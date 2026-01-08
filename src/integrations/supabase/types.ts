@@ -14,7 +14,272 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      aziende: {
+        Row: {
+          citta: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          indirizzo: string | null
+          nome: string
+          prodotti: number | null
+          settore: string | null
+          status: Database["public"]["Enums"]["company_status"] | null
+          telefono: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          citta?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          indirizzo?: string | null
+          nome: string
+          prodotti?: number | null
+          settore?: string | null
+          status?: Database["public"]["Enums"]["company_status"] | null
+          telefono?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          citta?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          indirizzo?: string | null
+          nome?: string
+          prodotti?: number | null
+          settore?: string | null
+          status?: Database["public"]["Enums"]["company_status"] | null
+          telefono?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      clienti: {
+        Row: {
+          azienda: string | null
+          created_at: string | null
+          email: string | null
+          fatturato: number | null
+          id: string
+          nome: string
+          ordini_count: number | null
+          status: Database["public"]["Enums"]["client_status"] | null
+          telefono: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          azienda?: string | null
+          created_at?: string | null
+          email?: string | null
+          fatturato?: number | null
+          id?: string
+          nome: string
+          ordini_count?: number | null
+          status?: Database["public"]["Enums"]["client_status"] | null
+          telefono?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          azienda?: string | null
+          created_at?: string | null
+          email?: string | null
+          fatturato?: number | null
+          id?: string
+          nome?: string
+          ordini_count?: number | null
+          status?: Database["public"]["Enums"]["client_status"] | null
+          telefono?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      eventi: {
+        Row: {
+          cliente_id: string | null
+          created_at: string | null
+          data: string
+          descrizione: string | null
+          id: string
+          luogo: string | null
+          orario_fine: string | null
+          orario_inizio: string | null
+          tipo: Database["public"]["Enums"]["event_type"] | null
+          titolo: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data: string
+          descrizione?: string | null
+          id?: string
+          luogo?: string | null
+          orario_fine?: string | null
+          orario_inizio?: string | null
+          tipo?: Database["public"]["Enums"]["event_type"] | null
+          titolo: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string | null
+          data?: string
+          descrizione?: string | null
+          id?: string
+          luogo?: string | null
+          orario_fine?: string | null
+          orario_inizio?: string | null
+          tipo?: Database["public"]["Enums"]["event_type"] | null
+          titolo?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventi_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordini: {
+        Row: {
+          azienda_id: string | null
+          cliente_id: string | null
+          codice: string | null
+          created_at: string | null
+          id: string
+          note: string | null
+          prodotti: number | null
+          status: Database["public"]["Enums"]["order_status"] | null
+          totale: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          cliente_id?: string | null
+          codice?: string | null
+          created_at?: string | null
+          id?: string
+          note?: string | null
+          prodotti?: number | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          totale?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string | null
+          cliente_id?: string | null
+          codice?: string | null
+          created_at?: string | null
+          id?: string
+          note?: string | null
+          prodotti?: number | null
+          status?: Database["public"]["Enums"]["order_status"] | null
+          totale?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordini_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordini_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      promemoria: {
+        Row: {
+          completato: boolean | null
+          created_at: string | null
+          data: string
+          descrizione: string | null
+          id: string
+          orario: string | null
+          priorita: Database["public"]["Enums"]["reminder_priority"] | null
+          tipo: Database["public"]["Enums"]["reminder_type"] | null
+          titolo: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completato?: boolean | null
+          created_at?: string | null
+          data: string
+          descrizione?: string | null
+          id?: string
+          orario?: string | null
+          priorita?: Database["public"]["Enums"]["reminder_priority"] | null
+          tipo?: Database["public"]["Enums"]["reminder_type"] | null
+          titolo: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completato?: boolean | null
+          created_at?: string | null
+          data?: string
+          descrizione?: string | null
+          id?: string
+          orario?: string | null
+          priorita?: Database["public"]["Enums"]["reminder_priority"] | null
+          tipo?: Database["public"]["Enums"]["reminder_type"] | null
+          titolo?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +288,12 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      client_status: "premium" | "standard" | "nuovo"
+      company_status: "attivo" | "in_pausa"
+      event_type: "meeting" | "presentazione" | "visita" | "altro"
+      order_status: "in_attesa" | "spedito" | "completato" | "annullato"
+      reminder_priority: "alta" | "media" | "bassa"
+      reminder_type: "call" | "email" | "documento" | "scadenza"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +420,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      client_status: ["premium", "standard", "nuovo"],
+      company_status: ["attivo", "in_pausa"],
+      event_type: ["meeting", "presentazione", "visita", "altro"],
+      order_status: ["in_attesa", "spedito", "completato", "annullato"],
+      reminder_priority: ["alta", "media", "bassa"],
+      reminder_type: ["call", "email", "documento", "scadenza"],
+    },
   },
 } as const
