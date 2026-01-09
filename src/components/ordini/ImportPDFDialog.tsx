@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Upload, FileText, Check, AlertCircle } from "lucide-react";
+import { Loader2, Upload, FileText, Check, AlertCircle, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type ParsedRiga = {
   codice_prodotto: string | null;
@@ -37,6 +38,7 @@ type ParsedRiga = {
   prezzo_unitario: number;
   importo_riga: number;
   prodotto_id?: string;
+  createNew?: boolean;
 };
 
 type ParsedOrderData = {
@@ -88,6 +90,7 @@ interface ImportPDFDialogProps {
     note: string;
     righe: { prodotto_id: string; quantita_pezzi: number; quantita_cartoni: number; prezzo_unitario: number }[];
   }) => void;
+  onProductsCreated?: () => void;
 }
 
 const formatCurrency = (value: number) =>
@@ -100,13 +103,16 @@ export function ImportPDFDialog({
   aziende,
   prodotti,
   onImportComplete,
+  onProductsCreated,
 }: ImportPDFDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingProducts, setIsCreatingProducts] = useState(false);
   const [parsedData, setParsedData] = useState<ParsedOrderData | null>(null);
   const [selectedCliente, setSelectedCliente] = useState("");
   const [selectedAzienda, setSelectedAzienda] = useState("");
   const [dataOrdine, setDataOrdine] = useState("");
-  const [mappedRighe, setMappedRighe] = useState<(ParsedRiga & { prodotto_id: string })[]>([]);
+  const [mappedRighe, setMappedRighe] = useState<(ParsedRiga & { prodotto_id: string; createNew?: boolean })[]>([]);
+  const [localProdotti, setLocalProdotti] = useState<Prodotto[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = () => {
@@ -115,10 +121,14 @@ export function ImportPDFDialog({
     setSelectedAzienda("");
     setDataOrdine("");
     setMappedRighe([]);
+    setLocalProdotti([]);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
+
+  // Combina prodotti originali con quelli creati localmente
+  const allProdotti = [...prodotti, ...localProdotti];
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -136,6 +146,7 @@ export function ImportPDFDialog({
 
     setIsLoading(true);
     setParsedData(null);
+    setLocalProdotti([]);
 
     try {
       // Convert to base64
@@ -209,7 +220,7 @@ export function ImportPDFDialog({
     
     if (!parsedData) return;
 
-    const aziendaProdotti = prodotti.filter((p) => p.azienda_id === aziendaId);
+    const aziendaProdotti = allProdotti.filter((p) => p.azienda_id === aziendaId);
     
     const mapped = parsedData.righe.map((riga) => {
       // Try to match by codice
@@ -229,6 +240,7 @@ export function ImportPDFDialog({
       return {
         ...riga,
         prodotto_id: matchedProdotto?.id || "",
+        createNew: !matchedProdotto,
       };
     });
 
@@ -237,8 +249,81 @@ export function ImportPDFDialog({
 
   const updateRigaProdotto = (index: number, prodottoId: string) => {
     const updated = [...mappedRighe];
-    updated[index] = { ...updated[index], prodotto_id: prodottoId };
+    updated[index] = { ...updated[index], prodotto_id: prodottoId, createNew: false };
     setMappedRighe(updated);
+  };
+
+  const toggleCreateNew = (index: number, checked: boolean) => {
+    const updated = [...mappedRighe];
+    updated[index] = { ...updated[index], createNew: checked, prodotto_id: checked ? "" : updated[index].prodotto_id };
+    setMappedRighe(updated);
+  };
+
+  const createMissingProducts = async () => {
+    if (!selectedAzienda) {
+      toast.error("Seleziona prima un'azienda");
+      return;
+    }
+
+    const righeToCreate = mappedRighe.filter(r => r.createNew && !r.prodotto_id);
+    if (righeToCreate.length === 0) {
+      toast.info("Nessun prodotto da creare");
+      return;
+    }
+
+    setIsCreatingProducts(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Utente non autenticato");
+
+      const newProducts: Prodotto[] = [];
+      const updatedRighe = [...mappedRighe];
+
+      for (const riga of righeToCreate) {
+        const { data: newProdotto, error } = await supabase
+          .from("prodotti")
+          .insert({
+            nome: riga.nome_prodotto,
+            codice: riga.codice_prodotto,
+            azienda_id: selectedAzienda,
+            prezzo_listino: riga.prezzo_unitario,
+            pezzi_per_cartone: riga.quantita_cartoni > 0 && riga.quantita_pezzi > 0 
+              ? Math.round(riga.quantita_pezzi / riga.quantita_cartoni) 
+              : 1,
+            user_id: user.id,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error creating product:", error);
+          throw new Error(`Errore nella creazione del prodotto: ${riga.nome_prodotto}`);
+        }
+
+        newProducts.push(newProdotto as Prodotto);
+
+        // Update the riga with the new product id
+        const rigaIndex = mappedRighe.findIndex(r => r.nome_prodotto === riga.nome_prodotto && r.createNew);
+        if (rigaIndex !== -1) {
+          updatedRighe[rigaIndex] = {
+            ...updatedRighe[rigaIndex],
+            prodotto_id: newProdotto.id,
+            createNew: false,
+          };
+        }
+      }
+
+      setLocalProdotti(prev => [...prev, ...newProducts]);
+      setMappedRighe(updatedRighe);
+      toast.success(`${newProducts.length} prodotti creati con successo!`);
+      onProductsCreated?.();
+    } catch (error) {
+      console.error("Error creating products:", error);
+      toast.error(error instanceof Error ? error.message : "Errore nella creazione dei prodotti");
+    } finally {
+      setIsCreatingProducts(false);
+    }
   };
 
   const handleImport = () => {
@@ -274,7 +359,8 @@ export function ImportPDFDialog({
     onOpenChange(false);
   };
 
-  const aziendaProdotti = prodotti.filter((p) => p.azienda_id === selectedAzienda);
+  const aziendaProdotti = allProdotti.filter((p) => p.azienda_id === selectedAzienda);
+  const unmappedCount = mappedRighe.filter(r => !r.prodotto_id && r.createNew).length;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) resetState(); }}>
@@ -375,11 +461,29 @@ export function ImportPDFDialog({
 
               {/* Product Lines */}
               <div className="space-y-2">
-                <Label>Righe Ordine ({parsedData.righe.length} prodotti)</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Righe Ordine ({parsedData.righe.length} prodotti)</Label>
+                  {unmappedCount > 0 && selectedAzienda && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={createMissingProducts}
+                      disabled={isCreatingProducts}
+                    >
+                      {isCreatingProducts ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4 mr-2" />
+                      )}
+                      Crea {unmappedCount} prodotti mancanti
+                    </Button>
+                  )}
+                </div>
                 <div className="border rounded-lg overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-12">Nuovo</TableHead>
                         <TableHead className="w-24">Codice</TableHead>
                         <TableHead>Prodotto PDF</TableHead>
                         <TableHead className="w-48">Associa Prodotto</TableHead>
@@ -391,29 +495,42 @@ export function ImportPDFDialog({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(mappedRighe.length > 0 ? mappedRighe : parsedData.righe.map(r => ({ ...r, prodotto_id: "" }))).map((riga, index) => (
+                      {(mappedRighe.length > 0 ? mappedRighe : parsedData.righe.map(r => ({ ...r, prodotto_id: "", createNew: true }))).map((riga, index) => (
                         <TableRow key={index}>
+                          <TableCell>
+                            <Checkbox
+                              checked={riga.createNew && !riga.prodotto_id}
+                              onCheckedChange={(checked) => toggleCreateNew(index, !!checked)}
+                              disabled={!!riga.prodotto_id || !selectedAzienda}
+                            />
+                          </TableCell>
                           <TableCell className="font-mono text-xs">
                             {riga.codice_prodotto || "-"}
                           </TableCell>
                           <TableCell className="text-sm">{riga.nome_prodotto}</TableCell>
                           <TableCell>
-                            <Select 
-                              value={riga.prodotto_id || ""} 
-                              onValueChange={(v) => updateRigaProdotto(index, v)}
-                              disabled={!selectedAzienda}
-                            >
-                              <SelectTrigger className="h-8 text-xs">
-                                <SelectValue placeholder="Seleziona..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {aziendaProdotti.map((p) => (
-                                  <SelectItem key={p.id} value={p.id} className="text-xs">
-                                    {p.codice ? `[${p.codice}] ` : ""}{p.nome}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            {riga.createNew && !riga.prodotto_id ? (
+                              <span className="text-xs text-muted-foreground italic">
+                                Verrà creato automaticamente
+                              </span>
+                            ) : (
+                              <Select 
+                                value={riga.prodotto_id || ""} 
+                                onValueChange={(v) => updateRigaProdotto(index, v)}
+                                disabled={!selectedAzienda}
+                              >
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Seleziona..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {aziendaProdotti.map((p) => (
+                                    <SelectItem key={p.id} value={p.id} className="text-xs">
+                                      {p.codice ? `[${p.codice}] ` : ""}{p.nome}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">{riga.quantita_pezzi}</TableCell>
                           <TableCell className="text-right">{riga.quantita_cartoni}</TableCell>
@@ -422,6 +539,8 @@ export function ImportPDFDialog({
                           <TableCell>
                             {riga.prodotto_id ? (
                               <Check className="h-4 w-4 text-success" />
+                            ) : riga.createNew ? (
+                              <Plus className="h-4 w-4 text-primary" />
                             ) : (
                               <AlertCircle className="h-4 w-4 text-warning" />
                             )}

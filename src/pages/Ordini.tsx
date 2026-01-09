@@ -130,7 +130,7 @@ const Ordini = () => {
   const { data: ordini, isLoading } = useOrdini(searchTerm, statusFilter);
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
-  const { data: allProdotti } = useProdotti();
+  const { data: allProdotti, refetch: refetchProdotti } = useProdotti();
   const createOrdine = useCreateOrdine();
   const createRigheBatch = useCreateOrdineRigheBatch();
   const updateStatus = useUpdateOrdineStatus();
@@ -1090,6 +1090,7 @@ const Ordini = () => {
           clienti={clienti || []}
           aziende={aziende || []}
           prodotti={allProdotti || []}
+          onProductsCreated={() => refetchProdotti()}
           onImportComplete={async (data) => {
             try {
               const ordine = await createOrdine.mutateAsync({
