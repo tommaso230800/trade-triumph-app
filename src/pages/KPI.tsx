@@ -3,6 +3,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { useKPIStats, PeriodFilter } from "@/hooks/useKPIStats";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
+import { YearComparisonChart } from "@/components/dashboard/YearComparisonChart";
 import {
   Table,
   TableBody,
@@ -34,6 +35,7 @@ import {
   BarChart3,
   PieChart,
   Calendar,
+  GitCompare,
 } from "lucide-react";
 
 const formatCurrency = (value: number) =>
@@ -219,6 +221,15 @@ const KPI = () => {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Year Comparison */}
+        <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
+          <div className="flex items-center gap-2 mb-4">
+            <GitCompare className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold">Confronto 2025 vs 2026</h3>
+          </div>
+          <YearComparisonChart data2026={stats?.ordiniPerMese || []} />
         </div>
 
         {/* Detailed Tabs */}

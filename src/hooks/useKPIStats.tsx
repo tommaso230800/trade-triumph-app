@@ -204,18 +204,25 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
         ? prodottiKPI.reduce((sum, p) => sum + (p.fatturato_totale / (p.quantita_venduta || 1)), 0) / prodottiKPI.length
         : 0;
 
-      // Monthly trend
-      const ordiniPerMese = ordini.reduce((acc, o) => {
-        const mese = new Date(o.created_at).toLocaleString("it-IT", { month: "short" });
-        const existing = acc.find((m) => m.mese === mese);
-        if (existing) {
-          existing.fatturato += Number(o.totale);
-          existing.ordini += 1;
-        } else {
-          acc.push({ mese, fatturato: Number(o.totale), ordini: 1 });
+      // Monthly trend - ensure all 12 months in order
+      const mesiNomi = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
+      const ordiniPerMeseMap = ordini.reduce((acc, o) => {
+        const date = new Date(o.created_at);
+        const meseIndex = date.getMonth();
+        const mese = mesiNomi[meseIndex];
+        if (!acc[mese]) {
+          acc[mese] = { fatturato: 0, ordini: 0 };
         }
+        acc[mese].fatturato += Number(o.totale);
+        acc[mese].ordini += 1;
         return acc;
-      }, [] as { mese: string; fatturato: number; ordini: number }[]);
+      }, {} as Record<string, { fatturato: number; ordini: number }>);
+
+      const ordiniPerMese = mesiNomi.map((mese) => ({
+        mese,
+        fatturato: ordiniPerMeseMap[mese]?.fatturato || 0,
+        ordini: ordiniPerMeseMap[mese]?.ordini || 0,
+      }));
 
       // Consorzio breakdown with aziende and clienti details
       type ClienteBreakdown = { cliente_id: string; cliente_nome: string; fatturato: number };
