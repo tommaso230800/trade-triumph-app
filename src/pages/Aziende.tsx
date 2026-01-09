@@ -22,10 +22,43 @@ import {
 import { Plus, Search, Loader2 } from "lucide-react";
 import { useAziende, useCreateAzienda, useDeleteAzienda } from "@/hooks/useAziende";
 import { AziendaCard } from "@/components/aziende/AziendaCard";
+import { toast } from "sonner";
+
+// Lookup P.IVA via OpenAPI (free service for Italian companies)
+async function lookupPartitaIva(piva: string): Promise<{
+  nome?: string;
+  indirizzo?: string;
+  citta?: string;
+  telefono?: string;
+  email?: string;
+} | null> {
+  try {
+    // Use the openapi.it free service
+    const response = await fetch(`https://openapi.it/api/v1/partita-iva/${piva.replace(/\s/g, '')}`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    
+    if (!response.ok) return null;
+    
+    const data = await response.json();
+    if (data.success && data.data) {
+      return {
+        nome: data.data.denominazione || data.data.nome,
+        indirizzo: data.data.indirizzo,
+        citta: data.data.comune,
+      };
+    }
+    return null;
+  } catch {
+    // Fallback: try a simple CORS-free approach or return null
+    return null;
+  }
+}
 
 const Aziende = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLookingUp, setIsLookingUp] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
     settore: "",
@@ -35,17 +68,45 @@ const Aziende = () => {
     email: "",
     status: "attivo" as "attivo" | "in_pausa",
     prodotti: 0,
+    partita_iva: "",
   });
 
   const { data: aziende, isLoading } = useAziende(searchTerm);
   const createAzienda = useCreateAzienda();
   const deleteAzienda = useDeleteAzienda();
 
+  const handlePartitaIvaBlur = async () => {
+    const piva = formData.partita_iva.trim();
+    if (piva.length < 11) return;
+    
+    setIsLookingUp(true);
+    try {
+      const result = await lookupPartitaIva(piva);
+      if (result) {
+        setFormData(prev => ({
+          ...prev,
+          nome: result.nome || prev.nome,
+          indirizzo: result.indirizzo || prev.indirizzo,
+          citta: result.citta || prev.citta,
+          telefono: result.telefono || prev.telefono,
+          email: result.email || prev.email,
+        }));
+        toast.success("Dati azienda recuperati!");
+      } else {
+        toast.info("Nessun dato trovato per questa P.IVA");
+      }
+    } catch {
+      toast.error("Errore nella ricerca P.IVA");
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.nome) return;
     await createAzienda.mutateAsync(formData);
     setIsDialogOpen(false);
-    setFormData({ nome: "", settore: "", citta: "", indirizzo: "", telefono: "", email: "", status: "attivo", prodotti: 0 });
+    setFormData({ nome: "", settore: "", citta: "", indirizzo: "", telefono: "", email: "", status: "attivo", prodotti: 0, partita_iva: "" });
   };
 
   return (
@@ -70,9 +131,25 @@ const Aziende = () => {
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Nuova Azienda</DialogTitle>
-                <DialogDescription>Aggiungi una nuova azienda partner</DialogDescription>
+                <DialogDescription>Inserisci la P.IVA per compilare automaticamente i dati</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Partita IVA</Label>
+                  <div className="relative">
+                    <Input
+                      value={formData.partita_iva}
+                      onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
+                      onBlur={handlePartitaIvaBlur}
+                      placeholder="12345678901"
+                      maxLength={11}
+                    />
+                    {isLookingUp && (
+                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Inserisci e premi Tab per autocompilare</p>
+                </div>
                 <div className="space-y-2">
                   <Label>Nome *</Label>
                   <Input
@@ -98,6 +175,14 @@ const Aziende = () => {
                       placeholder="Es: Milano"
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Indirizzo</Label>
+                  <Input
+                    value={formData.indirizzo}
+                    onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })}
+                    placeholder="Via Roma 1"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

@@ -10,6 +10,8 @@ export type Prodotto = {
   prezzo_listino: number;
   quantita_pezzi: number;
   pezzi_per_cartone: number;
+  strati: number;
+  cartoni_per_strato: number;
   created_at: string;
   updated_at: string;
 };

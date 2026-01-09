@@ -23,6 +23,7 @@ export type Database = {
           indirizzo: string | null
           logo_url: string | null
           nome: string
+          partita_iva: string | null
           prodotti: number | null
           settore: string | null
           status: Database["public"]["Enums"]["company_status"] | null
@@ -38,6 +39,7 @@ export type Database = {
           indirizzo?: string | null
           logo_url?: string | null
           nome: string
+          partita_iva?: string | null
           prodotti?: number | null
           settore?: string | null
           status?: Database["public"]["Enums"]["company_status"] | null
@@ -53,6 +55,7 @@ export type Database = {
           indirizzo?: string | null
           logo_url?: string | null
           nome?: string
+          partita_iva?: string | null
           prodotti?: number | null
           settore?: string | null
           status?: Database["public"]["Enums"]["company_status"] | null
@@ -71,6 +74,7 @@ export type Database = {
           id: string
           nome: string
           ordini_count: number | null
+          partita_iva: string | null
           status: Database["public"]["Enums"]["client_status"] | null
           telefono: string | null
           updated_at: string | null
@@ -84,6 +88,7 @@ export type Database = {
           id?: string
           nome: string
           ordini_count?: number | null
+          partita_iva?: string | null
           status?: Database["public"]["Enums"]["client_status"] | null
           telefono?: string | null
           updated_at?: string | null
@@ -97,6 +102,7 @@ export type Database = {
           id?: string
           nome?: string
           ordini_count?: number | null
+          partita_iva?: string | null
           status?: Database["public"]["Enums"]["client_status"] | null
           telefono?: string | null
           updated_at?: string | null
@@ -265,34 +271,40 @@ export type Database = {
       prodotti: {
         Row: {
           azienda_id: string
+          cartoni_per_strato: number
           created_at: string
           id: string
           nome: string
           pezzi_per_cartone: number
           prezzo_listino: number
           quantita_pezzi: number
+          strati: number
           updated_at: string
           user_id: string
         }
         Insert: {
           azienda_id: string
+          cartoni_per_strato?: number
           created_at?: string
           id?: string
           nome: string
           pezzi_per_cartone?: number
           prezzo_listino?: number
           quantita_pezzi?: number
+          strati?: number
           updated_at?: string
           user_id: string
         }
         Update: {
           azienda_id?: string
+          cartoni_per_strato?: number
           created_at?: string
           id?: string
           nome?: string
           pezzi_per_cartone?: number
           prezzo_listino?: number
           quantita_pezzi?: number
+          strati?: number
           updated_at?: string
           user_id?: string
         }
