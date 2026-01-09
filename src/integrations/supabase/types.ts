@@ -68,6 +68,143 @@ export type Database = {
         }
         Relationships: []
       }
+      canvass: {
+        Row: {
+          attivo: boolean
+          azienda_id: string
+          created_at: string
+          data_fine: string
+          data_inizio: string
+          descrizione: string | null
+          id: string
+          nome: string
+          tipo: string
+          tutti_clienti: boolean
+          updated_at: string
+          user_id: string
+          valore: number
+        }
+        Insert: {
+          attivo?: boolean
+          azienda_id: string
+          created_at?: string
+          data_fine: string
+          data_inizio: string
+          descrizione?: string | null
+          id?: string
+          nome: string
+          tipo: string
+          tutti_clienti?: boolean
+          updated_at?: string
+          user_id: string
+          valore?: number
+        }
+        Update: {
+          attivo?: boolean
+          azienda_id?: string
+          created_at?: string
+          data_fine?: string
+          data_inizio?: string
+          descrizione?: string | null
+          id?: string
+          nome?: string
+          tipo?: string
+          tutti_clienti?: boolean
+          updated_at?: string
+          user_id?: string
+          valore?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canvass_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      canvass_clienti: {
+        Row: {
+          canvass_id: string
+          cliente_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          canvass_id: string
+          cliente_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          canvass_id?: string
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canvass_clienti_canvass_id_fkey"
+            columns: ["canvass_id"]
+            isOneToOne: false
+            referencedRelation: "canvass"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canvass_clienti_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      canvass_prodotti: {
+        Row: {
+          canvass_id: string
+          created_at: string
+          id: string
+          prodotto_id: string
+          user_id: string
+          valore_override: number | null
+        }
+        Insert: {
+          canvass_id: string
+          created_at?: string
+          id?: string
+          prodotto_id: string
+          user_id: string
+          valore_override?: number | null
+        }
+        Update: {
+          canvass_id?: string
+          created_at?: string
+          id?: string
+          prodotto_id?: string
+          user_id?: string
+          valore_override?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canvass_prodotti_canvass_id_fkey"
+            columns: ["canvass_id"]
+            isOneToOne: false
+            referencedRelation: "canvass"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canvass_prodotti_prodotto_id_fkey"
+            columns: ["prodotto_id"]
+            isOneToOne: false
+            referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clienti: {
         Row: {
           azienda: string | null
@@ -136,6 +273,60 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      contratti_clienti: {
+        Row: {
+          anno: number
+          azienda_id: string
+          cliente_id: string
+          created_at: string
+          id: string
+          note: string | null
+          percentuale_premio: number
+          soglia_fatturato: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anno: number
+          azienda_id: string
+          cliente_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          percentuale_premio?: number
+          soglia_fatturato?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anno?: number
+          azienda_id?: string
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          percentuale_premio?: number
+          soglia_fatturato?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratti_clienti_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratti_clienti_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       eventi: {
         Row: {

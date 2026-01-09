@@ -35,13 +35,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw, Upload } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw, Upload, Tag } from "lucide-react";
 import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, useUpdateOrdine, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
 import { useProdotti, Prodotto } from "@/hooks/useProdotti";
 import { useCreateOrdineRigheBatch, useOrdiniRighe, useUpdateOrdineRiga, useUpdateOrdineTotale } from "@/hooks/useOrdiniRighe";
 import { useLastOrdineForClient } from "@/hooks/useLastOrdineRighe";
+import { useCanvassAttive } from "@/hooks/useCanvass";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ProformaDialog } from "@/components/ordini/ProformaDialog";
@@ -152,12 +154,22 @@ const Ordini = () => {
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
   const { data: allProdotti, refetch: refetchProdotti } = useProdotti();
+  const { data: canvassAttive = [] } = useCanvassAttive();
   const createOrdine = useCreateOrdine();
   const createRigheBatch = useCreateOrdineRigheBatch();
   const updateStatus = useUpdateOrdineStatus();
   const updateRigaMutation = useUpdateOrdineRiga();
   const updateOrdineTotale = useUpdateOrdineTotale();
   const updateOrdine = useUpdateOrdine();
+  
+  // Get active promotions for selected client/company
+  const promozioniRilevanti = useMemo(() => {
+    if (!formData.azienda_id) return [];
+    return canvassAttive.filter(c => 
+      c.azienda_id === formData.azienda_id && 
+      (c.tutti_clienti || c.canvass_clienti?.some(cc => cc.cliente_id === formData.cliente_id))
+    );
+  }, [formData.azienda_id, formData.cliente_id, canvassAttive]);
   
   // Fetch righe for editing
   const { data: righeForEdit, refetch: refetchRighe } = useOrdiniRighe(editingOrdine?.id);
