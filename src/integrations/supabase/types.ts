@@ -25,6 +25,7 @@ export type Database = {
           nome: string
           partita_iva: string | null
           prodotti: number | null
+          provvigione_percentuale: number | null
           settore: string | null
           status: Database["public"]["Enums"]["company_status"] | null
           telefono: string | null
@@ -41,6 +42,7 @@ export type Database = {
           nome: string
           partita_iva?: string | null
           prodotti?: number | null
+          provvigione_percentuale?: number | null
           settore?: string | null
           status?: Database["public"]["Enums"]["company_status"] | null
           telefono?: string | null
@@ -57,6 +59,7 @@ export type Database = {
           nome?: string
           partita_iva?: string | null
           prodotti?: number | null
+          provvigione_percentuale?: number | null
           settore?: string | null
           status?: Database["public"]["Enums"]["company_status"] | null
           telefono?: string | null

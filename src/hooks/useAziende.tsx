@@ -15,6 +15,7 @@ export type Azienda = {
   prodotti: number;
   logo_url: string | null;
   partita_iva: string | null;
+  provvigione_percentuale: number;
   created_at: string;
 };
 

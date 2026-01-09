@@ -35,6 +35,7 @@ type FormData = {
   status: "attivo" | "in_pausa";
   prodotti: number;
   partita_iva: string;
+  provvigione_percentuale: string;
 };
 
 const defaultFormData: FormData = {
@@ -47,6 +48,7 @@ const defaultFormData: FormData = {
   status: "attivo",
   prodotti: 0,
   partita_iva: "",
+  provvigione_percentuale: "0",
 };
 
 const Aziende = () => {
@@ -73,6 +75,7 @@ const Aziende = () => {
       status: azienda.status,
       prodotti: azienda.prodotti,
       partita_iva: azienda.partita_iva || "",
+      provvigione_percentuale: String(azienda.provvigione_percentuale || 0),
     });
     setIsDialogOpen(true);
   };
@@ -128,6 +131,7 @@ const Aziende = () => {
       telefono: formData.telefono || null,
       email: formData.email || null,
       partita_iva: formData.partita_iva || null,
+      provvigione_percentuale: parseFloat(formData.provvigione_percentuale.replace(",", ".")) || 0,
     };
 
     if (editingAzienda) {
@@ -245,20 +249,31 @@ const Aziende = () => {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(v) => setFormData({ ...formData, status: v as "attivo" | "in_pausa" })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="attivo">Attivo</SelectItem>
-                      <SelectItem value="in_pausa">In Pausa</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(v) => setFormData({ ...formData, status: v as "attivo" | "in_pausa" })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="attivo">Attivo</SelectItem>
+                        <SelectItem value="in_pausa">In Pausa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Provvigione %</Label>
+                    <Input
+                      value={formData.provvigione_percentuale}
+                      onChange={(e) => setFormData({ ...formData, provvigione_percentuale: e.target.value })}
+                      placeholder="Es: 5"
+                      type="text"
+                    />
+                  </div>
                 </div>
               </div>
               <DialogFooter>
