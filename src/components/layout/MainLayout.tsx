@@ -45,10 +45,10 @@ export function MainLayout({ children }: MainLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background safe-top safe-bottom">
       <Sidebar />
       <main className="lg:pl-64">
-        <div className="p-4 pt-16 lg:pt-4 lg:p-8">{children}</div>
+        <div className="p-4 pt-16 pb-8 lg:pt-4 lg:p-8">{children}</div>
       </main>
     </div>
   );

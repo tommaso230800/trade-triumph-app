@@ -62,7 +62,7 @@ export function Sidebar() {
         </Button>
       </div>
 
-      {/* Navigation */}
+      {/* Navigation - touch friendly */}
       <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
@@ -72,10 +72,10 @@ export function Sidebar() {
               to={item.href}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                "flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-medium transition-all duration-200 touch-target active:scale-[0.98]",
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent"
               )}
             >
               <item.icon className="h-5 w-5 flex-shrink-0" />
@@ -85,19 +85,19 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="border-t border-sidebar-border p-3 space-y-1">
+      {/* Bottom Actions - touch friendly */}
+      <div className="border-t border-sidebar-border p-3 space-y-1 safe-bottom">
         <Link
           to="/impostazioni"
           onClick={() => setMobileOpen(false)}
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
+          className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200 touch-target active:scale-[0.98]"
         >
           <Settings className="h-5 w-5 flex-shrink-0" />
           <span className="truncate">Impostazioni</span>
         </Link>
         <button
           onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-all duration-200"
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-base font-medium text-destructive hover:bg-destructive/10 transition-all duration-200 touch-target active:scale-[0.98]"
         >
           <LogOut className="h-5 w-5 flex-shrink-0" />
           <span className="truncate">Esci</span>
@@ -108,11 +108,11 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Mobile menu button - touch friendly */}
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-4 left-4 z-50 lg:hidden bg-card shadow-md"
+        className="fixed top-4 left-4 z-50 lg:hidden bg-card shadow-md h-11 w-11 touch-target safe-top"
         onClick={() => setMobileOpen(true)}
       >
         <Menu className="h-5 w-5" />
@@ -131,10 +131,10 @@ export function Sidebar() {
         <SidebarContent />
       </aside>
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar - with safe areas */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 lg:hidden",
+          "fixed inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 lg:hidden safe-top safe-bottom",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
