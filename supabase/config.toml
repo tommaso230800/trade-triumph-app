@@ -1,1 +1,4 @@
 project_id = "vjwreqnonxjigfgufpil"
+
+[functions.lookup-piva]
+verify_jwt = false

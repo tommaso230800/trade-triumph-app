@@ -12,6 +12,7 @@ export type Cliente = {
   fatturato: number;
   ordini_count: number;
   status: "premium" | "standard" | "nuovo";
+  partita_iva: string | null;
   created_at: string;
 };
 

@@ -19,41 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Loader2 } from "lucide-react";
+import { Plus, Search, Loader2, Wand2 } from "lucide-react";
 import { useAziende, useCreateAzienda, useDeleteAzienda } from "@/hooks/useAziende";
 import { AziendaCard } from "@/components/aziende/AziendaCard";
 import { toast } from "sonner";
-
-// Lookup P.IVA via OpenAPI (free service for Italian companies)
-async function lookupPartitaIva(piva: string): Promise<{
-  nome?: string;
-  indirizzo?: string;
-  citta?: string;
-  telefono?: string;
-  email?: string;
-} | null> {
-  try {
-    // Use the openapi.it free service
-    const response = await fetch(`https://openapi.it/api/v1/partita-iva/${piva.replace(/\s/g, '')}`, {
-      headers: { 'Accept': 'application/json' }
-    });
-    
-    if (!response.ok) return null;
-    
-    const data = await response.json();
-    if (data.success && data.data) {
-      return {
-        nome: data.data.denominazione || data.data.nome,
-        indirizzo: data.data.indirizzo,
-        citta: data.data.comune,
-      };
-    }
-    return null;
-  } catch {
-    // Fallback: try a simple CORS-free approach or return null
-    return null;
-  }
-}
+import { supabase } from "@/integrations/supabase/client";
 
 const Aziende = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -75,28 +45,35 @@ const Aziende = () => {
   const createAzienda = useCreateAzienda();
   const deleteAzienda = useDeleteAzienda();
 
-  const handlePartitaIvaBlur = async () => {
+  const handleLookupPiva = async () => {
     const piva = formData.partita_iva.trim();
-    if (piva.length < 11) return;
+    if (piva.length < 11) {
+      toast.error("Inserisci una P.IVA valida (11 cifre)");
+      return;
+    }
     
     setIsLookingUp(true);
     try {
-      const result = await lookupPartitaIva(piva);
-      if (result) {
+      const { data, error } = await supabase.functions.invoke('lookup-piva', {
+        body: { partita_iva: piva }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success && data?.data) {
         setFormData(prev => ({
           ...prev,
-          nome: result.nome || prev.nome,
-          indirizzo: result.indirizzo || prev.indirizzo,
-          citta: result.citta || prev.citta,
-          telefono: result.telefono || prev.telefono,
-          email: result.email || prev.email,
+          nome: data.data.nome || prev.nome,
+          indirizzo: data.data.indirizzo || prev.indirizzo,
+          citta: data.data.citta || prev.citta,
         }));
         toast.success("Dati azienda recuperati!");
       } else {
-        toast.info("Nessun dato trovato per questa P.IVA");
+        toast.info(data?.message || "Nessun dato trovato per questa P.IVA");
       }
-    } catch {
-      toast.error("Errore nella ricerca P.IVA");
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error("Errore nella ricerca: " + error.message);
     } finally {
       setIsLookingUp(false);
     }
@@ -136,19 +113,27 @@ const Aziende = () => {
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label>Partita IVA</Label>
-                  <div className="relative">
+                  <div className="flex gap-2">
                     <Input
                       value={formData.partita_iva}
                       onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
-                      onBlur={handlePartitaIvaBlur}
                       placeholder="12345678901"
                       maxLength={11}
+                      className="flex-1"
                     />
-                    {isLookingUp && (
-                      <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                    )}
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={handleLookupPiva}
+                      disabled={isLookingUp || formData.partita_iva.length < 11}
+                    >
+                      {isLookingUp ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">Inserisci e premi Tab per autocompilare</p>
                 </div>
                 <div className="space-y-2">
                   <Label>Nome *</Label>
