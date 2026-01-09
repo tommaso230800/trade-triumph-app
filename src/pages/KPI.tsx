@@ -192,17 +192,26 @@ const KPI = () => {
                       {formatCurrency(cs.fatturato_totale)}
                     </span>
                   </div>
-                  <div className="space-y-1.5 pl-3">
+                  <div className="space-y-3 pl-3">
                     {cs.aziende.map((azienda, idx) => (
-                      <div key={idx} className="space-y-1">
+                      <div key={idx} className="space-y-1.5">
                         <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">{azienda.azienda_nome}</span>
+                          <span className="text-muted-foreground font-medium">{azienda.azienda_nome}</span>
                           <span className="font-medium">{formatCurrency(azienda.fatturato)}</span>
                         </div>
                         <Progress
                           value={(azienda.fatturato / (cs.fatturato_totale || 1)) * 100}
                           className="h-1.5"
                         />
+                        {/* Clienti breakdown */}
+                        <div className="pl-3 space-y-1 border-l border-border/50">
+                          {azienda.clienti.map((cliente) => (
+                            <div key={cliente.cliente_id} className="flex justify-between text-xs">
+                              <span className="text-muted-foreground/80">{cliente.cliente_nome}</span>
+                              <span className="text-muted-foreground">{formatCurrency(cliente.fatturato)}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))}
                   </div>
