@@ -35,7 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw } from "lucide-react";
 import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
@@ -412,11 +412,24 @@ const Ordini = () => {
     setIsProformaOpen(true);
   };
 
+  // Separate active orders from cancelled ones
+  const ordiniAttivi = useMemo(() => 
+    ordini?.filter((o) => o.status !== "annullato") || [], 
+    [ordini]
+  );
+  
+  const ordiniAnnullati = useMemo(() => 
+    ordini?.filter((o) => o.status === "annullato") || [], 
+    [ordini]
+  );
+
   const stats = {
-    totale: ordini?.length || 0,
-    inAttesa: ordini?.filter((o) => o.status === "in_attesa").length || 0,
-    completati: ordini?.filter((o) => o.status === "completato").length || 0,
-    valoreTotale: ordini?.reduce((sum, o) => sum + Number(o.totale), 0) || 0,
+    totale: ordiniAttivi.length,
+    inAttesa: ordiniAttivi.filter((o) => o.status === "in_attesa").length,
+    completati: ordiniAttivi.filter((o) => o.status === "completato").length,
+    valoreTotale: ordiniAttivi.reduce((sum, o) => sum + Number(o.totale), 0),
+    annullati: ordiniAnnullati.length,
+    valoreAnnullato: ordiniAnnullati.reduce((sum, o) => sum + Number(o.totale), 0),
   };
 
   return (
@@ -735,7 +748,7 @@ const Ordini = () => {
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : !ordini?.length ? (
+        ) : !ordiniAttivi.length && !ordiniAnnullati.length ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nessun ordine trovato</p>
             <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
@@ -743,6 +756,7 @@ const Ordini = () => {
             </Button>
           </div>
         ) : (
+          <>
           <div className="rounded-xl bg-card shadow-card overflow-hidden animate-fade-in">
             <div className="overflow-x-auto">
               <Table>
@@ -759,7 +773,7 @@ const Ordini = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ordini.map((ordine) => (
+                  {ordiniAttivi.map((ordine) => (
                     <TableRow key={ordine.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="font-mono text-xs lg:text-sm font-medium text-primary">
                         {ordine.codice}
@@ -828,6 +842,90 @@ const Ordini = () => {
               </Table>
             </div>
           </div>
+
+          {/* Cancelled Orders Section */}
+          {ordiniAnnullati.length > 0 && (
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Ban className="h-5 w-5 text-destructive" />
+                <h2 className="text-lg font-semibold text-foreground">
+                  Ordini Annullati ({ordiniAnnullati.length})
+                </h2>
+                <span className="text-sm text-muted-foreground ml-2">
+                  Valore perso: {formatCurrency(stats.valoreAnnullato)}
+                </span>
+              </div>
+              <div className="rounded-xl bg-card shadow-card overflow-hidden border border-destructive/20">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-destructive/5">
+                        <TableHead>ID Ordine</TableHead>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead className="hidden sm:table-cell">Prodotti</TableHead>
+                        <TableHead>Totale</TableHead>
+                        <TableHead className="hidden md:table-cell">Data</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="w-12"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {ordiniAnnullati.map((ordine) => (
+                        <TableRow key={ordine.id} className="hover:bg-muted/30 transition-colors opacity-70">
+                          <TableCell className="font-mono text-xs lg:text-sm font-medium text-muted-foreground">
+                            {ordine.codice}
+                          </TableCell>
+                          <TableCell className="font-medium text-muted-foreground">
+                            <span className="truncate block max-w-[120px] sm:max-w-none">
+                              {ordine.clienti?.nome || "—"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell text-muted-foreground">
+                            {ordine.prodotti} articoli
+                          </TableCell>
+                          <TableCell className="font-semibold text-muted-foreground line-through">
+                            {formatCurrency(Number(ordine.totale))}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell text-muted-foreground">
+                            {format(new Date(ordine.created_at), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={statusConfig[ordine.status].className}>
+                              {statusConfig[ordine.status].label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handleShowProforma(ordine)}
+                                >
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Visualizza Proforma
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => updateStatus.mutate({ id: ordine.id, status: "in_attesa" })}
+                                >
+                                  <RotateCcw className="h-4 w-4 mr-2" />
+                                  Riattiva Ordine
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
         )}
 
         {/* Edit Order Dialog */}
