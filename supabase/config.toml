@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.parse-order-pdf]
 verify_jwt = false
+
+[functions.parse-products-pdf]
+verify_jwt = false
