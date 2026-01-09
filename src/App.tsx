@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Aziende from "./pages/Aziende";
+import AziendaDettaglio from "./pages/AziendaDettaglio";
 import Clienti from "./pages/Clienti";
 import ClienteDettaglio from "./pages/ClienteDettaglio";
 import Ordini from "./pages/Ordini";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/aziende" element={<Aziende />} />
+            <Route path="/aziende/:id" element={<AziendaDettaglio />} />
             <Route path="/clienti" element={<Clienti />} />
             <Route path="/clienti/:id" element={<ClienteDettaglio />} />
             <Route path="/ordini" element={<Ordini />} />
