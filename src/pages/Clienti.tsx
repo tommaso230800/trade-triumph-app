@@ -35,8 +35,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal, Loader2, Filter } from "lucide-react";
+import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal, Loader2, Filter, Wand2 } from "lucide-react";
 import { useClienti, useCreateCliente, useDeleteCliente, Cliente } from "@/hooks/useClienti";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const statusConfig = {
   premium: { label: "Premium", className: "bg-primary/10 text-primary hover:bg-primary/20" },
@@ -51,6 +53,7 @@ const Clienti = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Cliente["status"] | "tutti">("tutti");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLookingUp, setIsLookingUp] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
     azienda: "",
@@ -59,17 +62,51 @@ const Clienti = () => {
     fatturato: 0,
     ordini_count: 0,
     status: "nuovo" as Cliente["status"],
+    partita_iva: "",
   });
 
   const { data: clienti, isLoading } = useClienti(searchTerm, statusFilter);
   const createCliente = useCreateCliente();
   const deleteCliente = useDeleteCliente();
 
+  const handleLookupPiva = async () => {
+    const piva = formData.partita_iva.trim();
+    if (piva.length < 11) {
+      toast.error("Inserisci una P.IVA valida (11 cifre)");
+      return;
+    }
+    
+    setIsLookingUp(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('lookup-piva', {
+        body: { partita_iva: piva }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success && data?.data) {
+        setFormData(prev => ({
+          ...prev,
+          nome: data.data.nome || prev.nome,
+          azienda: data.data.nome || prev.azienda,
+        }));
+        toast.success("Dati cliente recuperati!");
+      } else {
+        toast.info(data?.message || "Nessun dato trovato per questa P.IVA");
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error("Errore nella ricerca: " + error.message);
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.nome) return;
     await createCliente.mutateAsync(formData);
     setIsDialogOpen(false);
-    setFormData({ nome: "", azienda: "", email: "", telefono: "", fatturato: 0, ordini_count: 0, status: "nuovo" });
+    setFormData({ nome: "", azienda: "", email: "", telefono: "", fatturato: 0, ordini_count: 0, status: "nuovo", partita_iva: "" });
   };
 
   const stats = {
@@ -103,9 +140,33 @@ const Clienti = () => {
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Nuovo Cliente</DialogTitle>
-                <DialogDescription>Aggiungi un nuovo cliente al portfolio</DialogDescription>
+                <DialogDescription>Inserisci la P.IVA per compilare automaticamente i dati</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Partita IVA</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={formData.partita_iva}
+                      onChange={(e) => setFormData({ ...formData, partita_iva: e.target.value })}
+                      placeholder="12345678901"
+                      maxLength={11}
+                      className="flex-1"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={handleLookupPiva}
+                      disabled={isLookingUp || formData.partita_iva.length < 11}
+                    >
+                      {isLookingUp ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Nome *</Label>
