@@ -1,15 +1,17 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useCanvass, useCanvassAttive, useContrattiClienti, useCreateCanvass, useDeleteCanvass, useCreateContrattoCliente, useDeleteContrattoCliente, Canvass, ContrattoCliente } from "@/hooks/useCanvass";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
 import { useProdotti } from "@/hooks/useProdotti";
+import { useOrdini } from "@/hooks/useOrdini";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Percent, Tag, Trophy, Calendar, Building2, Users, Package, Trash2, AlertCircle, Clock, CheckCircle2, AlertTriangle, Upload, Loader2, Sparkles, FileImage, Gift } from "lucide-react";
+import { Plus, Percent, Tag, Trophy, Calendar, Building2, Users, Package, Trash2, AlertCircle, Clock, CheckCircle2, AlertTriangle, Upload, Loader2, Sparkles, FileImage, Gift, TrendingUp, Target } from "lucide-react";
 import { format, parseISO, differenceInDays, isAfter, isBefore } from "date-fns";
 import { it } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +41,7 @@ export default function CanvassPage() {
   const { data: aziende = [] } = useAziende();
   const { data: clienti = [] } = useClienti();
   const { data: prodotti = [] } = useProdotti();
+  const { data: ordini = [] } = useOrdini();
   
   const createCanvass = useCreateCanvass();
   const deleteCanvass = useDeleteCanvass();
@@ -67,6 +70,7 @@ export default function CanvassPage() {
     prodotti: [] as { prodotto_id: string; valore_override?: number }[],
     cartoni_omaggio: 0,
     cartoni_acquisto: 0,
+    periodi_aggiuntivi: [] as { data_inizio: string; data_fine: string }[],
   });
 
   const [contrattoForm, setContrattoForm] = useState({
@@ -84,6 +88,45 @@ export default function CanvassPage() {
   
   // Get unique consorzi
   const consorzi = [...new Set(clienti.filter(c => c.consorzio).map(c => c.consorzio))];
+  
+  // Calculate fatturato by client/consorzio/azienda for the current year
+  const fatturatoData = useMemo(() => {
+    const currentYear = today.getFullYear();
+    const validOrdini = ordini.filter(o => o.status !== "annullato");
+    
+    return validOrdini.reduce((acc, ordine) => {
+      const orderDate = new Date(ordine.data_ordine || ordine.created_at || "");
+      if (orderDate.getFullYear() !== currentYear) return acc;
+      
+      const key = `${ordine.cliente_id || ""}_${ordine.azienda_id || ""}`;
+      if (!acc[key]) {
+        acc[key] = { cliente_id: ordine.cliente_id, azienda_id: ordine.azienda_id, totale: 0 };
+      }
+      acc[key].totale += Number(ordine.totale) || 0;
+      return acc;
+    }, {} as Record<string, { cliente_id: string | null; azienda_id: string | null; totale: number }>);
+  }, [ordini, today]);
+
+  // Calculate fatturato by consorzio for the current year
+  const fatturatoConsorzioData = useMemo(() => {
+    const currentYear = today.getFullYear();
+    const validOrdini = ordini.filter(o => o.status !== "annullato");
+    
+    return validOrdini.reduce((acc, ordine) => {
+      const orderDate = new Date(ordine.data_ordine || ordine.created_at || "");
+      if (orderDate.getFullYear() !== currentYear) return acc;
+      
+      const cliente = clienti.find(c => c.id === ordine.cliente_id);
+      if (!cliente?.consorzio) return acc;
+      
+      const key = `${cliente.consorzio}_${ordine.azienda_id || ""}`;
+      if (!acc[key]) {
+        acc[key] = { consorzio: cliente.consorzio, azienda_id: ordine.azienda_id, totale: 0 };
+      }
+      acc[key].totale += Number(ordine.totale) || 0;
+      return acc;
+    }, {} as Record<string, { consorzio: string; azienda_id: string | null; totale: number }>);
+  }, [ordini, clienti, today]);
   
   // Statistiche
   const promozioniAttive = canvassAttive.length;
@@ -116,6 +159,7 @@ export default function CanvassPage() {
       },
       clienti_ids: promoForm.tutti_clienti ? [] : promoForm.clienti_ids,
       prodotti: promoForm.prodotti,
+      periodi: promoForm.periodi_aggiuntivi.filter(p => p.data_inizio && p.data_fine),
     });
     
     resetPromoForm();
@@ -137,6 +181,7 @@ export default function CanvassPage() {
       prodotti: [],
       cartoni_omaggio: 0,
       cartoni_acquisto: 0,
+      periodi_aggiuntivi: [],
     });
   };
 
@@ -325,14 +370,37 @@ export default function CanvassPage() {
   const getPromoStatus = (promo: Canvass) => {
     const inizio = parseISO(promo.data_inizio);
     const fine = parseISO(promo.data_fine);
+    const todayStr = format(today, "yyyy-MM-dd");
     
     if (!promo.attivo) return { label: "Disattivata", color: "bg-gray-100 text-gray-600", icon: AlertCircle };
-    if (isBefore(fine, today)) return { label: "Scaduta", color: "bg-red-100 text-red-800", icon: AlertCircle };
-    if (isAfter(inizio, today)) return { label: "Futura", color: "bg-purple-100 text-purple-800", icon: Clock };
     
-    const daysLeft = differenceInDays(fine, today);
-    if (daysLeft <= 7) return { label: `Scade tra ${daysLeft}g`, color: "bg-orange-100 text-orange-800", icon: AlertTriangle };
-    return { label: "Attiva", color: "bg-green-100 text-green-800", icon: CheckCircle2 };
+    // Check if currently in any active period (main or additional)
+    const isInMainPeriod = promo.data_inizio <= todayStr && promo.data_fine >= todayStr;
+    const isInAdditionalPeriod = promo.canvass_periodi?.some(p => 
+      p.data_inizio <= todayStr && p.data_fine >= todayStr
+    );
+    
+    if (isInMainPeriod || isInAdditionalPeriod) {
+      // Find the closest end date
+      const allEndDates = [promo.data_fine, ...(promo.canvass_periodi?.map(p => p.data_fine) || [])];
+      const nextEnd = allEndDates
+        .filter(d => d >= todayStr)
+        .sort()[0];
+      
+      if (nextEnd) {
+        const daysLeft = differenceInDays(parseISO(nextEnd), today);
+        if (daysLeft <= 7) return { label: `Scade tra ${daysLeft}g`, color: "bg-orange-100 text-orange-800", icon: AlertTriangle };
+      }
+      return { label: "Attiva", color: "bg-green-100 text-green-800", icon: CheckCircle2 };
+    }
+    
+    // Check if all periods are past
+    const allEndDates = [promo.data_fine, ...(promo.canvass_periodi?.map(p => p.data_fine) || [])];
+    const latestEnd = allEndDates.sort().pop() || promo.data_fine;
+    if (isBefore(parseISO(latestEnd), today)) return { label: "Scaduta", color: "bg-red-100 text-red-800", icon: AlertCircle };
+    
+    // Future
+    return { label: "Futura", color: "bg-purple-100 text-purple-800", icon: Clock };
   };
 
   const filteredProdotti = selectedAziendaId 
@@ -607,6 +675,72 @@ export default function CanvassPage() {
                         placeholder="Es. 1"
                       />
                     </div>
+                  </div>
+                  
+                  {/* Periodi Aggiuntivi */}
+                  <div className="col-span-2 space-y-3 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-900">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-purple-600" />
+                        <Label className="font-medium text-purple-800 dark:text-purple-300">Periodi Aggiuntivi</Label>
+                      </div>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setPromoForm(f => ({ 
+                          ...f, 
+                          periodi_aggiuntivi: [...f.periodi_aggiuntivi, { data_inizio: "", data_fine: "" }] 
+                        }))}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Aggiungi Periodo
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Aggiungi periodi separati durante l'anno (es. Marzo, Giugno, Ottobre)
+                    </p>
+                    {promoForm.periodi_aggiuntivi.map((periodo, idx) => (
+                      <div key={idx} className="grid grid-cols-5 gap-2 items-end">
+                        <div className="col-span-2">
+                          <Label className="text-xs">Inizio</Label>
+                          <Input 
+                            type="date" 
+                            value={periodo.data_inizio}
+                            onChange={(e) => {
+                              const newPeriodi = [...promoForm.periodi_aggiuntivi];
+                              newPeriodi[idx].data_inizio = e.target.value;
+                              setPromoForm(f => ({ ...f, periodi_aggiuntivi: newPeriodi }));
+                            }}
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs">Fine</Label>
+                          <Input 
+                            type="date" 
+                            value={periodo.data_fine}
+                            onChange={(e) => {
+                              const newPeriodi = [...promoForm.periodi_aggiuntivi];
+                              newPeriodi[idx].data_fine = e.target.value;
+                              setPromoForm(f => ({ ...f, periodi_aggiuntivi: newPeriodi }));
+                            }}
+                          />
+                        </div>
+                        <Button 
+                          type="button"
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => {
+                            setPromoForm(f => ({ 
+                              ...f, 
+                              periodi_aggiuntivi: f.periodi_aggiuntivi.filter((_, i) => i !== idx) 
+                            }));
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                   
                   <div className="col-span-2 space-y-4 border-t pt-4">
@@ -932,9 +1066,19 @@ export default function CanvassPage() {
                               }
                             </TableCell>
                             <TableCell>
-                              <div className="text-sm">
-                                <p>{format(parseISO(promo.data_inizio), "dd MMM", { locale: it })}</p>
-                                <p className="text-muted-foreground">{format(parseISO(promo.data_fine), "dd MMM yyyy", { locale: it })}</p>
+                              <div className="text-sm space-y-1">
+                                <div>
+                                  <p>{format(parseISO(promo.data_inizio), "dd MMM", { locale: it })} - {format(parseISO(promo.data_fine), "dd MMM", { locale: it })}</p>
+                                </div>
+                                {promo.canvass_periodi && promo.canvass_periodi.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {promo.canvass_periodi.map((p, idx) => (
+                                      <Badge key={idx} variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950/20">
+                                        {format(parseISO(p.data_inizio), "dd/MM", { locale: it })} - {format(parseISO(p.data_fine), "dd/MM", { locale: it })}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>
@@ -999,18 +1143,30 @@ export default function CanvassPage() {
                         <TableHead>Azienda</TableHead>
                         <TableHead>Anno</TableHead>
                         <TableHead>Premio %</TableHead>
-                        <TableHead>Soglia</TableHead>
-                        <TableHead>Fatturato</TableHead>
+                        <TableHead>Avanzamento Target</TableHead>
                         <TableHead>Premio Stimato</TableHead>
-                        <TableHead>Note</TableHead>
                         <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {contratti.map((contratto) => {
-                        const fatturato = contratto.clienti?.fatturato || 0;
-                        const sogliaRaggiunta = fatturato >= contratto.soglia_fatturato;
-                        const premioStimato = sogliaRaggiunta ? (fatturato * contratto.percentuale_premio / 100) : 0;
+                        // Calculate real fatturato from orders for this year
+                        let fatturatoReale = 0;
+                        
+                        if (contratto.is_consorzio) {
+                          // For consortium, get fatturato for all associated clients
+                          const key = `${contratto.consorzio}_${contratto.azienda_id}`;
+                          fatturatoReale = fatturatoConsorzioData[key]?.totale || 0;
+                        } else {
+                          // For single client
+                          const key = `${contratto.cliente_id}_${contratto.azienda_id}`;
+                          fatturatoReale = fatturatoData[key]?.totale || 0;
+                        }
+                        
+                        const soglia = contratto.soglia_fatturato || 0;
+                        const sogliaRaggiunta = soglia === 0 || fatturatoReale >= soglia;
+                        const progressPercent = soglia > 0 ? Math.min((fatturatoReale / soglia) * 100, 100) : 100;
+                        const premioStimato = sogliaRaggiunta ? (fatturatoReale * contratto.percentuale_premio / 100) : 0;
                         const clientiAssociati = contratto.is_consorzio 
                           ? clienti.filter(c => c.consorzio === contratto.consorzio)
                           : [];
@@ -1048,29 +1204,53 @@ export default function CanvassPage() {
                             <TableCell className="font-bold text-primary">
                               {contratto.percentuale_premio}%
                             </TableCell>
-                            <TableCell>
-                              {contratto.soglia_fatturato > 0 
-                                ? formatCurrency(contratto.soglia_fatturato)
-                                : "-"
-                              }
+                            <TableCell className="min-w-[200px]">
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="font-medium">{formatCurrency(fatturatoReale)}</span>
+                                  {soglia > 0 && (
+                                    <span className="text-muted-foreground">/ {formatCurrency(soglia)}</span>
+                                  )}
+                                </div>
+                                <Progress 
+                                  value={progressPercent} 
+                                  className={`h-2 ${sogliaRaggiunta ? '[&>div]:bg-green-500' : '[&>div]:bg-amber-500'}`}
+                                />
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className={sogliaRaggiunta ? "text-green-600 font-medium flex items-center gap-1" : "text-amber-600 flex items-center gap-1"}>
+                                    {sogliaRaggiunta ? (
+                                      <>
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Target raggiunto!
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Target className="h-3 w-3" />
+                                        {Math.round(progressPercent)}% completato
+                                      </>
+                                    )}
+                                  </span>
+                                  {soglia > 0 && !sogliaRaggiunta && (
+                                    <span className="text-muted-foreground">
+                                      Mancano {formatCurrency(soglia - fatturatoReale)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                             </TableCell>
                             <TableCell>
-                              {!contratto.is_consorzio && (
-                                <span className={sogliaRaggiunta ? "text-green-600 font-medium" : ""}>
-                                  {formatCurrency(fatturato)}
-                                </span>
-                              )}
-                              {contratto.is_consorzio && "-"}
-                            </TableCell>
-                            <TableCell>
-                              {!contratto.is_consorzio && sogliaRaggiunta ? (
-                                <span className="font-bold text-green-600">{formatCurrency(premioStimato)}</span>
-                              ) : !contratto.is_consorzio ? (
-                                <span className="text-muted-foreground">Soglia non raggiunta</span>
-                              ) : "-"}
-                            </TableCell>
-                            <TableCell className="max-w-[150px] truncate">
-                              {contratto.note || "-"}
+                              <div className="space-y-1">
+                                {sogliaRaggiunta ? (
+                                  <span className="font-bold text-green-600 text-lg">{formatCurrency(premioStimato)}</span>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm">Soglia non raggiunta</span>
+                                )}
+                                {contratto.note && (
+                                  <p className="text-xs text-muted-foreground truncate max-w-[120px]" title={contratto.note}>
+                                    {contratto.note}
+                                  </p>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell>
                               <Button 

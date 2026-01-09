@@ -169,6 +169,41 @@ export type Database = {
           },
         ]
       }
+      canvass_periodi: {
+        Row: {
+          canvass_id: string
+          created_at: string
+          data_fine: string
+          data_inizio: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          canvass_id: string
+          created_at?: string
+          data_fine: string
+          data_inizio: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          canvass_id?: string
+          created_at?: string
+          data_fine?: string
+          data_inizio?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canvass_periodi_canvass_id_fkey"
+            columns: ["canvass_id"]
+            isOneToOne: false
+            referencedRelation: "canvass"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canvass_prodotti: {
         Row: {
           canvass_id: string

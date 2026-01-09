@@ -2,6 +2,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export type CanvassPeriodo = {
+  id: string;
+  canvass_id: string;
+  user_id: string;
+  data_inizio: string;
+  data_fine: string;
+  created_at: string;
+};
+
 export type Canvass = {
   id: string;
   user_id: string;
@@ -37,6 +46,7 @@ export type Canvass = {
       codice: string | null;
     };
   }[];
+  canvass_periodi?: CanvassPeriodo[];
 };
 
 export type ContrattoCliente = {
@@ -73,7 +83,8 @@ export function useCanvass() {
           *,
           azienda:aziende(nome, logo_url),
           canvass_clienti(cliente_id, clienti(nome, azienda)),
-          canvass_prodotti(prodotto_id, valore_override, prodotti(nome, codice))
+          canvass_prodotti(prodotto_id, valore_override, prodotti(nome, codice)),
+          canvass_periodi(id, data_inizio, data_fine)
         `)
         .order("data_inizio", { ascending: true });
 
@@ -94,15 +105,21 @@ export function useCanvassAttive() {
           *,
           azienda:aziende(nome, logo_url),
           canvass_clienti(cliente_id, clienti(nome, azienda)),
-          canvass_prodotti(prodotto_id, valore_override, prodotti(nome, codice))
+          canvass_prodotti(prodotto_id, valore_override, prodotti(nome, codice)),
+          canvass_periodi(id, data_inizio, data_fine)
         `)
         .eq("attivo", true)
-        .lte("data_inizio", today)
-        .gte("data_fine", today)
         .order("data_fine", { ascending: true });
 
       if (error) throw error;
-      return data as Canvass[];
+      
+      // Filter canvass that are active now (check main period OR additional periods)
+      return (data as Canvass[]).filter(c => {
+        // Check main period
+        if (c.data_inizio <= today && c.data_fine >= today) return true;
+        // Check additional periods
+        return c.canvass_periodi?.some(p => p.data_inizio <= today && p.data_fine >= today);
+      });
     },
   });
 }
@@ -115,10 +132,12 @@ export function useCreateCanvass() {
       canvass,
       clienti_ids,
       prodotti,
+      periodi,
     }: {
-      canvass: Omit<Canvass, "id" | "user_id" | "created_at" | "updated_at" | "azienda" | "canvass_clienti" | "canvass_prodotti">;
+      canvass: Omit<Canvass, "id" | "user_id" | "created_at" | "updated_at" | "azienda" | "canvass_clienti" | "canvass_prodotti" | "canvass_periodi">;
       clienti_ids?: string[];
       prodotti?: { prodotto_id: string; valore_override?: number }[];
+      periodi?: { data_inizio: string; data_fine: string }[];
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -155,6 +174,19 @@ export function useCreateCanvass() {
         if (prodottiError) throw prodottiError;
       }
 
+      // Aggiungi periodi aggiuntivi
+      if (periodi && periodi.length > 0) {
+        const { error: periodiError } = await supabase
+          .from("canvass_periodi")
+          .insert(periodi.map(p => ({
+            canvass_id: newCanvass.id,
+            data_inizio: p.data_inizio,
+            data_fine: p.data_fine,
+            user_id: user?.id,
+          })));
+        if (periodiError) throw periodiError;
+      }
+
       return newCanvass;
     },
     onSuccess: () => {
@@ -176,11 +208,13 @@ export function useUpdateCanvass() {
       canvass,
       clienti_ids,
       prodotti,
+      periodi,
     }: {
       id: string;
-      canvass: Partial<Omit<Canvass, "id" | "user_id" | "created_at" | "updated_at" | "azienda" | "canvass_clienti" | "canvass_prodotti">>;
+      canvass: Partial<Omit<Canvass, "id" | "user_id" | "created_at" | "updated_at" | "azienda" | "canvass_clienti" | "canvass_prodotti" | "canvass_periodi">>;
       clienti_ids?: string[];
       prodotti?: { prodotto_id: string; valore_override?: number }[];
+      periodi?: { data_inizio: string; data_fine: string }[];
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -219,6 +253,22 @@ export function useUpdateCanvass() {
               user_id: user?.id,
             })));
           if (prodottiError) throw prodottiError;
+        }
+      }
+
+      // Aggiorna periodi
+      if (periodi !== undefined) {
+        await supabase.from("canvass_periodi").delete().eq("canvass_id", id);
+        if (periodi.length > 0) {
+          const { error: periodiError } = await supabase
+            .from("canvass_periodi")
+            .insert(periodi.map(p => ({
+              canvass_id: id,
+              data_inizio: p.data_inizio,
+              data_fine: p.data_fine,
+              user_id: user?.id,
+            })));
+          if (periodiError) throw periodiError;
         }
       }
     },
