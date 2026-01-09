@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Building2,
@@ -13,7 +13,6 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -28,11 +27,12 @@ const navigation = [
 
 export function Sidebar() {
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleSignOut = () => {
+    sessionStorage.removeItem("app_authenticated");
+    navigate("/auth");
   };
 
   const SidebarContent = () => (
@@ -44,7 +44,7 @@ export function Sidebar() {
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold text-sidebar-foreground truncate">SalesAgent</h1>
-          <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email}</p>
+          <p className="text-xs text-sidebar-foreground/60 truncate">Pro</p>
         </div>
         {/* Mobile close button */}
         <Button
