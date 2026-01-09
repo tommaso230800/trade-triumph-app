@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw, Upload, Tag } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw, Upload, Tag, Gift, Sparkles, CheckCircle2 } from "lucide-react";
 import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, useUpdateOrdine, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
@@ -162,6 +162,9 @@ const Ordini = () => {
   const updateOrdineTotale = useUpdateOrdineTotale();
   const updateOrdine = useUpdateOrdine();
   
+  // State for applied promotions
+  const [appliedPromos, setAppliedPromos] = useState<string[]>([]);
+
   // Get active promotions for selected client/company
   const promozioniRilevanti = useMemo(() => {
     if (!formData.azienda_id) return [];
@@ -170,6 +173,75 @@ const Ordini = () => {
       (c.tutti_clienti || c.canvass_clienti?.some(cc => cc.cliente_id === formData.cliente_id))
     );
   }, [formData.azienda_id, formData.cliente_id, canvassAttive]);
+
+  // Get promotions that apply to specific products in the order
+  const promozioniProdotti = useMemo(() => {
+    if (righeOrdine.length === 0 || promozioniRilevanti.length === 0) return [];
+    const prodottiInOrdine = righeOrdine.map(r => r.prodotto_id);
+    return promozioniRilevanti.filter(promo => 
+      promo.canvass_prodotti?.some(cp => prodottiInOrdine.includes(cp.prodotto_id))
+    );
+  }, [righeOrdine, promozioniRilevanti]);
+
+  // Apply promotion to order
+  const handleApplyPromo = (promo: typeof canvassAttive[0]) => {
+    if (appliedPromos.includes(promo.id)) return;
+    
+    // Apply based on promo type
+    if (promo.tipo === "sconto_percentuale") {
+      // Apply percentage discount to relevant products or globally
+      if (promo.canvass_prodotti && promo.canvass_prodotti.length > 0) {
+        // Apply to specific products
+        const updatedRighe = righeOrdine.map(riga => {
+          const promoProduct = promo.canvass_prodotti?.find(cp => cp.prodotto_id === riga.prodotto_id);
+          if (promoProduct) {
+            const scontoValue = promoProduct.valore_override ?? promo.valore;
+            return { ...riga, sc1: String(scontoValue).replace(".", ",") };
+          }
+          return riga;
+        });
+        setRigheOrdine(updatedRighe);
+      } else {
+        // Apply as global discount
+        setFormData(prev => ({
+          ...prev,
+          sconto: String(promo.valore).replace(".", ",")
+        }));
+      }
+    } else if (promo.tipo === "prezzo_fisso") {
+      // Apply fixed price to products
+      if (promo.canvass_prodotti && promo.canvass_prodotti.length > 0) {
+        const updatedRighe = righeOrdine.map(riga => {
+          const promoProduct = promo.canvass_prodotti?.find(cp => cp.prodotto_id === riga.prodotto_id);
+          if (promoProduct) {
+            const prezzoFisso = promoProduct.valore_override ?? promo.valore;
+            return { ...riga, prezzo_unitario: String(prezzoFisso).replace(".", ",") };
+          }
+          return riga;
+        });
+        setRigheOrdine(updatedRighe);
+      }
+    }
+    
+    setAppliedPromos(prev => [...prev, promo.id]);
+    toast.success(`Promozione "${promo.nome}" applicata!`);
+  };
+
+  // Auto-apply promos when adding products
+  const applyPromoToNewProduct = (riga: RigaOrdine): RigaOrdine => {
+    for (const promo of promozioniRilevanti) {
+      const promoProduct = promo.canvass_prodotti?.find(cp => cp.prodotto_id === riga.prodotto_id);
+      if (promoProduct) {
+        const scontoValue = promoProduct.valore_override ?? promo.valore;
+        if (promo.tipo === "sconto_percentuale") {
+          return { ...riga, sc1: String(scontoValue).replace(".", ",") };
+        } else if (promo.tipo === "prezzo_fisso") {
+          return { ...riga, prezzo_unitario: String(scontoValue).replace(".", ",") };
+        }
+      }
+    }
+    return riga;
+  };
   
   // Fetch righe for editing
   const { data: righeForEdit, refetch: refetchRighe } = useOrdiniRighe(editingOrdine?.id);
@@ -196,20 +268,32 @@ const Ordini = () => {
       return;
     }
 
-    setRigheOrdine([
-      ...righeOrdine,
-      {
-        prodotto_id: prodotto.id,
-        prodotto_nome: prodotto.nome,
-        prezzo_unitario: String(prodotto.prezzo_listino).replace(".", ","),
-        quantita_pezzi: 0,
-        quantita_cartoni: 0,
-        pezzi_per_cartone: prodotto.pezzi_per_cartone,
-        sc1: "0",
-        sc2: "0",
-        sc3: "0",
-      },
-    ]);
+    let newRiga: RigaOrdine = {
+      prodotto_id: prodotto.id,
+      prodotto_nome: prodotto.nome,
+      prezzo_unitario: String(prodotto.prezzo_listino).replace(".", ","),
+      quantita_pezzi: 0,
+      quantita_cartoni: 0,
+      pezzi_per_cartone: prodotto.pezzi_per_cartone,
+      sc1: "0",
+      sc2: "0",
+      sc3: "0",
+    };
+
+    // Auto-apply promotions to new product
+    newRiga = applyPromoToNewProduct(newRiga);
+    
+    // Check if promo was applied and notify
+    const appliedPromo = promozioniRilevanti.find(promo => 
+      promo.canvass_prodotti?.some(cp => cp.prodotto_id === prodotto.id)
+    );
+    if (appliedPromo && newRiga.sc1 !== "0") {
+      toast.success(`Promozione "${appliedPromo.nome}" applicata automaticamente!`, {
+        icon: <Gift className="h-4 w-4 text-success" />
+      });
+    }
+
+    setRigheOrdine([...righeOrdine, newRiga]);
     setSelectedProdotto("");
   };
 
@@ -449,6 +533,7 @@ const Ordini = () => {
     setIsDialogOpen(false);
     setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti", data_ordine: format(new Date(), "yyyy-MM-dd") });
     setRigheOrdine([]);
+    setAppliedPromos([]);
   };
 
   // Handle showing proforma for existing order
@@ -536,6 +621,7 @@ const Ordini = () => {
                 setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti", data_ordine: format(new Date(), "yyyy-MM-dd") });
                 setRigheOrdine([]);
                 setSelectedProdotto("");
+                setAppliedPromos([]);
               }
             }}>
               <DialogTrigger asChild>
@@ -601,6 +687,57 @@ const Ordini = () => {
                     </Select>
                   </div>
                 </div>
+
+                {/* Promozioni Attive Alert */}
+                {formData.azienda_id && promozioniRilevanti.length > 0 && (
+                  <Alert className="border-success/50 bg-success/10">
+                    <Sparkles className="h-4 w-4 text-success" />
+                    <AlertTitle className="text-success flex items-center gap-2">
+                      <Gift className="h-4 w-4" />
+                      {promozioniRilevanti.length} Promozioni Attive
+                    </AlertTitle>
+                    <AlertDescription className="mt-2 space-y-2">
+                      {promozioniRilevanti.map(promo => (
+                        <div 
+                          key={promo.id} 
+                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded-lg bg-background/60"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{promo.nome}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {promo.tipo === "sconto_percentuale" && `Sconto ${promo.valore}%`}
+                              {promo.tipo === "prezzo_fisso" && `Prezzo fisso €${promo.valore}`}
+                              {promo.cartoni_omaggio > 0 && ` • ${promo.cartoni_acquisto}+${promo.cartoni_omaggio} omaggio`}
+                              {promo.canvass_prodotti && promo.canvass_prodotti.length > 0 && (
+                                <span> • {promo.canvass_prodotti.length} prodotti</span>
+                              )}
+                            </p>
+                          </div>
+                          {appliedPromos.includes(promo.id) ? (
+                            <Badge variant="outline" className="bg-success/20 text-success border-success/30 shrink-0">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Applicata
+                            </Badge>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="border-success/50 text-success hover:bg-success/20 shrink-0"
+                              onClick={() => handleApplyPromo(promo)}
+                            >
+                              <Gift className="h-3 w-3 mr-1" />
+                              Applica
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <p className="text-xs text-muted-foreground italic mt-2">
+                        💡 Le promozioni sui prodotti verranno applicate automaticamente quando li aggiungi
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 {/* Riassortimento Button */}
                 {formData.cliente_id && formData.azienda_id && lastOrdineData && (
