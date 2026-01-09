@@ -1,11 +1,14 @@
+import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { Printer, X } from "lucide-react";
+import { Printer, X, Download, Loader2 } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 type RigaOrdine = {
   prodotto_nome: string;
@@ -44,10 +47,51 @@ const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
 
 export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
   if (!data) return null;
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleExportPDF = async () => {
+    if (!contentRef.current) return;
+    
+    setIsExporting(true);
+    try {
+      const element = contentRef.current;
+      
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+      });
+      
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const imgX = (pdfWidth - imgWidth * ratio) / 2;
+      const imgY = 10;
+      
+      pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.save(`Proforma_${data.codice}.pdf`);
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const subtotale = data.righe.reduce((sum, riga) => {
@@ -65,7 +109,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
         </DialogHeader>
 
         {/* Printable Content */}
-        <div className="proforma-content space-y-6 p-4 bg-white text-black print:p-8">
+        <div ref={contentRef} className="proforma-content space-y-6 p-4 bg-white text-black print:p-8">
           {/* Header with Logo */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
@@ -80,7 +124,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
               </div>
             </div>
             <div className="text-right">
-              <h2 className="text-lg font-semibold text-primary">PROFORMA</h2>
+              <h2 className="text-lg font-semibold text-blue-600">PROFORMA</h2>
               <p className="text-sm font-mono text-gray-700">{data.codice}</p>
               <p className="text-sm text-gray-600">
                 {format(new Date(data.created_at), "dd MMMM yyyy", { locale: it })}
@@ -88,7 +132,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-gray-200" />
 
           {/* Client and Company Info */}
           <div className="grid grid-cols-2 gap-8">
@@ -124,16 +168,16 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
           </div>
 
           {/* Order Details Table */}
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   <TableHead className="font-semibold text-gray-900">Prodotto</TableHead>
-                  <TableHead className="text-right font-semibold text-gray-900">Prezzo Unit.</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900">Pezzi</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900">Cartoni</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900">Tot. Pezzi</TableHead>
-                  <TableHead className="text-right font-semibold text-gray-900">Subtotale</TableHead>
+                  <TableHead className="text-right font-semibold text-gray-900">Prezzo</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900">Pz</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900">Cart.</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900">Tot.</TableHead>
+                  <TableHead className="text-right font-semibold text-gray-900">Subtot.</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -141,16 +185,16 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                   const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
                   const rigaSubtotale = pezziTotali * riga.prezzo_unitario;
                   return (
-                    <TableRow key={idx}>
+                    <TableRow key={idx} className="border-b border-gray-100">
                       <TableCell>
                         <p className="font-medium text-gray-900">{riga.prodotto_nome}</p>
-                        <p className="text-xs text-gray-500">{riga.pezzi_per_cartone} pz/cartone</p>
+                        <p className="text-xs text-gray-500">{riga.pezzi_per_cartone} pz/cart</p>
                       </TableCell>
-                      <TableCell className="text-right">{formatCurrency(riga.prezzo_unitario)}</TableCell>
-                      <TableCell className="text-center">{riga.quantita_pezzi}</TableCell>
-                      <TableCell className="text-center">{riga.quantita_cartoni}</TableCell>
-                      <TableCell className="text-center font-medium">{pezziTotali}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatCurrency(rigaSubtotale)}</TableCell>
+                      <TableCell className="text-right text-gray-700">{formatCurrency(riga.prezzo_unitario)}</TableCell>
+                      <TableCell className="text-center text-gray-700">{riga.quantita_pezzi}</TableCell>
+                      <TableCell className="text-center text-gray-700">{riga.quantita_cartoni}</TableCell>
+                      <TableCell className="text-center font-medium text-gray-900">{pezziTotali}</TableCell>
+                      <TableCell className="text-right font-semibold text-gray-900">{formatCurrency(rigaSubtotale)}</TableCell>
                     </TableRow>
                   );
                 })}
@@ -163,7 +207,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
             <div className="w-72 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotale:</span>
-                <span className="font-medium">{formatCurrency(subtotale)}</span>
+                <span className="font-medium text-gray-900">{formatCurrency(subtotale)}</span>
               </div>
               {data.sconto > 0 && (
                 <div className="flex justify-between text-sm">
@@ -177,14 +221,14 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                   <span className="font-medium text-red-600">-{formatCurrency(data.sconto_merce)}</span>
                 </div>
               )}
-              <Separator />
+              <Separator className="bg-gray-300" />
               <div className="flex justify-between text-lg">
-                <span className="font-semibold">Totale:</span>
-                <span className="font-bold text-primary">{formatCurrency(data.totale)}</span>
+                <span className="font-semibold text-gray-900">Totale:</span>
+                <span className="font-bold text-blue-600">{formatCurrency(data.totale)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Pagamento:</span>
-                <span className="font-medium">{data.tipo_pagamento}</span>
+                <span className="font-medium text-gray-900">{data.tipo_pagamento}</span>
               </div>
             </div>
           </div>
@@ -198,10 +242,18 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
           )}
         </div>
 
-        <DialogFooter className="print:hidden">
+        <DialogFooter className="print:hidden gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             <X className="h-4 w-4 mr-2" />
             Chiudi
+          </Button>
+          <Button variant="outline" onClick={handleExportPDF} disabled={isExporting}>
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            Salva PDF
           </Button>
           <Button onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-2" />
