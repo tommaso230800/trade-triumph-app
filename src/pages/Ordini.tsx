@@ -92,6 +92,7 @@ const Ordini = () => {
     sconto: "0",
     sconto_merce: "0",
     tipo_pagamento: "Contanti",
+    data_ordine: format(new Date(), "yyyy-MM-dd"),
   });
   const [righeOrdine, setRigheOrdine] = useState<RigaOrdine[]>([]);
   const [selectedProdotto, setSelectedProdotto] = useState("");
@@ -371,7 +372,7 @@ const Ordini = () => {
     setIsProformaOpen(true);
 
     setIsDialogOpen(false);
-    setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti" });
+    setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti", data_ordine: format(new Date(), "yyyy-MM-dd") });
     setRigheOrdine([]);
   };
 
@@ -451,7 +452,7 @@ const Ordini = () => {
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {
-              setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti" });
+              setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti", data_ordine: format(new Date(), "yyyy-MM-dd") });
               setRigheOrdine([]);
               setSelectedProdotto("");
             }
@@ -469,6 +470,16 @@ const Ordini = () => {
                 <DialogDescription>Seleziona cliente, azienda e aggiungi i prodotti</DialogDescription>
               </DialogHeader>
               <div className="space-y-6 py-4">
+                {/* Data Ordine */}
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Data Ordine</Label>
+                  <Input
+                    type="date"
+                    value={formData.data_ordine}
+                    onChange={(e) => setFormData({ ...formData, data_ordine: e.target.value })}
+                  />
+                </div>
+
                 {/* Cliente e Azienda */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
