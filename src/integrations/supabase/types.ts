@@ -68,13 +68,21 @@ export type Database = {
       clienti: {
         Row: {
           azienda: string | null
+          cap: string | null
+          citta: string | null
+          codice_sdi: string | null
+          consorzio: string | null
           created_at: string | null
           email: string | null
+          email_aggiuntive: string[] | null
           fatturato: number | null
           id: string
+          indirizzo: string | null
           nome: string
           ordini_count: number | null
           partita_iva: string | null
+          pec: string | null
+          provincia: string | null
           status: Database["public"]["Enums"]["client_status"] | null
           telefono: string | null
           updated_at: string | null
@@ -82,13 +90,21 @@ export type Database = {
         }
         Insert: {
           azienda?: string | null
+          cap?: string | null
+          citta?: string | null
+          codice_sdi?: string | null
+          consorzio?: string | null
           created_at?: string | null
           email?: string | null
+          email_aggiuntive?: string[] | null
           fatturato?: number | null
           id?: string
+          indirizzo?: string | null
           nome: string
           ordini_count?: number | null
           partita_iva?: string | null
+          pec?: string | null
+          provincia?: string | null
           status?: Database["public"]["Enums"]["client_status"] | null
           telefono?: string | null
           updated_at?: string | null
@@ -96,13 +112,21 @@ export type Database = {
         }
         Update: {
           azienda?: string | null
+          cap?: string | null
+          citta?: string | null
+          codice_sdi?: string | null
+          consorzio?: string | null
           created_at?: string | null
           email?: string | null
+          email_aggiuntive?: string[] | null
           fatturato?: number | null
           id?: string
+          indirizzo?: string | null
           nome?: string
           ordini_count?: number | null
           partita_iva?: string | null
+          pec?: string | null
+          provincia?: string | null
           status?: Database["public"]["Enums"]["client_status"] | null
           telefono?: string | null
           updated_at?: string | null
