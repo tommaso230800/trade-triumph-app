@@ -160,24 +160,34 @@ const KPI = () => {
             </div>
             <SalesChart data={stats?.ordiniPerMese || []} type="area" />
           </div>
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
+          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card max-h-[500px] overflow-y-auto">
             <div className="flex items-center gap-2 mb-4">
               <PieChart className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Fatturato per Consorzio</h3>
+              <h3 className="text-lg font-semibold">Fatturato per Consorzio e Azienda</h3>
             </div>
-            <div className="space-y-3">
-              {stats?.consorzioStats.map((cs) => (
-                <div key={cs.consorzio} className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">{cs.consorzio}</span>
-                    <span className="text-muted-foreground">
-                      {cs.clienti} clienti · {formatCurrency(cs.fatturato)}
+            <div className="space-y-4">
+              {stats?.consorzioAziendeStats.map((cs) => (
+                <div key={cs.consorzio} className="space-y-2">
+                  <div className="flex justify-between text-sm border-b border-border pb-1">
+                    <span className="font-semibold text-primary">{cs.consorzio}</span>
+                    <span className="font-semibold">
+                      {formatCurrency(cs.fatturato_totale)}
                     </span>
                   </div>
-                  <Progress
-                    value={(cs.fatturato / (stats?.fatturatoTotale || 1)) * 100}
-                    className="h-2"
-                  />
+                  <div className="space-y-1.5 pl-3">
+                    {cs.aziende.map((azienda, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{azienda.azienda_nome}</span>
+                          <span className="font-medium">{formatCurrency(azienda.fatturato)}</span>
+                        </div>
+                        <Progress
+                          value={(azienda.fatturato / (cs.fatturato_totale || 1)) * 100}
+                          className="h-1.5"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
