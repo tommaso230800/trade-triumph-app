@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,13 +35,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2 } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw } from "lucide-react";
 import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
 import { useProdotti, Prodotto } from "@/hooks/useProdotti";
 import { useCreateOrdineRigheBatch } from "@/hooks/useOrdiniRighe";
+import { useLastOrdineForClient } from "@/hooks/useLastOrdineRighe";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -50,13 +52,27 @@ const statusConfig = {
   annullato: { label: "Annullato", className: "bg-destructive/10 text-destructive hover:bg-destructive/20" },
 };
 
+const TIPI_PAGAMENTO = [
+  "Anticipato",
+  "Contanti",
+  "Ri.Ba 30gg",
+  "Ri.Ba 60gg",
+  "Ri.Ba 90gg",
+];
+
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+
+const parseDecimalInput = (value: string): number => {
+  const normalized = value.replace(",", ".");
+  const parsed = parseFloat(normalized);
+  return isNaN(parsed) ? 0 : parsed;
+};
 
 type RigaOrdine = {
   prodotto_id: string;
   prodotto_nome: string;
-  prezzo_unitario: number;
+  prezzo_unitario: string;
   quantita_pezzi: number;
   quantita_cartoni: number;
   pezzi_per_cartone: number;
@@ -70,6 +86,9 @@ const Ordini = () => {
     cliente_id: "",
     azienda_id: "",
     note: "",
+    sconto: "0",
+    sconto_merce: "0",
+    tipo_pagamento: "Contanti",
   });
   const [righeOrdine, setRigheOrdine] = useState<RigaOrdine[]>([]);
   const [selectedProdotto, setSelectedProdotto] = useState("");
@@ -81,6 +100,12 @@ const Ordini = () => {
   const createOrdine = useCreateOrdine();
   const createRigheBatch = useCreateOrdineRigheBatch();
   const updateStatus = useUpdateOrdineStatus();
+
+  // Get last order for restock functionality
+  const { data: lastOrdineData } = useLastOrdineForClient(
+    formData.cliente_id || undefined,
+    formData.azienda_id || undefined
+  );
 
   // Filter products by selected company
   const prodottiAzienda = useMemo(() => {
@@ -103,7 +128,7 @@ const Ordini = () => {
       {
         prodotto_id: prodotto.id,
         prodotto_nome: prodotto.nome,
-        prezzo_unitario: prodotto.prezzo_listino,
+        prezzo_unitario: String(prodotto.prezzo_listino).replace(".", ","),
         quantita_pezzi: 0,
         quantita_cartoni: 0,
         pezzi_per_cartone: prodotto.pezzi_per_cartone,
@@ -112,7 +137,7 @@ const Ordini = () => {
     setSelectedProdotto("");
   };
 
-  const updateRiga = (index: number, field: "quantita_pezzi" | "quantita_cartoni", value: number) => {
+  const updateRiga = (index: number, field: keyof RigaOrdine, value: number | string) => {
     const updated = [...righeOrdine];
     updated[index] = { ...updated[index], [field]: value };
     setRigheOrdine(updated);
@@ -123,16 +148,54 @@ const Ordini = () => {
   };
 
   const calcolaTotale = () => {
-    return righeOrdine.reduce((sum, riga) => {
+    const subtotale = righeOrdine.reduce((sum, riga) => {
       const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
-      return sum + pezziTotali * riga.prezzo_unitario;
+      return sum + pezziTotali * parseDecimalInput(riga.prezzo_unitario);
     }, 0);
+    
+    const sconto = parseDecimalInput(formData.sconto);
+    const scontoMerce = parseDecimalInput(formData.sconto_merce);
+    
+    // Apply percentage discount
+    const afterSconto = subtotale * (1 - sconto / 100);
+    // Subtract merchandise discount value
+    return Math.max(0, afterSconto - scontoMerce);
   };
 
   const calcolaProdottiTotali = () => {
     return righeOrdine.reduce((sum, riga) => {
       return sum + riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
     }, 0);
+  };
+
+  const handleRiassortimento = () => {
+    if (!lastOrdineData) {
+      toast.error("Nessun ordine precedente trovato per questo cliente/azienda");
+      return;
+    }
+
+    const { ordine, righe } = lastOrdineData;
+
+    // Set payment info from last order
+    setFormData((prev) => ({
+      ...prev,
+      sconto: String(ordine.sconto || 0).replace(".", ","),
+      sconto_merce: String(ordine.sconto_merce || 0).replace(".", ","),
+      tipo_pagamento: ordine.tipo_pagamento || "Contanti",
+    }));
+
+    // Set order lines from last order
+    const newRighe: RigaOrdine[] = righe.map((r) => ({
+      prodotto_id: r.prodotto_id,
+      prodotto_nome: r.prodotti?.nome || "Prodotto",
+      prezzo_unitario: String(r.prezzo_unitario).replace(".", ","),
+      quantita_pezzi: r.quantita_pezzi,
+      quantita_cartoni: r.quantita_cartoni,
+      pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
+    }));
+
+    setRigheOrdine(newRighe);
+    toast.success("Dati dell'ultimo ordine caricati!");
   };
 
   const handleSubmit = async () => {
@@ -147,6 +210,9 @@ const Ordini = () => {
       prodotti: prodottiCount,
       totale,
       note: formData.note || undefined,
+      sconto: parseDecimalInput(formData.sconto),
+      sconto_merce: parseDecimalInput(formData.sconto_merce),
+      tipo_pagamento: formData.tipo_pagamento,
     });
 
     // Create order lines
@@ -156,12 +222,12 @@ const Ordini = () => {
         prodotto_id: riga.prodotto_id,
         quantita_pezzi: riga.quantita_pezzi,
         quantita_cartoni: riga.quantita_cartoni,
-        prezzo_unitario: riga.prezzo_unitario,
+        prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
       }))
     );
 
     setIsDialogOpen(false);
-    setFormData({ cliente_id: "", azienda_id: "", note: "" });
+    setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti" });
     setRigheOrdine([]);
   };
 
@@ -186,7 +252,7 @@ const Ordini = () => {
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) {
-              setFormData({ cliente_id: "", azienda_id: "", note: "" });
+              setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti" });
               setRigheOrdine([]);
               setSelectedProdotto("");
             }
@@ -245,6 +311,58 @@ const Ordini = () => {
                   </div>
                 </div>
 
+                {/* Riassortimento Button */}
+                {formData.cliente_id && formData.azienda_id && lastOrdineData && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={handleRiassortimento}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Riassortimento (carica ultimo ordine)
+                  </Button>
+                )}
+
+                {/* Payment and Discounts */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tipo Pagamento</Label>
+                    <Select value={formData.tipo_pagamento} onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TIPI_PAGAMENTO.map((tipo) => (
+                          <SelectItem key={tipo} value={tipo}>
+                            {tipo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sconto (%)</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={formData.sconto}
+                      onChange={(e) => setFormData({ ...formData, sconto: e.target.value })}
+                      placeholder="es. 10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sconto Merce (€)</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={formData.sconto_merce}
+                      onChange={(e) => setFormData({ ...formData, sconto_merce: e.target.value })}
+                      placeholder="es. 50"
+                    />
+                  </div>
+                </div>
+
                 {/* Add Product */}
                 {formData.azienda_id && (
                   <div className="space-y-4 border-t pt-4">
@@ -291,7 +409,7 @@ const Ordini = () => {
                       <TableBody>
                         {righeOrdine.map((riga, index) => {
                           const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
-                          const subtotale = pezziTotali * riga.prezzo_unitario;
+                          const subtotale = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
                           return (
                             <TableRow key={riga.prodotto_id}>
                               <TableCell className="font-medium">
@@ -300,7 +418,16 @@ const Ordini = () => {
                                   {riga.pezzi_per_cartone} pz/cartone
                                 </span>
                               </TableCell>
-                              <TableCell>{formatCurrency(riga.prezzo_unitario)}</TableCell>
+                              <TableCell>
+                                <Input
+                                  type="text"
+                                  inputMode="decimal"
+                                  className="w-20"
+                                  value={riga.prezzo_unitario}
+                                  onChange={(e) => updateRiga(index, "prezzo_unitario", e.target.value)}
+                                  placeholder="1,85"
+                                />
+                              </TableCell>
                               <TableCell>
                                 <Input
                                   type="number"
@@ -337,8 +464,13 @@ const Ordini = () => {
                     </Table>
 
                     <div className="flex justify-end">
-                      <div className="text-right">
+                      <div className="text-right space-y-1">
                         <p className="text-sm text-muted-foreground">Totale prodotti: {calcolaProdottiTotali()} pezzi</p>
+                        {(parseDecimalInput(formData.sconto) > 0 || parseDecimalInput(formData.sconto_merce) > 0) && (
+                          <p className="text-sm text-muted-foreground">
+                            Sconto: {formData.sconto}% + {formatCurrency(parseDecimalInput(formData.sconto_merce))}
+                          </p>
+                        )}
                         <p className="text-xl font-bold">{formatCurrency(calcolaTotale())}</p>
                       </div>
                     </div>
@@ -439,6 +571,7 @@ const Ordini = () => {
                     <TableHead>Cliente</TableHead>
                     <TableHead className="hidden sm:table-cell">Prodotti</TableHead>
                     <TableHead>Totale</TableHead>
+                    <TableHead className="hidden md:table-cell">Pagamento</TableHead>
                     <TableHead className="hidden md:table-cell">Data</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="w-12"></TableHead>
@@ -457,6 +590,9 @@ const Ordini = () => {
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">{ordine.prodotti} articoli</TableCell>
                       <TableCell className="font-semibold">{formatCurrency(Number(ordine.totale))}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                        {ordine.tipo_pagamento || "—"}
+                      </TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">
                         {format(new Date(ordine.created_at), "dd/MM/yyyy")}
                       </TableCell>

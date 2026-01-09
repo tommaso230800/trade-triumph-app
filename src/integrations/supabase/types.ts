@@ -172,7 +172,10 @@ export type Database = {
           id: string
           note: string | null
           prodotti: number | null
+          sconto: number | null
+          sconto_merce: number | null
           status: Database["public"]["Enums"]["order_status"] | null
+          tipo_pagamento: string | null
           totale: number | null
           updated_at: string | null
           user_id: string
@@ -185,7 +188,10 @@ export type Database = {
           id?: string
           note?: string | null
           prodotti?: number | null
+          sconto?: number | null
+          sconto_merce?: number | null
           status?: Database["public"]["Enums"]["order_status"] | null
+          tipo_pagamento?: string | null
           totale?: number | null
           updated_at?: string | null
           user_id: string
@@ -198,7 +204,10 @@ export type Database = {
           id?: string
           note?: string | null
           prodotti?: number | null
+          sconto?: number | null
+          sconto_merce?: number | null
           status?: Database["public"]["Enums"]["order_status"] | null
+          tipo_pagamento?: string | null
           totale?: number | null
           updated_at?: string | null
           user_id?: string
@@ -274,6 +283,7 @@ export type Database = {
           cartoni_per_strato: number
           created_at: string
           id: string
+          immagine_url: string | null
           nome: string
           pezzi_per_cartone: number
           prezzo_listino: number
@@ -287,6 +297,7 @@ export type Database = {
           cartoni_per_strato?: number
           created_at?: string
           id?: string
+          immagine_url?: string | null
           nome: string
           pezzi_per_cartone?: number
           prezzo_listino?: number
@@ -300,6 +311,7 @@ export type Database = {
           cartoni_per_strato?: number
           created_at?: string
           id?: string
+          immagine_url?: string | null
           nome?: string
           pezzi_per_cartone?: number
           prezzo_listino?: number

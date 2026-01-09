@@ -30,20 +30,29 @@ interface AziendaCardProps {
 
 type ProductForm = {
   nome: string;
-  prezzo_listino: number;
+  prezzo_listino: string;
   quantita_pezzi: number;
   pezzi_per_cartone: number;
   strati: number;
   cartoni_per_strato: number;
+  immagine_url?: string | null;
 };
 
 const defaultProductForm: ProductForm = {
   nome: "",
-  prezzo_listino: 0,
+  prezzo_listino: "0",
   quantita_pezzi: 0,
   pezzi_per_cartone: 1,
   strati: 1,
   cartoni_per_strato: 1,
+  immagine_url: null,
+};
+
+const parseDecimalInput = (value: string): number => {
+  // Replace comma with dot for parsing
+  const normalized = value.replace(",", ".");
+  const parsed = parseFloat(normalized);
+  return isNaN(parsed) ? 0 : parsed;
 };
 
 export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
@@ -65,11 +74,12 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
     setEditingId(prodotto.id);
     setEditForm({
       nome: prodotto.nome,
-      prezzo_listino: prodotto.prezzo_listino,
+      prezzo_listino: String(prodotto.prezzo_listino).replace(".", ","),
       quantita_pezzi: prodotto.quantita_pezzi,
       pezzi_per_cartone: prodotto.pezzi_per_cartone,
       strati: prodotto.strati,
       cartoni_per_strato: prodotto.cartoni_per_strato,
+      immagine_url: prodotto.immagine_url,
     });
   };
 
@@ -80,15 +90,62 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
 
   const saveEdit = async () => {
     if (!editingId || !editForm.nome) return;
-    await updateProdotto.mutateAsync({ id: editingId, ...editForm });
+    await updateProdotto.mutateAsync({ 
+      id: editingId, 
+      nome: editForm.nome,
+      prezzo_listino: parseDecimalInput(editForm.prezzo_listino),
+      quantita_pezzi: editForm.quantita_pezzi,
+      pezzi_per_cartone: editForm.pezzi_per_cartone,
+      strati: editForm.strati,
+      cartoni_per_strato: editForm.cartoni_per_strato,
+      immagine_url: editForm.immagine_url,
+    });
     cancelEdit();
   };
 
   const handleAddProduct = async () => {
     if (!newProduct.nome) return;
-    await createProdotto.mutateAsync({ azienda_id: azienda.id, ...newProduct });
+    await createProdotto.mutateAsync({ 
+      azienda_id: azienda.id, 
+      nome: newProduct.nome,
+      prezzo_listino: parseDecimalInput(newProduct.prezzo_listino),
+      quantita_pezzi: newProduct.quantita_pezzi,
+      pezzi_per_cartone: newProduct.pezzi_per_cartone,
+      strati: newProduct.strati,
+      cartoni_per_strato: newProduct.cartoni_per_strato,
+      immagine_url: newProduct.immagine_url,
+    });
     setNewProduct(defaultProductForm);
     setIsAdding(false);
+  };
+
+  const handleProductImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('prodotti-images')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('prodotti-images')
+        .getPublicUrl(fileName);
+
+      if (isEdit) {
+        setEditForm({ ...editForm, immagine_url: publicUrl });
+      } else {
+        setNewProduct({ ...newProduct, immagine_url: publicUrl });
+      }
+      toast.success("Immagine caricata!");
+    } catch (error: any) {
+      toast.error("Errore upload: " + error.message);
+    }
   };
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -244,6 +301,30 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
                     {editingId === prodotto.id ? (
                       /* Edit Mode */
                       <div className="space-y-3">
+                        {/* Product Image */}
+                        <div className="space-y-1">
+                          <Label className="text-xs">Immagine Prodotto</Label>
+                          <div className="flex items-center gap-2">
+                            {editForm.immagine_url ? (
+                              <img src={editForm.immagine_url} alt="Prodotto" className="w-12 h-12 object-cover rounded" />
+                            ) : (
+                              <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                                <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <label className="cursor-pointer">
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleProductImageUpload(e, true)}
+                              />
+                              <Button type="button" variant="outline" size="sm" asChild>
+                                <span><Upload className="h-3 w-3 mr-1" /> Carica</span>
+                              </Button>
+                            </label>
+                          </div>
+                        </div>
                         <div className="space-y-1">
                           <Label className="text-xs">Nome Prodotto</Label>
                           <Input
@@ -256,10 +337,11 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
                         <div className="space-y-1">
                           <Label className="text-xs">Prezzo Listino (€)</Label>
                           <Input
-                            type="number"
-                            step="0.01"
+                            type="text"
+                            inputMode="decimal"
                             value={editForm.prezzo_listino}
-                            onChange={(e) => setEditForm({ ...editForm, prezzo_listino: parseFloat(e.target.value) || 0 })}
+                            onChange={(e) => setEditForm({ ...editForm, prezzo_listino: e.target.value })}
+                            placeholder="es. 1,85"
                             className="h-8 text-sm"
                           />
                         </div>
@@ -359,6 +441,30 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
                 {/* Add New Product Form */}
                 {isAdding ? (
                   <div className="bg-card rounded-lg p-3 shadow-sm space-y-3">
+                    {/* Product Image */}
+                    <div className="space-y-1">
+                      <Label className="text-xs">Immagine Prodotto</Label>
+                      <div className="flex items-center gap-2">
+                        {newProduct.immagine_url ? (
+                          <img src={newProduct.immagine_url} alt="Prodotto" className="w-12 h-12 object-cover rounded" />
+                        ) : (
+                          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        <label className="cursor-pointer">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleProductImageUpload(e, false)}
+                          />
+                          <Button type="button" variant="outline" size="sm" asChild>
+                            <span><Upload className="h-3 w-3 mr-1" /> Carica</span>
+                          </Button>
+                        </label>
+                      </div>
+                    </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Nome Prodotto</Label>
                       <Input
@@ -372,10 +478,11 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
                     <div className="space-y-1">
                       <Label className="text-xs">Prezzo Listino (€)</Label>
                       <Input
-                        type="number"
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
                         value={newProduct.prezzo_listino}
-                        onChange={(e) => setNewProduct({ ...newProduct, prezzo_listino: parseFloat(e.target.value) || 0 })}
+                        onChange={(e) => setNewProduct({ ...newProduct, prezzo_listino: e.target.value })}
+                        placeholder="es. 1,85"
                         className="h-8 text-sm"
                       />
                     </div>
