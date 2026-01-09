@@ -13,6 +13,7 @@ import Ordini from "./pages/Ordini";
 import Agenda from "./pages/Agenda";
 import Promemoria from "./pages/Promemoria";
 import KPI from "./pages/KPI";
+import Provvigioni from "./pages/Provvigioni";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/promemoria" element={<Promemoria />} />
             <Route path="/kpi" element={<KPI />} />
+            <Route path="/provvigioni" element={<Provvigioni />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
