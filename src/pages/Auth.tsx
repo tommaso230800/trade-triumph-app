@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Mail, Lock, User } from "lucide-react";
+import { Loader2, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import agencyLogo from "@/assets/agency-logo.jpg";
@@ -17,10 +16,8 @@ const passwordSchema = z.string().min(6, "La password deve avere almeno 6 caratt
 export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -85,41 +82,6 @@ export default function Auth() {
     setLoading(false);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateInputs()) return;
-    
-    setLoading(true);
-    
-    const redirectUrl = `${window.location.origin}/`;
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-
-    if (error) {
-      if (error.message.includes("User already registered")) {
-        toast.error("Utente già registrato. Prova ad accedere.");
-        setActiveTab("login");
-      } else {
-        toast.error("Errore: " + error.message);
-      }
-      setLoading(false);
-      return;
-    }
-
-    toast.success("Registrazione completata! Controlla la tua email per confermare l'account.");
-    setActiveTab("login");
-    setLoading(false);
-  };
-
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -140,115 +102,48 @@ export default function Auth() {
         </div>
 
         <div className="bg-card rounded-xl shadow-card p-6 animate-fade-in">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "signup")}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="login">Accedi</TabsTrigger>
-              <TabsTrigger value="signup">Registrati</TabsTrigger>
-            </TabsList>
+          <h2 className="text-xl font-semibold text-center mb-6">Accedi</h2>
+          
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="login-email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@esempio.it"
+                  disabled={loading}
+                  className="pl-10"
+                  autoComplete="email"
+                />
+              </div>
+            </div>
 
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="login-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="email@esempio.it"
-                      disabled={loading}
-                      className="pl-10"
-                      autoComplete="email"
-                    />
-                  </div>
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="login-password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="login-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={loading}
+                  className="pl-10"
+                  autoComplete="current-password"
+                />
+              </div>
+            </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="login-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      disabled={loading}
-                      className="pl-10"
-                      autoComplete="current-password"
-                    />
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full" disabled={loading || !email || !password}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Accedi
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Nome completo</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-name"
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Mario Rossi"
-                      disabled={loading}
-                      className="pl-10"
-                      autoComplete="name"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="email@esempio.it"
-                      disabled={loading}
-                      className="pl-10"
-                      autoComplete="email"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Minimo 6 caratteri"
-                      disabled={loading}
-                      className="pl-10"
-                      autoComplete="new-password"
-                    />
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full" disabled={loading || !email || !password}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Registrati
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+            <Button type="submit" className="w-full" disabled={loading || !email || !password}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Accedi
+            </Button>
+          </form>
         </div>
       </div>
     </div>
