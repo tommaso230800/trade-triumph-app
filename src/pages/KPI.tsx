@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { useKPIStats } from "@/hooks/useKPIStats";
+import { useKPIStats, PeriodFilter } from "@/hooks/useKPIStats";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import {
@@ -33,13 +33,15 @@ import {
   Loader2,
   BarChart3,
   PieChart,
+  Calendar,
 } from "lucide-react";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
 
 const KPI = () => {
-  const { data: stats, isLoading } = useKPIStats();
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("tutti");
+  const { data: stats, isLoading } = useKPIStats(periodFilter);
   const [clientSearch, setClientSearch] = useState("");
   const [prodottoSearch, setProdottoSearch] = useState("");
   const [consorzioFilter, setConsorzioFilter] = useState<string>("tutti");
@@ -74,14 +76,30 @@ const KPI = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-            Analisi KPI
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Analisi dettagliata delle performance aziendali
-          </p>
+        {/* Header with Period Filter */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+              Analisi KPI
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Analisi dettagliata delle performance aziendali
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Periodo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tutti">Tutti i periodi</SelectItem>
+                <SelectItem value="mese">Questo Mese</SelectItem>
+                <SelectItem value="trimestre">Questo Trimestre</SelectItem>
+                <SelectItem value="anno">Quest'Anno</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Main KPIs */}

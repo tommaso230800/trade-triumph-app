@@ -102,3 +102,54 @@ export function useDeleteOrdineRiga() {
     },
   });
 }
+
+export function useUpdateOrdineRiga() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (riga: { id: string; quantita_pezzi: number; quantita_cartoni: number; prezzo_unitario: number }) => {
+      const { error } = await supabase
+        .from("ordini_righe")
+        .update({
+          quantita_pezzi: riga.quantita_pezzi,
+          quantita_cartoni: riga.quantita_cartoni,
+          prezzo_unitario: riga.prezzo_unitario,
+        })
+        .eq("id", riga.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ordini_righe"] });
+      queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
+      toast.success("Riga ordine aggiornata!");
+    },
+    onError: (error) => {
+      toast.error("Errore: " + error.message);
+    },
+  });
+}
+
+export function useUpdateOrdineTotale() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ ordine_id, totale, prodotti }: { ordine_id: string; totale: number; prodotti: number }) => {
+      const { error } = await supabase
+        .from("ordini")
+        .update({ totale, prodotti })
+        .eq("id", ordine_id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
+      queryClient.invalidateQueries({ queryKey: ["cliente_ordini"] });
+    },
+    onError: (error) => {
+      toast.error("Errore aggiornamento totale: " + error.message);
+    },
+  });
+}

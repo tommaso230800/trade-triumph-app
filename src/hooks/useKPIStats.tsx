@@ -38,10 +38,31 @@ export type AziendaKPI = {
   prodotti_venduti: number;
 };
 
-export function useKPIStats() {
+export type PeriodFilter = "tutti" | "mese" | "trimestre" | "anno";
+
+export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
   return useQuery({
-    queryKey: ["kpi_stats"],
+    queryKey: ["kpi_stats", periodFilter],
     queryFn: async () => {
+      // Calculate date range based on filter
+      const now = new Date();
+      let startDate: Date | null = null;
+      
+      switch (periodFilter) {
+        case "mese":
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case "trimestre":
+          const quarterMonth = Math.floor(now.getMonth() / 3) * 3;
+          startDate = new Date(now.getFullYear(), quarterMonth, 1);
+          break;
+        case "anno":
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          startDate = null;
+      }
+      
       // Fetch all clients with their orders
       const { data: clienti, error: clientiError } = await supabase
         .from("clienti")
@@ -50,8 +71,8 @@ export function useKPIStats() {
 
       if (clientiError) throw clientiError;
 
-      // Fetch all orders with details
-      const { data: ordini, error: ordiniError } = await supabase
+      // Fetch all orders with details - apply date filter
+      let ordiniQuery = supabase
         .from("ordini")
         .select(`
           *,
@@ -67,6 +88,12 @@ export function useKPIStats() {
           )
         `)
         .order("created_at", { ascending: false });
+      
+      if (startDate) {
+        ordiniQuery = ordiniQuery.gte("created_at", startDate.toISOString());
+      }
+
+      const { data: ordini, error: ordiniError } = await ordiniQuery;
 
       if (ordiniError) throw ordiniError;
 

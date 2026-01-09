@@ -35,12 +35,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit } from "lucide-react";
 import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
 import { useProdotti, Prodotto } from "@/hooks/useProdotti";
-import { useCreateOrdineRigheBatch } from "@/hooks/useOrdiniRighe";
+import { useCreateOrdineRigheBatch, useOrdiniRighe, useUpdateOrdineRiga, useUpdateOrdineTotale } from "@/hooks/useOrdiniRighe";
 import { useLastOrdineForClient } from "@/hooks/useLastOrdineRighe";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -92,6 +92,11 @@ const Ordini = () => {
   });
   const [righeOrdine, setRigheOrdine] = useState<RigaOrdine[]>([]);
   const [selectedProdotto, setSelectedProdotto] = useState("");
+  
+  // Edit order state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingOrdine, setEditingOrdine] = useState<Ordine | null>(null);
+  const [editRighe, setEditRighe] = useState<{ id: string; prodotto_nome: string; quantita_pezzi: number; quantita_cartoni: number; prezzo_unitario: string; pezzi_per_cartone: number }[]>([]);
 
   const { data: ordini, isLoading } = useOrdini(searchTerm, statusFilter);
   const { data: clienti } = useClienti();
@@ -100,6 +105,11 @@ const Ordini = () => {
   const createOrdine = useCreateOrdine();
   const createRigheBatch = useCreateOrdineRigheBatch();
   const updateStatus = useUpdateOrdineStatus();
+  const updateRigaMutation = useUpdateOrdineRiga();
+  const updateOrdineTotale = useUpdateOrdineTotale();
+  
+  // Fetch righe for editing
+  const { data: righeForEdit, refetch: refetchRighe } = useOrdiniRighe(editingOrdine?.id);
 
   // Get last order for restock functionality
   const { data: lastOrdineData } = useLastOrdineForClient(
@@ -166,6 +176,81 @@ const Ordini = () => {
     return righeOrdine.reduce((sum, riga) => {
       return sum + riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
     }, 0);
+  };
+
+  // Handle opening edit dialog
+  const handleOpenEditDialog = (ordine: Ordine) => {
+    setEditingOrdine(ordine);
+    setIsEditDialogOpen(true);
+  };
+
+  // Populate edit righe when data arrives
+  useEffect(() => {
+    if (righeForEdit && isEditDialogOpen) {
+      setEditRighe(righeForEdit.map((r) => ({
+        id: r.id,
+        prodotto_nome: r.prodotti?.nome || "Prodotto",
+        quantita_pezzi: r.quantita_pezzi,
+        quantita_cartoni: r.quantita_cartoni,
+        prezzo_unitario: String(r.prezzo_unitario).replace(".", ","),
+        pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
+      })));
+    }
+  }, [righeForEdit, isEditDialogOpen]);
+
+  const updateEditRiga = (index: number, field: string, value: number | string) => {
+    const updated = [...editRighe];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditRighe(updated);
+  };
+
+  const calcolaEditTotale = () => {
+    if (!editingOrdine) return 0;
+    const subtotale = editRighe.reduce((sum, riga) => {
+      const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
+      return sum + pezziTotali * parseDecimalInput(riga.prezzo_unitario);
+    }, 0);
+    
+    const sconto = Number(editingOrdine.sconto) || 0;
+    const scontoMerce = Number(editingOrdine.sconto_merce) || 0;
+    
+    const afterSconto = subtotale * (1 - sconto / 100);
+    return Math.max(0, afterSconto - scontoMerce);
+  };
+
+  const calcolaEditProdottiTotali = () => {
+    return editRighe.reduce((sum, riga) => {
+      return sum + riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
+    }, 0);
+  };
+
+  const handleSaveEditRighe = async () => {
+    if (!editingOrdine) return;
+    
+    try {
+      // Update each riga
+      for (const riga of editRighe) {
+        await updateRigaMutation.mutateAsync({
+          id: riga.id,
+          quantita_pezzi: riga.quantita_pezzi,
+          quantita_cartoni: riga.quantita_cartoni,
+          prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
+        });
+      }
+      
+      // Update order totals
+      await updateOrdineTotale.mutateAsync({
+        ordine_id: editingOrdine.id,
+        totale: calcolaEditTotale(),
+        prodotti: calcolaEditProdottiTotali(),
+      });
+      
+      setIsEditDialogOpen(false);
+      setEditingOrdine(null);
+      setEditRighe([]);
+    } catch (error) {
+      console.error("Error saving righe:", error);
+    }
   };
 
   const handleRiassortimento = () => {
@@ -611,6 +696,12 @@ const Ordini = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
+                              onClick={() => handleOpenEditDialog(ordine)}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Modifica Quantità
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => updateStatus.mutate({ id: ordine.id, status: "spedito" })}
                             >
                               Segna come Spedito
@@ -636,6 +727,113 @@ const Ordini = () => {
             </div>
           </div>
         )}
+
+        {/* Edit Order Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) {
+            setEditingOrdine(null);
+            setEditRighe([]);
+          }
+        }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Modifica Ordine {editingOrdine?.codice}</DialogTitle>
+              <DialogDescription>
+                Modifica le quantità dei prodotti nell'ordine
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              {editRighe.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Prodotto</TableHead>
+                      <TableHead>Prezzo</TableHead>
+                      <TableHead>Pezzi</TableHead>
+                      <TableHead>Cartoni</TableHead>
+                      <TableHead>Subtotale</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {editRighe.map((riga, index) => {
+                      const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
+                      const subtotale = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
+                      return (
+                        <TableRow key={riga.id}>
+                          <TableCell className="font-medium">
+                            {riga.prodotto_nome}
+                            <span className="text-xs text-muted-foreground block">
+                              {riga.pezzi_per_cartone} pz/cartone
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              className="w-20"
+                              value={riga.prezzo_unitario}
+                              onChange={(e) => updateEditRiga(index, "prezzo_unitario", e.target.value)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              className="w-20"
+                              value={riga.quantita_pezzi}
+                              onChange={(e) => updateEditRiga(index, "quantita_pezzi", parseInt(e.target.value) || 0)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              className="w-20"
+                              value={riga.quantita_cartoni}
+                              onChange={(e) => updateEditRiga(index, "quantita_cartoni", parseInt(e.target.value) || 0)}
+                            />
+                          </TableCell>
+                          <TableCell className="font-semibold">{formatCurrency(subtotale)}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+
+              <div className="flex justify-end pt-4 border-t">
+                <div className="text-right space-y-1">
+                  <p className="text-sm text-muted-foreground">Totale prodotti: {calcolaEditProdottiTotali()} pezzi</p>
+                  {editingOrdine && (Number(editingOrdine.sconto) > 0 || Number(editingOrdine.sconto_merce) > 0) && (
+                    <p className="text-sm text-muted-foreground">
+                      Sconto: {editingOrdine.sconto}% + {formatCurrency(Number(editingOrdine.sconto_merce))}
+                    </p>
+                  )}
+                  <p className="text-xl font-bold">{formatCurrency(calcolaEditTotale())}</p>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Annulla
+              </Button>
+              <Button 
+                onClick={handleSaveEditRighe}
+                disabled={updateRigaMutation.isPending || updateOrdineTotale.isPending}
+              >
+                {(updateRigaMutation.isPending || updateOrdineTotale.isPending) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Salva Modifiche
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
