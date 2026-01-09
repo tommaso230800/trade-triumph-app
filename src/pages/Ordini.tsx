@@ -79,7 +79,9 @@ type RigaOrdine = {
   quantita_pezzi: number;
   quantita_cartoni: number;
   pezzi_per_cartone: number;
-  sconto_riga: string;
+  sc1: string;
+  sc2: string;
+  sc3: string;
 };
 
 const Ordini = () => {
@@ -171,7 +173,9 @@ const Ordini = () => {
         quantita_pezzi: 0,
         quantita_cartoni: 0,
         pezzi_per_cartone: prodotto.pezzi_per_cartone,
-        sconto_riga: "0",
+        sc1: "0",
+        sc2: "0",
+        sc3: "0",
       },
     ]);
     setSelectedProdotto("");
@@ -191,8 +195,11 @@ const Ordini = () => {
     const subtotale = righeOrdine.reduce((sum, riga) => {
       const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
       const prezzoBase = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
-      const scontoRiga = parseDecimalInput(riga.sconto_riga);
-      return sum + prezzoBase * (1 - scontoRiga / 100);
+      const sc1 = parseDecimalInput(riga.sc1);
+      const sc2 = parseDecimalInput(riga.sc2);
+      const sc3 = parseDecimalInput(riga.sc3);
+      const scontoTotale = 1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100);
+      return sum + prezzoBase * (1 - scontoTotale);
     }, 0);
     
     const sconto = parseDecimalInput(formData.sconto);
@@ -309,7 +316,9 @@ const Ordini = () => {
       quantita_pezzi: r.quantita_pezzi,
       quantita_cartoni: r.quantita_cartoni,
       pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
-      sconto_riga: "0",
+      sc1: "0",
+      sc2: "0",
+      sc3: "0",
     }));
 
     setRigheOrdine(newRighe);
@@ -620,8 +629,11 @@ const Ordini = () => {
                       {righeOrdine.map((riga, index) => {
                         const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
                         const prezzoBase = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
-                        const scontoRiga = parseDecimalInput(riga.sconto_riga);
-                        const subtotale = prezzoBase * (1 - scontoRiga / 100);
+                        const sc1 = parseDecimalInput(riga.sc1);
+                        const sc2 = parseDecimalInput(riga.sc2);
+                        const sc3 = parseDecimalInput(riga.sc3);
+                        const scontoTotale = 1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100);
+                        const subtotale = prezzoBase * (1 - scontoTotale);
                         return (
                           <div key={riga.prodotto_id} className="bg-muted/50 rounded-xl p-3 space-y-3">
                             {/* Product Header */}
@@ -640,8 +652,8 @@ const Ordini = () => {
                               </Button>
                             </div>
                             
-                            {/* Inputs Grid */}
-                            <div className="grid grid-cols-4 gap-2">
+                            {/* Inputs Grid - Row 1 */}
+                            <div className="grid grid-cols-3 gap-2">
                               <div className="space-y-1">
                                 <Label className="text-xs text-muted-foreground">Prezzo</Label>
                                 <Input
@@ -675,14 +687,40 @@ const Ordini = () => {
                                   onChange={(e) => updateRiga(index, "quantita_cartoni", parseInt(e.target.value) || 0)}
                                 />
                               </div>
+                            </div>
+                            
+                            {/* Inputs Grid - Row 2: Sconti */}
+                            <div className="grid grid-cols-3 gap-2">
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Sconto %</Label>
+                                <Label className="text-xs text-muted-foreground">Sc1 %</Label>
                                 <Input
                                   type="text"
                                   inputMode="decimal"
                                   className="h-10 px-2 text-sm"
-                                  value={riga.sconto_riga}
-                                  onChange={(e) => updateRiga(index, "sconto_riga", e.target.value)}
+                                  value={riga.sc1}
+                                  onChange={(e) => updateRiga(index, "sc1", e.target.value)}
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Sc2 %</Label>
+                                <Input
+                                  type="text"
+                                  inputMode="decimal"
+                                  className="h-10 px-2 text-sm"
+                                  value={riga.sc2}
+                                  onChange={(e) => updateRiga(index, "sc2", e.target.value)}
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Sc3 %</Label>
+                                <Input
+                                  type="text"
+                                  inputMode="decimal"
+                                  className="h-10 px-2 text-sm"
+                                  value={riga.sc3}
+                                  onChange={(e) => updateRiga(index, "sc3", e.target.value)}
                                   placeholder="0"
                                 />
                               </div>
