@@ -110,13 +110,24 @@ export function useUpdateOrdineRiga() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (riga: { id: string; quantita_pezzi: number; quantita_cartoni: number; prezzo_unitario: number }) => {
+    mutationFn: async (riga: { 
+      id: string; 
+      quantita_pezzi: number; 
+      quantita_cartoni: number; 
+      prezzo_unitario: number;
+      sc1?: number;
+      sc2?: number;
+      sc3?: number;
+    }) => {
       const { error } = await supabase
         .from("ordini_righe")
         .update({
           quantita_pezzi: riga.quantita_pezzi,
           quantita_cartoni: riga.quantita_cartoni,
           prezzo_unitario: riga.prezzo_unitario,
+          sc1: riga.sc1 ?? 0,
+          sc2: riga.sc2 ?? 0,
+          sc3: riga.sc3 ?? 0,
         })
         .eq("id", riga.id);
       if (error) throw error;
@@ -126,7 +137,6 @@ export function useUpdateOrdineRiga() {
       queryClient.invalidateQueries({ queryKey: ["ordini"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
-      toast.success("Riga ordine aggiornata!");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);

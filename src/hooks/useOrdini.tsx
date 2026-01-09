@@ -127,3 +127,39 @@ export function useUpdateProvvigionePagata() {
     },
   });
 }
+
+export function useUpdateOrdine() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ordine: { 
+      id: string;
+      cliente_id?: string | null; 
+      azienda_id?: string | null; 
+      sconto?: number;
+      sconto_merce?: number;
+      tipo_pagamento?: string;
+      note?: string | null;
+      data_ordine?: string | null;
+      totale?: number;
+      prodotti?: number;
+    }) => {
+      const { id, ...updates } = ordine;
+      const { error } = await supabase
+        .from("ordini")
+        .update(updates)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["cliente_ordini"] });
+      toast.success("Ordine aggiornato con successo!");
+    },
+    onError: (error) => {
+      toast.error("Errore: " + error.message);
+    },
+  });
+}

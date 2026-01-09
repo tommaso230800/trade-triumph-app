@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw, Upload } from "lucide-react";
-import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, Ordine } from "@/hooks/useOrdini";
+import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, useUpdateOrdine, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
 import { useProdotti, Prodotto } from "@/hooks/useProdotti";
@@ -103,7 +103,26 @@ const Ordini = () => {
   // Edit order state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingOrdine, setEditingOrdine] = useState<Ordine | null>(null);
-  const [editRighe, setEditRighe] = useState<{ id: string; prodotto_nome: string; quantita_pezzi: number; quantita_cartoni: number; prezzo_unitario: string; pezzi_per_cartone: number }[]>([]);
+  const [editFormData, setEditFormData] = useState({
+    cliente_id: "",
+    azienda_id: "",
+    note: "",
+    sconto: "0",
+    sconto_merce: "0",
+    tipo_pagamento: "Contanti",
+    data_ordine: "",
+  });
+  const [editRighe, setEditRighe] = useState<{ 
+    id: string; 
+    prodotto_nome: string; 
+    quantita_pezzi: number; 
+    quantita_cartoni: number; 
+    prezzo_unitario: string; 
+    pezzi_per_cartone: number;
+    sc1: string;
+    sc2: string;
+    sc3: string;
+  }[]>([]);
   
   // Proforma state
   const [isProformaOpen, setIsProformaOpen] = useState(false);
@@ -138,6 +157,7 @@ const Ordini = () => {
   const updateStatus = useUpdateOrdineStatus();
   const updateRigaMutation = useUpdateOrdineRiga();
   const updateOrdineTotale = useUpdateOrdineTotale();
+  const updateOrdine = useUpdateOrdine();
   
   // Fetch righe for editing
   const { data: righeForEdit, refetch: refetchRighe } = useOrdiniRighe(editingOrdine?.id);
@@ -220,6 +240,15 @@ const Ordini = () => {
   // Handle opening edit dialog
   const handleOpenEditDialog = (ordine: Ordine) => {
     setEditingOrdine(ordine);
+    setEditFormData({
+      cliente_id: ordine.cliente_id || "",
+      azienda_id: ordine.azienda_id || "",
+      note: ordine.note || "",
+      sconto: String(ordine.sconto || 0).replace(".", ","),
+      sconto_merce: String(ordine.sconto_merce || 0).replace(".", ","),
+      tipo_pagamento: ordine.tipo_pagamento || "Contanti",
+      data_ordine: ordine.data_ordine || "",
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -233,6 +262,9 @@ const Ordini = () => {
         quantita_cartoni: r.quantita_cartoni,
         prezzo_unitario: String(r.prezzo_unitario).replace(".", ","),
         pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
+        sc1: String(r.sc1 || 0).replace(".", ","),
+        sc2: String(r.sc2 || 0).replace(".", ","),
+        sc3: String(r.sc3 || 0).replace(".", ","),
       })));
     }
   }, [righeForEdit, isEditDialogOpen]);
@@ -244,14 +276,18 @@ const Ordini = () => {
   };
 
   const calcolaEditTotale = () => {
-    if (!editingOrdine) return 0;
     const subtotale = editRighe.reduce((sum, riga) => {
       const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
-      return sum + pezziTotali * parseDecimalInput(riga.prezzo_unitario);
+      const prezzoBase = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
+      const sc1 = parseDecimalInput(riga.sc1);
+      const sc2 = parseDecimalInput(riga.sc2);
+      const sc3 = parseDecimalInput(riga.sc3);
+      const scontoTotale = 1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100);
+      return sum + prezzoBase * (1 - scontoTotale);
     }, 0);
     
-    const sconto = Number(editingOrdine.sconto) || 0;
-    const scontoMerce = Number(editingOrdine.sconto_merce) || 0;
+    const sconto = parseDecimalInput(editFormData.sconto);
+    const scontoMerce = parseDecimalInput(editFormData.sconto_merce);
     
     const afterSconto = subtotale * (1 - sconto / 100);
     return Math.max(0, afterSconto - scontoMerce);
@@ -263,23 +299,33 @@ const Ordini = () => {
     }, 0);
   };
 
-  const handleSaveEditRighe = async () => {
+  const handleSaveEdit = async () => {
     if (!editingOrdine) return;
     
     try {
-      // Update each riga
+      // Update each riga with all fields
       for (const riga of editRighe) {
         await updateRigaMutation.mutateAsync({
           id: riga.id,
           quantita_pezzi: riga.quantita_pezzi,
           quantita_cartoni: riga.quantita_cartoni,
           prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
+          sc1: parseDecimalInput(riga.sc1),
+          sc2: parseDecimalInput(riga.sc2),
+          sc3: parseDecimalInput(riga.sc3),
         });
       }
       
-      // Update order totals
-      await updateOrdineTotale.mutateAsync({
-        ordine_id: editingOrdine.id,
+      // Update order with all fields
+      await updateOrdine.mutateAsync({
+        id: editingOrdine.id,
+        cliente_id: editFormData.cliente_id || null,
+        azienda_id: editFormData.azienda_id || null,
+        sconto: parseDecimalInput(editFormData.sconto),
+        sconto_merce: parseDecimalInput(editFormData.sconto_merce),
+        tipo_pagamento: editFormData.tipo_pagamento,
+        note: editFormData.note || null,
+        data_ordine: editFormData.data_ordine || null,
         totale: calcolaEditTotale(),
         prodotti: calcolaEditProdottiTotali(),
       });
@@ -288,7 +334,7 @@ const Ordini = () => {
       setEditingOrdine(null);
       setEditRighe([]);
     } catch (error) {
-      console.error("Error saving righe:", error);
+      console.error("Error saving order:", error);
     }
   };
 
@@ -1018,82 +1064,225 @@ const Ordini = () => {
             setEditRighe([]);
           }
         }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Modifica Ordine {editingOrdine?.codice}</DialogTitle>
               <DialogDescription>
-                Modifica le quantità dei prodotti nell'ordine
+                Modifica tutti i dettagli dell'ordine
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              {/* Data Ordine */}
+              <div className="space-y-1.5">
+                <Label className="text-sm">Data Ordine</Label>
+                <Input
+                  type="date"
+                  value={editFormData.data_ordine}
+                  onChange={(e) => setEditFormData({ ...editFormData, data_ordine: e.target.value })}
+                />
+              </div>
+
+              {/* Cliente e Azienda */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Cliente</Label>
+                  <Select value={editFormData.cliente_id} onValueChange={(v) => setEditFormData({ ...editFormData, cliente_id: v })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clienti?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Azienda Fornitrice</Label>
+                  <Select value={editFormData.azienda_id} onValueChange={(v) => setEditFormData({ ...editFormData, azienda_id: v })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona azienda" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {aziende?.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Payment and Discounts */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Tipo Pagamento</Label>
+                  <Select value={editFormData.tipo_pagamento} onValueChange={(v) => setEditFormData({ ...editFormData, tipo_pagamento: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIPI_PAGAMENTO.map((tipo) => (
+                        <SelectItem key={tipo} value={tipo}>
+                          {tipo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Sconto (%)</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={editFormData.sconto}
+                    onChange={(e) => setEditFormData({ ...editFormData, sconto: e.target.value })}
+                    placeholder="es. 10"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Sconto Merce (€)</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={editFormData.sconto_merce}
+                    onChange={(e) => setEditFormData({ ...editFormData, sconto_merce: e.target.value })}
+                    placeholder="es. 50"
+                  />
+                </div>
+              </div>
+
+              {/* Order Lines */}
               {editRighe.length === 0 ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Prodotto</TableHead>
-                      <TableHead>Prezzo</TableHead>
-                      <TableHead>Pezzi</TableHead>
-                      <TableHead>Cartoni</TableHead>
-                      <TableHead>Subtotale</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <div className="space-y-3 border-t pt-4">
+                  <h4 className="font-medium text-sm">Prodotti nell'ordine</h4>
+                  <div className="space-y-3">
                     {editRighe.map((riga, index) => {
                       const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
-                      const subtotale = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
+                      const prezzoBase = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
+                      const sc1 = parseDecimalInput(riga.sc1);
+                      const sc2 = parseDecimalInput(riga.sc2);
+                      const sc3 = parseDecimalInput(riga.sc3);
+                      const scontoTotale = 1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100);
+                      const subtotale = prezzoBase * (1 - scontoTotale);
                       return (
-                        <TableRow key={riga.id}>
-                          <TableCell className="font-medium">
-                            {riga.prodotto_nome}
-                            <span className="text-xs text-muted-foreground block">
-                              {riga.pezzi_per_cartone} pz/cartone
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="text"
-                              inputMode="decimal"
-                              className="w-20"
-                              value={riga.prezzo_unitario}
-                              onChange={(e) => updateEditRiga(index, "prezzo_unitario", e.target.value)}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              className="w-20"
-                              value={riga.quantita_pezzi}
-                              onChange={(e) => updateEditRiga(index, "quantita_pezzi", parseInt(e.target.value) || 0)}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="0"
-                              className="w-20"
-                              value={riga.quantita_cartoni}
-                              onChange={(e) => updateEditRiga(index, "quantita_cartoni", parseInt(e.target.value) || 0)}
-                            />
-                          </TableCell>
-                          <TableCell className="font-semibold">{formatCurrency(subtotale)}</TableCell>
-                        </TableRow>
+                        <div key={riga.id} className="bg-muted/50 rounded-xl p-3 space-y-3">
+                          {/* Product Header */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm truncate">{riga.prodotto_nome}</p>
+                              <p className="text-xs text-muted-foreground">{riga.pezzi_per_cartone} pz/cartone</p>
+                            </div>
+                          </div>
+                          
+                          {/* Inputs Grid - Row 1 */}
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Prezzo</Label>
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                className="h-10 px-2 text-sm"
+                                value={riga.prezzo_unitario}
+                                onChange={(e) => updateEditRiga(index, "prezzo_unitario", e.target.value)}
+                                placeholder="1,85"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Pezzi</Label>
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                min="0"
+                                className="h-10 px-2 text-sm"
+                                value={riga.quantita_pezzi}
+                                onChange={(e) => updateEditRiga(index, "quantita_pezzi", parseInt(e.target.value) || 0)}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Cartoni</Label>
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                min="0"
+                                className="h-10 px-2 text-sm"
+                                value={riga.quantita_cartoni}
+                                onChange={(e) => updateEditRiga(index, "quantita_cartoni", parseInt(e.target.value) || 0)}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Inputs Grid - Row 2: Sconti */}
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Sc1 %</Label>
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                className="h-10 px-2 text-sm"
+                                value={riga.sc1}
+                                onChange={(e) => updateEditRiga(index, "sc1", e.target.value)}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Sc2 %</Label>
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                className="h-10 px-2 text-sm"
+                                value={riga.sc2}
+                                onChange={(e) => updateEditRiga(index, "sc2", e.target.value)}
+                                placeholder="0"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">Sc3 %</Label>
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                className="h-10 px-2 text-sm"
+                                value={riga.sc3}
+                                onChange={(e) => updateEditRiga(index, "sc3", e.target.value)}
+                                placeholder="0"
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Subtotal */}
+                          <div className="flex justify-end pt-1 border-t border-border/50">
+                            <p className="text-sm font-semibold">{formatCurrency(subtotale)}</p>
+                          </div>
+                        </div>
                       );
                     })}
-                  </TableBody>
-                </Table>
+                  </div>
+                </div>
               )}
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label>Note</Label>
+                <Textarea
+                  value={editFormData.note}
+                  onChange={(e) => setEditFormData({ ...editFormData, note: e.target.value })}
+                  placeholder="Note aggiuntive..."
+                />
+              </div>
 
               <div className="flex justify-end pt-4 border-t">
                 <div className="text-right space-y-1">
                   <p className="text-sm text-muted-foreground">Totale prodotti: {calcolaEditProdottiTotali()} pezzi</p>
-                  {editingOrdine && (Number(editingOrdine.sconto) > 0 || Number(editingOrdine.sconto_merce) > 0) && (
+                  {(parseDecimalInput(editFormData.sconto) > 0 || parseDecimalInput(editFormData.sconto_merce) > 0) && (
                     <p className="text-sm text-muted-foreground">
-                      Sconto: {editingOrdine.sconto}% + {formatCurrency(Number(editingOrdine.sconto_merce))}
+                      Sconto: {editFormData.sconto}% + {formatCurrency(parseDecimalInput(editFormData.sconto_merce))}
                     </p>
                   )}
                   <p className="text-xl font-bold">{formatCurrency(calcolaEditTotale())}</p>
@@ -1105,10 +1294,10 @@ const Ordini = () => {
                 Annulla
               </Button>
               <Button 
-                onClick={handleSaveEditRighe}
-                disabled={updateRigaMutation.isPending || updateOrdineTotale.isPending}
+                onClick={handleSaveEdit}
+                disabled={updateRigaMutation.isPending || updateOrdine.isPending}
               >
-                {(updateRigaMutation.isPending || updateOrdineTotale.isPending) && (
+                {(updateRigaMutation.isPending || updateOrdine.isPending) && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 Salva Modifiche
