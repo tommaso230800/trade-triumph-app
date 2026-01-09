@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { Printer, X, Download, Loader2 } from "lucide-react";
+import { Printer, X, Download, Loader2, Gift } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -16,6 +16,12 @@ type RigaOrdine = {
   quantita_pezzi: number;
   quantita_cartoni: number;
   pezzi_per_cartone: number;
+};
+
+type PromoApplicata = {
+  nome: string;
+  tipo: string;
+  valore: number;
 };
 
 type ProformaData = {
@@ -35,6 +41,7 @@ type ProformaData = {
   totale: number;
   note?: string;
   righe: RigaOrdine[];
+  promozioni_applicate?: PromoApplicata[];
 };
 
 type ProformaDialogProps = {
@@ -232,6 +239,26 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
               </div>
             </div>
           </div>
+
+          {/* Promozioni Applicate */}
+          {data.promozioni_applicate && data.promozioni_applicate.length > 0 && (
+            <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Gift className="h-4 w-4 text-green-600" />
+                <h3 className="text-xs font-semibold uppercase text-green-700">Promozioni Applicate</h3>
+              </div>
+              <div className="space-y-1">
+                {data.promozioni_applicate.map((promo, idx) => (
+                  <p key={idx} className="text-sm text-green-700">
+                    <span className="font-medium">{promo.nome}</span>
+                    <span className="text-green-600 ml-2">
+                      ({promo.tipo === "sconto_percentuale" ? `${promo.valore}%` : `€${promo.valore}`} come da promo canvass)
+                    </span>
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Notes */}
           {data.note && (

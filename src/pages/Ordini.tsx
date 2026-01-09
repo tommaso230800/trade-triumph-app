@@ -148,6 +148,7 @@ const Ordini = () => {
     totale: number;
     note?: string;
     righe: { prodotto_nome: string; prezzo_unitario: number; quantita_pezzi: number; quantita_cartoni: number; pezzi_per_cartone: number }[];
+    promozioni_applicate?: { nome: string; tipo: string; valore: number }[];
   } | null>(null);
 
   const { data: ordini, isLoading } = useOrdini(searchTerm, statusFilter);
@@ -503,6 +504,16 @@ const Ordini = () => {
     const cliente = clienti?.find((c) => c.id === formData.cliente_id);
     const azienda = aziende?.find((a) => a.id === formData.azienda_id);
 
+    // Build applied promotions list for proforma
+    const promozioniApplicate = appliedPromos.map(promoId => {
+      const promo = canvassAttive.find(c => c.id === promoId);
+      return promo ? {
+        nome: promo.nome,
+        tipo: promo.tipo,
+        valore: promo.valore,
+      } : null;
+    }).filter(Boolean) as { nome: string; tipo: string; valore: number }[];
+
     // Show proforma
     setProformaData({
       codice: ordine.codice || `ORD-${ordine.id.slice(0, 8)}`,
@@ -527,6 +538,7 @@ const Ordini = () => {
         quantita_cartoni: riga.quantita_cartoni,
         pezzi_per_cartone: riga.pezzi_per_cartone,
       })),
+      promozioni_applicate: promozioniApplicate.length > 0 ? promozioniApplicate : undefined,
     });
     setIsProformaOpen(true);
 
