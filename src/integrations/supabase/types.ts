@@ -21,6 +21,7 @@ export type Database = {
           email: string | null
           id: string
           indirizzo: string | null
+          logo_url: string | null
           nome: string
           prodotti: number | null
           settore: string | null
@@ -35,6 +36,7 @@ export type Database = {
           email?: string | null
           id?: string
           indirizzo?: string | null
+          logo_url?: string | null
           nome: string
           prodotti?: number | null
           settore?: string | null
@@ -49,6 +51,7 @@ export type Database = {
           email?: string | null
           id?: string
           indirizzo?: string | null
+          logo_url?: string | null
           nome?: string
           prodotti?: number | null
           settore?: string | null

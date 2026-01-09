@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
 export type Prodotto = {
@@ -16,8 +15,6 @@ export type Prodotto = {
 };
 
 export function useProdotti(aziendaId?: string) {
-  const { user } = useAuth();
-
   return useQuery({
     queryKey: ["prodotti", aziendaId],
     queryFn: async () => {
@@ -34,16 +31,15 @@ export function useProdotti(aziendaId?: string) {
       if (error) throw error;
       return data as Prodotto[];
     },
-    enabled: !!user,
   });
 }
 
 export function useCreateProdotto() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (prodotto: Omit<Prodotto, "id" | "user_id" | "created_at" | "updated_at">) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("prodotti")
         .insert({ ...prodotto, user_id: user?.id })

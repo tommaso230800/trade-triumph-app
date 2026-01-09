@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
 export type Evento = {
@@ -19,8 +18,6 @@ export type Evento = {
 };
 
 export function useEventi(selectedDate?: Date) {
-  const { user } = useAuth();
-
   return useQuery({
     queryKey: ["eventi", selectedDate?.toISOString()],
     queryFn: async () => {
@@ -42,16 +39,15 @@ export function useEventi(selectedDate?: Date) {
       if (error) throw error;
       return data as Evento[];
     },
-    enabled: !!user,
   });
 }
 
 export function useCreateEvento() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (evento: Omit<Evento, "id" | "user_id" | "created_at" | "clienti">) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("eventi")
         .insert({ ...evento, user_id: user?.id })

@@ -7,7 +7,6 @@ import {
   Calendar,
   Bell,
   Settings,
-  TrendingUp,
   LogOut,
   Menu,
   X,
@@ -15,6 +14,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import agencyLogo from "@/assets/agency-logo.jpg";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -30,21 +31,21 @@ export function Sidebar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleSignOut = () => {
-    sessionStorage.removeItem("app_authenticated");
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
     navigate("/auth");
   };
 
   const SidebarContent = () => (
     <>
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 px-6 border-b border-sidebar-border">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
-          <TrendingUp className="h-5 w-5 text-primary-foreground" />
+      <div className="flex h-20 items-center gap-3 px-4 border-b border-sidebar-border">
+        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white shadow-sm overflow-hidden flex-shrink-0">
+          <img src={agencyLogo} alt="AMG Logo" className="w-full h-full object-contain p-1" />
         </div>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold text-sidebar-foreground truncate">SalesAgent</h1>
-          <p className="text-xs text-sidebar-foreground/60 truncate">Pro</p>
+          <h1 className="text-base font-bold text-sidebar-foreground truncate">AMG HO.RE.CA</h1>
+          <p className="text-xs text-sidebar-foreground/60 truncate">Business & Strategy</p>
         </div>
         {/* Mobile close button */}
         <Button

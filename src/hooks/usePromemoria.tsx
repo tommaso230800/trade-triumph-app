@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
 export type Promemoria = {
@@ -17,8 +16,6 @@ export type Promemoria = {
 };
 
 export function usePromemoria() {
-  const { user } = useAuth();
-
   return useQuery({
     queryKey: ["promemoria"],
     queryFn: async () => {
@@ -31,16 +28,15 @@ export function usePromemoria() {
       if (error) throw error;
       return data as Promemoria[];
     },
-    enabled: !!user,
   });
 }
 
 export function useCreatePromemoria() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (promemoria: Omit<Promemoria, "id" | "user_id" | "created_at" | "completato">) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("promemoria")
         .insert({ ...promemoria, user_id: user?.id, completato: false })

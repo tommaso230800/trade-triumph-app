@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
 
 export interface DashboardStats {
   fatturatoMensile: number;
@@ -17,14 +16,11 @@ export interface DashboardStats {
 }
 
 export function useStats() {
-  const { user } = useAuth();
-
   return useQuery({
     queryKey: ["stats"],
     queryFn: async (): Promise<DashboardStats> => {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
 
       // Fetch ordini
       const { data: ordini } = await supabase
@@ -93,6 +89,5 @@ export function useStats() {
         ordiniPerMese,
       };
     },
-    enabled: !!user,
   });
 }
