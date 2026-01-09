@@ -20,30 +20,68 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Loader2, Wand2 } from "lucide-react";
-import { useAziende, useCreateAzienda, useDeleteAzienda } from "@/hooks/useAziende";
+import { useAziende, useCreateAzienda, useDeleteAzienda, useUpdateAzienda, Azienda } from "@/hooks/useAziende";
 import { AziendaCard } from "@/components/aziende/AziendaCard";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+
+type FormData = {
+  nome: string;
+  settore: string;
+  citta: string;
+  indirizzo: string;
+  telefono: string;
+  email: string;
+  status: "attivo" | "in_pausa";
+  prodotti: number;
+  partita_iva: string;
+};
+
+const defaultFormData: FormData = {
+  nome: "",
+  settore: "",
+  citta: "",
+  indirizzo: "",
+  telefono: "",
+  email: "",
+  status: "attivo",
+  prodotti: 0,
+  partita_iva: "",
+};
 
 const Aziende = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLookingUp, setIsLookingUp] = useState(false);
-  const [formData, setFormData] = useState({
-    nome: "",
-    settore: "",
-    citta: "",
-    indirizzo: "",
-    telefono: "",
-    email: "",
-    status: "attivo" as "attivo" | "in_pausa",
-    prodotti: 0,
-    partita_iva: "",
-  });
+  const [editingAzienda, setEditingAzienda] = useState<Azienda | null>(null);
+  const [formData, setFormData] = useState<FormData>(defaultFormData);
 
   const { data: aziende, isLoading } = useAziende(searchTerm);
   const createAzienda = useCreateAzienda();
+  const updateAzienda = useUpdateAzienda();
   const deleteAzienda = useDeleteAzienda();
+
+  const openEditDialog = (azienda: Azienda) => {
+    setEditingAzienda(azienda);
+    setFormData({
+      nome: azienda.nome,
+      settore: azienda.settore || "",
+      citta: azienda.citta || "",
+      indirizzo: azienda.indirizzo || "",
+      telefono: azienda.telefono || "",
+      email: azienda.email || "",
+      status: azienda.status,
+      prodotti: azienda.prodotti,
+      partita_iva: azienda.partita_iva || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingAzienda(null);
+    setFormData(defaultFormData);
+  };
 
   const handleLookupPiva = async () => {
     const piva = formData.partita_iva.trim();
@@ -81,9 +119,24 @@ const Aziende = () => {
 
   const handleSubmit = async () => {
     if (!formData.nome) return;
-    await createAzienda.mutateAsync(formData);
-    setIsDialogOpen(false);
-    setFormData({ nome: "", settore: "", citta: "", indirizzo: "", telefono: "", email: "", status: "attivo", prodotti: 0, partita_iva: "" });
+    
+    const submitData = {
+      ...formData,
+      settore: formData.settore || null,
+      citta: formData.citta || null,
+      indirizzo: formData.indirizzo || null,
+      telefono: formData.telefono || null,
+      email: formData.email || null,
+      partita_iva: formData.partita_iva || null,
+    };
+
+    if (editingAzienda) {
+      await updateAzienda.mutateAsync({ id: editingAzienda.id, ...submitData });
+    } else {
+      await createAzienda.mutateAsync(submitData);
+    }
+    
+    handleCloseDialog();
   };
 
   return (
@@ -97,7 +150,10 @@ const Aziende = () => {
               Gestisci le aziende e i loro prodotti
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            if (!open) handleCloseDialog();
+            else setIsDialogOpen(open);
+          }}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
@@ -107,8 +163,10 @@ const Aziende = () => {
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle>Nuova Azienda</DialogTitle>
-                <DialogDescription>Inserisci la P.IVA per compilare automaticamente i dati</DialogDescription>
+                <DialogTitle>{editingAzienda ? "Modifica Azienda" : "Nuova Azienda"}</DialogTitle>
+                <DialogDescription>
+                  {editingAzienda ? "Modifica i dati dell'azienda" : "Inserisci la P.IVA per compilare automaticamente i dati"}
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -204,12 +262,12 @@ const Aziende = () => {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button variant="outline" onClick={handleCloseDialog}>
                   Annulla
                 </Button>
-                <Button onClick={handleSubmit} disabled={createAzienda.isPending || !formData.nome}>
-                  {createAzienda.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Crea
+                <Button onClick={handleSubmit} disabled={(createAzienda.isPending || updateAzienda.isPending) || !formData.nome}>
+                  {(createAzienda.isPending || updateAzienda.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingAzienda ? "Salva" : "Crea"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -245,6 +303,7 @@ const Aziende = () => {
               <AziendaCard
                 key={azienda.id}
                 azienda={azienda}
+                onEdit={openEditDialog}
                 onDelete={(id) => deleteAzienda.mutate(id)}
               />
             ))}
