@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,6 +61,7 @@ const parseDecimalInput = (value: string): number => {
 };
 
 export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
+  const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ProductForm>(defaultProductForm);
@@ -68,6 +70,20 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
   const [uploading, setUploading] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('[role="menuitem"]') ||
+      target.closest('[data-radix-collection-item]') ||
+      target.closest('input')
+    ) {
+      return;
+    }
+    navigate(`/aziende/${azienda.id}`);
+  };
 
   const { data: prodotti, isLoading, refetch: refetchProdotti } = useProdotti(isExpanded ? azienda.id : undefined);
   const createProdotto = useCreateProdotto();
@@ -188,7 +204,10 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <div className="group rounded-xl bg-card shadow-card transition-all duration-300 hover:shadow-card-hover animate-fade-in overflow-hidden">
+      <div 
+        className="group rounded-xl bg-card shadow-card transition-all duration-300 hover:shadow-card-hover animate-fade-in overflow-hidden cursor-pointer"
+        onClick={handleCardClick}
+      >
         {/* Card Header */}
         <div className="p-5">
           <div className="flex items-start justify-between">
