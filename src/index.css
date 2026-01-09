@@ -111,9 +111,37 @@
     @apply border-border;
   }
 
+  html {
+    /* iOS safe areas */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    /* Prevent pull-to-refresh on iOS */
+    overscroll-behavior-y: contain;
+    /* Smooth scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Prevent text size adjustment on orientation change */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Prevent iOS zoom on input focus (font-size >= 16px) */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  /* iOS tap highlight */
+  a, button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Smooth scrolling for scroll containers */
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -132,6 +160,29 @@
 
   .shadow-card-hover {
     box-shadow: var(--shadow-lg);
+  }
+
+  /* iOS safe area utilities */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Touch-friendly tap targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
 
