@@ -1,9 +1,26 @@
+import { useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,69 +35,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-const clienti = [
-  {
-    id: 1,
-    nome: "Mario Rossi",
-    azienda: "Rossi S.r.l.",
-    email: "mario.rossi@rossisrl.it",
-    telefono: "+39 333 1234567",
-    fatturato: "€ 45.200",
-    ordini: 23,
-    status: "premium",
-  },
-  {
-    id: 2,
-    nome: "Laura Bianchi",
-    azienda: "Bianchi & Co.",
-    email: "l.bianchi@bianchico.it",
-    telefono: "+39 335 9876543",
-    fatturato: "€ 32.100",
-    ordini: 18,
-    status: "standard",
-  },
-  {
-    id: 3,
-    nome: "Giuseppe Verde",
-    azienda: "Verde Distribuzione",
-    email: "g.verde@verdedist.it",
-    telefono: "+39 340 5566778",
-    fatturato: "€ 78.500",
-    ordini: 42,
-    status: "premium",
-  },
-  {
-    id: 4,
-    nome: "Anna Neri",
-    azienda: "Tech Solutions",
-    email: "anna.neri@techsol.it",
-    telefono: "+39 339 1122334",
-    fatturato: "€ 15.800",
-    ordini: 8,
-    status: "nuovo",
-  },
-  {
-    id: 5,
-    nome: "Paolo Gialli",
-    azienda: "Alfa Trading",
-    email: "p.gialli@alfatrading.it",
-    telefono: "+39 347 8899001",
-    fatturato: "€ 52.300",
-    ordini: 31,
-    status: "standard",
-  },
-  {
-    id: 6,
-    nome: "Elena Blu",
-    azienda: "Blue Ocean S.r.l.",
-    email: "e.blu@blueocean.it",
-    telefono: "+39 328 4455667",
-    fatturato: "€ 28.900",
-    ordini: 15,
-    status: "standard",
-  },
-];
+import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal, Loader2, Filter } from "lucide-react";
+import { useClienti, useCreateCliente, useDeleteCliente, Cliente } from "@/hooks/useClienti";
 
 const statusConfig = {
   premium: { label: "Premium", className: "bg-primary/10 text-primary hover:bg-primary/20" },
@@ -88,127 +44,283 @@ const statusConfig = {
   nuovo: { label: "Nuovo", className: "bg-success/10 text-success hover:bg-success/20" },
 };
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+
 const Clienti = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<Cliente["status"] | "tutti">("tutti");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    nome: "",
+    azienda: "",
+    email: "",
+    telefono: "",
+    fatturato: 0,
+    ordini_count: 0,
+    status: "nuovo" as Cliente["status"],
+  });
+
+  const { data: clienti, isLoading } = useClienti(searchTerm, statusFilter);
+  const createCliente = useCreateCliente();
+  const deleteCliente = useDeleteCliente();
+
+  const handleSubmit = async () => {
+    if (!formData.nome) return;
+    await createCliente.mutateAsync(formData);
+    setIsDialogOpen(false);
+    setFormData({ nome: "", azienda: "", email: "", telefono: "", fatturato: 0, ordini_count: 0, status: "nuovo" });
+  };
+
+  const stats = {
+    totale: clienti?.length || 0,
+    premium: clienti?.filter((c) => c.status === "premium").length || 0,
+    nuovi: clienti?.filter((c) => c.status === "nuovo").length || 0,
+    fatturatoMedio: clienti?.length
+      ? clienti.reduce((sum, c) => sum + Number(c.fatturato), 0) / clienti.length
+      : 0,
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Portfolio Clienti</h1>
-            <p className="mt-1 text-muted-foreground">
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">Portfolio Clienti</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Gestisci i tuoi clienti e monitora le performance
             </p>
           </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nuovo Cliente
-          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Nuovo Cliente</span>
+                <span className="sm:hidden">Aggiungi</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Nuovo Cliente</DialogTitle>
+                <DialogDescription>Aggiungi un nuovo cliente al portfolio</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Nome *</Label>
+                    <Input
+                      value={formData.nome}
+                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                      placeholder="Nome completo"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Azienda</Label>
+                    <Input
+                      value={formData.azienda}
+                      onChange={(e) => setFormData({ ...formData, azienda: e.target.value })}
+                      placeholder="Nome azienda"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="email@esempio.it"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Telefono</Label>
+                    <Input
+                      value={formData.telefono}
+                      onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                      placeholder="+39 ..."
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(v) => setFormData({ ...formData, status: v as Cliente["status"] })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="nuovo">Nuovo</SelectItem>
+                      <SelectItem value="standard">Standard</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Annulla
+                </Button>
+                <Button onClick={handleSubmit} disabled={createCliente.isPending || !formData.nome}>
+                  {createCliente.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Crea
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-sm text-muted-foreground">Totale Clienti</p>
-            <p className="text-2xl font-bold text-card-foreground">47</p>
+            <p className="text-xs lg:text-sm text-muted-foreground">Totale Clienti</p>
+            <p className="text-xl lg:text-2xl font-bold text-card-foreground">{stats.totale}</p>
           </div>
           <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-sm text-muted-foreground">Clienti Premium</p>
-            <p className="text-2xl font-bold text-primary">12</p>
+            <p className="text-xs lg:text-sm text-muted-foreground">Clienti Premium</p>
+            <p className="text-xl lg:text-2xl font-bold text-primary">{stats.premium}</p>
           </div>
           <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-sm text-muted-foreground">Nuovi questo mese</p>
-            <p className="text-2xl font-bold text-success">5</p>
+            <p className="text-xs lg:text-sm text-muted-foreground">Nuovi</p>
+            <p className="text-xl lg:text-2xl font-bold text-success">{stats.nuovi}</p>
           </div>
           <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-sm text-muted-foreground">Fatturato medio</p>
-            <p className="text-2xl font-bold text-card-foreground">€ 42.100</p>
+            <p className="text-xs lg:text-sm text-muted-foreground">Fatturato Medio</p>
+            <p className="text-xl lg:text-2xl font-bold text-card-foreground">{formatCurrency(stats.fatturatoMedio)}</p>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="flex items-center gap-4">
+        {/* Search & Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Cerca cliente..." className="pl-10" />
+            <Input
+              placeholder="Cerca cliente..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+            <SelectTrigger className="w-full sm:w-40">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tutti">Tutti</SelectItem>
+              <SelectItem value="nuovo">Nuovo</SelectItem>
+              <SelectItem value="standard">Standard</SelectItem>
+              <SelectItem value="premium">Premium</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Table */}
-        <div className="rounded-xl bg-card shadow-card overflow-hidden animate-fade-in">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50">
-                <TableHead>Cliente</TableHead>
-                <TableHead>Contatti</TableHead>
-                <TableHead>Fatturato</TableHead>
-                <TableHead>Ordini</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clienti.map((cliente) => (
-                <TableRow key={cliente.id} className="hover:bg-muted/30 transition-colors">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                          {cliente.nome.split(" ").map((n) => n[0]).join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-card-foreground">{cliente.nome}</p>
-                        <p className="text-sm text-muted-foreground">{cliente.azienda}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">{cliente.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">{cliente.telefono}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-card-foreground">{cliente.fatturato}</span>
-                      <TrendingUp className="h-4 w-4 text-success" />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium text-card-foreground">{cliente.ordini}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={statusConfig[cliente.status as keyof typeof statusConfig].className}>
-                      {statusConfig[cliente.status as keyof typeof statusConfig].label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Visualizza</DropdownMenuItem>
-                        <DropdownMenuItem>Modifica</DropdownMenuItem>
-                        <DropdownMenuItem>Nuovo Ordine</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">Elimina</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : !clienti?.length ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Nessun cliente trovato</p>
+            <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
+              Aggiungi il primo cliente
+            </Button>
+          </div>
+        ) : (
+          <div className="rounded-xl bg-card shadow-card overflow-hidden animate-fade-in">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Cliente</TableHead>
+                    <TableHead className="hidden md:table-cell">Contatti</TableHead>
+                    <TableHead>Fatturato</TableHead>
+                    <TableHead className="hidden sm:table-cell">Ordini</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-12"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clienti.map((cliente) => (
+                    <TableRow key={cliente.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9 hidden sm:flex">
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                              {cliente.nome
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="font-medium text-card-foreground truncate">{cliente.nome}</p>
+                            <p className="text-xs text-muted-foreground truncate">{cliente.azienda || "—"}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="space-y-1">
+                          {cliente.email && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <Mail className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-muted-foreground truncate max-w-[150px]">{cliente.email}</span>
+                            </div>
+                          )}
+                          {cliente.telefono && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <Phone className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-muted-foreground">{cliente.telefono}</span>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <span className="font-semibold text-card-foreground text-sm">
+                            {formatCurrency(Number(cliente.fatturato))}
+                          </span>
+                          {Number(cliente.fatturato) > 0 && (
+                            <TrendingUp className="h-3 w-3 text-success hidden sm:block" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <span className="font-medium text-card-foreground">{cliente.ordini_count}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={statusConfig[cliente.status].className}>
+                          {statusConfig[cliente.status].label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => deleteCliente.mutate(cliente.id)}
+                            >
+                              Elimina
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

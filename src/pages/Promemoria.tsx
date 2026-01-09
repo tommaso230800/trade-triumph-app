@@ -21,61 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Bell, Calendar, Phone, Mail, FileText, Trash2 } from "lucide-react";
+import { Plus, Bell, Phone, Mail, FileText, Calendar, Trash2, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const promemoria = [
-  {
-    id: 1,
-    titolo: "Chiamare Rossi S.r.l.",
-    descrizione: "Follow-up ordine mensile",
-    data: "Oggi",
-    orario: "10:00",
-    tipo: "call",
-    priorita: "alta",
-    completato: false,
-  },
-  {
-    id: 2,
-    titolo: "Inviare preventivo Verde Dist.",
-    descrizione: "Catalogo 2024 con prezzi aggiornati",
-    data: "Oggi",
-    orario: "14:00",
-    tipo: "email",
-    priorita: "alta",
-    completato: false,
-  },
-  {
-    id: 3,
-    titolo: "Preparare presentazione",
-    descrizione: "Nuovi prodotti per Bianchi & Co.",
-    data: "Domani",
-    orario: "09:00",
-    tipo: "documento",
-    priorita: "media",
-    completato: false,
-  },
-  {
-    id: 4,
-    titolo: "Scadenza contratto Tech Solutions",
-    descrizione: "Rinnovare entro fine mese",
-    data: "12 Gen",
-    orario: "--:--",
-    tipo: "scadenza",
-    priorita: "alta",
-    completato: false,
-  },
-  {
-    id: 5,
-    titolo: "Report settimanale",
-    descrizione: "Inviare al direttore vendite",
-    data: "Ieri",
-    orario: "18:00",
-    tipo: "documento",
-    priorita: "bassa",
-    completato: true,
-  },
-];
+import {
+  usePromemoria,
+  useCreatePromemoria,
+  useTogglePromemoria,
+  useDeletePromemoria,
+  Promemoria,
+} from "@/hooks/usePromemoria";
+import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
+import { it } from "date-fns/locale";
 
 const tipoIcons = {
   call: Phone,
@@ -87,30 +43,72 @@ const tipoIcons = {
 const prioritaConfig = {
   alta: { label: "Alta", className: "border-l-destructive bg-destructive/5" },
   media: { label: "Media", className: "border-l-warning bg-warning/5" },
-  bassa: { label: "Bassa", className: "border-l-muted bg-muted/30" },
+  bassa: { label: "Bassa", className: "border-l-info bg-info/5" },
 };
 
-const Promemoria = () => {
+const PromemoriaPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [items, setItems] = useState(promemoria);
+  const [formData, setFormData] = useState({
+    titolo: "",
+    descrizione: "",
+    data: format(new Date(), "yyyy-MM-dd"),
+    orario: "09:00",
+    tipo: "documento" as Promemoria["tipo"],
+    priorita: "media" as Promemoria["priorita"],
+  });
 
-  const toggleComplete = (id: number) => {
-    setItems(items.map(item => 
-      item.id === id ? { ...item, completato: !item.completato } : item
-    ));
+  const { data: promemoria, isLoading } = usePromemoria();
+  const createPromemoria = useCreatePromemoria();
+  const togglePromemoria = useTogglePromemoria();
+  const deletePromemoria = useDeletePromemoria();
+
+  const handleSubmit = async () => {
+    if (!formData.titolo) return;
+    await createPromemoria.mutateAsync({
+      titolo: formData.titolo,
+      descrizione: formData.descrizione || null,
+      data: formData.data,
+      orario: formData.orario || null,
+      tipo: formData.tipo,
+      priorita: formData.priorita,
+    });
+    setIsDialogOpen(false);
+    setFormData({
+      titolo: "",
+      descrizione: "",
+      data: format(new Date(), "yyyy-MM-dd"),
+      orario: "09:00",
+      tipo: "documento",
+      priorita: "media",
+    });
   };
 
-  const pendenti = items.filter(item => !item.completato);
-  const completati = items.filter(item => item.completato);
+  const pendenti = promemoria?.filter((p) => !p.completato) || [];
+  const completati = promemoria?.filter((p) => p.completato) || [];
+
+  const getDateLabel = (dateStr: string) => {
+    const date = parseISO(dateStr);
+    if (isToday(date)) return "Oggi";
+    if (isTomorrow(date)) return "Domani";
+    if (isPast(date)) return "Scaduto";
+    return format(date, "dd MMM", { locale: it });
+  };
+
+  const stats = {
+    pendenti: pendenti.length,
+    altaPriorita: pendenti.filter((p) => p.priorita === "alta").length,
+    oggi: pendenti.filter((p) => isToday(parseISO(p.data))).length,
+    completati: completati.length,
+  };
 
   return (
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Promemoria</h1>
-            <p className="mt-1 text-muted-foreground">
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">Promemoria</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Gestisci le tue attività e scadenze
             </p>
           </div>
@@ -118,41 +116,59 @@ const Promemoria = () => {
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Nuovo Promemoria
+                <span className="hidden sm:inline">Nuovo Promemoria</span>
+                <span className="sm:hidden">Aggiungi</span>
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Nuovo Promemoria</DialogTitle>
-                <DialogDescription>
-                  Crea un nuovo promemoria per le tue attività
-                </DialogDescription>
+                <DialogDescription>Crea un nuovo promemoria</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="titolo">Titolo</Label>
-                  <Input id="titolo" placeholder="Es: Chiamare cliente" />
+                  <Label>Titolo *</Label>
+                  <Input
+                    value={formData.titolo}
+                    onChange={(e) => setFormData({ ...formData, titolo: e.target.value })}
+                    placeholder="Es: Chiamare cliente"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="descrizione">Descrizione</Label>
-                  <Input id="descrizione" placeholder="Dettagli aggiuntivi..." />
+                  <Label>Descrizione</Label>
+                  <Input
+                    value={formData.descrizione}
+                    onChange={(e) => setFormData({ ...formData, descrizione: e.target.value })}
+                    placeholder="Dettagli aggiuntivi..."
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Data</Label>
-                    <Input type="date" />
+                    <Input
+                      type="date"
+                      value={formData.data}
+                      onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label>Orario</Label>
-                    <Input type="time" />
+                    <Input
+                      type="time"
+                      value={formData.orario}
+                      onChange={(e) => setFormData({ ...formData, orario: e.target.value })}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Tipo</Label>
-                    <Select>
+                    <Select
+                      value={formData.tipo}
+                      onValueChange={(v) => setFormData({ ...formData, tipo: v as Promemoria["tipo"] })}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleziona" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="call">Chiamata</SelectItem>
@@ -164,9 +180,12 @@ const Promemoria = () => {
                   </div>
                   <div className="space-y-2">
                     <Label>Priorità</Label>
-                    <Select>
+                    <Select
+                      value={formData.priorita}
+                      onValueChange={(v) => setFormData({ ...formData, priorita: v as Promemoria["priorita"] })}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleziona" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="alta">Alta</SelectItem>
@@ -181,133 +200,156 @@ const Promemoria = () => {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Annulla
                 </Button>
-                <Button onClick={() => setIsDialogOpen(false)}>Crea</Button>
+                <Button onClick={handleSubmit} disabled={createPromemoria.isPending || !formData.titolo}>
+                  {createPromemoria.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Crea
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-sm text-muted-foreground">Da completare</p>
-            <p className="text-2xl font-bold text-card-foreground">{pendenti.length}</p>
+            <p className="text-xs lg:text-sm text-muted-foreground">Da completare</p>
+            <p className="text-xl lg:text-2xl font-bold text-card-foreground">{stats.pendenti}</p>
           </div>
           <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-sm text-muted-foreground">Priorità Alta</p>
-            <p className="text-2xl font-bold text-destructive">
-              {pendenti.filter(p => p.priorita === "alta").length}
-            </p>
+            <p className="text-xs lg:text-sm text-muted-foreground">Priorità Alta</p>
+            <p className="text-xl lg:text-2xl font-bold text-destructive">{stats.altaPriorita}</p>
           </div>
           <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-sm text-muted-foreground">Per Oggi</p>
-            <p className="text-2xl font-bold text-warning">
-              {pendenti.filter(p => p.data === "Oggi").length}
-            </p>
+            <p className="text-xs lg:text-sm text-muted-foreground">Per Oggi</p>
+            <p className="text-xl lg:text-2xl font-bold text-warning">{stats.oggi}</p>
           </div>
           <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-sm text-muted-foreground">Completati</p>
-            <p className="text-2xl font-bold text-success">{completati.length}</p>
+            <p className="text-xs lg:text-sm text-muted-foreground">Completati</p>
+            <p className="text-xl lg:text-2xl font-bold text-success">{stats.completati}</p>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Pending */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">Da Completare</h2>
-            </div>
-            <div className="space-y-3">
-              {pendenti.map((item) => {
-                const Icon = tipoIcons[item.tipo as keyof typeof tipoIcons];
-                return (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      "group rounded-lg border-l-4 p-4 shadow-card transition-all duration-300 hover:shadow-card-hover animate-fade-in",
-                      prioritaConfig[item.priorita as keyof typeof prioritaConfig].className
-                    )}
-                  >
-                    <div className="flex items-start gap-4">
-                      <Checkbox
-                        checked={item.completato}
-                        onCheckedChange={() => toggleComplete(item.id)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-lg bg-muted p-2">
-                            <Icon className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-card-foreground">{item.titolo}</h3>
-                            <p className="text-sm text-muted-foreground">{item.descrizione}</p>
-                          </div>
-                        </div>
-                        <div className="mt-3 flex items-center gap-4">
-                          <span className="text-xs text-muted-foreground">
-                            {item.data} {item.orario !== "--:--" && `· ${item.orario}`}
-                          </span>
-                          <Badge variant="outline" className="text-xs">
-                            {prioritaConfig[item.priorita as keyof typeof prioritaConfig].label}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Pending */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">Da Completare</h2>
+              </div>
+              {pendenti.length === 0 ? (
+                <div className="text-center py-8 bg-card rounded-xl shadow-card">
+                  <p className="text-muted-foreground">Nessun promemoria in sospeso</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pendenti.map((item) => {
+                    const Icon = tipoIcons[item.tipo];
+                    const isOverdue = isPast(parseISO(item.data)) && !isToday(parseISO(item.data));
+                    return (
+                      <div
+                        key={item.id}
+                        className={cn(
+                          "group rounded-lg border-l-4 p-4 shadow-card transition-all duration-300 hover:shadow-card-hover animate-fade-in",
+                          prioritaConfig[item.priorita].className
+                        )}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Completed */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Completati</h2>
-            <div className="space-y-3">
-              {completati.map((item) => {
-                const Icon = tipoIcons[item.tipo as keyof typeof tipoIcons];
-                return (
-                  <div
-                    key={item.id}
-                    className="rounded-lg bg-muted/30 p-4 opacity-60 animate-fade-in"
-                  >
-                    <div className="flex items-start gap-4">
-                      <Checkbox
-                        checked={item.completato}
-                        onCheckedChange={() => toggleComplete(item.id)}
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-lg bg-muted p-2">
-                            <Icon className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={item.completato}
+                            onCheckedChange={(checked) =>
+                              togglePromemoria.mutate({ id: item.id, completato: !!checked })
+                            }
+                            className="mt-1"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3">
+                              <div className="rounded-lg bg-muted p-2">
+                                <Icon className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-medium text-card-foreground truncate">{item.titolo}</h3>
+                                {item.descrizione && (
+                                  <p className="text-sm text-muted-foreground truncate">{item.descrizione}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="mt-2 flex items-center gap-3 flex-wrap">
+                              <span
+                                className={cn("text-xs", isOverdue ? "text-destructive font-medium" : "text-muted-foreground")}
+                              >
+                                {getDateLabel(item.data)} {item.orario && `· ${item.orario.slice(0, 5)}`}
+                              </span>
+                              <Badge variant="outline" className="text-xs">
+                                {prioritaConfig[item.priorita].label}
+                              </Badge>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-medium text-muted-foreground line-through">
-                              {item.titolo}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">{item.descrizione}</p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive flex-shrink-0"
+                            onClick={() => deletePromemoria.mutate(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Completed */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-foreground">Completati</h2>
+              {completati.length === 0 ? (
+                <div className="text-center py-8 bg-card rounded-xl shadow-card">
+                  <p className="text-muted-foreground">Nessun promemoria completato</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {completati.slice(0, 5).map((item) => {
+                    const Icon = tipoIcons[item.tipo];
+                    return (
+                      <div key={item.id} className="rounded-lg bg-muted/30 p-4 opacity-60 animate-fade-in">
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={item.completato}
+                            onCheckedChange={(checked) =>
+                              togglePromemoria.mutate({ id: item.id, completato: !!checked })
+                            }
+                            className="mt-1"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3">
+                              <div className="rounded-lg bg-muted p-2">
+                                <Icon className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                              <div className="min-w-0">
+                                <h3 className="font-medium text-muted-foreground line-through truncate">
+                                  {item.titolo}
+                                </h3>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </MainLayout>
   );
 };
 
-export default Promemoria;
+export default PromemoriaPage;
