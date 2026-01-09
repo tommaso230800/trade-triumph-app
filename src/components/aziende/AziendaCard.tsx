@@ -223,23 +223,24 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MoreHorizontal className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-11 w-11 touch-target opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                  <MoreHorizontal className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onEdit(azienda)}>
-                  <Pencil className="h-4 w-4 mr-2" />
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => onEdit(azienda)} className="py-3 text-base">
+                  <Pencil className="h-4 w-4 mr-3" />
                   Modifica Dati
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                  <ImageIcon className="h-4 w-4 mr-2" />
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="py-3 text-base">
+                  <ImageIcon className="h-4 w-4 mr-3" />
                   Carica Logo
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-destructive"
+                  className="text-destructive py-3 text-base"
                   onClick={() => onDelete(azienda.id)}
                 >
+                  <Trash2 className="h-4 w-4 mr-3" />
                   Elimina
                 </DropdownMenuItem>
               </DropdownMenuContent>
