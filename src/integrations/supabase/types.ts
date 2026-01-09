@@ -72,6 +72,8 @@ export type Database = {
         Row: {
           attivo: boolean
           azienda_id: string
+          cartoni_acquisto: number | null
+          cartoni_omaggio: number | null
           created_at: string
           data_fine: string
           data_inizio: string
@@ -87,6 +89,8 @@ export type Database = {
         Insert: {
           attivo?: boolean
           azienda_id: string
+          cartoni_acquisto?: number | null
+          cartoni_omaggio?: number | null
           created_at?: string
           data_fine: string
           data_inizio: string
@@ -102,6 +106,8 @@ export type Database = {
         Update: {
           attivo?: boolean
           azienda_id?: string
+          cartoni_acquisto?: number | null
+          cartoni_omaggio?: number | null
           created_at?: string
           data_fine?: string
           data_inizio?: string
@@ -279,8 +285,10 @@ export type Database = {
           anno: number
           azienda_id: string
           cliente_id: string
+          consorzio: string | null
           created_at: string
           id: string
+          is_consorzio: boolean
           note: string | null
           percentuale_premio: number
           soglia_fatturato: number | null
@@ -291,8 +299,10 @@ export type Database = {
           anno: number
           azienda_id: string
           cliente_id: string
+          consorzio?: string | null
           created_at?: string
           id?: string
+          is_consorzio?: boolean
           note?: string | null
           percentuale_premio?: number
           soglia_fatturato?: number | null
@@ -303,8 +313,10 @@ export type Database = {
           anno?: number
           azienda_id?: string
           cliente_id?: string
+          consorzio?: string | null
           created_at?: string
           id?: string
+          is_consorzio?: boolean
           note?: string | null
           percentuale_premio?: number
           soglia_fatturato?: number | null

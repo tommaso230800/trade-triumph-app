@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.parse-products-pdf]
 verify_jwt = false
+
+[functions.parse-canvass-document]
+verify_jwt = false

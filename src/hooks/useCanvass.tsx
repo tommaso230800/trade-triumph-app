@@ -14,6 +14,8 @@ export type Canvass = {
   data_fine: string;
   attivo: boolean;
   tutti_clienti: boolean;
+  cartoni_omaggio: number;
+  cartoni_acquisto: number;
   created_at: string;
   updated_at: string;
   azienda?: {
@@ -40,19 +42,22 @@ export type Canvass = {
 export type ContrattoCliente = {
   id: string;
   user_id: string;
-  cliente_id: string;
+  cliente_id: string | null;
   azienda_id: string;
   anno: number;
   percentuale_premio: number;
   soglia_fatturato: number;
   note: string | null;
+  consorzio: string | null;
+  is_consorzio: boolean;
   created_at: string;
   updated_at: string;
   clienti?: {
     nome: string;
     azienda: string | null;
     fatturato: number;
-  };
+    consorzio: string | null;
+  } | null;
   aziende?: {
     nome: string;
   };
@@ -254,7 +259,7 @@ export function useContrattiClienti() {
         .from("contratti_clienti")
         .select(`
           *,
-          clienti(nome, azienda, fatturato),
+          clienti(nome, azienda, fatturato, consorzio),
           aziende(nome)
         `)
         .order("anno", { ascending: false });

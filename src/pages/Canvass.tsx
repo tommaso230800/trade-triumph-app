@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useCanvass, useCanvassAttive, useContrattiClienti, useCreateCanvass, useDeleteCanvass, useCreateContrattoCliente, useDeleteContrattoCliente, Canvass, ContrattoCliente } from "@/hooks/useCanvass";
 import { useAziende } from "@/hooks/useAziende";
@@ -16,9 +16,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Percent, Tag, Trophy, Calendar, Building2, Users, Package, Trash2, AlertCircle, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
-import { format, isWithinInterval, parseISO, differenceInDays, isAfter, isBefore } from "date-fns";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Plus, Percent, Tag, Trophy, Calendar, Building2, Users, Package, Trash2, AlertCircle, Clock, CheckCircle2, AlertTriangle, Upload, Loader2, Sparkles, FileImage, Gift } from "lucide-react";
+import { format, parseISO, differenceInDays, isAfter, isBefore } from "date-fns";
 import { it } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const tipoConfig = {
   sconto_percentuale: { label: "Sconto %", icon: Percent, color: "bg-blue-100 text-blue-800" },
@@ -44,7 +47,11 @@ export default function CanvassPage() {
 
   const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
   const [isContrattoDialogOpen, setIsContrattoDialogOpen] = useState(false);
+  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [selectedAziendaId, setSelectedAziendaId] = useState<string>("");
+  const [isParsingAI, setIsParsingAI] = useState(false);
+  const [aiResult, setAiResult] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [promoForm, setPromoForm] = useState({
     nome: "",
@@ -58,6 +65,8 @@ export default function CanvassPage() {
     azienda_id: "",
     clienti_ids: [] as string[],
     prodotti: [] as { prodotto_id: string; valore_override?: number }[],
+    cartoni_omaggio: 0,
+    cartoni_acquisto: 0,
   });
 
   const [contrattoForm, setContrattoForm] = useState({
@@ -67,9 +76,14 @@ export default function CanvassPage() {
     percentuale_premio: 0,
     soglia_fatturato: 0,
     note: "",
+    consorzio: "",
+    is_consorzio: false,
   });
 
   const today = new Date();
+  
+  // Get unique consorzi
+  const consorzi = [...new Set(clienti.filter(c => c.consorzio).map(c => c.consorzio))];
   
   // Statistiche
   const promozioniAttive = canvassAttive.length;
@@ -97,11 +111,18 @@ export default function CanvassPage() {
         attivo: promoForm.attivo,
         tutti_clienti: promoForm.tutti_clienti,
         azienda_id: promoForm.azienda_id,
+        cartoni_omaggio: promoForm.cartoni_omaggio,
+        cartoni_acquisto: promoForm.cartoni_acquisto,
       },
       clienti_ids: promoForm.tutti_clienti ? [] : promoForm.clienti_ids,
       prodotti: promoForm.prodotti,
     });
     
+    resetPromoForm();
+    setIsPromoDialogOpen(false);
+  };
+
+  const resetPromoForm = () => {
     setPromoForm({
       nome: "",
       descrizione: "",
@@ -114,14 +135,28 @@ export default function CanvassPage() {
       azienda_id: "",
       clienti_ids: [],
       prodotti: [],
+      cartoni_omaggio: 0,
+      cartoni_acquisto: 0,
     });
-    setIsPromoDialogOpen(false);
   };
 
   const handleCreateContratto = async () => {
-    if (!contrattoForm.cliente_id || !contrattoForm.azienda_id) return;
+    if (contrattoForm.is_consorzio) {
+      if (!contrattoForm.consorzio || !contrattoForm.azienda_id) return;
+    } else {
+      if (!contrattoForm.cliente_id || !contrattoForm.azienda_id) return;
+    }
     
-    await createContratto.mutateAsync(contrattoForm);
+    await createContratto.mutateAsync({
+      cliente_id: contrattoForm.is_consorzio ? null : contrattoForm.cliente_id,
+      azienda_id: contrattoForm.azienda_id,
+      anno: contrattoForm.anno,
+      percentuale_premio: contrattoForm.percentuale_premio,
+      soglia_fatturato: contrattoForm.soglia_fatturato,
+      note: contrattoForm.note || null,
+      consorzio: contrattoForm.is_consorzio ? contrattoForm.consorzio : null,
+      is_consorzio: contrattoForm.is_consorzio,
+    });
     
     setContrattoForm({
       cliente_id: "",
@@ -130,8 +165,161 @@ export default function CanvassPage() {
       percentuale_premio: 0,
       soglia_fatturato: 0,
       note: "",
+      consorzio: "",
+      is_consorzio: false,
     });
     setIsContrattoDialogOpen(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Formato non supportato. Usa JPG, PNG, WebP o PDF.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File troppo grande. Massimo 10MB.");
+      return;
+    }
+
+    setIsParsingAI(true);
+    setAiResult(null);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        
+        const { data, error } = await supabase.functions.invoke("parse-canvass-document", {
+          body: {
+            file_base64: base64,
+            file_type: file.type,
+            clienti: clienti.map(c => ({ nome: c.nome, azienda: c.azienda, consorzio: c.consorzio })),
+            aziende: aziende.map(a => ({ nome: a.nome })),
+            prodotti: prodotti.map(p => ({ nome: p.nome, codice: p.codice })),
+          },
+        });
+
+        if (error) {
+          console.error("AI Parse error:", error);
+          toast.error("Errore nell'analisi del documento");
+          setIsParsingAI(false);
+          return;
+        }
+
+        if (data.error) {
+          toast.error(data.error);
+          setIsParsingAI(false);
+          return;
+        }
+
+        setAiResult(data.data);
+        setIsParsingAI(false);
+        setIsAIDialogOpen(true);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("File read error:", err);
+      toast.error("Errore nella lettura del file");
+      setIsParsingAI(false);
+    }
+  };
+
+  const applyAIResult = async () => {
+    if (!aiResult) return;
+
+    try {
+      if (aiResult.tipo === "contratto") {
+        // Find azienda ID
+        const azienda = aziende.find(a => a.nome.toLowerCase().includes(aiResult.azienda_nome?.toLowerCase() || ""));
+        if (!azienda) {
+          toast.error("Azienda non trovata: " + aiResult.azienda_nome);
+          return;
+        }
+
+        if (aiResult.consorzio) {
+          // Contratto consorzio
+          await createContratto.mutateAsync({
+            cliente_id: null,
+            azienda_id: azienda.id,
+            anno: aiResult.anno || new Date().getFullYear(),
+            percentuale_premio: aiResult.percentuale_premio || 0,
+            soglia_fatturato: aiResult.soglia_fatturato || 0,
+            note: aiResult.note || null,
+            consorzio: aiResult.consorzio,
+            is_consorzio: true,
+          });
+        } else {
+          // Contratto cliente
+          const cliente = clienti.find(c => c.nome.toLowerCase().includes(aiResult.cliente_nome?.toLowerCase() || ""));
+          if (!cliente) {
+            toast.error("Cliente non trovato: " + aiResult.cliente_nome);
+            return;
+          }
+
+          await createContratto.mutateAsync({
+            cliente_id: cliente.id,
+            azienda_id: azienda.id,
+            anno: aiResult.anno || new Date().getFullYear(),
+            percentuale_premio: aiResult.percentuale_premio || 0,
+            soglia_fatturato: aiResult.soglia_fatturato || 0,
+            note: aiResult.note || null,
+            consorzio: null,
+            is_consorzio: false,
+          });
+        }
+        toast.success("Contratto creato con successo!");
+      } else if (aiResult.tipo === "promozione" && aiResult.promozione) {
+        const azienda = aziende.find(a => a.nome.toLowerCase().includes(aiResult.azienda_nome?.toLowerCase() || ""));
+        if (!azienda) {
+          toast.error("Azienda non trovata: " + aiResult.azienda_nome);
+          return;
+        }
+
+        // Find matching products
+        const prodottiMatch = aiResult.promozione.prodotti?.map((pName: string) => {
+          const found = prodotti.find(p => 
+            p.nome.toLowerCase().includes(pName.toLowerCase()) ||
+            p.codice?.toLowerCase().includes(pName.toLowerCase())
+          );
+          return found ? { prodotto_id: found.id } : null;
+        }).filter(Boolean) || [];
+
+        // Find matching client
+        const clienteMatch = aiResult.cliente_nome 
+          ? clienti.find(c => c.nome.toLowerCase().includes(aiResult.cliente_nome.toLowerCase()))
+          : null;
+
+        await createCanvass.mutateAsync({
+          canvass: {
+            nome: aiResult.promozione.nome,
+            descrizione: aiResult.note || null,
+            tipo: aiResult.promozione.tipo,
+            valore: aiResult.promozione.valore,
+            data_inizio: aiResult.promozione.data_inizio || format(new Date(), "yyyy-MM-dd"),
+            data_fine: aiResult.promozione.data_fine || format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+            attivo: true,
+            tutti_clienti: !clienteMatch,
+            azienda_id: azienda.id,
+            cartoni_omaggio: aiResult.promozione.cartoni_omaggio || 0,
+            cartoni_acquisto: aiResult.promozione.cartoni_acquisto || 0,
+          },
+          clienti_ids: clienteMatch ? [clienteMatch.id] : [],
+          prodotti: prodottiMatch,
+        });
+        toast.success("Promozione creata con successo!");
+      }
+
+      setIsAIDialogOpen(false);
+      setAiResult(null);
+    } catch (err) {
+      console.error("Apply AI result error:", err);
+      toast.error("Errore nell'applicazione del risultato");
+    }
   };
 
   const getPromoStatus = (promo: Canvass) => {
@@ -150,6 +338,11 @@ export default function CanvassPage() {
   const filteredProdotti = selectedAziendaId 
     ? prodotti.filter(p => p.azienda_id === selectedAziendaId)
     : prodotti;
+    
+  // Get clients for selected consorzio
+  const clientiConsorzio = contrattoForm.consorzio 
+    ? clienti.filter(c => c.consorzio === contrattoForm.consorzio)
+    : [];
 
   if (loadingCanvass || loadingContratti) {
     return (
@@ -167,10 +360,32 @@ export default function CanvassPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Canvass Aziende</h1>
-            <p className="text-muted-foreground">Gestisci promozioni, sconti e premi dei tuoi partner</p>
+            <h1 className="text-3xl font-bold tracking-tight">Canvass/PFA</h1>
+            <p className="text-muted-foreground">Gestisci promozioni, sconti e premi fine anno</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {/* AI Upload Button */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*,.pdf"
+              onChange={handleFileUpload}
+            />
+            <Button 
+              variant="outline" 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isParsingAI}
+              className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-200 hover:border-purple-300"
+            >
+              {isParsingAI ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
+              )}
+              Importa con AI
+            </Button>
+
             <Dialog open={isContrattoDialogOpen} onOpenChange={setIsContrattoDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
@@ -181,9 +396,18 @@ export default function CanvassPage() {
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>Nuovo Contratto Premio</DialogTitle>
-                  <DialogDescription>Crea un contratto premio fine anno per un cliente</DialogDescription>
+                  <DialogDescription>Crea un contratto premio fine anno per un cliente o consorzio</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id="is_consorzio" 
+                      checked={contrattoForm.is_consorzio} 
+                      onCheckedChange={(c) => setContrattoForm(f => ({ ...f, is_consorzio: !!c, cliente_id: "", consorzio: "" }))} 
+                    />
+                    <Label htmlFor="is_consorzio">Contratto per Consorzio</Label>
+                  </div>
+                  
                   <div>
                     <Label>Azienda *</Label>
                     <Select value={contrattoForm.azienda_id} onValueChange={(v) => setContrattoForm(f => ({ ...f, azienda_id: v }))}>
@@ -195,17 +419,38 @@ export default function CanvassPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label>Cliente *</Label>
-                    <Select value={contrattoForm.cliente_id} onValueChange={(v) => setContrattoForm(f => ({ ...f, cliente_id: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Seleziona cliente" /></SelectTrigger>
-                      <SelectContent>
-                        {clienti.map(c => (
-                          <SelectItem key={c.id} value={c.id}>{c.nome} {c.azienda && `- ${c.azienda}`}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  
+                  {contrattoForm.is_consorzio ? (
+                    <div>
+                      <Label>Consorzio *</Label>
+                      <Select value={contrattoForm.consorzio} onValueChange={(v) => setContrattoForm(f => ({ ...f, consorzio: v }))}>
+                        <SelectTrigger><SelectValue placeholder="Seleziona consorzio" /></SelectTrigger>
+                        <SelectContent>
+                          {consorzi.map(c => (
+                            <SelectItem key={c} value={c!}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {contrattoForm.consorzio && clientiConsorzio.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {clientiConsorzio.length} clienti associati
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <Label>Cliente *</Label>
+                      <Select value={contrattoForm.cliente_id} onValueChange={(v) => setContrattoForm(f => ({ ...f, cliente_id: v }))}>
+                        <SelectTrigger><SelectValue placeholder="Seleziona cliente" /></SelectTrigger>
+                        <SelectContent>
+                          {clienti.map(c => (
+                            <SelectItem key={c.id} value={c.id}>{c.nome} {c.azienda && `- ${c.azienda}`}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Anno</Label>
@@ -338,6 +583,32 @@ export default function CanvassPage() {
                     />
                   </div>
                   
+                  {/* Cartoni omaggio */}
+                  <div className="col-span-2 grid grid-cols-2 gap-4 p-3 bg-muted/50 rounded-lg">
+                    <div className="col-span-2 flex items-center gap-2">
+                      <Gift className="h-4 w-4 text-primary" />
+                      <Label className="font-medium">Promo Cartoni Omaggio</Label>
+                    </div>
+                    <div>
+                      <Label className="text-sm">Acquisti (cartoni)</Label>
+                      <Input 
+                        type="number" 
+                        value={promoForm.cartoni_acquisto} 
+                        onChange={(e) => setPromoForm(f => ({ ...f, cartoni_acquisto: parseInt(e.target.value) || 0 }))} 
+                        placeholder="Es. 10"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm">Omaggio (cartoni)</Label>
+                      <Input 
+                        type="number" 
+                        value={promoForm.cartoni_omaggio} 
+                        onChange={(e) => setPromoForm(f => ({ ...f, cartoni_omaggio: parseInt(e.target.value) || 0 }))} 
+                        placeholder="Es. 1"
+                      />
+                    </div>
+                  </div>
+                  
                   <div className="col-span-2 space-y-4 border-t pt-4">
                     <div className="flex items-center gap-2">
                       <Checkbox 
@@ -409,6 +680,103 @@ export default function CanvassPage() {
             </Dialog>
           </div>
         </div>
+
+        {/* AI Result Dialog */}
+        <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-600" />
+                Risultato Analisi AI
+              </DialogTitle>
+              <DialogDescription>
+                Verifica i dati estratti dal documento
+              </DialogDescription>
+            </DialogHeader>
+            {aiResult && (
+              <div className="space-y-4">
+                <Alert>
+                  <FileImage className="h-4 w-4" />
+                  <AlertTitle>
+                    {aiResult.tipo === "contratto" ? "Contratto Premio" : "Promozione"}
+                  </AlertTitle>
+                  <AlertDescription>
+                    Confidenza: {Math.round((aiResult.confidence || 0) * 100)}%
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {aiResult.azienda_nome && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Azienda</Label>
+                      <p className="font-medium">{aiResult.azienda_nome}</p>
+                    </div>
+                  )}
+                  {aiResult.cliente_nome && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Cliente</Label>
+                      <p className="font-medium">{aiResult.cliente_nome}</p>
+                    </div>
+                  )}
+                  {aiResult.consorzio && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Consorzio</Label>
+                      <p className="font-medium">{aiResult.consorzio}</p>
+                    </div>
+                  )}
+                  {aiResult.anno && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Anno</Label>
+                      <p className="font-medium">{aiResult.anno}</p>
+                    </div>
+                  )}
+                  {aiResult.percentuale_premio !== undefined && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Premio %</Label>
+                      <p className="font-medium">{aiResult.percentuale_premio}%</p>
+                    </div>
+                  )}
+                  {aiResult.promozione && (
+                    <>
+                      <div className="col-span-2">
+                        <Label className="text-xs text-muted-foreground">Nome Promozione</Label>
+                        <p className="font-medium">{aiResult.promozione.nome}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Tipo</Label>
+                        <p className="font-medium">{tipoConfig[aiResult.promozione.tipo as keyof typeof tipoConfig]?.label || aiResult.promozione.tipo}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Valore</Label>
+                        <p className="font-medium">{aiResult.promozione.valore}{aiResult.promozione.tipo !== "prezzo_fisso" ? "%" : "€"}</p>
+                      </div>
+                      {aiResult.promozione.cartoni_omaggio > 0 && (
+                        <div className="col-span-2">
+                          <Label className="text-xs text-muted-foreground">Cartoni Omaggio</Label>
+                          <p className="font-medium">Prendi {aiResult.promozione.cartoni_acquisto}, ricevi {aiResult.promozione.cartoni_omaggio} omaggio</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {aiResult.note && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Note</Label>
+                    <p className="text-sm">{aiResult.note}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAIDialogOpen(false)}>Annulla</Button>
+              <Button onClick={applyAIResult} disabled={createCanvass.isPending || createContratto.isPending}>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Applica
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -507,7 +875,7 @@ export default function CanvassPage() {
                   <div className="text-center py-8 text-muted-foreground">
                     <Tag className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Nessuna promozione presente</p>
-                    <p className="text-sm">Crea la tua prima promozione per iniziare</p>
+                    <p className="text-sm">Crea la tua prima promozione o importa un documento con AI</p>
                   </div>
                 ) : (
                   <Table>
@@ -536,6 +904,12 @@ export default function CanvassPage() {
                                 <p className="font-medium">{promo.nome}</p>
                                 {promo.descrizione && (
                                   <p className="text-sm text-muted-foreground truncate max-w-[200px]">{promo.descrizione}</p>
+                                )}
+                                {promo.cartoni_omaggio > 0 && (
+                                  <Badge variant="outline" className="mt-1">
+                                    <Gift className="h-3 w-3 mr-1" />
+                                    {promo.cartoni_acquisto}+{promo.cartoni_omaggio}
+                                  </Badge>
                                 )}
                               </div>
                             </TableCell>
@@ -608,25 +982,25 @@ export default function CanvassPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Contratti Premio Fine Anno</CardTitle>
-                <CardDescription>Clienti contrattizzati con premi in percentuale sul fatturato</CardDescription>
+                <CardDescription>Clienti e consorzi contrattizzati con premi in percentuale sul fatturato</CardDescription>
               </CardHeader>
               <CardContent>
                 {contratti.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>Nessun contratto presente</p>
-                    <p className="text-sm">Crea un contratto premio per un cliente</p>
+                    <p className="text-sm">Crea un contratto premio o importa un documento con AI</p>
                   </div>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Cliente</TableHead>
+                        <TableHead>Cliente/Consorzio</TableHead>
                         <TableHead>Azienda</TableHead>
                         <TableHead>Anno</TableHead>
                         <TableHead>Premio %</TableHead>
                         <TableHead>Soglia</TableHead>
-                        <TableHead>Fatturato Cliente</TableHead>
+                        <TableHead>Fatturato</TableHead>
                         <TableHead>Premio Stimato</TableHead>
                         <TableHead>Note</TableHead>
                         <TableHead></TableHead>
@@ -637,16 +1011,32 @@ export default function CanvassPage() {
                         const fatturato = contratto.clienti?.fatturato || 0;
                         const sogliaRaggiunta = fatturato >= contratto.soglia_fatturato;
                         const premioStimato = sogliaRaggiunta ? (fatturato * contratto.percentuale_premio / 100) : 0;
+                        const clientiAssociati = contratto.is_consorzio 
+                          ? clienti.filter(c => c.consorzio === contratto.consorzio)
+                          : [];
                         
                         return (
                           <TableRow key={contratto.id}>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <Users className="h-4 w-4 text-muted-foreground" />
+                                {contratto.is_consorzio ? (
+                                  <Building2 className="h-4 w-4 text-primary" />
+                                ) : (
+                                  <Users className="h-4 w-4 text-muted-foreground" />
+                                )}
                                 <div>
-                                  <p className="font-medium">{contratto.clienti?.nome}</p>
-                                  {contratto.clienti?.azienda && (
-                                    <p className="text-sm text-muted-foreground">{contratto.clienti.azienda}</p>
+                                  {contratto.is_consorzio ? (
+                                    <>
+                                      <p className="font-medium">{contratto.consorzio}</p>
+                                      <p className="text-xs text-muted-foreground">{clientiAssociati.length} clienti associati</p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="font-medium">{contratto.clienti?.nome}</p>
+                                      {contratto.clienti?.azienda && (
+                                        <p className="text-sm text-muted-foreground">{contratto.clienti.azienda}</p>
+                                      )}
+                                    </>
                                   )}
                                 </div>
                               </div>
@@ -665,16 +1055,19 @@ export default function CanvassPage() {
                               }
                             </TableCell>
                             <TableCell>
-                              <span className={sogliaRaggiunta ? "text-green-600 font-medium" : ""}>
-                                {formatCurrency(fatturato)}
-                              </span>
+                              {!contratto.is_consorzio && (
+                                <span className={sogliaRaggiunta ? "text-green-600 font-medium" : ""}>
+                                  {formatCurrency(fatturato)}
+                                </span>
+                              )}
+                              {contratto.is_consorzio && "-"}
                             </TableCell>
                             <TableCell>
-                              {sogliaRaggiunta ? (
+                              {!contratto.is_consorzio && sogliaRaggiunta ? (
                                 <span className="font-bold text-green-600">{formatCurrency(premioStimato)}</span>
-                              ) : (
+                              ) : !contratto.is_consorzio ? (
                                 <span className="text-muted-foreground">Soglia non raggiunta</span>
-                              )}
+                              ) : "-"}
                             </TableCell>
                             <TableCell className="max-w-[150px] truncate">
                               {contratto.note || "-"}

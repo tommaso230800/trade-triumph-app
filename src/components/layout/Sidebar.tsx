@@ -24,7 +24,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "KPI", href: "/kpi", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
-  { name: "Canvass", href: "/canvass", icon: Tag },
+  { name: "Canvass/PFA", href: "/canvass", icon: Tag },
   { name: "Aziende", href: "/aziende", icon: Building2 },
   { name: "Clienti", href: "/clienti", icon: Users },
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
