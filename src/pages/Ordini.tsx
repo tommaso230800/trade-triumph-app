@@ -35,7 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw, Upload } from "lucide-react";
 import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
@@ -46,6 +46,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { ProformaDialog } from "@/components/ordini/ProformaDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -104,6 +105,9 @@ const Ordini = () => {
   
   // Proforma state
   const [isProformaOpen, setIsProformaOpen] = useState(false);
+  
+  // Import PDF state
+  const [isImportPDFOpen, setIsImportPDFOpen] = useState(false);
   const [proformaData, setProformaData] = useState<{
     codice: string;
     created_at: string;
@@ -450,21 +454,27 @@ const Ordini = () => {
               Crea e gestisci gli ordini dei tuoi clienti
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) {
-              setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti", data_ordine: format(new Date(), "yyyy-MM-dd") });
-              setRigheOrdine([]);
-              setSelectedProdotto("");
-            }
-          }}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Nuovo Ordine</span>
-                <span className="sm:hidden">Aggiungi</span>
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2" onClick={() => setIsImportPDFOpen(true)}>
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Importa PDF</span>
+              <span className="sm:hidden">PDF</span>
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) {
+                setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti", data_ordine: format(new Date(), "yyyy-MM-dd") });
+                setRigheOrdine([]);
+                setSelectedProdotto("");
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Nuovo Ordine</span>
+                  <span className="sm:hidden">Aggiungi</span>
+                </Button>
+              </DialogTrigger>
             <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
               <DialogHeader>
                 <DialogTitle>Crea Nuovo Ordine</DialogTitle>
@@ -725,6 +735,7 @@ const Ordini = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        </div>
         </div>
 
         {/* Stats */}
@@ -1070,6 +1081,45 @@ const Ordini = () => {
           open={isProformaOpen} 
           onOpenChange={setIsProformaOpen} 
           data={proformaData} 
+        />
+
+        {/* Import PDF Dialog */}
+        <ImportPDFDialog
+          open={isImportPDFOpen}
+          onOpenChange={setIsImportPDFOpen}
+          clienti={clienti || []}
+          aziende={aziende || []}
+          prodotti={allProdotti || []}
+          onImportComplete={async (data) => {
+            try {
+              const ordine = await createOrdine.mutateAsync({
+                cliente_id: data.cliente_id,
+                azienda_id: data.azienda_id,
+                prodotti: data.righe.reduce((sum, r) => sum + r.quantita_pezzi + r.quantita_cartoni, 0),
+                totale: data.totale,
+                note: data.note || undefined,
+                sconto: data.sconto,
+                sconto_merce: data.sconto_merce,
+                tipo_pagamento: data.tipo_pagamento,
+                data_ordine: data.data_ordine,
+              });
+
+              await createRigheBatch.mutateAsync(
+                data.righe.map((riga) => ({
+                  ordine_id: ordine.id,
+                  prodotto_id: riga.prodotto_id,
+                  quantita_pezzi: riga.quantita_pezzi,
+                  quantita_cartoni: riga.quantita_cartoni,
+                  prezzo_unitario: riga.prezzo_unitario,
+                }))
+              );
+
+              toast.success("Ordine importato con successo!");
+            } catch (error) {
+              console.error("Error importing order:", error);
+              toast.error("Errore nell'importazione dell'ordine");
+            }
+          }}
         />
       </div>
     </MainLayout>
