@@ -11,6 +11,9 @@ export type Ordine = {
   prodotti: number;
   totale: number;
   note: string | null;
+  sconto: number;
+  sconto_merce: number;
+  tipo_pagamento: string;
   status: "in_attesa" | "spedito" | "completato" | "annullato";
   created_at: string;
   clienti?: { nome: string; azienda: string | null } | null;
@@ -54,7 +57,10 @@ export function useCreateOrdine() {
       azienda_id?: string; 
       prodotti: number; 
       totale: number; 
-      note?: string 
+      note?: string;
+      sconto?: number;
+      sconto_merce?: number;
+      tipo_pagamento?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase

@@ -12,6 +12,7 @@ export type Prodotto = {
   pezzi_per_cartone: number;
   strati: number;
   cartoni_per_strato: number;
+  immagine_url: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -40,7 +41,7 @@ export function useCreateProdotto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (prodotto: Omit<Prodotto, "id" | "user_id" | "created_at" | "updated_at">) => {
+    mutationFn: async (prodotto: Omit<Prodotto, "id" | "user_id" | "created_at" | "updated_at" | "immagine_url"> & { immagine_url?: string | null }) => {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("prodotti")
