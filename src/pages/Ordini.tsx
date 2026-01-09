@@ -35,7 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText } from "lucide-react";
 import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
@@ -44,6 +44,8 @@ import { useCreateOrdineRigheBatch, useOrdiniRighe, useUpdateOrdineRiga, useUpda
 import { useLastOrdineForClient } from "@/hooks/useLastOrdineRighe";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { ProformaDialog } from "@/components/ordini/ProformaDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -97,6 +99,27 @@ const Ordini = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingOrdine, setEditingOrdine] = useState<Ordine | null>(null);
   const [editRighe, setEditRighe] = useState<{ id: string; prodotto_nome: string; quantita_pezzi: number; quantita_cartoni: number; prezzo_unitario: string; pezzi_per_cartone: number }[]>([]);
+  
+  // Proforma state
+  const [isProformaOpen, setIsProformaOpen] = useState(false);
+  const [proformaData, setProformaData] = useState<{
+    codice: string;
+    created_at: string;
+    cliente_nome: string;
+    cliente_indirizzo?: string;
+    cliente_citta?: string;
+    cliente_cap?: string;
+    cliente_piva?: string;
+    azienda_nome: string;
+    azienda_indirizzo?: string;
+    azienda_citta?: string;
+    tipo_pagamento: string;
+    sconto: number;
+    sconto_merce: number;
+    totale: number;
+    note?: string;
+    righe: { prodotto_nome: string; prezzo_unitario: number; quantita_pezzi: number; quantita_cartoni: number; pezzi_per_cartone: number }[];
+  } | null>(null);
 
   const { data: ordini, isLoading } = useOrdini(searchTerm, statusFilter);
   const { data: clienti } = useClienti();
@@ -311,9 +334,82 @@ const Ordini = () => {
       }))
     );
 
+    // Get client and company details for proforma
+    const cliente = clienti?.find((c) => c.id === formData.cliente_id);
+    const azienda = aziende?.find((a) => a.id === formData.azienda_id);
+
+    // Show proforma
+    setProformaData({
+      codice: ordine.codice || `ORD-${ordine.id.slice(0, 8)}`,
+      created_at: ordine.created_at,
+      cliente_nome: cliente?.nome || "N/A",
+      cliente_indirizzo: cliente?.indirizzo || undefined,
+      cliente_citta: cliente?.citta || undefined,
+      cliente_cap: cliente?.cap || undefined,
+      cliente_piva: cliente?.partita_iva || undefined,
+      azienda_nome: azienda?.nome || "N/A",
+      azienda_indirizzo: azienda?.indirizzo || undefined,
+      azienda_citta: azienda?.citta || undefined,
+      tipo_pagamento: formData.tipo_pagamento,
+      sconto: parseDecimalInput(formData.sconto),
+      sconto_merce: parseDecimalInput(formData.sconto_merce),
+      totale,
+      note: formData.note || undefined,
+      righe: righeOrdine.map((riga) => ({
+        prodotto_nome: riga.prodotto_nome,
+        prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
+        quantita_pezzi: riga.quantita_pezzi,
+        quantita_cartoni: riga.quantita_cartoni,
+        pezzi_per_cartone: riga.pezzi_per_cartone,
+      })),
+    });
+    setIsProformaOpen(true);
+
     setIsDialogOpen(false);
     setFormData({ cliente_id: "", azienda_id: "", note: "", sconto: "0", sconto_merce: "0", tipo_pagamento: "Contanti" });
     setRigheOrdine([]);
+  };
+
+  // Handle showing proforma for existing order
+  const handleShowProforma = async (ordine: Ordine) => {
+    // We need to fetch the righe for this order
+    const cliente = clienti?.find((c) => c.id === ordine.cliente_id);
+    const azienda = aziende?.find((a) => a.id === ordine.azienda_id);
+    
+    // Fetch righe
+    const { data: righeData } = await supabase
+      .from("ordini_righe")
+      .select(`
+        *,
+        prodotti (nome, pezzi_per_cartone)
+      `)
+      .eq("ordine_id", ordine.id);
+    
+    setProformaData({
+      codice: ordine.codice || `ORD-${ordine.id.slice(0, 8)}`,
+      created_at: ordine.created_at,
+      cliente_nome: cliente?.nome || ordine.clienti?.nome || "N/A",
+      cliente_indirizzo: cliente?.indirizzo || undefined,
+      cliente_citta: cliente?.citta || undefined,
+      cliente_cap: cliente?.cap || undefined,
+      cliente_piva: cliente?.partita_iva || undefined,
+      azienda_nome: azienda?.nome || ordine.aziende?.nome || "N/A",
+      azienda_indirizzo: azienda?.indirizzo || undefined,
+      azienda_citta: azienda?.citta || undefined,
+      tipo_pagamento: ordine.tipo_pagamento || "Contanti",
+      sconto: Number(ordine.sconto) || 0,
+      sconto_merce: Number(ordine.sconto_merce) || 0,
+      totale: Number(ordine.totale),
+      note: ordine.note || undefined,
+      righe: (righeData || []).map((r: any) => ({
+        prodotto_nome: r.prodotti?.nome || "Prodotto",
+        prezzo_unitario: Number(r.prezzo_unitario),
+        quantita_pezzi: r.quantita_pezzi,
+        quantita_cartoni: r.quantita_cartoni,
+        pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
+      })),
+    });
+    setIsProformaOpen(true);
   };
 
   const stats = {
@@ -696,6 +792,12 @@ const Ordini = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
+                              onClick={() => handleShowProforma(ordine)}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Visualizza Proforma
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => handleOpenEditDialog(ordine)}
                             >
                               <Edit className="h-4 w-4 mr-2" />
@@ -834,6 +936,13 @@ const Ordini = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Proforma Dialog */}
+        <ProformaDialog 
+          open={isProformaOpen} 
+          onOpenChange={setIsProformaOpen} 
+          data={proformaData} 
+        />
       </div>
     </MainLayout>
   );

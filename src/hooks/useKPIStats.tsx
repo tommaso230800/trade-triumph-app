@@ -114,17 +114,18 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
 
       if (aziendeError) throw aziendeError;
 
-      // Calculate client KPIs
+      // Calculate client KPIs - use orders from selected period, not static fatturato field
       const clientiKPI: ClienteKPI[] = clienti.map((cliente) => {
         const clienteOrdini = ordini.filter((o) => o.cliente_id === cliente.id);
+        const fatturatoFromOrders = clienteOrdini.reduce((sum, o) => sum + Number(o.totale), 0);
         return {
           id: cliente.id,
           nome: cliente.nome,
           azienda: cliente.azienda,
           consorzio: cliente.consorzio,
           citta: cliente.citta,
-          fatturato: Number(cliente.fatturato),
-          ordini_count: cliente.ordini_count,
+          fatturato: fatturatoFromOrders, // Calculated from orders in period, not static field
+          ordini_count: clienteOrdini.length, // Count from filtered orders
           status: cliente.status,
           ordini_dettaglio: clienteOrdini.map((o) => ({
             id: o.id,
@@ -213,24 +214,35 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
         return acc;
       }, [] as { mese: string; fatturato: number; ordini: number }[]);
 
-      // Consorzio breakdown with aziende details
-      const consorzioAziendeMap = new Map<string, Map<string, { azienda_nome: string; fatturato: number }>>();
+      // Consorzio breakdown with aziende and clienti details
+      type ClienteBreakdown = { cliente_id: string; cliente_nome: string; fatturato: number };
+      type AziendaBreakdown = { azienda_nome: string; fatturato: number; clienti: Map<string, ClienteBreakdown> };
+      const consorzioAziendeMap = new Map<string, Map<string, AziendaBreakdown>>();
       
       ordini.forEach((ordine) => {
         const cliente = clienti.find((c) => c.id === ordine.cliente_id);
         const consorzio = cliente?.consorzio || "Indipendente";
         const aziendaNome = ordine.aziende?.nome || "N/A";
         const aziendaId = ordine.azienda_id || "unknown";
+        const clienteId = ordine.cliente_id || "unknown";
+        const clienteNome = cliente?.nome || "N/A";
         
         if (!consorzioAziendeMap.has(consorzio)) {
           consorzioAziendeMap.set(consorzio, new Map());
         }
         const aziendeMap = consorzioAziendeMap.get(consorzio)!;
         
-        if (aziendeMap.has(aziendaId)) {
-          aziendeMap.get(aziendaId)!.fatturato += Number(ordine.totale);
+        if (!aziendeMap.has(aziendaId)) {
+          aziendeMap.set(aziendaId, { azienda_nome: aziendaNome, fatturato: 0, clienti: new Map() });
+        }
+        
+        const aziendaData = aziendeMap.get(aziendaId)!;
+        aziendaData.fatturato += Number(ordine.totale);
+        
+        if (aziendaData.clienti.has(clienteId)) {
+          aziendaData.clienti.get(clienteId)!.fatturato += Number(ordine.totale);
         } else {
-          aziendeMap.set(aziendaId, { azienda_nome: aziendaNome, fatturato: Number(ordine.totale) });
+          aziendaData.clienti.set(clienteId, { cliente_id: clienteId, cliente_nome: clienteNome, fatturato: Number(ordine.totale) });
         }
       });
 
@@ -246,10 +258,14 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
         return acc;
       }, [] as { consorzio: string; clienti: number; fatturato: number }[]);
 
-      // Build consorzio with aziende breakdown
+      // Build consorzio with aziende and clienti breakdown
       const consorzioAziendeStats = Array.from(consorzioAziendeMap.entries()).map(([consorzio, aziendeMap]) => ({
         consorzio,
-        aziende: Array.from(aziendeMap.values()).sort((a, b) => b.fatturato - a.fatturato),
+        aziende: Array.from(aziendeMap.values()).map((a) => ({
+          azienda_nome: a.azienda_nome,
+          fatturato: a.fatturato,
+          clienti: Array.from(a.clienti.values()).sort((x, y) => y.fatturato - x.fatturato),
+        })).sort((a, b) => b.fatturato - a.fatturato),
         fatturato_totale: Array.from(aziendeMap.values()).reduce((sum, a) => sum + a.fatturato, 0),
       })).sort((a, b) => b.fatturato_totale - a.fatturato_totale);
 
