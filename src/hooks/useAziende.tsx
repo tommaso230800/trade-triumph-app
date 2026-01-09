@@ -14,6 +14,7 @@ export type Azienda = {
   status: "attivo" | "in_pausa";
   prodotti: number;
   logo_url: string | null;
+  partita_iva: string | null;
   created_at: string;
 };
 

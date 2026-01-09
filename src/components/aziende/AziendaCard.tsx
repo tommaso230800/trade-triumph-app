@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -27,12 +28,30 @@ interface AziendaCardProps {
   onDelete: (id: string) => void;
 }
 
+type ProductForm = {
+  nome: string;
+  prezzo_listino: number;
+  quantita_pezzi: number;
+  pezzi_per_cartone: number;
+  strati: number;
+  cartoni_per_strato: number;
+};
+
+const defaultProductForm: ProductForm = {
+  nome: "",
+  prezzo_listino: 0,
+  quantita_pezzi: 0,
+  pezzi_per_cartone: 1,
+  strati: 1,
+  cartoni_per_strato: 1,
+};
+
 export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ nome: "", prezzo_listino: 0, quantita_pezzi: 0, pezzi_per_cartone: 1 });
+  const [editForm, setEditForm] = useState<ProductForm>(defaultProductForm);
   const [isAdding, setIsAdding] = useState(false);
-  const [newProduct, setNewProduct] = useState({ nome: "", prezzo_listino: 0, quantita_pezzi: 0, pezzi_per_cartone: 1 });
+  const [newProduct, setNewProduct] = useState<ProductForm>(defaultProductForm);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -49,12 +68,14 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
       prezzo_listino: prodotto.prezzo_listino,
       quantita_pezzi: prodotto.quantita_pezzi,
       pezzi_per_cartone: prodotto.pezzi_per_cartone,
+      strati: prodotto.strati,
+      cartoni_per_strato: prodotto.cartoni_per_strato,
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditForm({ nome: "", prezzo_listino: 0, quantita_pezzi: 0, pezzi_per_cartone: 1 });
+    setEditForm(defaultProductForm);
   };
 
   const saveEdit = async () => {
@@ -66,7 +87,7 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
   const handleAddProduct = async () => {
     if (!newProduct.nome) return;
     await createProdotto.mutateAsync({ azienda_id: azienda.id, ...newProduct });
-    setNewProduct({ nome: "", prezzo_listino: 0, quantita_pezzi: 0, pezzi_per_cartone: 1 });
+    setNewProduct(defaultProductForm);
     setIsAdding(false);
   };
 
@@ -97,6 +118,8 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
       setUploading(false);
     }
   };
+
+  const calcTotaleCartoni = (strati: number, cartoniPerStrato: number) => strati * cartoniPerStrato;
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
@@ -135,6 +158,9 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
               <div className="min-w-0">
                 <h3 className="font-semibold text-card-foreground truncate">{azienda.nome}</h3>
                 <p className="text-sm text-muted-foreground">{azienda.settore || "—"}</p>
+                {azienda.partita_iva && (
+                  <p className="text-xs text-muted-foreground">P.IVA: {azienda.partita_iva}</p>
+                )}
               </div>
             </div>
             <DropdownMenu>
@@ -217,39 +243,71 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
                   <div key={prodotto.id} className="bg-card rounded-lg p-3 shadow-sm">
                     {editingId === prodotto.id ? (
                       /* Edit Mode */
-                      <div className="space-y-2">
-                        <Input
-                          value={editForm.nome}
-                          onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
-                          placeholder="Nome"
-                          className="h-8 text-sm"
-                        />
-                        <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Nome Prodotto</Label>
+                          <Input
+                            value={editForm.nome}
+                            onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
+                            placeholder="Nome"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Prezzo Listino (€)</Label>
                           <Input
                             type="number"
                             step="0.01"
                             value={editForm.prezzo_listino}
                             onChange={(e) => setEditForm({ ...editForm, prezzo_listino: parseFloat(e.target.value) || 0 })}
-                            placeholder="Prezzo"
-                            className="h-8 text-sm"
-                          />
-                          <Input
-                            type="number"
-                            value={editForm.quantita_pezzi}
-                            onChange={(e) => setEditForm({ ...editForm, quantita_pezzi: parseInt(e.target.value) || 0 })}
-                            placeholder="Pezzi"
-                            className="h-8 text-sm"
-                          />
-                          <Input
-                            type="number"
-                            min="1"
-                            value={editForm.pezzi_per_cartone}
-                            onChange={(e) => setEditForm({ ...editForm, pezzi_per_cartone: parseInt(e.target.value) || 1 })}
-                            placeholder="Pz/Cart"
                             className="h-8 text-sm"
                           />
                         </div>
-                        <div className="flex justify-end gap-1">
+                        <div className="border-t pt-3">
+                          <Label className="text-xs font-semibold text-muted-foreground">Pallettizzazione</Label>
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Pz/Cartone</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={editForm.pezzi_per_cartone}
+                                onChange={(e) => setEditForm({ ...editForm, pezzi_per_cartone: parseInt(e.target.value) || 1 })}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Strati</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={editForm.strati}
+                                onChange={(e) => setEditForm({ ...editForm, strati: parseInt(e.target.value) || 1 })}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Cart/Strato</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={editForm.cartoni_per_strato}
+                                onChange={(e) => setEditForm({ ...editForm, cartoni_per_strato: parseInt(e.target.value) || 1 })}
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Tot Cartoni</Label>
+                              <Input
+                                type="number"
+                                value={calcTotaleCartoni(editForm.strati, editForm.cartoni_per_strato)}
+                                disabled
+                                className="h-8 text-sm bg-muted"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-1 pt-2">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -277,7 +335,7 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
                         >
                           <p className="font-medium text-sm">{prodotto.nome}</p>
                           <p className="text-xs text-muted-foreground">
-                            {formatCurrency(prodotto.prezzo_listino)} · {prodotto.quantita_pezzi} pz · {prodotto.pezzi_per_cartone} pz/cart
+                            {formatCurrency(prodotto.prezzo_listino)} · {prodotto.pezzi_per_cartone} pz/cart · {prodotto.strati}×{prodotto.cartoni_per_strato} = {calcTotaleCartoni(prodotto.strati, prodotto.cartoni_per_strato)} cart/pallet
                           </p>
                         </div>
                         <Button
@@ -300,46 +358,78 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
 
                 {/* Add New Product Form */}
                 {isAdding ? (
-                  <div className="bg-card rounded-lg p-3 shadow-sm space-y-2">
-                    <Input
-                      value={newProduct.nome}
-                      onChange={(e) => setNewProduct({ ...newProduct, nome: e.target.value })}
-                      placeholder="Nome prodotto"
-                      className="h-8 text-sm"
-                      autoFocus
-                    />
-                    <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-card rounded-lg p-3 shadow-sm space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Nome Prodotto</Label>
+                      <Input
+                        value={newProduct.nome}
+                        onChange={(e) => setNewProduct({ ...newProduct, nome: e.target.value })}
+                        placeholder="Nome prodotto"
+                        className="h-8 text-sm"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Prezzo Listino (€)</Label>
                       <Input
                         type="number"
                         step="0.01"
                         value={newProduct.prezzo_listino}
                         onChange={(e) => setNewProduct({ ...newProduct, prezzo_listino: parseFloat(e.target.value) || 0 })}
-                        placeholder="Prezzo €"
-                        className="h-8 text-sm"
-                      />
-                      <Input
-                        type="number"
-                        value={newProduct.quantita_pezzi}
-                        onChange={(e) => setNewProduct({ ...newProduct, quantita_pezzi: parseInt(e.target.value) || 0 })}
-                        placeholder="Pezzi"
-                        className="h-8 text-sm"
-                      />
-                      <Input
-                        type="number"
-                        min="1"
-                        value={newProduct.pezzi_per_cartone}
-                        onChange={(e) => setNewProduct({ ...newProduct, pezzi_per_cartone: parseInt(e.target.value) || 1 })}
-                        placeholder="Pz/Cart"
                         className="h-8 text-sm"
                       />
                     </div>
-                    <div className="flex justify-end gap-1">
+                    <div className="border-t pt-3">
+                      <Label className="text-xs font-semibold text-muted-foreground">Pallettizzazione</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Pz/Cartone</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={newProduct.pezzi_per_cartone}
+                            onChange={(e) => setNewProduct({ ...newProduct, pezzi_per_cartone: parseInt(e.target.value) || 1 })}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Strati</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={newProduct.strati}
+                            onChange={(e) => setNewProduct({ ...newProduct, strati: parseInt(e.target.value) || 1 })}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Cart/Strato</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={newProduct.cartoni_per_strato}
+                            onChange={(e) => setNewProduct({ ...newProduct, cartoni_per_strato: parseInt(e.target.value) || 1 })}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Tot Cartoni</Label>
+                          <Input
+                            type="number"
+                            value={calcTotaleCartoni(newProduct.strati, newProduct.cartoni_per_strato)}
+                            disabled
+                            className="h-8 text-sm bg-muted"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-1 pt-2">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
                           setIsAdding(false);
-                          setNewProduct({ nome: "", prezzo_listino: 0, quantita_pezzi: 0, pezzi_per_cartone: 1 });
+                          setNewProduct(defaultProductForm);
                         }}
                         disabled={createProdotto.isPending}
                       >
