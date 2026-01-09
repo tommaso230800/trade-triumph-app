@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAziende } from "@/hooks/useAziende";
-import { useOrdini } from "@/hooks/useOrdini";
+import { useOrdini, useUpdateProvvigionePagata } from "@/hooks/useOrdini";
 import {
   Table,
   TableBody,
@@ -20,6 +20,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Euro,
   TrendingUp,
@@ -29,7 +31,12 @@ import {
   Percent,
   CheckCircle2,
   Clock,
+  FileText,
+  Check,
+  X,
 } from "lucide-react";
+import { format } from "date-fns";
+import { it } from "date-fns/locale";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
@@ -58,6 +65,7 @@ const Provvigioni = () => {
 
   const { data: aziende, isLoading: aziendeLoading } = useAziende();
   const { data: ordini, isLoading: ordiniLoading } = useOrdini();
+  const updateProvvigionePagata = useUpdateProvvigionePagata();
 
   const years = useMemo(() => {
     const yearsSet = new Set<number>();
@@ -67,6 +75,36 @@ const Provvigioni = () => {
     yearsSet.add(currentYear);
     return Array.from(yearsSet).sort((a, b) => b - a);
   }, [ordini, currentYear]);
+
+  // Filter orders based on year and quarter
+  const filteredOrdini = useMemo(() => {
+    if (!ordini || !aziende) return [];
+
+    return ordini.filter((o) => {
+      const orderDate = new Date(o.created_at);
+      const orderYear = orderDate.getFullYear();
+      const orderMonth = orderDate.getMonth();
+
+      if (orderYear !== selectedYear) return false;
+
+      if (selectedTrimestre !== "tutti") {
+        const trimestreMesi = trimestreConfig[selectedTrimestre].mesi;
+        if (!trimestreMesi.includes(orderMonth)) return false;
+      }
+
+      return true;
+    }).map((o) => {
+      const azienda = aziende.find((a) => a.id === o.azienda_id);
+      const provvigionePercentuale = azienda?.provvigione_percentuale || 0;
+      const provvigioneCalcolata = Number(o.totale) * (provvigionePercentuale / 100);
+      return {
+        ...o,
+        aziendaNome: azienda?.nome || "—",
+        provvigionePercentuale,
+        provvigioneCalcolata,
+      };
+    });
+  }, [ordini, aziende, selectedYear, selectedTrimestre]);
 
   const provvigioniData = useMemo(() => {
     if (!aziende || !ordini) return [];
@@ -92,9 +130,13 @@ const Provvigioni = () => {
         (sum, o) => sum + Number(o.totale),
         0
       );
-      const provvigionePercentuale = (azienda as any).provvigione_percentuale || 0;
+      const provvigionePercentuale = azienda.provvigione_percentuale || 0;
       const provvigioneCalcolata = fatturatoTrimestre * (provvigionePercentuale / 100);
       const ordiniCount = aziendaOrdini.length;
+      const ordiniPagati = aziendaOrdini.filter((o) => o.provvigione_pagata).length;
+      const provvigionePagata = aziendaOrdini
+        .filter((o) => o.provvigione_pagata)
+        .reduce((sum, o) => sum + Number(o.totale) * (provvigionePercentuale / 100), 0);
 
       // Breakdown per quarter
       const quarterBreakdown = Object.entries(trimestreConfig).map(([key, config]) => {
@@ -105,11 +147,13 @@ const Provvigioni = () => {
         });
         const qFatturato = qOrdini.reduce((sum, o) => sum + Number(o.totale), 0);
         const qProvvigione = qFatturato * (provvigionePercentuale / 100);
+        const qPagati = qOrdini.filter((o) => o.provvigione_pagata).length;
         return {
           trimestre: key as Trimestre,
           fatturato: qFatturato,
           provvigione: qProvvigione,
           ordini: qOrdini.length,
+          pagati: qPagati,
         };
       });
 
@@ -120,7 +164,9 @@ const Provvigioni = () => {
         provvigionePercentuale,
         fatturatoTrimestre,
         provvigioneCalcolata,
+        provvigionePagata,
         ordiniCount,
+        ordiniPagati,
         quarterBreakdown,
         fatturatoAnnuale: quarterBreakdown.reduce((sum, q) => sum + q.fatturato, 0),
         provvigioneAnnuale: quarterBreakdown.reduce((sum, q) => sum + q.provvigione, 0),
@@ -129,16 +175,31 @@ const Provvigioni = () => {
   }, [aziende, ordini, selectedYear, selectedTrimestre]);
 
   const totali = useMemo(() => {
+    const provvigioniPagate = filteredOrdini
+      .filter((o) => o.provvigione_pagata)
+      .reduce((sum, o) => sum + o.provvigioneCalcolata, 0);
+    const provvigioniDaPagare = filteredOrdini
+      .filter((o) => !o.provvigione_pagata)
+      .reduce((sum, o) => sum + o.provvigioneCalcolata, 0);
+
     return {
       fatturato: provvigioniData.reduce((sum, a) => sum + a.fatturatoTrimestre, 0),
       provvigioni: provvigioniData.reduce((sum, a) => sum + a.provvigioneCalcolata, 0),
       fatturatoAnnuale: provvigioniData.reduce((sum, a) => sum + a.fatturatoAnnuale, 0),
       provvigioniAnnuali: provvigioniData.reduce((sum, a) => sum + a.provvigioneAnnuale, 0),
       ordini: provvigioniData.reduce((sum, a) => sum + a.ordiniCount, 0),
+      provvigioniPagate,
+      provvigioniDaPagare,
+      ordiniPagati: filteredOrdini.filter((o) => o.provvigione_pagata).length,
+      ordiniDaPagare: filteredOrdini.filter((o) => !o.provvigione_pagata).length,
     };
-  }, [provvigioniData]);
+  }, [provvigioniData, filteredOrdini]);
 
   const maxProvvigione = Math.max(...provvigioniData.map((a) => a.provvigioneCalcolata), 1);
+
+  const handleToggleProvvigione = (ordineId: string, currentValue: boolean) => {
+    updateProvvigionePagata.mutate({ id: ordineId, provvigione_pagata: !currentValue });
+  };
 
   const isLoading = aziendeLoading || ordiniLoading;
 
@@ -203,7 +264,7 @@ const Provvigioni = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -224,7 +285,7 @@ const Provvigioni = () => {
           <Card className="bg-primary/5 border-primary/20">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Provvigioni {selectedTrimestre === "tutti" ? "Annuali" : "Trimestre"}
+                Provvigioni Totali
               </CardTitle>
               <Percent className="h-4 w-4 text-primary" />
             </CardHeader>
@@ -238,31 +299,50 @@ const Provvigioni = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Fatturato Annuale</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-green-700 dark:text-green-400">
+                Pagate
+              </CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(totali.fatturatoAnnuale)}
+              <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+                {formatCurrency(totali.provvigioniPagate)}
               </div>
-              <p className="text-xs text-muted-foreground">Anno {selectedYear}</p>
+              <p className="text-xs text-green-600 dark:text-green-500">
+                {totali.ordiniPagati} ordini
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                Da Incassare
+              </CardTitle>
+              <Clock className="h-4 w-4 text-amber-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+                {formatCurrency(totali.provvigioniDaPagare)}
+              </div>
+              <p className="text-xs text-amber-600 dark:text-amber-500">
+                {totali.ordiniDaPagare} ordini
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Provvigioni Annuali</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Annuali</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {formatCurrency(totali.provvigioniAnnuali)}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {aziende?.length || 0} aziende
-              </p>
+              <p className="text-xs text-muted-foreground">Anno {selectedYear}</p>
             </CardContent>
           </Card>
         </div>
@@ -289,157 +369,270 @@ const Provvigioni = () => {
                 <span className="text-sm font-medium">{key}</span>
                 <span className="text-xs opacity-70">{config.label}</span>
                 {isPast && (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
                 )}
                 {isCurrent && !isPast && (
-                  <Clock className="h-3.5 w-3.5 text-warning" />
+                  <Clock className="h-3.5 w-3.5 text-amber-500" />
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Provvigioni Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Dettaglio Provvigioni per Azienda
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead>Azienda</TableHead>
-                    <TableHead className="text-center">% Provv.</TableHead>
-                    <TableHead className="text-right">Fatturato</TableHead>
-                    <TableHead className="text-center">Ordini</TableHead>
-                    <TableHead className="text-right">Provvigione</TableHead>
-                    <TableHead className="w-40">Performance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {provvigioniData.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        Nessun dato disponibile per il periodo selezionato
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    provvigioniData.map((azienda) => (
-                      <TableRow key={azienda.id} className="hover:bg-muted/30">
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{azienda.nome}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {azienda.settore || "—"}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge
-                            variant={azienda.provvigionePercentuale > 0 ? "default" : "secondary"}
-                            className="font-mono"
-                          >
-                            {azienda.provvigionePercentuale}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(azienda.fatturatoTrimestre)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {azienda.ordiniCount}
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-primary">
-                          {formatCurrency(azienda.provvigioneCalcolata)}
-                        </TableCell>
-                        <TableCell>
-                          <Progress
-                            value={(azienda.provvigioneCalcolata / maxProvvigione) * 100}
-                            className="h-2"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tabs for different views */}
+        <Tabs defaultValue="ordini" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="ordini" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Ordini ({filteredOrdini.length})
+            </TabsTrigger>
+            <TabsTrigger value="aziende" className="gap-2">
+              <Building2 className="h-4 w-4" />
+              Per Azienda
+            </TabsTrigger>
+            <TabsTrigger value="riepilogo" className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+              Riepilogo Annuale
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Yearly Breakdown per Azienda */}
-        {selectedTrimestre === "tutti" && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarDays className="h-5 w-5" />
-                Riepilogo Trimestrale {selectedYear}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Azienda</TableHead>
-                      <TableHead className="text-center">Q1</TableHead>
-                      <TableHead className="text-center">Q2</TableHead>
-                      <TableHead className="text-center">Q3</TableHead>
-                      <TableHead className="text-center">Q4</TableHead>
-                      <TableHead className="text-right">Totale Annuo</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {provvigioniData.map((azienda) => (
-                      <TableRow key={azienda.id} className="hover:bg-muted/30">
-                        <TableCell className="font-medium">{azienda.nome}</TableCell>
-                        {azienda.quarterBreakdown.map((q) => (
-                          <TableCell key={q.trimestre} className="text-center">
+          {/* Orders Tab - Main view for tracking payments */}
+          <TabsContent value="ordini">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Dettaglio Ordini - Stato Provvigioni
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>Codice</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Azienda</TableHead>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead className="text-right">Totale</TableHead>
+                        <TableHead className="text-center">%</TableHead>
+                        <TableHead className="text-right">Provvigione</TableHead>
+                        <TableHead className="text-center">Pagata</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredOrdini.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                            Nessun ordine per il periodo selezionato
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredOrdini.map((ordine) => (
+                          <TableRow 
+                            key={ordine.id} 
+                            className={`hover:bg-muted/30 ${ordine.provvigione_pagata ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}
+                          >
+                            <TableCell className="font-mono font-medium">
+                              {ordine.codice}
+                            </TableCell>
+                            <TableCell>
+                              {format(new Date(ordine.created_at), "dd MMM yyyy", { locale: it })}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {ordine.aziendaNome}
+                            </TableCell>
+                            <TableCell>
+                              {ordine.clienti?.nome || "—"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(Number(ordine.totale))}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge variant="outline" className="font-mono">
+                                {ordine.provvigionePercentuale}%
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-primary">
+                              {formatCurrency(ordine.provvigioneCalcolata)}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <Switch
+                                  checked={ordine.provvigione_pagata}
+                                  onCheckedChange={() => handleToggleProvvigione(ordine.id, ordine.provvigione_pagata)}
+                                  disabled={updateProvvigionePagata.isPending}
+                                />
+                                {ordine.provvigione_pagata ? (
+                                  <Check className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <X className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Companies Tab */}
+          <TabsContent value="aziende">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Dettaglio Provvigioni per Azienda
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>Azienda</TableHead>
+                        <TableHead className="text-center">% Provv.</TableHead>
+                        <TableHead className="text-right">Fatturato</TableHead>
+                        <TableHead className="text-center">Ordini</TableHead>
+                        <TableHead className="text-right">Provvigione</TableHead>
+                        <TableHead className="text-right">Pagata</TableHead>
+                        <TableHead className="w-40">Performance</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {provvigioniData.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                            Nessun dato disponibile per il periodo selezionato
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        provvigioniData.map((azienda) => (
+                          <TableRow key={azienda.id} className="hover:bg-muted/30">
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{azienda.nome}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {azienda.settore || "—"}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Badge
+                                variant={azienda.provvigionePercentuale > 0 ? "default" : "secondary"}
+                                className="font-mono"
+                              >
+                                {azienda.provvigionePercentuale}%
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(azienda.fatturatoTrimestre)}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className="text-sm">
+                                {azienda.ordiniPagati}/{azienda.ordiniCount}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-primary">
+                              {formatCurrency(azienda.provvigioneCalcolata)}
+                            </TableCell>
+                            <TableCell className="text-right font-medium text-green-600">
+                              {formatCurrency(azienda.provvigionePagata)}
+                            </TableCell>
+                            <TableCell>
+                              <Progress
+                                value={(azienda.provvigioneCalcolata / maxProvvigione) * 100}
+                                className="h-2"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Yearly Summary Tab */}
+          <TabsContent value="riepilogo">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarDays className="h-5 w-5" />
+                  Riepilogo Trimestrale {selectedYear}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>Azienda</TableHead>
+                        <TableHead className="text-center">Q1</TableHead>
+                        <TableHead className="text-center">Q2</TableHead>
+                        <TableHead className="text-center">Q3</TableHead>
+                        <TableHead className="text-center">Q4</TableHead>
+                        <TableHead className="text-right">Totale Annuo</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {provvigioniData.map((azienda) => (
+                        <TableRow key={azienda.id} className="hover:bg-muted/30">
+                          <TableCell className="font-medium">{azienda.nome}</TableCell>
+                          {azienda.quarterBreakdown.map((q) => (
+                            <TableCell key={q.trimestre} className="text-center">
+                              <div className="text-xs text-muted-foreground">
+                                {formatCurrency(q.fatturato)}
+                              </div>
+                              <div className="font-medium text-primary text-sm">
+                                {formatCurrency(q.provvigione)}
+                              </div>
+                              <div className="text-xs text-green-600">
+                                {q.pagati}/{q.ordini} pagati
+                              </div>
+                            </TableCell>
+                          ))}
+                          <TableCell className="text-right">
                             <div className="text-xs text-muted-foreground">
-                              {formatCurrency(q.fatturato)}
+                              {formatCurrency(azienda.fatturatoAnnuale)}
                             </div>
-                            <div className="font-medium text-primary text-sm">
-                              {formatCurrency(q.provvigione)}
+                            <div className="font-bold text-primary">
+                              {formatCurrency(azienda.provvigioneAnnuale)}
                             </div>
                           </TableCell>
-                        ))}
-                        <TableCell className="text-right">
-                          <div className="text-xs text-muted-foreground">
-                            {formatCurrency(azienda.fatturatoAnnuale)}
-                          </div>
-                          <div className="font-bold text-primary">
-                            {formatCurrency(azienda.provvigioneAnnuale)}
-                          </div>
+                        </TableRow>
+                      ))}
+                      {/* Totals Row */}
+                      <TableRow className="bg-muted/70 font-bold">
+                        <TableCell>TOTALE</TableCell>
+                        {["Q1", "Q2", "Q3", "Q4"].map((q) => {
+                          const qTotale = provvigioniData.reduce(
+                            (sum, a) => sum + (a.quarterBreakdown.find((qb) => qb.trimestre === q)?.provvigione || 0),
+                            0
+                          );
+                          return (
+                            <TableCell key={q} className="text-center text-primary">
+                              {formatCurrency(qTotale)}
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell className="text-right text-primary text-lg">
+                          {formatCurrency(totali.provvigioniAnnuali)}
                         </TableCell>
                       </TableRow>
-                    ))}
-                    {/* Totals Row */}
-                    <TableRow className="bg-muted/70 font-bold">
-                      <TableCell>TOTALE</TableCell>
-                      {["Q1", "Q2", "Q3", "Q4"].map((q) => {
-                        const qTotale = provvigioniData.reduce(
-                          (sum, a) => sum + (a.quarterBreakdown.find((qb) => qb.trimestre === q)?.provvigione || 0),
-                          0
-                        );
-                        return (
-                          <TableCell key={q} className="text-center text-primary">
-                            {formatCurrency(qTotale)}
-                          </TableCell>
-                        );
-                      })}
-                      <TableCell className="text-right text-primary text-lg">
-                        {formatCurrency(totali.provvigioniAnnuali)}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );
