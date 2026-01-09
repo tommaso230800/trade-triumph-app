@@ -17,6 +17,7 @@ export type Ordine = {
   status: "in_attesa" | "spedito" | "completato" | "annullato";
   provvigione_pagata: boolean;
   created_at: string;
+  data_ordine: string | null;
   clienti?: { nome: string; azienda: string | null } | null;
   aziende?: { nome: string } | null;
 };
@@ -62,6 +63,7 @@ export function useCreateOrdine() {
       sconto?: number;
       sconto_merce?: number;
       tipo_pagamento?: string;
+      data_ordine?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase

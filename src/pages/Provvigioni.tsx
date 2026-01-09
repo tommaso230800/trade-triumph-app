@@ -70,7 +70,7 @@ const Provvigioni = () => {
   const years = useMemo(() => {
     const yearsSet = new Set<number>();
     ordini?.forEach((o) => {
-      yearsSet.add(new Date(o.created_at).getFullYear());
+      yearsSet.add(new Date(o.data_ordine || o.created_at).getFullYear());
     });
     yearsSet.add(currentYear);
     return Array.from(yearsSet).sort((a, b) => b - a);
@@ -81,7 +81,7 @@ const Provvigioni = () => {
     if (!ordini || !aziende) return [];
 
     return ordini.filter((o) => {
-      const orderDate = new Date(o.created_at);
+      const orderDate = new Date(o.data_ordine || o.created_at);
       const orderYear = orderDate.getFullYear();
       const orderMonth = orderDate.getMonth();
 
@@ -112,7 +112,7 @@ const Provvigioni = () => {
     return aziende.map((azienda) => {
       const aziendaOrdini = ordini.filter((o) => {
         if (o.azienda_id !== azienda.id) return false;
-        const orderDate = new Date(o.created_at);
+        const orderDate = new Date(o.data_ordine || o.created_at);
         const orderYear = orderDate.getFullYear();
         const orderMonth = orderDate.getMonth();
 
@@ -142,7 +142,7 @@ const Provvigioni = () => {
       const quarterBreakdown = Object.entries(trimestreConfig).map(([key, config]) => {
         const qOrdini = ordini.filter((o) => {
           if (o.azienda_id !== azienda.id) return false;
-          const orderDate = new Date(o.created_at);
+          const orderDate = new Date(o.data_ordine || o.created_at);
           return orderDate.getFullYear() === selectedYear && config.mesi.includes(orderDate.getMonth());
         });
         const qFatturato = qOrdini.reduce((sum, o) => sum + Number(o.totale), 0);
@@ -437,7 +437,7 @@ const Provvigioni = () => {
                               {ordine.codice}
                             </TableCell>
                             <TableCell>
-                              {format(new Date(ordine.created_at), "dd MMM yyyy", { locale: it })}
+                              {format(new Date(ordine.data_ordine || ordine.created_at), "dd MMM yyyy", { locale: it })}
                             </TableCell>
                             <TableCell className="font-medium">
                               {ordine.aziendaNome}

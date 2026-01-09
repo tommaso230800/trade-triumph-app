@@ -327,6 +327,7 @@ const Ordini = () => {
       sconto: parseDecimalInput(formData.sconto),
       sconto_merce: parseDecimalInput(formData.sconto_merce),
       tipo_pagamento: formData.tipo_pagamento,
+      data_ordine: formData.data_ordine,
     });
 
     // Create order lines
@@ -818,7 +819,7 @@ const Ordini = () => {
                         {ordine.tipo_pagamento || "—"}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {format(new Date(ordine.created_at), "dd/MM/yyyy")}
+                        {format(new Date(ordine.data_ordine || ordine.created_at), "dd/MM/yyyy")}
                       </TableCell>
                       <TableCell>
                         <Badge className={statusConfig[ordine.status].className}>
