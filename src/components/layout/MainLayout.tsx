@@ -1,32 +1,30 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
-import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!loading && !user) {
+    const auth = sessionStorage.getItem("app_authenticated");
+    if (auth === "true") {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
       navigate("/auth");
     }
-  }, [user, loading, navigate]);
+  }, [navigate]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+  if (isAuthenticated === null) {
+    return null;
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return null;
   }
 

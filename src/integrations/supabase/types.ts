@@ -211,6 +211,98 @@ export type Database = {
           },
         ]
       }
+      ordini_righe: {
+        Row: {
+          created_at: string
+          id: string
+          ordine_id: string
+          prezzo_unitario: number
+          prodotto_id: string
+          quantita_cartoni: number
+          quantita_pezzi: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ordine_id: string
+          prezzo_unitario?: number
+          prodotto_id: string
+          quantita_cartoni?: number
+          quantita_pezzi?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ordine_id?: string
+          prezzo_unitario?: number
+          prodotto_id?: string
+          quantita_cartoni?: number
+          quantita_pezzi?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordini_righe_ordine_id_fkey"
+            columns: ["ordine_id"]
+            isOneToOne: false
+            referencedRelation: "ordini"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordini_righe_prodotto_id_fkey"
+            columns: ["prodotto_id"]
+            isOneToOne: false
+            referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prodotti: {
+        Row: {
+          azienda_id: string
+          created_at: string
+          id: string
+          nome: string
+          pezzi_per_cartone: number
+          prezzo_listino: number
+          quantita_pezzi: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id: string
+          created_at?: string
+          id?: string
+          nome: string
+          pezzi_per_cartone?: number
+          prezzo_listino?: number
+          quantita_pezzi?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          pezzi_per_cartone?: number
+          prezzo_listino?: number
+          quantita_pezzi?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prodotti_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

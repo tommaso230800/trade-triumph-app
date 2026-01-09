@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,10 +35,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Filter, Download, MoreHorizontal, Loader2 } from "lucide-react";
+import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2 } from "lucide-react";
 import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
+import { useProdotti, Prodotto } from "@/hooks/useProdotti";
+import { useCreateOrdineRigheBatch } from "@/hooks/useOrdiniRighe";
 import { format } from "date-fns";
 
 const statusConfig = {
@@ -51,6 +53,15 @@ const statusConfig = {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
 
+type RigaOrdine = {
+  prodotto_id: string;
+  prodotto_nome: string;
+  prezzo_unitario: number;
+  quantita_pezzi: number;
+  quantita_cartoni: number;
+  pezzi_per_cartone: number;
+};
+
 const Ordini = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Ordine["status"] | "tutti">("tutti");
@@ -58,27 +69,100 @@ const Ordini = () => {
   const [formData, setFormData] = useState({
     cliente_id: "",
     azienda_id: "",
-    prodotti: 1,
-    totale: 0,
     note: "",
   });
+  const [righeOrdine, setRigheOrdine] = useState<RigaOrdine[]>([]);
+  const [selectedProdotto, setSelectedProdotto] = useState("");
 
   const { data: ordini, isLoading } = useOrdini(searchTerm, statusFilter);
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
+  const { data: allProdotti } = useProdotti();
   const createOrdine = useCreateOrdine();
+  const createRigheBatch = useCreateOrdineRigheBatch();
   const updateStatus = useUpdateOrdineStatus();
 
+  // Filter products by selected company
+  const prodottiAzienda = useMemo(() => {
+    if (!formData.azienda_id || !allProdotti) return [];
+    return allProdotti.filter((p) => p.azienda_id === formData.azienda_id);
+  }, [formData.azienda_id, allProdotti]);
+
+  const addProdottoToOrder = () => {
+    if (!selectedProdotto) return;
+    const prodotto = prodottiAzienda.find((p) => p.id === selectedProdotto);
+    if (!prodotto) return;
+
+    // Check if already added
+    if (righeOrdine.find((r) => r.prodotto_id === prodotto.id)) {
+      return;
+    }
+
+    setRigheOrdine([
+      ...righeOrdine,
+      {
+        prodotto_id: prodotto.id,
+        prodotto_nome: prodotto.nome,
+        prezzo_unitario: prodotto.prezzo_listino,
+        quantita_pezzi: 0,
+        quantita_cartoni: 0,
+        pezzi_per_cartone: prodotto.pezzi_per_cartone,
+      },
+    ]);
+    setSelectedProdotto("");
+  };
+
+  const updateRiga = (index: number, field: "quantita_pezzi" | "quantita_cartoni", value: number) => {
+    const updated = [...righeOrdine];
+    updated[index] = { ...updated[index], [field]: value };
+    setRigheOrdine(updated);
+  };
+
+  const removeRiga = (index: number) => {
+    setRigheOrdine(righeOrdine.filter((_, i) => i !== index));
+  };
+
+  const calcolaTotale = () => {
+    return righeOrdine.reduce((sum, riga) => {
+      const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
+      return sum + pezziTotali * riga.prezzo_unitario;
+    }, 0);
+  };
+
+  const calcolaProdottiTotali = () => {
+    return righeOrdine.reduce((sum, riga) => {
+      return sum + riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
+    }, 0);
+  };
+
   const handleSubmit = async () => {
-    await createOrdine.mutateAsync({
+    if (righeOrdine.length === 0) return;
+
+    const totale = calcolaTotale();
+    const prodottiCount = calcolaProdottiTotali();
+
+    const ordine = await createOrdine.mutateAsync({
       cliente_id: formData.cliente_id || undefined,
       azienda_id: formData.azienda_id || undefined,
-      prodotti: formData.prodotti,
-      totale: formData.totale,
+      prodotti: prodottiCount,
+      totale,
       note: formData.note || undefined,
     });
+
+    // Create order lines
+    await createRigheBatch.mutateAsync(
+      righeOrdine.map((riga) => ({
+        ordine_id: ordine.id,
+        prodotto_id: riga.prodotto_id,
+        quantita_pezzi: riga.quantita_pezzi,
+        quantita_cartoni: riga.quantita_cartoni,
+        prezzo_unitario: riga.prezzo_unitario,
+      }))
+    );
+
     setIsDialogOpen(false);
-    setFormData({ cliente_id: "", azienda_id: "", prodotti: 1, totale: 0, note: "" });
+    setFormData({ cliente_id: "", azienda_id: "", note: "" });
+    setRigheOrdine([]);
   };
 
   const stats = {
@@ -99,7 +183,14 @@ const Ordini = () => {
               Crea e gestisci gli ordini dei tuoi clienti
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) {
+              setFormData({ cliente_id: "", azienda_id: "", note: "" });
+              setRigheOrdine([]);
+              setSelectedProdotto("");
+            }
+          }}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
@@ -107,61 +198,154 @@ const Ordini = () => {
                 <span className="sm:hidden">Aggiungi</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Crea Nuovo Ordine</DialogTitle>
-                <DialogDescription>Inserisci i dettagli per creare un nuovo ordine</DialogDescription>
+                <DialogDescription>Seleziona cliente, azienda e aggiungi i prodotti</DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Cliente</Label>
-                  <Select value={formData.cliente_id} onValueChange={(v) => setFormData({ ...formData, cliente_id: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clienti?.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Azienda Fornitrice</Label>
-                  <Select value={formData.azienda_id} onValueChange={(v) => setFormData({ ...formData, azienda_id: v })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleziona azienda" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {aziende?.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>
-                          {a.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-6 py-4">
+                {/* Cliente e Azienda */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Quantità</Label>
-                    <Input
-                      type="number"
-                      value={formData.prodotti}
-                      onChange={(e) => setFormData({ ...formData, prodotti: parseInt(e.target.value) || 0 })}
-                    />
+                    <Label>Cliente</Label>
+                    <Select value={formData.cliente_id} onValueChange={(v) => setFormData({ ...formData, cliente_id: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleziona cliente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clienti?.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Importo (€)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formData.totale}
-                      onChange={(e) => setFormData({ ...formData, totale: parseFloat(e.target.value) || 0 })}
-                    />
+                    <Label>Azienda Fornitrice *</Label>
+                    <Select 
+                      value={formData.azienda_id} 
+                      onValueChange={(v) => {
+                        setFormData({ ...formData, azienda_id: v });
+                        setRigheOrdine([]);
+                        setSelectedProdotto("");
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleziona azienda" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {aziende?.map((a) => (
+                          <SelectItem key={a.id} value={a.id}>
+                            {a.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
+
+                {/* Add Product */}
+                {formData.azienda_id && (
+                  <div className="space-y-4 border-t pt-4">
+                    <h4 className="font-medium">Aggiungi Prodotti</h4>
+                    <div className="flex gap-2">
+                      <Select value={selectedProdotto} onValueChange={setSelectedProdotto}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Seleziona prodotto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {prodottiAzienda.map((p) => (
+                            <SelectItem key={p.id} value={p.id} disabled={righeOrdine.some((r) => r.prodotto_id === p.id)}>
+                              {p.nome} - {formatCurrency(p.prezzo_listino)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button onClick={addProdottoToOrder} disabled={!selectedProdotto}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {prodottiAzienda.length === 0 && (
+                      <p className="text-sm text-muted-foreground">Nessun prodotto disponibile per questa azienda</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Order Lines */}
+                {righeOrdine.length > 0 && (
+                  <div className="space-y-4 border-t pt-4">
+                    <h4 className="font-medium">Prodotti nell'ordine</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Prodotto</TableHead>
+                          <TableHead>Prezzo</TableHead>
+                          <TableHead>Pezzi</TableHead>
+                          <TableHead>Cartoni</TableHead>
+                          <TableHead>Subtotale</TableHead>
+                          <TableHead className="w-12"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {righeOrdine.map((riga, index) => {
+                          const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
+                          const subtotale = pezziTotali * riga.prezzo_unitario;
+                          return (
+                            <TableRow key={riga.prodotto_id}>
+                              <TableCell className="font-medium">
+                                {riga.prodotto_nome}
+                                <span className="text-xs text-muted-foreground block">
+                                  {riga.pezzi_per_cartone} pz/cartone
+                                </span>
+                              </TableCell>
+                              <TableCell>{formatCurrency(riga.prezzo_unitario)}</TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  className="w-20"
+                                  value={riga.quantita_pezzi}
+                                  onChange={(e) => updateRiga(index, "quantita_pezzi", parseInt(e.target.value) || 0)}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  className="w-20"
+                                  value={riga.quantita_cartoni}
+                                  onChange={(e) => updateRiga(index, "quantita_cartoni", parseInt(e.target.value) || 0)}
+                                />
+                              </TableCell>
+                              <TableCell className="font-semibold">{formatCurrency(subtotale)}</TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => removeRiga(index)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+
+                    <div className="flex justify-end">
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">Totale prodotti: {calcolaProdottiTotali()} pezzi</p>
+                        <p className="text-xl font-bold">{formatCurrency(calcolaTotale())}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Notes */}
                 <div className="space-y-2">
                   <Label>Note</Label>
                   <Textarea
@@ -175,8 +359,11 @@ const Ordini = () => {
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                   Annulla
                 </Button>
-                <Button onClick={handleSubmit} disabled={createOrdine.isPending}>
-                  {createOrdine.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={createOrdine.isPending || createRigheBatch.isPending || righeOrdine.length === 0}
+                >
+                  {(createOrdine.isPending || createRigheBatch.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Crea Ordine
                 </Button>
               </DialogFooter>
