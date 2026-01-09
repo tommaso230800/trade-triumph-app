@@ -4,11 +4,12 @@ import { SalesChart } from "@/components/dashboard/SalesChart";
 import { useStats } from "@/hooks/useStats";
 import { useOrdini } from "@/hooks/useOrdini";
 import { usePromemoria } from "@/hooks/usePromemoria";
-import { ShoppingCart, Users, Building2, Euro, TrendingUp, Target, Bell, Phone, Calendar, Mail, Loader2 } from "lucide-react";
+import { useCanvassAttive } from "@/hooks/useCanvass";
+import { ShoppingCart, Users, Building2, Euro, TrendingUp, Target, Bell, Phone, Calendar, Mail, Loader2, Tag, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
-import { format, isToday, isTomorrow, parseISO } from "date-fns";
+import { format, isToday, isTomorrow, parseISO, differenceInDays } from "date-fns";
 import { it } from "date-fns/locale";
 
 const statusConfig = {
@@ -38,9 +39,18 @@ const Index = () => {
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: ordini, isLoading: ordiniLoading } = useOrdini();
   const { data: promemoria, isLoading: promemoriaLoading } = usePromemoria();
+  const { data: canvassAttive = [] } = useCanvassAttive();
 
   const recentOrdini = ordini?.slice(0, 5) || [];
   const pendingPromemoria = promemoria?.filter((p) => !p.completato).slice(0, 3) || [];
+  
+  // Promozioni in scadenza (entro 7 giorni)
+  const today = new Date();
+  const promoInScadenza = canvassAttive.filter(c => {
+    const dataFine = parseISO(c.data_fine);
+    const daysLeft = differenceInDays(dataFine, today);
+    return daysLeft >= 0 && daysLeft <= 7;
+  });
 
   const getDateLabel = (dateStr: string) => {
     const date = parseISO(dateStr);
@@ -81,6 +91,40 @@ const Index = () => {
             </span>
           </div>
         </div>
+
+        {/* Alert Promozioni Attive */}
+        {canvassAttive.length > 0 && (
+          <div className="rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 p-4 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/20 rounded-lg">
+                  <Tag className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">
+                    {canvassAttive.length} Promozioni Attive
+                    {promoInScadenza.length > 0 && (
+                      <Badge variant="destructive" className="ml-2">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        {promoInScadenza.length} in scadenza
+                      </Badge>
+                    )}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {canvassAttive.slice(0, 2).map(c => c.nome).join(", ")}
+                    {canvassAttive.length > 2 && ` e altri ${canvassAttive.length - 2}`}
+                  </p>
+                </div>
+              </div>
+              <Link 
+                to="/canvass" 
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Visualizza tutte
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* KPI Grid */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
