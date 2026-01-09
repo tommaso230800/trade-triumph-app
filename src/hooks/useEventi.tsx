@@ -18,8 +18,11 @@ export type Evento = {
 };
 
 export function useEventi(selectedDate?: Date) {
+  // Format date to YYYY-MM-DD for query key
+  const dateKey = selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}` : undefined;
+  
   return useQuery({
-    queryKey: ["eventi", selectedDate?.toISOString()],
+    queryKey: ["eventi", dateKey],
     queryFn: async () => {
       let query = supabase
         .from("eventi")
@@ -31,7 +34,11 @@ export function useEventi(selectedDate?: Date) {
         .order("orario_inizio", { ascending: true });
 
       if (selectedDate) {
-        const dateStr = selectedDate.toISOString().split("T")[0];
+        // Format date as YYYY-MM-DD without timezone issues
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(selectedDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
         query = query.eq("data", dateStr);
       }
 
