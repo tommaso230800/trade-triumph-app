@@ -20,13 +20,14 @@ export function KPICard({
   variant = "default",
 }: KPICardProps) {
   const getTrendIcon = () => {
-    if (!change) return <Minus className="h-3 w-3" />;
+    if (change === undefined || change === null) return null;
+    if (change === 0) return <Minus className="h-3 w-3" />;
     if (change > 0) return <TrendingUp className="h-3 w-3" />;
     return <TrendingDown className="h-3 w-3" />;
   };
 
   const getTrendColor = () => {
-    if (!change) return "text-muted-foreground";
+    if (change === undefined || change === null || change === 0) return "text-muted-foreground";
     if (change > 0) return "text-success";
     return "text-destructive";
   };
@@ -46,24 +47,24 @@ export function KPICard({
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-xl bg-card p-6 shadow-card transition-all duration-300 hover:shadow-card-hover animate-fade-in">
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold tracking-tight text-card-foreground">
+    <div className="group relative overflow-hidden rounded-xl bg-card p-4 lg:p-6 shadow-card transition-all duration-300 hover:shadow-card-hover animate-fade-in">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1 lg:space-y-2 min-w-0">
+          <p className="text-xs lg:text-sm font-medium text-muted-foreground truncate">{title}</p>
+          <p className="text-xl lg:text-3xl font-bold tracking-tight text-card-foreground truncate">
             {value}
           </p>
           {change !== undefined && (
-            <div className={cn("flex items-center gap-1 text-xs font-medium", getTrendColor())}>
+            <div className={cn("flex items-center gap-1 text-xs font-medium flex-wrap", getTrendColor())}>
               {getTrendIcon()}
               <span>{change > 0 ? "+" : ""}{change}%</span>
-              {changeLabel && <span className="text-muted-foreground">{changeLabel}</span>}
+              {changeLabel && <span className="text-muted-foreground hidden sm:inline">{changeLabel}</span>}
             </div>
           )}
         </div>
         <div
           className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110",
+            "flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110 flex-shrink-0",
             iconBgVariants[variant],
             iconColorVariants[variant]
           )}
