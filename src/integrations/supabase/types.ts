@@ -271,6 +271,9 @@ export type Database = {
           prodotto_id: string
           quantita_cartoni: number
           quantita_pezzi: number
+          sc1: number
+          sc2: number
+          sc3: number
           user_id: string
         }
         Insert: {
@@ -281,6 +284,9 @@ export type Database = {
           prodotto_id: string
           quantita_cartoni?: number
           quantita_pezzi?: number
+          sc1?: number
+          sc2?: number
+          sc3?: number
           user_id: string
         }
         Update: {
@@ -291,6 +297,9 @@ export type Database = {
           prodotto_id?: string
           quantita_cartoni?: number
           quantita_pezzi?: number
+          sc1?: number
+          sc2?: number
+          sc3?: number
           user_id?: string
         }
         Relationships: [

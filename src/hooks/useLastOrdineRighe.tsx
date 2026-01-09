@@ -6,6 +6,9 @@ export type LastOrdineRiga = {
   quantita_pezzi: number;
   quantita_cartoni: number;
   prezzo_unitario: number;
+  sc1: number;
+  sc2: number;
+  sc3: number;
   prodotti?: { nome: string; pezzi_per_cartone: number } | null;
 };
 
@@ -42,6 +45,9 @@ export function useLastOrdineForClient(clienteId?: string, aziendaId?: string) {
           quantita_pezzi,
           quantita_cartoni,
           prezzo_unitario,
+          sc1,
+          sc2,
+          sc3,
           prodotti (nome, pezzi_per_cartone)
         `)
         .eq("ordine_id", lastOrdine.id);

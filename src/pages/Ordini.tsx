@@ -308,7 +308,7 @@ const Ordini = () => {
       tipo_pagamento: ordine.tipo_pagamento || "Contanti",
     }));
 
-    // Set order lines from last order
+    // Set order lines from last order with all data
     const newRighe: RigaOrdine[] = righe.map((r) => ({
       prodotto_id: r.prodotto_id,
       prodotto_nome: r.prodotti?.nome || "Prodotto",
@@ -316,9 +316,9 @@ const Ordini = () => {
       quantita_pezzi: r.quantita_pezzi,
       quantita_cartoni: r.quantita_cartoni,
       pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
-      sc1: "0",
-      sc2: "0",
-      sc3: "0",
+      sc1: String(r.sc1 || 0).replace(".", ","),
+      sc2: String(r.sc2 || 0).replace(".", ","),
+      sc3: String(r.sc3 || 0).replace(".", ","),
     }));
 
     setRigheOrdine(newRighe);
@@ -343,7 +343,7 @@ const Ordini = () => {
       data_ordine: formData.data_ordine,
     });
 
-    // Create order lines
+    // Create order lines with discounts
     await createRigheBatch.mutateAsync(
       righeOrdine.map((riga) => ({
         ordine_id: ordine.id,
@@ -351,6 +351,9 @@ const Ordini = () => {
         quantita_pezzi: riga.quantita_pezzi,
         quantita_cartoni: riga.quantita_cartoni,
         prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
+        sc1: parseDecimalInput(riga.sc1),
+        sc2: parseDecimalInput(riga.sc2),
+        sc3: parseDecimalInput(riga.sc3),
       }))
     );
 
@@ -1150,6 +1153,9 @@ const Ordini = () => {
                   quantita_pezzi: riga.quantita_pezzi,
                   quantita_cartoni: riga.quantita_cartoni,
                   prezzo_unitario: riga.prezzo_unitario,
+                  sc1: 0,
+                  sc2: 0,
+                  sc3: 0,
                 }))
               );
 
