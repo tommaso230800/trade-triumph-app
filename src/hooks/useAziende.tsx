@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
 export type Azienda = {
@@ -14,12 +13,11 @@ export type Azienda = {
   email: string | null;
   status: "attivo" | "in_pausa";
   prodotti: number;
+  logo_url: string | null;
   created_at: string;
 };
 
 export function useAziende(searchTerm?: string) {
-  const { user } = useAuth();
-
   return useQuery({
     queryKey: ["aziende", searchTerm],
     queryFn: async () => {
@@ -36,16 +34,15 @@ export function useAziende(searchTerm?: string) {
       if (error) throw error;
       return data as Azienda[];
     },
-    enabled: !!user,
   });
 }
 
 export function useCreateAzienda() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (azienda: Omit<Azienda, "id" | "user_id" | "created_at">) => {
+    mutationFn: async (azienda: Omit<Azienda, "id" | "user_id" | "created_at" | "logo_url">) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("aziende")
         .insert({ ...azienda, user_id: user?.id })
@@ -60,6 +57,26 @@ export function useCreateAzienda() {
     },
     onError: (error) => {
       toast.error("Errore nella creazione: " + error.message);
+    },
+  });
+}
+
+export function useUpdateAzienda() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Azienda> & { id: string }) => {
+      const { error } = await supabase
+        .from("aziende")
+        .update(updates)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["aziende"] });
+    },
+    onError: (error) => {
+      toast.error("Errore: " + error.message);
     },
   });
 }

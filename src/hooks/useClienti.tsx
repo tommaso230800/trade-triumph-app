@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
 export type Cliente = {
@@ -17,8 +16,6 @@ export type Cliente = {
 };
 
 export function useClienti(searchTerm?: string, statusFilter?: Cliente["status"] | "tutti") {
-  const { user } = useAuth();
-
   return useQuery({
     queryKey: ["clienti", searchTerm, statusFilter],
     queryFn: async () => {
@@ -39,16 +36,15 @@ export function useClienti(searchTerm?: string, statusFilter?: Cliente["status"]
       if (error) throw error;
       return data as Cliente[];
     },
-    enabled: !!user,
   });
 }
 
 export function useCreateCliente() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (cliente: Omit<Cliente, "id" | "user_id" | "created_at">) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("clienti")
         .insert({ ...cliente, user_id: user?.id })

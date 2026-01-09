@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +13,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { MapPin, Phone, Mail, MoreHorizontal, Loader2, Package, Trash2, Check, X, Plus, ChevronDown, ChevronUp } from "lucide-react";
-import { Azienda } from "@/hooks/useAziende";
+import { MapPin, Phone, Mail, MoreHorizontal, Loader2, Package, Trash2, Check, X, Plus, ChevronDown, ChevronUp, Upload, ImageIcon } from "lucide-react";
+import { Azienda, useUpdateAzienda } from "@/hooks/useAziende";
 import { useProdotti, useCreateProdotto, useDeleteProdotto, useUpdateProdotto, Prodotto } from "@/hooks/useProdotti";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
@@ -31,11 +33,14 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
   const [editForm, setEditForm] = useState({ nome: "", prezzo_listino: 0, quantita_pezzi: 0, pezzi_per_cartone: 1 });
   const [isAdding, setIsAdding] = useState(false);
   const [newProduct, setNewProduct] = useState({ nome: "", prezzo_listino: 0, quantita_pezzi: 0, pezzi_per_cartone: 1 });
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: prodotti, isLoading } = useProdotti(isExpanded ? azienda.id : undefined);
   const createProdotto = useCreateProdotto();
   const updateProdotto = useUpdateProdotto();
   const deleteProdotto = useDeleteProdotto();
+  const updateAzienda = useUpdateAzienda();
 
   const startEdit = (prodotto: Prodotto) => {
     setEditingId(prodotto.id);
@@ -65,6 +70,34 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
     setIsAdding(false);
   };
 
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${azienda.id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('aziende-logos')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('aziende-logos')
+        .getPublicUrl(fileName);
+
+      await updateAzienda.mutateAsync({ id: azienda.id, logo_url: publicUrl });
+      toast.success("Logo caricato!");
+    } catch (error: any) {
+      toast.error("Errore upload: " + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <div className="group rounded-xl bg-card shadow-card transition-all duration-300 hover:shadow-card-hover animate-fade-in overflow-hidden">
@@ -72,8 +105,32 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
         <div className="p-5">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl gradient-primary text-primary-foreground font-bold text-lg">
-                {azienda.nome.charAt(0)}
+              {/* Logo or Initial */}
+              <div 
+                className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-muted overflow-hidden cursor-pointer group/logo"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {azienda.logo_url ? (
+                  <img src={azienda.logo_url} alt={azienda.nome} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="gradient-primary w-full h-full flex items-center justify-center text-primary-foreground font-bold text-xl">
+                    {azienda.nome.charAt(0)}
+                  </span>
+                )}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover/logo:opacity-100 transition-opacity flex items-center justify-center">
+                  {uploading ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-white" />
+                  ) : (
+                    <Upload className="h-5 w-5 text-white" />
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoUpload}
+                />
               </div>
               <div className="min-w-0">
                 <h3 className="font-semibold text-card-foreground truncate">{azienda.nome}</h3>
@@ -87,6 +144,10 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Carica Logo
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive"
                   onClick={() => onDelete(azienda.id)}

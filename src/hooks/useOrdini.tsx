@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
 export type Ordine = {
@@ -19,8 +18,6 @@ export type Ordine = {
 };
 
 export function useOrdini(searchTerm?: string, statusFilter?: Ordine["status"] | "tutti") {
-  const { user } = useAuth();
-
   return useQuery({
     queryKey: ["ordini", searchTerm, statusFilter],
     queryFn: async () => {
@@ -45,13 +42,11 @@ export function useOrdini(searchTerm?: string, statusFilter?: Ordine["status"] |
       if (error) throw error;
       return data as Ordine[];
     },
-    enabled: !!user,
   });
 }
 
 export function useCreateOrdine() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (ordine: { 
@@ -61,6 +56,7 @@ export function useCreateOrdine() {
       totale: number; 
       note?: string 
     }) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("ordini")
         .insert({ ...ordine, user_id: user?.id })

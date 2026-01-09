@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
 export type OrdineRiga = {
@@ -16,8 +15,6 @@ export type OrdineRiga = {
 };
 
 export function useOrdiniRighe(ordineId?: string) {
-  const { user } = useAuth();
-
   return useQuery({
     queryKey: ["ordini_righe", ordineId],
     queryFn: async () => {
@@ -37,16 +34,16 @@ export function useOrdiniRighe(ordineId?: string) {
       if (error) throw error;
       return data as OrdineRiga[];
     },
-    enabled: !!user && !!ordineId,
+    enabled: !!ordineId,
   });
 }
 
 export function useCreateOrdineRiga() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (riga: Omit<OrdineRiga, "id" | "user_id" | "created_at" | "prodotti">) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("ordini_righe")
         .insert({ ...riga, user_id: user?.id })
@@ -67,10 +64,10 @@ export function useCreateOrdineRiga() {
 
 export function useCreateOrdineRigheBatch() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (righe: Omit<OrdineRiga, "id" | "user_id" | "created_at" | "prodotti">[]) => {
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("ordini_righe")
         .insert(righe.map(r => ({ ...r, user_id: user?.id })))

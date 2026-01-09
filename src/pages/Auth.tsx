@@ -3,34 +3,43 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TrendingUp, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import agencyLogo from "@/assets/agency-logo.jpg";
 
 const CORRECT_PASSWORD = "Nictom23";
 
 export default function Auth() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const auth = sessionStorage.getItem("app_authenticated");
-    if (auth === "true") {
-      setIsAuthenticated(true);
-      navigate("/");
-    }
+    // Check if already authenticated
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/");
+      }
+      setChecking(false);
+    });
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Small delay for UX
-    await new Promise((r) => setTimeout(r, 300));
-
     if (password === CORRECT_PASSWORD) {
-      sessionStorage.setItem("app_authenticated", "true");
+      // Sign in anonymously to Supabase for RLS
+      const { error } = await supabase.auth.signInAnonymously();
+      
+      if (error) {
+        toast.error("Errore di autenticazione: " + error.message);
+        setLoading(false);
+        return;
+      }
+
       toast.success("Benvenuto!");
       navigate("/");
     } else {
@@ -40,17 +49,23 @@ export default function Auth() {
     setLoading(false);
   };
 
-  if (isAuthenticated) return null;
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl gradient-primary mb-4">
-            <TrendingUp className="h-8 w-8 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-white shadow-lg mb-4 overflow-hidden">
+            <img src={agencyLogo} alt="AMG Logo" className="w-full h-full object-contain p-2" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">SalesAgent Pro</h1>
-          <p className="text-muted-foreground mt-1">Inserisci la password per accedere</p>
+          <h1 className="text-2xl font-bold text-foreground">AMG HO.RE.CA</h1>
+          <p className="text-muted-foreground mt-1">Business & Strategy</p>
         </div>
 
         <div className="bg-card rounded-xl shadow-card p-6 animate-fade-in">
