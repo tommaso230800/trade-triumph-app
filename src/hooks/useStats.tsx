@@ -37,7 +37,8 @@ export function useStats() {
         .from("aziende")
         .select("*");
 
-      const ordiniList = ordini || [];
+      // Filter out cancelled orders from all stats
+      const ordiniList = (ordini || []).filter(o => o.status !== "annullato");
       const clientiList = clienti || [];
       const aziendeList = aziende || [];
 
