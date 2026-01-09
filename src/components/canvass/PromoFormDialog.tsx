@@ -79,6 +79,7 @@ export function PromoFormDialog({
   const [clienteSearch, setClienteSearch] = useState("");
   const [prodottoSearch, setProdottoSearch] = useState("");
   const [step, setStep] = useState(1);
+  const [showCartoniOmaggio, setShowCartoniOmaggio] = useState(false);
 
   // Reset form when opening/closing or when editingPromo changes
   useEffect(() => {
@@ -335,34 +336,70 @@ export function PromoFormDialog({
                     </div>
                   </div>
 
-                  {/* Cartoni Omaggio */}
-                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Gift className="h-5 w-5 text-green-600" />
-                      <Label className="font-semibold text-green-800 dark:text-green-300">Promozione Cartoni Omaggio</Label>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <Label className="text-sm text-green-700 dark:text-green-400">Acquista (cartoni)</Label>
-                        <Input 
-                          type="number" 
-                          value={form.cartoni_acquisto} 
-                          onChange={(e) => setForm(f => ({ ...f, cartoni_acquisto: parseInt(e.target.value) || 0 }))} 
-                          placeholder="Es. 10"
-                          className="bg-white dark:bg-background"
-                        />
+                  {/* Cartoni Omaggio - Collapsible */}
+                  <div className="rounded-xl border border-green-200 dark:border-green-800 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setShowCartoniOmaggio(!showCartoniOmaggio)}
+                      className="w-full p-4 bg-green-50 dark:bg-green-900/20 flex items-center justify-between hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Gift className="h-5 w-5 text-green-600" />
+                        <span className="font-semibold text-green-800 dark:text-green-300">Promozione Cartoni Omaggio</span>
+                        {(form.cartoni_acquisto > 0 || form.cartoni_omaggio > 0) && (
+                          <Badge className="bg-green-600 text-white ml-2">
+                            {form.cartoni_acquisto}+{form.cartoni_omaggio}
+                          </Badge>
+                        )}
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-sm text-green-700 dark:text-green-400">Ricevi Omaggio (cartoni)</Label>
-                        <Input 
-                          type="number" 
-                          value={form.cartoni_omaggio} 
-                          onChange={(e) => setForm(f => ({ ...f, cartoni_omaggio: parseInt(e.target.value) || 0 }))} 
-                          placeholder="Es. 1"
-                          className="bg-white dark:bg-background"
-                        />
+                      <div className={`transform transition-transform ${showCartoniOmaggio ? "rotate-180" : ""}`}>
+                        <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
                       </div>
-                    </div>
+                    </button>
+                    {showCartoniOmaggio && (
+                      <div className="p-4 bg-green-50/50 dark:bg-green-900/10 border-t border-green-200 dark:border-green-800">
+                        <p className="text-sm text-green-700 dark:text-green-400 mb-4">
+                          Es: Acquista 10 cartoni e ricevi 1 in omaggio (10+1)
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-green-700 dark:text-green-400">
+                              Acquista (cartoni)
+                            </Label>
+                            <Input 
+                              type="number" 
+                              min="0"
+                              value={form.cartoni_acquisto || ""} 
+                              onChange={(e) => setForm(f => ({ ...f, cartoni_acquisto: parseInt(e.target.value) || 0 }))} 
+                              placeholder="Es. 10"
+                              className="bg-white dark:bg-background h-12 text-lg"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-green-700 dark:text-green-400">
+                              Ricevi Omaggio (cartoni)
+                            </Label>
+                            <Input 
+                              type="number"
+                              min="0" 
+                              value={form.cartoni_omaggio || ""} 
+                              onChange={(e) => setForm(f => ({ ...f, cartoni_omaggio: parseInt(e.target.value) || 0 }))} 
+                              placeholder="Es. 1"
+                              className="bg-white dark:bg-background h-12 text-lg"
+                            />
+                          </div>
+                        </div>
+                        {form.cartoni_acquisto > 0 && form.cartoni_omaggio > 0 && (
+                          <div className="mt-4 p-3 bg-green-100 dark:bg-green-800/30 rounded-lg">
+                            <p className="text-sm font-medium text-green-800 dark:text-green-200 text-center">
+                              ✅ Promo: {form.cartoni_acquisto}+{form.cartoni_omaggio} (Acquista {form.cartoni_acquisto} cartoni, ricevi {form.cartoni_omaggio} gratis)
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Periodi Aggiuntivi */}
