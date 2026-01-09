@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { useCanvass, useCanvassAttive, useContrattiClienti, useCreateCanvass, useDeleteCanvass, useCreateContrattoCliente, useDeleteContrattoCliente, Canvass, ContrattoCliente } from "@/hooks/useCanvass";
+import { useCanvass, useCanvassAttive, useContrattiClienti, useCreateCanvass, useUpdateCanvass, useDeleteCanvass, useCreateContrattoCliente, useUpdateContrattoCliente, useDeleteContrattoCliente, Canvass, ContrattoCliente } from "@/hooks/useCanvass";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
 import { useProdotti } from "@/hooks/useProdotti";
@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Percent, Tag, Trophy, Calendar, Building2, Users, Package, Trash2, AlertCircle, Clock, CheckCircle2, AlertTriangle, Upload, Loader2, Sparkles, FileImage, Gift, TrendingUp, Target } from "lucide-react";
+import { Plus, Percent, Tag, Trophy, Calendar, Building2, Users, Package, Trash2, AlertCircle, Clock, CheckCircle2, AlertTriangle, Upload, Loader2, Sparkles, FileImage, Gift, TrendingUp, Target, Pencil } from "lucide-react";
 import { format, parseISO, differenceInDays, isAfter, isBefore } from "date-fns";
 import { it } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,8 +44,10 @@ export default function CanvassPage() {
   const { data: ordini = [] } = useOrdini();
   
   const createCanvass = useCreateCanvass();
+  const updateCanvass = useUpdateCanvass();
   const deleteCanvass = useDeleteCanvass();
   const createContratto = useCreateContrattoCliente();
+  const updateContratto = useUpdateContrattoCliente();
   const deleteContratto = useDeleteContrattoCliente();
 
   const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
@@ -55,6 +57,10 @@ export default function CanvassPage() {
   const [isParsingAI, setIsParsingAI] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Edit mode state
+  const [editingPromo, setEditingPromo] = useState<Canvass | null>(null);
+  const [editingContratto, setEditingContratto] = useState<ContrattoCliente | null>(null);
   
   const [promoForm, setPromoForm] = useState({
     nome: "",
@@ -138,31 +144,81 @@ export default function CanvassPage() {
   const contrattiAnnoCorrente = contratti.filter(c => c.anno === today.getFullYear()).length;
   const promozioniFuture = canvass.filter(c => isAfter(parseISO(c.data_inizio), today)).length;
 
-  const handleCreatePromo = async () => {
+  const openEditPromo = (promo: Canvass) => {
+    setEditingPromo(promo);
+    setPromoForm({
+      nome: promo.nome,
+      descrizione: promo.descrizione || "",
+      tipo: promo.tipo,
+      valore: promo.valore,
+      data_inizio: promo.data_inizio,
+      data_fine: promo.data_fine,
+      attivo: promo.attivo,
+      tutti_clienti: promo.tutti_clienti,
+      azienda_id: promo.azienda_id,
+      clienti_ids: promo.canvass_clienti?.map(cc => cc.cliente_id) || [],
+      prodotti: promo.canvass_prodotti?.map(cp => ({ prodotto_id: cp.prodotto_id, valore_override: cp.valore_override || undefined })) || [],
+      cartoni_omaggio: promo.cartoni_omaggio || 0,
+      cartoni_acquisto: promo.cartoni_acquisto || 0,
+      periodi_aggiuntivi: promo.canvass_periodi?.map(p => ({ data_inizio: p.data_inizio, data_fine: p.data_fine })) || [],
+    });
+    setSelectedAziendaId(promo.azienda_id);
+    setIsPromoDialogOpen(true);
+  };
+
+  const openEditContratto = (contratto: ContrattoCliente) => {
+    setEditingContratto(contratto);
+    setContrattoForm({
+      cliente_id: contratto.cliente_id || "",
+      azienda_id: contratto.azienda_id,
+      anno: contratto.anno,
+      percentuale_premio: contratto.percentuale_premio,
+      soglia_fatturato: contratto.soglia_fatturato || 0,
+      note: contratto.note || "",
+      consorzio: contratto.consorzio || "",
+      is_consorzio: contratto.is_consorzio,
+    });
+    setIsContrattoDialogOpen(true);
+  };
+
+  const handleSavePromo = async () => {
     if (!promoForm.nome || !promoForm.azienda_id || !promoForm.data_inizio || !promoForm.data_fine) {
       return;
     }
     
-    await createCanvass.mutateAsync({
-      canvass: {
-        nome: promoForm.nome,
-        descrizione: promoForm.descrizione || null,
-        tipo: promoForm.tipo,
-        valore: promoForm.valore,
-        data_inizio: promoForm.data_inizio,
-        data_fine: promoForm.data_fine,
-        attivo: promoForm.attivo,
-        tutti_clienti: promoForm.tutti_clienti,
-        azienda_id: promoForm.azienda_id,
-        cartoni_omaggio: promoForm.cartoni_omaggio,
-        cartoni_acquisto: promoForm.cartoni_acquisto,
-      },
-      clienti_ids: promoForm.tutti_clienti ? [] : promoForm.clienti_ids,
-      prodotti: promoForm.prodotti,
-      periodi: promoForm.periodi_aggiuntivi.filter(p => p.data_inizio && p.data_fine),
-    });
+    const canvassData = {
+      nome: promoForm.nome,
+      descrizione: promoForm.descrizione || null,
+      tipo: promoForm.tipo,
+      valore: promoForm.valore,
+      data_inizio: promoForm.data_inizio,
+      data_fine: promoForm.data_fine,
+      attivo: promoForm.attivo,
+      tutti_clienti: promoForm.tutti_clienti,
+      azienda_id: promoForm.azienda_id,
+      cartoni_omaggio: promoForm.cartoni_omaggio,
+      cartoni_acquisto: promoForm.cartoni_acquisto,
+    };
+
+    if (editingPromo) {
+      await updateCanvass.mutateAsync({
+        id: editingPromo.id,
+        canvass: canvassData,
+        clienti_ids: promoForm.tutti_clienti ? [] : promoForm.clienti_ids,
+        prodotti: promoForm.prodotti,
+        periodi: promoForm.periodi_aggiuntivi.filter(p => p.data_inizio && p.data_fine),
+      });
+    } else {
+      await createCanvass.mutateAsync({
+        canvass: canvassData,
+        clienti_ids: promoForm.tutti_clienti ? [] : promoForm.clienti_ids,
+        prodotti: promoForm.prodotti,
+        periodi: promoForm.periodi_aggiuntivi.filter(p => p.data_inizio && p.data_fine),
+      });
+    }
     
     resetPromoForm();
+    setEditingPromo(null);
     setIsPromoDialogOpen(false);
   };
 
@@ -183,16 +239,17 @@ export default function CanvassPage() {
       cartoni_acquisto: 0,
       periodi_aggiuntivi: [],
     });
+    setSelectedAziendaId("");
   };
 
-  const handleCreateContratto = async () => {
+  const handleSaveContratto = async () => {
     if (contrattoForm.is_consorzio) {
       if (!contrattoForm.consorzio || !contrattoForm.azienda_id) return;
     } else {
       if (!contrattoForm.cliente_id || !contrattoForm.azienda_id) return;
     }
     
-    await createContratto.mutateAsync({
+    const contrattoData = {
       cliente_id: contrattoForm.is_consorzio ? null : contrattoForm.cliente_id,
       azienda_id: contrattoForm.azienda_id,
       anno: contrattoForm.anno,
@@ -201,8 +258,23 @@ export default function CanvassPage() {
       note: contrattoForm.note || null,
       consorzio: contrattoForm.is_consorzio ? contrattoForm.consorzio : null,
       is_consorzio: contrattoForm.is_consorzio,
-    });
+    };
+
+    if (editingContratto) {
+      await updateContratto.mutateAsync({
+        id: editingContratto.id,
+        ...contrattoData,
+      });
+    } else {
+      await createContratto.mutateAsync(contrattoData);
+    }
     
+    resetContrattoForm();
+    setEditingContratto(null);
+    setIsContrattoDialogOpen(false);
+  };
+
+  const resetContrattoForm = () => {
     setContrattoForm({
       cliente_id: "",
       azienda_id: "",
@@ -213,7 +285,6 @@ export default function CanvassPage() {
       consorzio: "",
       is_consorzio: false,
     });
-    setIsContrattoDialogOpen(false);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -278,55 +349,95 @@ export default function CanvassPage() {
     if (!aiResult) return;
 
     try {
-      if (aiResult.tipo === "contratto") {
-        // Find azienda ID
-        const azienda = aziende.find(a => a.nome.toLowerCase().includes(aiResult.azienda_nome?.toLowerCase() || ""));
-        if (!azienda) {
-          toast.error("Azienda non trovata: " + aiResult.azienda_nome);
-          return;
-        }
+      const azienda = aziende.find(a => a.nome.toLowerCase().includes(aiResult.azienda_nome?.toLowerCase() || ""));
+      if (!azienda) {
+        toast.error("Azienda non trovata: " + aiResult.azienda_nome);
+        return;
+      }
 
-        if (aiResult.consorzio) {
-          // Contratto consorzio
-          await createContratto.mutateAsync({
-            cliente_id: null,
-            azienda_id: azienda.id,
-            anno: aiResult.anno || new Date().getFullYear(),
-            percentuale_premio: aiResult.percentuale_premio || 0,
-            soglia_fatturato: aiResult.soglia_fatturato || 0,
-            note: aiResult.note || null,
-            consorzio: aiResult.consorzio,
-            is_consorzio: true,
-          });
-        } else {
-          // Contratto cliente
-          const cliente = clienti.find(c => c.nome.toLowerCase().includes(aiResult.cliente_nome?.toLowerCase() || ""));
-          if (!cliente) {
-            toast.error("Cliente non trovato: " + aiResult.cliente_nome);
-            return;
+      // Handle mixed documents or contracts
+      if (aiResult.tipo === "contratto" || aiResult.tipo === "misto") {
+        // Create contract(s)
+        if (aiResult.obbiettivi && aiResult.obbiettivi.length > 0) {
+          // Multiple objectives - create a contract for each or use the first
+          const primaryObj = aiResult.obbiettivi[0];
+          
+          if (aiResult.consorzio) {
+            await createContratto.mutateAsync({
+              cliente_id: null,
+              azienda_id: azienda.id,
+              anno: aiResult.anno || new Date().getFullYear(),
+              percentuale_premio: primaryObj.percentuale_premio || aiResult.percentuale_premio || 0,
+              soglia_fatturato: primaryObj.soglia_fatturato || aiResult.soglia_fatturato || 0,
+              note: aiResult.obbiettivi.length > 1 
+                ? `Obbiettivi: ${aiResult.obbiettivi.map((o: any) => `${o.percentuale_premio}% sopra ${formatCurrency(o.soglia_fatturato)}`).join(", ")}. ${aiResult.note || ""}`
+                : aiResult.note || null,
+              consorzio: aiResult.consorzio,
+              is_consorzio: true,
+            });
+          } else {
+            const cliente = clienti.find(c => c.nome.toLowerCase().includes(aiResult.cliente_nome?.toLowerCase() || ""));
+            if (!cliente) {
+              toast.error("Cliente non trovato: " + aiResult.cliente_nome);
+              return;
+            }
+
+            await createContratto.mutateAsync({
+              cliente_id: cliente.id,
+              azienda_id: azienda.id,
+              anno: aiResult.anno || new Date().getFullYear(),
+              percentuale_premio: primaryObj.percentuale_premio || aiResult.percentuale_premio || 0,
+              soglia_fatturato: primaryObj.soglia_fatturato || aiResult.soglia_fatturato || 0,
+              note: aiResult.obbiettivi.length > 1 
+                ? `Obbiettivi: ${aiResult.obbiettivi.map((o: any) => `${o.percentuale_premio}% sopra ${formatCurrency(o.soglia_fatturato)}`).join(", ")}. ${aiResult.note || ""}`
+                : aiResult.note || null,
+              consorzio: null,
+              is_consorzio: false,
+            });
           }
+          
+          toast.success("Contratto creato con successo!");
+        } else if (aiResult.percentuale_premio !== undefined) {
+          // Single objective contract
+          if (aiResult.consorzio) {
+            await createContratto.mutateAsync({
+              cliente_id: null,
+              azienda_id: azienda.id,
+              anno: aiResult.anno || new Date().getFullYear(),
+              percentuale_premio: aiResult.percentuale_premio || 0,
+              soglia_fatturato: aiResult.soglia_fatturato || 0,
+              note: aiResult.note || null,
+              consorzio: aiResult.consorzio,
+              is_consorzio: true,
+            });
+          } else {
+            const cliente = clienti.find(c => c.nome.toLowerCase().includes(aiResult.cliente_nome?.toLowerCase() || ""));
+            if (!cliente) {
+              toast.error("Cliente non trovato: " + aiResult.cliente_nome);
+              return;
+            }
 
-          await createContratto.mutateAsync({
-            cliente_id: cliente.id,
-            azienda_id: azienda.id,
-            anno: aiResult.anno || new Date().getFullYear(),
-            percentuale_premio: aiResult.percentuale_premio || 0,
-            soglia_fatturato: aiResult.soglia_fatturato || 0,
-            note: aiResult.note || null,
-            consorzio: null,
-            is_consorzio: false,
-          });
+            await createContratto.mutateAsync({
+              cliente_id: cliente.id,
+              azienda_id: azienda.id,
+              anno: aiResult.anno || new Date().getFullYear(),
+              percentuale_premio: aiResult.percentuale_premio || 0,
+              soglia_fatturato: aiResult.soglia_fatturato || 0,
+              note: aiResult.note || null,
+              consorzio: null,
+              is_consorzio: false,
+            });
+          }
+          toast.success("Contratto creato con successo!");
         }
-        toast.success("Contratto creato con successo!");
-      } else if (aiResult.tipo === "promozione" && aiResult.promozione) {
-        const azienda = aziende.find(a => a.nome.toLowerCase().includes(aiResult.azienda_nome?.toLowerCase() || ""));
-        if (!azienda) {
-          toast.error("Azienda non trovata: " + aiResult.azienda_nome);
-          return;
-        }
+      }
 
+      // Handle promotions
+      const promosToCreate = aiResult.promozioni || (aiResult.promozione ? [aiResult.promozione] : []);
+      
+      for (const promo of promosToCreate) {
         // Find matching products
-        const prodottiMatch = aiResult.promozione.prodotti?.map((pName: string) => {
+        const prodottiMatch = promo.prodotti?.map((pName: string) => {
           const found = prodotti.find(p => 
             p.nome.toLowerCase().includes(pName.toLowerCase()) ||
             p.codice?.toLowerCase().includes(pName.toLowerCase())
@@ -339,24 +450,31 @@ export default function CanvassPage() {
           ? clienti.find(c => c.nome.toLowerCase().includes(aiResult.cliente_nome.toLowerCase()))
           : null;
 
+        // Handle multiple periods
+        const periodiAggiuntivi = promo.periodi?.slice(1) || [];
+
         await createCanvass.mutateAsync({
           canvass: {
-            nome: aiResult.promozione.nome,
+            nome: promo.nome,
             descrizione: aiResult.note || null,
-            tipo: aiResult.promozione.tipo,
-            valore: aiResult.promozione.valore,
-            data_inizio: aiResult.promozione.data_inizio || format(new Date(), "yyyy-MM-dd"),
-            data_fine: aiResult.promozione.data_fine || format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+            tipo: promo.tipo,
+            valore: promo.valore,
+            data_inizio: promo.periodi?.[0]?.data_inizio || promo.data_inizio || format(new Date(), "yyyy-MM-dd"),
+            data_fine: promo.periodi?.[0]?.data_fine || promo.data_fine || format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
             attivo: true,
             tutti_clienti: !clienteMatch,
             azienda_id: azienda.id,
-            cartoni_omaggio: aiResult.promozione.cartoni_omaggio || 0,
-            cartoni_acquisto: aiResult.promozione.cartoni_acquisto || 0,
+            cartoni_omaggio: promo.cartoni_omaggio || 0,
+            cartoni_acquisto: promo.cartoni_acquisto || 0,
           },
           clienti_ids: clienteMatch ? [clienteMatch.id] : [],
           prodotti: prodottiMatch,
+          periodi: periodiAggiuntivi,
         });
-        toast.success("Promozione creata con successo!");
+      }
+
+      if (promosToCreate.length > 0) {
+        toast.success(`${promosToCreate.length} promozione/i creata/e!`);
       }
 
       setIsAIDialogOpen(false);
@@ -454,7 +572,13 @@ export default function CanvassPage() {
               Importa con AI
             </Button>
 
-            <Dialog open={isContrattoDialogOpen} onOpenChange={setIsContrattoDialogOpen}>
+            <Dialog open={isContrattoDialogOpen} onOpenChange={(open) => {
+              setIsContrattoDialogOpen(open);
+              if (!open) {
+                setEditingContratto(null);
+                resetContrattoForm();
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button variant="outline">
                   <Trophy className="h-4 w-4 mr-2" />
@@ -463,8 +587,10 @@ export default function CanvassPage() {
               </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Nuovo Contratto Premio</DialogTitle>
-                  <DialogDescription>Crea un contratto premio fine anno per un cliente o consorzio</DialogDescription>
+                  <DialogTitle>{editingContratto ? "Modifica Contratto Premio" : "Nuovo Contratto Premio"}</DialogTitle>
+                  <DialogDescription>
+                    {editingContratto ? "Modifica il contratto premio fine anno" : "Crea un contratto premio fine anno per un cliente o consorzio"}
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
@@ -555,13 +681,25 @@ export default function CanvassPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsContrattoDialogOpen(false)}>Annulla</Button>
-                  <Button onClick={handleCreateContratto} disabled={createContratto.isPending}>Crea</Button>
+                  <Button variant="outline" onClick={() => {
+                    setIsContrattoDialogOpen(false);
+                    setEditingContratto(null);
+                    resetContrattoForm();
+                  }}>Annulla</Button>
+                  <Button onClick={handleSaveContratto} disabled={createContratto.isPending || updateContratto.isPending}>
+                    {editingContratto ? "Salva Modifiche" : "Crea"}
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
 
-            <Dialog open={isPromoDialogOpen} onOpenChange={setIsPromoDialogOpen}>
+            <Dialog open={isPromoDialogOpen} onOpenChange={(open) => {
+              setIsPromoDialogOpen(open);
+              if (!open) {
+                setEditingPromo(null);
+                resetPromoForm();
+              }
+            }}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
@@ -570,8 +708,10 @@ export default function CanvassPage() {
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Nuova Promozione</DialogTitle>
-                  <DialogDescription>Crea una nuova promozione o sconto</DialogDescription>
+                  <DialogTitle>{editingPromo ? "Modifica Promozione" : "Nuova Promozione"}</DialogTitle>
+                  <DialogDescription>
+                    {editingPromo ? "Modifica la promozione esistente" : "Crea una nuova promozione o sconto"}
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
@@ -807,8 +947,14 @@ export default function CanvassPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsPromoDialogOpen(false)}>Annulla</Button>
-                  <Button onClick={handleCreatePromo} disabled={createCanvass.isPending}>Crea Promozione</Button>
+                  <Button variant="outline" onClick={() => {
+                    setIsPromoDialogOpen(false);
+                    setEditingPromo(null);
+                    resetPromoForm();
+                  }}>Annulla</Button>
+                  <Button onClick={handleSavePromo} disabled={createCanvass.isPending || updateCanvass.isPending}>
+                    {editingPromo ? "Salva Modifiche" : "Crea Promozione"}
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -817,7 +963,7 @@ export default function CanvassPage() {
 
         {/* AI Result Dialog */}
         <Dialog open={isAIDialogOpen} onOpenChange={setIsAIDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-purple-600" />
@@ -832,7 +978,9 @@ export default function CanvassPage() {
                 <Alert>
                   <FileImage className="h-4 w-4" />
                   <AlertTitle>
-                    {aiResult.tipo === "contratto" ? "Contratto Premio" : "Promozione"}
+                    {aiResult.tipo === "contratto" ? "Contratto Premio" : 
+                     aiResult.tipo === "misto" ? "Documento Misto (Contratto + Promozioni)" : 
+                     "Promozione"}
                   </AlertTitle>
                   <AlertDescription>
                     Confidenza: {Math.round((aiResult.confidence || 0) * 100)}%
@@ -864,35 +1012,106 @@ export default function CanvassPage() {
                       <p className="font-medium">{aiResult.anno}</p>
                     </div>
                   )}
-                  {aiResult.percentuale_premio !== undefined && (
+                </div>
+
+                {/* Multiple objectives */}
+                {aiResult.obbiettivi && aiResult.obbiettivi.length > 0 && (
+                  <div className="space-y-2 p-3 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200">
+                    <Label className="font-medium text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                      <Target className="h-4 w-4" />
+                      Obbiettivi ({aiResult.obbiettivi.length})
+                    </Label>
+                    {aiResult.obbiettivi.map((obj: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center text-sm bg-white dark:bg-background p-2 rounded">
+                        <span>{obj.descrizione || `Scaglione ${idx + 1}`}</span>
+                        <span className="font-medium">
+                          {obj.percentuale_premio}% sopra {formatCurrency(obj.soglia_fatturato)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Single contract info */}
+                {!aiResult.obbiettivi?.length && aiResult.percentuale_premio !== undefined && (
+                  <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <Label className="text-xs text-muted-foreground">Premio %</Label>
                       <p className="font-medium">{aiResult.percentuale_premio}%</p>
                     </div>
-                  )}
-                  {aiResult.promozione && (
-                    <>
-                      <div className="col-span-2">
-                        <Label className="text-xs text-muted-foreground">Nome Promozione</Label>
-                        <p className="font-medium">{aiResult.promozione.nome}</p>
-                      </div>
+                    {aiResult.soglia_fatturato > 0 && (
                       <div>
-                        <Label className="text-xs text-muted-foreground">Tipo</Label>
-                        <p className="font-medium">{tipoConfig[aiResult.promozione.tipo as keyof typeof tipoConfig]?.label || aiResult.promozione.tipo}</p>
+                        <Label className="text-xs text-muted-foreground">Soglia</Label>
+                        <p className="font-medium">{formatCurrency(aiResult.soglia_fatturato)}</p>
                       </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">Valore</Label>
-                        <p className="font-medium">{aiResult.promozione.valore}{aiResult.promozione.tipo !== "prezzo_fisso" ? "%" : "€"}</p>
-                      </div>
-                      {aiResult.promozione.cartoni_omaggio > 0 && (
-                        <div className="col-span-2">
-                          <Label className="text-xs text-muted-foreground">Cartoni Omaggio</Label>
-                          <p className="font-medium">Prendi {aiResult.promozione.cartoni_acquisto}, ricevi {aiResult.promozione.cartoni_omaggio} omaggio</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Multiple promotions */}
+                {aiResult.promozioni && aiResult.promozioni.length > 0 && (
+                  <div className="space-y-2 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200">
+                    <Label className="font-medium text-purple-800 dark:text-purple-300 flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      Promozioni ({aiResult.promozioni.length})
+                    </Label>
+                    {aiResult.promozioni.map((promo: any, idx: number) => (
+                      <div key={idx} className="text-sm bg-white dark:bg-background p-2 rounded space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{promo.nome}</span>
+                          <Badge variant="outline">
+                            {promo.valore}{promo.tipo !== "prezzo_fisso" ? "%" : "€"}
+                          </Badge>
                         </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                        {promo.periodi && promo.periodi.length > 1 && (
+                          <div className="flex flex-wrap gap-1">
+                            {promo.periodi.map((p: any, pIdx: number) => (
+                              <Badge key={pIdx} variant="secondary" className="text-xs">
+                                {format(parseISO(p.data_inizio), "dd/MM")} - {format(parseISO(p.data_fine), "dd/MM")}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Single promotion (fallback) */}
+                {aiResult.promozione && !aiResult.promozioni?.length && (
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="col-span-2">
+                      <Label className="text-xs text-muted-foreground">Nome Promozione</Label>
+                      <p className="font-medium">{aiResult.promozione.nome}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Tipo</Label>
+                      <p className="font-medium">{tipoConfig[aiResult.promozione.tipo as keyof typeof tipoConfig]?.label || aiResult.promozione.tipo}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Valore</Label>
+                      <p className="font-medium">{aiResult.promozione.valore}{aiResult.promozione.tipo !== "prezzo_fisso" ? "%" : "€"}</p>
+                    </div>
+                    {aiResult.promozione.cartoni_omaggio > 0 && (
+                      <div className="col-span-2">
+                        <Label className="text-xs text-muted-foreground">Cartoni Omaggio</Label>
+                        <p className="font-medium">Prendi {aiResult.promozione.cartoni_acquisto}, ricevi {aiResult.promozione.cartoni_omaggio} omaggio</p>
+                      </div>
+                    )}
+                    {aiResult.promozione.periodi && aiResult.promozione.periodi.length > 1 && (
+                      <div className="col-span-2">
+                        <Label className="text-xs text-muted-foreground">Periodi</Label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {aiResult.promozione.periodi.map((p: any, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {format(parseISO(p.data_inizio), "dd/MM")} - {format(parseISO(p.data_fine), "dd/MM")}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {aiResult.note && (
                   <div>
@@ -1104,13 +1323,22 @@ export default function CanvassPage() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => deleteCanvass.mutate(promo.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => openEditPromo(promo)}
+                                >
+                                  <Pencil className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => deleteCanvass.mutate(promo.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
@@ -1253,13 +1481,22 @@ export default function CanvassPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => deleteContratto.mutate(contratto.id)}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => openEditContratto(contratto)}
+                                >
+                                  <Pencil className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => deleteContratto.mutate(contratto.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
