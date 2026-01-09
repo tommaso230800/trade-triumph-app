@@ -14,11 +14,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { MapPin, Phone, Mail, MoreHorizontal, Loader2, Package, Trash2, Check, X, Plus, ChevronDown, ChevronUp, Upload, ImageIcon, Pencil } from "lucide-react";
+import { MapPin, Phone, Mail, MoreHorizontal, Loader2, Package, Trash2, Check, X, Plus, ChevronDown, ChevronUp, Upload, ImageIcon, Pencil, FileUp } from "lucide-react";
 import { Azienda, useUpdateAzienda } from "@/hooks/useAziende";
 import { useProdotti, useCreateProdotto, useDeleteProdotto, useUpdateProdotto, Prodotto } from "@/hooks/useProdotti";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ImportProductsPDFDialog } from "./ImportProductsPDFDialog";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
@@ -65,9 +66,10 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newProduct, setNewProduct] = useState<ProductForm>(defaultProductForm);
   const [uploading, setUploading] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: prodotti, isLoading } = useProdotti(isExpanded ? azienda.id : undefined);
+  const { data: prodotti, isLoading, refetch: refetchProdotti } = useProdotti(isExpanded ? azienda.id : undefined);
   const createProdotto = useCreateProdotto();
   const updateProdotto = useUpdateProdotto();
   const deleteProdotto = useDeleteProdotto();
@@ -240,6 +242,10 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
                 <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="py-3 text-base">
                   <ImageIcon className="h-4 w-4 mr-3" />
                   Carica Logo
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsImportDialogOpen(true)} className="py-3 text-base">
+                  <FileUp className="h-4 w-4 mr-3" />
+                  Importa Prodotti PDF
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive py-3 text-base"
@@ -598,6 +604,14 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
           </div>
         </CollapsibleContent>
       </div>
+
+      <ImportProductsPDFDialog
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+        aziendaId={azienda.id}
+        aziendaNome={azienda.nome}
+        onImportComplete={() => refetchProdotti()}
+      />
     </Collapsible>
   );
 }
