@@ -5,24 +5,39 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface ContrattoObbiettivo {
+  soglia_fatturato: number;
+  percentuale_premio: number;
+  descrizione?: string;
+}
+
+interface PromozioneEstratta {
+  nome: string;
+  tipo: "sconto_percentuale" | "prezzo_fisso" | "premio_fine_anno";
+  valore: number;
+  data_inizio?: string;
+  data_fine?: string;
+  prodotti?: string[];
+  cartoni_omaggio?: number;
+  cartoni_acquisto?: number;
+  periodi?: { data_inizio: string; data_fine: string }[];
+}
+
 interface ParsedCanvassResult {
-  tipo: "contratto" | "promozione";
+  tipo: "contratto" | "promozione" | "misto";
   cliente_nome?: string;
   consorzio?: string;
   azienda_nome?: string;
   anno?: number;
+  // Per contratti con obbiettivi multipli
+  obbiettivi?: ContrattoObbiettivo[];
+  // Fallback singolo obbiettivo
   percentuale_premio?: number;
   soglia_fatturato?: number;
-  promozione?: {
-    nome: string;
-    tipo: "sconto_percentuale" | "prezzo_fisso" | "premio_fine_anno";
-    valore: number;
-    data_inizio?: string;
-    data_fine?: string;
-    prodotti?: string[];
-    cartoni_omaggio?: number;
-    cartoni_acquisto?: number;
-  };
+  // Promozioni (può essere array per documenti misti)
+  promozioni?: PromozioneEstratta[];
+  // Fallback singola promozione (retrocompatibilità)
+  promozione?: PromozioneEstratta;
   note?: string;
   confidence: number;
 }
@@ -64,16 +79,58 @@ ${aziendeList}
 PRODOTTI DISPONIBILI:
 ${prodottiList}
 
-Analizza il documento e restituisci un JSON con questa struttura:
+Analizza il documento con intelligenza. Può essere:
+1. Un CONTRATTO PREMIO FINE ANNO - accordo annuale con soglie di fatturato e premi percentuali
+2. Una PROMOZIONE/CANVASS - sconto temporaneo su prodotti specifici
+3. Un DOCUMENTO MISTO - contiene sia contratto che promozioni, o più obbiettivi
+
+IMPORTANTE: I contratti premio spesso hanno:
+- Obbiettivi multipli con soglie crescenti (es. +3% sopra 10.000€, +4% sopra 20.000€)
+- Riferimenti a promozioni incluse nel periodo contrattuale
+- Periodi di validità multipli per le promozioni (es. Marzo, Giugno, Ottobre)
+
+Restituisci un JSON con questa struttura:
 
 {
-  "tipo": "contratto" o "promozione",
-  "cliente_nome": "nome esatto del cliente se presente",
+  "tipo": "contratto" | "promozione" | "misto",
+  "cliente_nome": "nome esatto del cliente se presente (usa nomi dalla lista)",
   "consorzio": "nome del consorzio se il contratto è per un consorzio",
-  "azienda_nome": "nome esatto dell'azienda fornitrice",
+  "azienda_nome": "nome esatto dell'azienda fornitrice (usa nomi dalla lista)",
   "anno": 2024,
+  
+  "obbiettivi": [
+    {
+      "soglia_fatturato": 10000,
+      "percentuale_premio": 3,
+      "descrizione": "Primo scaglione"
+    },
+    {
+      "soglia_fatturato": 20000,
+      "percentuale_premio": 4,
+      "descrizione": "Secondo scaglione"
+    }
+  ],
+  
   "percentuale_premio": 3.5,
   "soglia_fatturato": 10000,
+  
+  "promozioni": [
+    {
+      "nome": "Promo Estate",
+      "tipo": "sconto_percentuale",
+      "valore": 10,
+      "data_inizio": "2024-06-01",
+      "data_fine": "2024-06-30",
+      "prodotti": ["nome prodotto 1"],
+      "cartoni_omaggio": 0,
+      "cartoni_acquisto": 0,
+      "periodi": [
+        { "data_inizio": "2024-03-01", "data_fine": "2024-03-31" },
+        { "data_inizio": "2024-06-01", "data_fine": "2024-06-30" }
+      ]
+    }
+  ],
+  
   "promozione": {
     "nome": "Nome della promozione",
     "tipo": "sconto_percentuale" | "prezzo_fisso" | "premio_fine_anno",
@@ -82,27 +139,46 @@ Analizza il documento e restituisci un JSON con questa struttura:
     "data_fine": "2024-12-31",
     "prodotti": ["nome prodotto 1", "nome prodotto 2"],
     "cartoni_omaggio": 1,
-    "cartoni_acquisto": 10
+    "cartoni_acquisto": 10,
+    "periodi": [
+      { "data_inizio": "2024-03-01", "data_fine": "2024-03-31" },
+      { "data_inizio": "2024-06-01", "data_fine": "2024-06-30" }
+    ]
   },
-  "note": "eventuali note aggiuntive",
+  
+  "note": "eventuali note aggiuntive estratte dal documento",
   "confidence": 0.95
 }
 
-REGOLE:
-- Se è un contratto premio fine anno, imposta tipo="contratto" e includi percentuale_premio
-- Se è una promozione/canvass, imposta tipo="promozione" e compila l'oggetto promozione
-- Per promozioni "prendi X paghi Y" o "cartoni omaggio", usa cartoni_omaggio e cartoni_acquisto
-- Se il contratto menziona un consorzio, tutti i clienti di quel consorzio ne beneficiano
-- Usa i nomi ESATTI di clienti, aziende e prodotti dalla lista fornita
-- Se non riesci a identificare qualcosa, usa null
-- Imposta confidence da 0 a 1 in base a quanto sei sicuro dell'interpretazione
+REGOLE INTELLIGENTI:
+1. Se il documento contiene SOLO un contratto premio annuale, usa tipo="contratto"
+2. Se contiene SOLO promozioni/canvass, usa tipo="promozione"
+3. Se contiene ENTRAMBI (es. contratto con promozioni incluse), usa tipo="misto"
+
+4. Per contratti con OBBIETTIVI MULTIPLI/SCAGLIONI:
+   - Popola l'array "obbiettivi" con tutte le soglie e premi trovati
+   - Usa anche percentuale_premio e soglia_fatturato per il primo/principale obbiettivo
+
+5. Per promozioni MULTIPLE nello stesso documento:
+   - Popola l'array "promozioni" con tutte le promozioni trovate
+   - Usa anche "promozione" per la prima/principale (retrocompatibilità)
+
+6. Per promozioni con PERIODI MULTIPLI (es. valida a Marzo, Giugno, Ottobre):
+   - Usa data_inizio e data_fine per il primo periodo
+   - Usa l'array "periodi" per tutti i periodi aggiuntivi
+
+7. Per promozioni "prendi X paghi Y" o "cartoni omaggio", usa cartoni_omaggio e cartoni_acquisto
+
+8. Usa i nomi ESATTI di clienti, aziende e prodotti dalla lista fornita quando possibile
+9. Se non riesci a identificare qualcosa, usa null
+10. Imposta confidence da 0 a 1 in base a quanto sei sicuro dell'interpretazione
 
 Rispondi SOLO con il JSON, senza markdown o testo aggiuntivo.`;
 
     const userContent = [
       {
         type: "text",
-        text: "Analizza questo documento commerciale ed estrai le informazioni sul contratto o promozione:"
+        text: "Analizza questo documento commerciale ed estrai TUTTE le informazioni su contratti, obbiettivi, promozioni e periodi. Sii intelligente nell'identificare se è un contratto premio, una promozione, o entrambi:"
       },
       {
         type: "image_url",
