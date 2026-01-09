@@ -186,7 +186,27 @@ export function useKPIStats() {
         return acc;
       }, [] as { mese: string; fatturato: number; ordini: number }[]);
 
-      // Consorzio breakdown
+      // Consorzio breakdown with aziende details
+      const consorzioAziendeMap = new Map<string, Map<string, { azienda_nome: string; fatturato: number }>>();
+      
+      ordini.forEach((ordine) => {
+        const cliente = clienti.find((c) => c.id === ordine.cliente_id);
+        const consorzio = cliente?.consorzio || "Indipendente";
+        const aziendaNome = ordine.aziende?.nome || "N/A";
+        const aziendaId = ordine.azienda_id || "unknown";
+        
+        if (!consorzioAziendeMap.has(consorzio)) {
+          consorzioAziendeMap.set(consorzio, new Map());
+        }
+        const aziendeMap = consorzioAziendeMap.get(consorzio)!;
+        
+        if (aziendeMap.has(aziendaId)) {
+          aziendeMap.get(aziendaId)!.fatturato += Number(ordine.totale);
+        } else {
+          aziendeMap.set(aziendaId, { azienda_nome: aziendaNome, fatturato: Number(ordine.totale) });
+        }
+      });
+
       const consorzioStats = clienti.reduce((acc, c) => {
         const consorzio = c.consorzio || "Indipendente";
         const existing = acc.find((cs) => cs.consorzio === consorzio);
@@ -198,6 +218,13 @@ export function useKPIStats() {
         }
         return acc;
       }, [] as { consorzio: string; clienti: number; fatturato: number }[]);
+
+      // Build consorzio with aziende breakdown
+      const consorzioAziendeStats = Array.from(consorzioAziendeMap.entries()).map(([consorzio, aziendeMap]) => ({
+        consorzio,
+        aziende: Array.from(aziendeMap.values()).sort((a, b) => b.fatturato - a.fatturato),
+        fatturato_totale: Array.from(aziendeMap.values()).reduce((sum, a) => sum + a.fatturato, 0),
+      })).sort((a, b) => b.fatturato_totale - a.fatturato_totale);
 
       return {
         clientiKPI,
@@ -211,6 +238,7 @@ export function useKPIStats() {
         prezzoMedioVendita,
         ordiniPerMese,
         consorzioStats,
+        consorzioAziendeStats,
         clientiTotali: clienti.length,
         prodottiTotali: prodotti.length,
         aziendeTotali: aziende.length,
