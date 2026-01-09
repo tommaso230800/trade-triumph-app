@@ -13,6 +13,14 @@ export type Cliente = {
   ordini_count: number;
   status: "premium" | "standard" | "nuovo";
   partita_iva: string | null;
+  indirizzo: string | null;
+  cap: string | null;
+  citta: string | null;
+  provincia: string | null;
+  codice_sdi: string | null;
+  pec: string | null;
+  email_aggiuntive: string[] | null;
+  consorzio: string | null;
   created_at: string;
 };
 

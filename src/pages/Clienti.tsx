@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal, Loader2, Filter, Wand2 } from "lucide-react";
+import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal, Loader2, Filter, Wand2, X } from "lucide-react";
 import { useClienti, useCreateCliente, useDeleteCliente, Cliente } from "@/hooks/useClienti";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -46,24 +46,64 @@ const statusConfig = {
   nuovo: { label: "Nuovo", className: "bg-success/10 text-success hover:bg-success/20" },
 };
 
+const CONSORZI = [
+  "ADAT",
+  "CBF",
+  "BEVERAGE NETWORK",
+  "RASNA",
+  "CDA",
+  "SAN GEMINIANO",
+  "INDIPENDENTE",
+];
+
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+
+type FormData = {
+  nome: string;
+  azienda: string;
+  email: string;
+  telefono: string;
+  fatturato: number;
+  ordini_count: number;
+  status: Cliente["status"];
+  partita_iva: string;
+  indirizzo: string;
+  cap: string;
+  citta: string;
+  provincia: string;
+  codice_sdi: string;
+  pec: string;
+  email_aggiuntive: string[];
+  consorzio: string;
+};
+
+const defaultFormData: FormData = {
+  nome: "",
+  azienda: "",
+  email: "",
+  telefono: "",
+  fatturato: 0,
+  ordini_count: 0,
+  status: "nuovo",
+  partita_iva: "",
+  indirizzo: "",
+  cap: "",
+  citta: "",
+  provincia: "",
+  codice_sdi: "",
+  pec: "",
+  email_aggiuntive: [],
+  consorzio: "",
+};
 
 const Clienti = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Cliente["status"] | "tutti">("tutti");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLookingUp, setIsLookingUp] = useState(false);
-  const [formData, setFormData] = useState({
-    nome: "",
-    azienda: "",
-    email: "",
-    telefono: "",
-    fatturato: 0,
-    ordini_count: 0,
-    status: "nuovo" as Cliente["status"],
-    partita_iva: "",
-  });
+  const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const [newEmail, setNewEmail] = useState("");
 
   const { data: clienti, isLoading } = useClienti(searchTerm, statusFilter);
   const createCliente = useCreateCliente();
@@ -89,6 +129,14 @@ const Clienti = () => {
           ...prev,
           nome: data.data.nome || prev.nome,
           azienda: data.data.nome || prev.azienda,
+          indirizzo: data.data.indirizzo || prev.indirizzo,
+          cap: data.data.cap || prev.cap,
+          citta: data.data.citta || prev.citta,
+          provincia: data.data.provincia || prev.provincia,
+          codice_sdi: data.data.codice_sdi || prev.codice_sdi,
+          pec: data.data.pec || prev.pec,
+          telefono: data.data.telefono || prev.telefono,
+          email: data.data.email || prev.email,
         }));
         toast.success("Dati cliente recuperati!");
       } else {
@@ -102,11 +150,38 @@ const Clienti = () => {
     }
   };
 
+  const addEmail = () => {
+    if (newEmail && !formData.email_aggiuntive.includes(newEmail)) {
+      setFormData({
+        ...formData,
+        email_aggiuntive: [...formData.email_aggiuntive, newEmail],
+      });
+      setNewEmail("");
+    }
+  };
+
+  const removeEmail = (email: string) => {
+    setFormData({
+      ...formData,
+      email_aggiuntive: formData.email_aggiuntive.filter((e) => e !== email),
+    });
+  };
+
   const handleSubmit = async () => {
     if (!formData.nome) return;
-    await createCliente.mutateAsync(formData);
+    await createCliente.mutateAsync({
+      ...formData,
+      email_aggiuntive: formData.email_aggiuntive.length > 0 ? formData.email_aggiuntive : null,
+      consorzio: formData.consorzio || null,
+      indirizzo: formData.indirizzo || null,
+      cap: formData.cap || null,
+      citta: formData.citta || null,
+      provincia: formData.provincia || null,
+      codice_sdi: formData.codice_sdi || null,
+      pec: formData.pec || null,
+    });
     setIsDialogOpen(false);
-    setFormData({ nome: "", azienda: "", email: "", telefono: "", fatturato: 0, ordini_count: 0, status: "nuovo", partita_iva: "" });
+    setFormData(defaultFormData);
   };
 
   const stats = {
@@ -129,7 +204,10 @@ const Clienti = () => {
               Gestisci i tuoi clienti e monitora le performance
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={(open) => {
+            setIsDialogOpen(open);
+            if (!open) setFormData(defaultFormData);
+          }}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
@@ -137,12 +215,13 @@ const Clienti = () => {
                 <span className="sm:hidden">Aggiungi</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Nuovo Cliente</DialogTitle>
                 <DialogDescription>Inserisci la P.IVA per compilare automaticamente i dati</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                {/* P.IVA with lookup */}
                 <div className="space-y-2">
                   <Label>Partita IVA</Label>
                   <div className="flex gap-2">
@@ -167,6 +246,8 @@ const Clienti = () => {
                     </Button>
                   </div>
                 </div>
+
+                {/* Nome e Azienda */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Nome *</Label>
@@ -185,9 +266,72 @@ const Clienti = () => {
                     />
                   </div>
                 </div>
+
+                {/* Indirizzo */}
+                <div className="space-y-2">
+                  <Label>Indirizzo</Label>
+                  <Input
+                    value={formData.indirizzo}
+                    onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })}
+                    placeholder="Via/Piazza..."
+                  />
+                </div>
+
+                {/* CAP, Città, Provincia */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>CAP</Label>
+                    <Input
+                      value={formData.cap}
+                      onChange={(e) => setFormData({ ...formData, cap: e.target.value })}
+                      placeholder="00000"
+                      maxLength={5}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Città</Label>
+                    <Input
+                      value={formData.citta}
+                      onChange={(e) => setFormData({ ...formData, citta: e.target.value })}
+                      placeholder="Città"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Provincia</Label>
+                    <Input
+                      value={formData.provincia}
+                      onChange={(e) => setFormData({ ...formData, provincia: e.target.value })}
+                      placeholder="XX"
+                      maxLength={2}
+                    />
+                  </div>
+                </div>
+
+                {/* Codice SDI e PEC */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Email</Label>
+                    <Label>Codice SDI</Label>
+                    <Input
+                      value={formData.codice_sdi}
+                      onChange={(e) => setFormData({ ...formData, codice_sdi: e.target.value.toUpperCase() })}
+                      placeholder="XXXXXXX"
+                      maxLength={7}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>PEC</Label>
+                    <Input
+                      value={formData.pec}
+                      onChange={(e) => setFormData({ ...formData, pec: e.target.value })}
+                      placeholder="pec@esempio.it"
+                    />
+                  </div>
+                </div>
+
+                {/* Email e Telefono */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Email Principale</Label>
                     <Input
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -203,6 +347,58 @@ const Clienti = () => {
                     />
                   </div>
                 </div>
+
+                {/* Email Aggiuntive */}
+                <div className="space-y-2">
+                  <Label>Email Aggiuntive</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      placeholder="altra-email@esempio.it"
+                      className="flex-1"
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addEmail())}
+                    />
+                    <Button type="button" variant="outline" onClick={addEmail} disabled={!newEmail}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {formData.email_aggiuntive.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {formData.email_aggiuntive.map((email) => (
+                        <Badge key={email} variant="secondary" className="gap-1">
+                          {email}
+                          <button onClick={() => removeEmail(email)} className="ml-1 hover:text-destructive">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Consorzio */}
+                <div className="space-y-2">
+                  <Label>Consorzio</Label>
+                  <Select
+                    value={formData.consorzio}
+                    onValueChange={(v) => setFormData({ ...formData, consorzio: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleziona consorzio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Nessuno</SelectItem>
+                      {CONSORZI.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Status */}
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select
@@ -298,6 +494,7 @@ const Clienti = () => {
                   <TableRow className="bg-muted/50">
                     <TableHead>Cliente</TableHead>
                     <TableHead className="hidden md:table-cell">Contatti</TableHead>
+                    <TableHead className="hidden lg:table-cell">Consorzio</TableHead>
                     <TableHead>Fatturato</TableHead>
                     <TableHead className="hidden sm:table-cell">Ordini</TableHead>
                     <TableHead>Status</TableHead>
@@ -321,6 +518,9 @@ const Clienti = () => {
                           <div className="min-w-0">
                             <p className="font-medium text-card-foreground truncate">{cliente.nome}</p>
                             <p className="text-xs text-muted-foreground truncate">{cliente.azienda || "—"}</p>
+                            {cliente.citta && (
+                              <p className="text-xs text-muted-foreground truncate">{cliente.citta}</p>
+                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -332,6 +532,12 @@ const Clienti = () => {
                               <span className="text-muted-foreground truncate max-w-[150px]">{cliente.email}</span>
                             </div>
                           )}
+                          {cliente.pec && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <Mail className="h-3 w-3 text-primary" />
+                              <span className="text-muted-foreground truncate max-w-[150px]">{cliente.pec}</span>
+                            </div>
+                          )}
                           {cliente.telefono && (
                             <div className="flex items-center gap-2 text-xs">
                               <Phone className="h-3 w-3 text-muted-foreground" />
@@ -339,6 +545,13 @@ const Clienti = () => {
                             </div>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {cliente.consorzio ? (
+                          <Badge variant="outline">{cliente.consorzio}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
