@@ -311,6 +311,7 @@ export type Database = {
         Row: {
           azienda_id: string
           cartoni_per_strato: number
+          codice: string | null
           created_at: string
           id: string
           immagine_url: string | null
@@ -325,6 +326,7 @@ export type Database = {
         Insert: {
           azienda_id: string
           cartoni_per_strato?: number
+          codice?: string | null
           created_at?: string
           id?: string
           immagine_url?: string | null
@@ -339,6 +341,7 @@ export type Database = {
         Update: {
           azienda_id?: string
           cartoni_per_strato?: number
+          codice?: string | null
           created_at?: string
           id?: string
           immagine_url?: string | null

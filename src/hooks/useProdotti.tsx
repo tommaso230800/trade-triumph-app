@@ -7,6 +7,7 @@ export type Prodotto = {
   azienda_id: string;
   user_id: string;
   nome: string;
+  codice: string | null;
   prezzo_listino: number;
   quantita_pezzi: number;
   pezzi_per_cartone: number;

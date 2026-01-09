@@ -31,6 +31,7 @@ interface AziendaCardProps {
 
 type ProductForm = {
   nome: string;
+  codice: string;
   prezzo_listino: string;
   quantita_pezzi: number;
   pezzi_per_cartone: number;
@@ -41,6 +42,7 @@ type ProductForm = {
 
 const defaultProductForm: ProductForm = {
   nome: "",
+  codice: "",
   prezzo_listino: "0",
   quantita_pezzi: 0,
   pezzi_per_cartone: 1,
@@ -75,6 +77,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
     setEditingId(prodotto.id);
     setEditForm({
       nome: prodotto.nome,
+      codice: prodotto.codice || "",
       prezzo_listino: String(prodotto.prezzo_listino).replace(".", ","),
       quantita_pezzi: prodotto.quantita_pezzi,
       pezzi_per_cartone: prodotto.pezzi_per_cartone,
@@ -94,6 +97,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
     await updateProdotto.mutateAsync({ 
       id: editingId, 
       nome: editForm.nome,
+      codice: editForm.codice || null,
       prezzo_listino: parseDecimalInput(editForm.prezzo_listino),
       quantita_pezzi: editForm.quantita_pezzi,
       pezzi_per_cartone: editForm.pezzi_per_cartone,
@@ -109,6 +113,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
     await createProdotto.mutateAsync({ 
       azienda_id: azienda.id, 
       nome: newProduct.nome,
+      codice: newProduct.codice || null,
       prezzo_listino: parseDecimalInput(newProduct.prezzo_listino),
       quantita_pezzi: newProduct.quantita_pezzi,
       pezzi_per_cartone: newProduct.pezzi_per_cartone,
@@ -341,6 +346,15 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
                           />
                         </div>
                         <div className="space-y-1">
+                          <Label className="text-xs">Codice Prodotto</Label>
+                          <Input
+                            value={editForm.codice}
+                            onChange={(e) => setEditForm({ ...editForm, codice: e.target.value })}
+                            placeholder="es. ABC123"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
                           <Label className="text-xs">Prezzo Listino (€)</Label>
                           <Input
                             type="text"
@@ -423,6 +437,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
                         >
                           <p className="font-medium text-sm">{prodotto.nome}</p>
                           <p className="text-xs text-muted-foreground">
+                            {prodotto.codice && <span className="font-mono mr-2">{prodotto.codice}</span>}
                             {formatCurrency(prodotto.prezzo_listino)} · {prodotto.pezzi_per_cartone} pz/cart · {prodotto.strati}×{prodotto.cartoni_per_strato} = {calcTotaleCartoni(prodotto.strati, prodotto.cartoni_per_strato)} cart/pallet
                           </p>
                         </div>
@@ -479,6 +494,15 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
                         placeholder="Nome prodotto"
                         className="h-8 text-sm"
                         autoFocus
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Codice Prodotto</Label>
+                      <Input
+                        value={newProduct.codice}
+                        onChange={(e) => setNewProduct({ ...newProduct, codice: e.target.value })}
+                        placeholder="es. ABC123"
+                        className="h-8 text-sm"
                       />
                     </div>
                     <div className="space-y-1">
