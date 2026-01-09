@@ -78,6 +78,7 @@ type RigaOrdine = {
   quantita_pezzi: number;
   quantita_cartoni: number;
   pezzi_per_cartone: number;
+  sconto_riga: string;
 };
 
 const Ordini = () => {
@@ -165,6 +166,7 @@ const Ordini = () => {
         quantita_pezzi: 0,
         quantita_cartoni: 0,
         pezzi_per_cartone: prodotto.pezzi_per_cartone,
+        sconto_riga: "0",
       },
     ]);
     setSelectedProdotto("");
@@ -183,7 +185,9 @@ const Ordini = () => {
   const calcolaTotale = () => {
     const subtotale = righeOrdine.reduce((sum, riga) => {
       const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
-      return sum + pezziTotali * parseDecimalInput(riga.prezzo_unitario);
+      const prezzoBase = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
+      const scontoRiga = parseDecimalInput(riga.sconto_riga);
+      return sum + prezzoBase * (1 - scontoRiga / 100);
     }, 0);
     
     const sconto = parseDecimalInput(formData.sconto);
@@ -300,6 +304,7 @@ const Ordini = () => {
       quantita_pezzi: r.quantita_pezzi,
       quantita_cartoni: r.quantita_cartoni,
       pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
+      sconto_riga: "0",
     }));
 
     setRigheOrdine(newRighe);
@@ -458,16 +463,16 @@ const Ordini = () => {
                 <span className="sm:hidden">Aggiungi</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
               <DialogHeader>
                 <DialogTitle>Crea Nuovo Ordine</DialogTitle>
                 <DialogDescription>Seleziona cliente, azienda e aggiungi i prodotti</DialogDescription>
               </DialogHeader>
               <div className="space-y-6 py-4">
                 {/* Cliente e Azienda */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Cliente</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Cliente</Label>
                     <Select value={formData.cliente_id} onValueChange={(v) => setFormData({ ...formData, cliente_id: v })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleziona cliente" />
@@ -481,8 +486,8 @@ const Ordini = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Azienda Fornitrice *</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Azienda Fornitrice *</Label>
                     <Select 
                       value={formData.azienda_id} 
                       onValueChange={(v) => {
@@ -519,9 +524,9 @@ const Ordini = () => {
                 )}
 
                 {/* Payment and Discounts */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>Tipo Pagamento</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Tipo Pagamento</Label>
                     <Select value={formData.tipo_pagamento} onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}>
                       <SelectTrigger>
                         <SelectValue />
@@ -535,8 +540,8 @@ const Ordini = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Sconto (%)</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Sconto (%)</Label>
                     <Input
                       type="text"
                       inputMode="decimal"
@@ -545,8 +550,8 @@ const Ordini = () => {
                       placeholder="es. 10"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Sconto Merce (€)</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Sconto Merce (€)</Label>
                     <Input
                       type="text"
                       inputMode="decimal"
@@ -585,77 +590,90 @@ const Ordini = () => {
                   </div>
                 )}
 
-                {/* Order Lines */}
+                {/* Order Lines - Mobile Optimized */}
                 {righeOrdine.length > 0 && (
-                  <div className="space-y-4 border-t pt-4">
-                    <h4 className="font-medium">Prodotti nell'ordine</h4>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Prodotto</TableHead>
-                          <TableHead>Prezzo</TableHead>
-                          <TableHead>Pezzi</TableHead>
-                          <TableHead>Cartoni</TableHead>
-                          <TableHead>Subtotale</TableHead>
-                          <TableHead className="w-12"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {righeOrdine.map((riga, index) => {
-                          const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
-                          const subtotale = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
-                          return (
-                            <TableRow key={riga.prodotto_id}>
-                              <TableCell className="font-medium">
-                                {riga.prodotto_nome}
-                                <span className="text-xs text-muted-foreground block">
-                                  {riga.pezzi_per_cartone} pz/cartone
-                                </span>
-                              </TableCell>
-                              <TableCell>
+                  <div className="space-y-3 border-t pt-4">
+                    <h4 className="font-medium text-sm">Prodotti nell'ordine</h4>
+                    <div className="space-y-3">
+                      {righeOrdine.map((riga, index) => {
+                        const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
+                        const prezzoBase = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
+                        const scontoRiga = parseDecimalInput(riga.sconto_riga);
+                        const subtotale = prezzoBase * (1 - scontoRiga / 100);
+                        return (
+                          <div key={riga.prodotto_id} className="bg-muted/50 rounded-xl p-3 space-y-3">
+                            {/* Product Header */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{riga.prodotto_nome}</p>
+                                <p className="text-xs text-muted-foreground">{riga.pezzi_per_cartone} pz/cartone</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
+                                onClick={() => removeRiga(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            
+                            {/* Inputs Grid */}
+                            <div className="grid grid-cols-4 gap-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Prezzo</Label>
                                 <Input
                                   type="text"
                                   inputMode="decimal"
-                                  className="w-20"
+                                  className="h-10 px-2 text-sm"
                                   value={riga.prezzo_unitario}
                                   onChange={(e) => updateRiga(index, "prezzo_unitario", e.target.value)}
                                   placeholder="1,85"
                                 />
-                              </TableCell>
-                              <TableCell>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Pezzi</Label>
                                 <Input
                                   type="number"
+                                  inputMode="numeric"
                                   min="0"
-                                  className="w-20"
+                                  className="h-10 px-2 text-sm"
                                   value={riga.quantita_pezzi}
                                   onChange={(e) => updateRiga(index, "quantita_pezzi", parseInt(e.target.value) || 0)}
                                 />
-                              </TableCell>
-                              <TableCell>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Cartoni</Label>
                                 <Input
                                   type="number"
+                                  inputMode="numeric"
                                   min="0"
-                                  className="w-20"
+                                  className="h-10 px-2 text-sm"
                                   value={riga.quantita_cartoni}
                                   onChange={(e) => updateRiga(index, "quantita_cartoni", parseInt(e.target.value) || 0)}
                                 />
-                              </TableCell>
-                              <TableCell className="font-semibold">{formatCurrency(subtotale)}</TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-destructive hover:text-destructive"
-                                  onClick={() => removeRiga(index)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">Sconto %</Label>
+                                <Input
+                                  type="text"
+                                  inputMode="decimal"
+                                  className="h-10 px-2 text-sm"
+                                  value={riga.sconto_riga}
+                                  onChange={(e) => updateRiga(index, "sconto_riga", e.target.value)}
+                                  placeholder="0"
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Subtotal */}
+                            <div className="flex justify-end pt-1 border-t border-border/50">
+                              <p className="text-sm font-semibold">{formatCurrency(subtotale)}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
 
                     <div className="flex justify-end">
                       <div className="text-right space-y-1">
