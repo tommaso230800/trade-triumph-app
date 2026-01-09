@@ -147,7 +147,16 @@ const Ordini = () => {
     sconto_merce: number;
     totale: number;
     note?: string;
-    righe: { prodotto_nome: string; prezzo_unitario: number; quantita_pezzi: number; quantita_cartoni: number; pezzi_per_cartone: number }[];
+    righe: { 
+      prodotto_nome: string; 
+      prezzo_unitario: number; 
+      quantita_pezzi: number; 
+      quantita_cartoni: number; 
+      pezzi_per_cartone: number;
+      promo_applicata?: string;
+      promo_tipo?: string;
+      promo_valore?: number;
+    }[];
     promozioni_applicate?: { nome: string; tipo: string; valore: number }[];
   } | null>(null);
 
@@ -531,13 +540,22 @@ const Ordini = () => {
       sconto_merce: parseDecimalInput(formData.sconto_merce),
       totale,
       note: formData.note || undefined,
-      righe: righeOrdine.map((riga) => ({
-        prodotto_nome: riga.prodotto_nome,
-        prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
-        quantita_pezzi: riga.quantita_pezzi,
-        quantita_cartoni: riga.quantita_cartoni,
-        pezzi_per_cartone: riga.pezzi_per_cartone,
-      })),
+      righe: righeOrdine.map((riga) => {
+        // Find if there's a promo applied to this product
+        const promoForProduct = promozioniRilevanti.find(promo => 
+          promo.canvass_prodotti?.some(cp => cp.prodotto_id === riga.prodotto_id)
+        );
+        return {
+          prodotto_nome: riga.prodotto_nome,
+          prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
+          quantita_pezzi: riga.quantita_pezzi,
+          quantita_cartoni: riga.quantita_cartoni,
+          pezzi_per_cartone: riga.pezzi_per_cartone,
+          promo_applicata: promoForProduct?.nome,
+          promo_tipo: promoForProduct?.tipo,
+          promo_valore: promoForProduct?.valore,
+        };
+      }),
       promozioni_applicate: promozioniApplicate.length > 0 ? promozioniApplicate : undefined,
     });
     setIsProformaOpen(true);

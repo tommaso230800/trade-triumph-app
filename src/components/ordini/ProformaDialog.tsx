@@ -16,6 +16,9 @@ type RigaOrdine = {
   quantita_pezzi: number;
   quantita_cartoni: number;
   pezzi_per_cartone: number;
+  promo_applicata?: string; // Nome della promo applicata
+  promo_tipo?: string; // Tipo sconto
+  promo_valore?: number; // Valore dello sconto/prezzo
 };
 
 type PromoApplicata = {
@@ -196,8 +199,21 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                       <TableCell>
                         <p className="font-medium text-gray-900">{riga.prodotto_nome}</p>
                         <p className="text-xs text-gray-500">{riga.pezzi_per_cartone} pz/cart</p>
+                        {riga.promo_applicata && (
+                          <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
+                            <Gift className="h-3 w-3" />
+                            {riga.promo_applicata}
+                          </p>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right text-gray-700">{formatCurrency(riga.prezzo_unitario)}</TableCell>
+                      <TableCell className="text-right">
+                        <span className="text-gray-700">{formatCurrency(riga.prezzo_unitario)}</span>
+                        {riga.promo_applicata && (
+                          <p className="text-xs text-green-600 font-medium">
+                            (come da promo)
+                          </p>
+                        )}
+                      </TableCell>
                       <TableCell className="text-center text-gray-700">{riga.quantita_pezzi}</TableCell>
                       <TableCell className="text-center text-gray-700">{riga.quantita_cartoni}</TableCell>
                       <TableCell className="text-center font-medium text-gray-900">{pezziTotali}</TableCell>
