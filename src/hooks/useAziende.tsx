@@ -75,6 +75,7 @@ export function useUpdateAzienda() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["aziende"] });
+      toast.success("Azienda aggiornata!");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);

@@ -14,7 +14,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { MapPin, Phone, Mail, MoreHorizontal, Loader2, Package, Trash2, Check, X, Plus, ChevronDown, ChevronUp, Upload, ImageIcon } from "lucide-react";
+import { MapPin, Phone, Mail, MoreHorizontal, Loader2, Package, Trash2, Check, X, Plus, ChevronDown, ChevronUp, Upload, ImageIcon, Pencil } from "lucide-react";
 import { Azienda, useUpdateAzienda } from "@/hooks/useAziende";
 import { useProdotti, useCreateProdotto, useDeleteProdotto, useUpdateProdotto, Prodotto } from "@/hooks/useProdotti";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,7 @@ const formatCurrency = (value: number) =>
 
 interface AziendaCardProps {
   azienda: Azienda;
+  onEdit: (azienda: Azienda) => void;
   onDelete: (id: string) => void;
 }
 
@@ -55,7 +56,7 @@ const parseDecimalInput = (value: string): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 
-export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
+export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<ProductForm>(defaultProductForm);
@@ -227,6 +228,10 @@ export function AziendaCard({ azienda, onDelete }: AziendaCardProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit(azienda)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Modifica Dati
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
                   <ImageIcon className="h-4 w-4 mr-2" />
                   Carica Logo
