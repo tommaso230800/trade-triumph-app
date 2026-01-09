@@ -196,6 +196,7 @@ export type Database = {
           cliente_id: string | null
           codice: string | null
           created_at: string | null
+          data_ordine: string | null
           id: string
           note: string | null
           prodotti: number | null
@@ -213,6 +214,7 @@ export type Database = {
           cliente_id?: string | null
           codice?: string | null
           created_at?: string | null
+          data_ordine?: string | null
           id?: string
           note?: string | null
           prodotti?: number | null
@@ -230,6 +232,7 @@ export type Database = {
           cliente_id?: string | null
           codice?: string | null
           created_at?: string | null
+          data_ordine?: string | null
           id?: string
           note?: string | null
           prodotti?: number | null
