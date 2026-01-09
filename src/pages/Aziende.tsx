@@ -52,7 +52,6 @@ const Aziende = () => {
     await createAzienda.mutateAsync(formData);
     setIsDialogOpen(false);
     setFormData({ nome: "", settore: "", citta: "", indirizzo: "", telefono: "", email: "", status: "attivo", prodotti: 0 });
-    setFormData({ nome: "", settore: "", citta: "", telefono: "", email: "", status: "attivo", prodotti: 0 });
   };
 
   return (
