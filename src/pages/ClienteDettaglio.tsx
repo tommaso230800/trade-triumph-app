@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useCliente, useClienteOrdini } from "@/hooks/useClienti";
+import { useCanvassAttive } from "@/hooks/useCanvass";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -22,6 +23,8 @@ import {
   ShoppingCart,
   Loader2,
   Calendar,
+  Gift,
+  Percent,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -40,6 +43,13 @@ const ClienteDettaglio = () => {
   const { id } = useParams<{ id: string }>();
   const { data: cliente, isLoading } = useCliente(id);
   const { data: ordini, isLoading: ordiniLoading } = useClienteOrdini(id);
+  const { data: promozioniAttive } = useCanvassAttive();
+
+  // Filtra le promozioni applicabili a questo cliente
+  const promozioniCliente = promozioniAttive?.filter(promo => 
+    promo.tutti_clienti || 
+    promo.canvass_clienti?.some(cc => cc.cliente_id === id)
+  ) || [];
 
   if (isLoading) {
     return (
@@ -278,6 +288,92 @@ const ClienteDettaglio = () => {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+          )}
+        </div>
+
+        {/* Promozioni Attive */}
+        <div className="rounded-xl bg-card p-6 shadow-card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <Gift className="h-5 w-5 text-primary" />
+              Promozioni Attive
+            </h3>
+            <Badge variant="outline" className="bg-success/10 text-success">
+              {promozioniCliente.length} attive
+            </Badge>
+          </div>
+
+          {promozioniCliente.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              Nessuna promozione attiva per questo cliente
+            </p>
+          ) : (
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {promozioniCliente.map((promo) => (
+                <div
+                  key={promo.id}
+                  className="rounded-lg border border-border p-4 space-y-3 hover:border-primary/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-medium text-foreground">{promo.nome}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {promo.azienda?.nome}
+                      </p>
+                    </div>
+                    <Badge className="bg-primary/10 text-primary">
+                      {promo.tipo === "sconto_percentuale" && (
+                        <><Percent className="h-3 w-3 mr-1" /> {promo.valore}%</>
+                      )}
+                      {promo.tipo === "prezzo_fisso" && (
+                        <>{promo.valore}€</>
+                      )}
+                      {promo.tipo === "premio_fine_anno" && (
+                        <>Premio {promo.valore}%</>
+                      )}
+                    </Badge>
+                  </div>
+                  
+                  {promo.descrizione && (
+                    <p className="text-xs text-muted-foreground">{promo.descrizione}</p>
+                  )}
+                  
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>
+                      {format(new Date(promo.data_inizio), "dd MMM", { locale: it })} - {format(new Date(promo.data_fine), "dd MMM yyyy", { locale: it })}
+                    </span>
+                  </div>
+
+                  {promo.cartoni_acquisto && promo.cartoni_omaggio ? (
+                    <div className="flex items-center gap-2 text-xs">
+                      <Gift className="h-3 w-3 text-success" />
+                      <span className="text-success font-medium">
+                        {promo.cartoni_acquisto}+{promo.cartoni_omaggio} cartoni omaggio
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {promo.canvass_prodotti && promo.canvass_prodotti.length > 0 && (
+                    <div className="pt-2 border-t border-border">
+                      <p className="text-xs text-muted-foreground mb-1">Prodotti inclusi:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {promo.canvass_prodotti.slice(0, 3).map((cp: any) => (
+                          <Badge key={cp.id} variant="outline" className="text-xs">
+                            {cp.prodotti?.nome}
+                          </Badge>
+                        ))}
+                        {promo.canvass_prodotti.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{promo.canvass_prodotti.length - 3} altri
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
