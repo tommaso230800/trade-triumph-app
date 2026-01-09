@@ -5,27 +5,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const { pdfBase64 } = await req.json();
-    
-    if (!pdfBase64) {
-      return new Response(
-        JSON.stringify({ error: "PDF base64 data is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
-
-    const systemPrompt = `Sei un assistente specializzato nell'estrazione di dati da ordini PDF italiani.
+// Funzione per chiamare l'AI con retry
+async function callAIWithRetry(pdfBase64: string, apiKey: string, maxRetries = 3): Promise<Response> {
+  const systemPrompt = `Sei un assistente specializzato nell'estrazione di dati da ordini PDF italiani.
 Analizza il documento PDF e estrai le seguenti informazioni in formato JSON:
 
 {
@@ -58,34 +40,90 @@ REGOLE IMPORTANTI:
 - L'imponibile_totale è il totale senza IVA
 - Restituisci SOLO il JSON, senza spiegazioni`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { 
-            role: "user", 
-            content: [
-              {
-                type: "text",
-                text: "Analizza questo ordine PDF ed estrai i dati in formato JSON:"
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:application/pdf;base64,${pdfBase64}`
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    console.log(`Tentativo ${attempt} di ${maxRetries}...`);
+    
+    try {
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { 
+              role: "user", 
+              content: [
+                {
+                  type: "text",
+                  text: "Analizza questo ordine PDF ed estrai i dati in formato JSON:"
+                },
+                {
+                  type: "image_url",
+                  image_url: {
+                    url: `data:application/pdf;base64,${pdfBase64}`
+                  }
                 }
-              }
-            ]
-          },
-        ],
-      }),
-    });
+              ]
+            },
+          ],
+        }),
+      });
+
+      // Se la risposta è OK o è un errore non recuperabile, ritorna
+      if (response.ok || response.status === 429 || response.status === 402) {
+        return response;
+      }
+
+      // Se è un errore 5xx, riprova
+      if (response.status >= 500 && attempt < maxRetries) {
+        const waitTime = attempt * 2000; // 2s, 4s, 6s
+        console.log(`Errore ${response.status}, attendo ${waitTime}ms prima di riprovare...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+
+      return response;
+    } catch (error) {
+      console.error(`Errore tentativo ${attempt}:`, error);
+      if (attempt < maxRetries) {
+        const waitTime = attempt * 2000;
+        console.log(`Errore di rete, attendo ${waitTime}ms prima di riprovare...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  throw new Error("Tutti i tentativi falliti");
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { pdfBase64 } = await req.json();
+    
+    if (!pdfBase64) {
+      return new Response(
+        JSON.stringify({ error: "PDF base64 data is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    console.log("Avvio parsing PDF...");
+    const response = await callAIWithRetry(pdfBase64, LOVABLE_API_KEY);
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -103,8 +141,8 @@ REGOLE IMPORTANTI:
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ error: "Errore AI gateway" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Servizio AI temporaneamente non disponibile. Riprova tra qualche secondo." }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
