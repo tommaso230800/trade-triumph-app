@@ -10,6 +10,9 @@ export type OrdineRiga = {
   quantita_pezzi: number;
   quantita_cartoni: number;
   prezzo_unitario: number;
+  sc1: number;
+  sc2: number;
+  sc3: number;
   created_at: string;
   prodotti?: { nome: string; pezzi_per_cartone: number; prezzo_listino: number } | null;
 };
