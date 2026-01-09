@@ -76,11 +76,14 @@ const Provvigioni = () => {
     return Array.from(yearsSet).sort((a, b) => b - a);
   }, [ordini, currentYear]);
 
-  // Filter orders based on year and quarter
+  // Filter orders based on year and quarter, exclude cancelled orders
   const filteredOrdini = useMemo(() => {
     if (!ordini || !aziende) return [];
 
     return ordini.filter((o) => {
+      // Exclude cancelled orders from commissions
+      if (o.status === "annullato") return false;
+      
       const orderDate = new Date(o.data_ordine || o.created_at);
       const orderYear = orderDate.getFullYear();
       const orderMonth = orderDate.getMonth();
@@ -109,8 +112,11 @@ const Provvigioni = () => {
   const provvigioniData = useMemo(() => {
     if (!aziende || !ordini) return [];
 
+    // Filter out cancelled orders first
+    const validOrdini = ordini.filter(o => o.status !== "annullato");
+
     return aziende.map((azienda) => {
-      const aziendaOrdini = ordini.filter((o) => {
+      const aziendaOrdini = validOrdini.filter((o) => {
         if (o.azienda_id !== azienda.id) return false;
         const orderDate = new Date(o.data_ordine || o.created_at);
         const orderYear = orderDate.getFullYear();
@@ -140,7 +146,7 @@ const Provvigioni = () => {
 
       // Breakdown per quarter
       const quarterBreakdown = Object.entries(trimestreConfig).map(([key, config]) => {
-        const qOrdini = ordini.filter((o) => {
+        const qOrdini = validOrdini.filter((o) => {
           if (o.azienda_id !== azienda.id) return false;
           const orderDate = new Date(o.data_ordine || o.created_at);
           return orderDate.getFullYear() === selectedYear && config.mesi.includes(orderDate.getMonth());
