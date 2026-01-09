@@ -73,6 +73,28 @@ export function useCreateCliente() {
   });
 }
 
+export function useUpdateCliente() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Cliente> & { id: string }) => {
+      const { error } = await supabase
+        .from("clienti")
+        .update(updates)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clienti"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
+      toast.success("Cliente aggiornato!");
+    },
+    onError: (error) => {
+      toast.error("Errore: " + error.message);
+    },
+  });
+}
+
 export function useDeleteCliente() {
   const queryClient = useQueryClient();
 
@@ -89,5 +111,50 @@ export function useDeleteCliente() {
     onError: (error) => {
       toast.error("Errore: " + error.message);
     },
+  });
+}
+
+export function useCliente(id?: string) {
+  return useQuery({
+    queryKey: ["cliente", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data, error } = await supabase
+        .from("clienti")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      return data as Cliente;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useClienteOrdini(clienteId?: string) {
+  return useQuery({
+    queryKey: ["cliente_ordini", clienteId],
+    queryFn: async () => {
+      if (!clienteId) return [];
+      const { data, error } = await supabase
+        .from("ordini")
+        .select(`
+          *,
+          aziende (nome),
+          ordini_righe (
+            id,
+            prodotto_id,
+            quantita_pezzi,
+            quantita_cartoni,
+            prezzo_unitario,
+            prodotti (nome)
+          )
+        `)
+        .eq("cliente_id", clienteId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clienteId,
   });
 }

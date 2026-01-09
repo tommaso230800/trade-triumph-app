@@ -10,6 +10,7 @@ import {
   LogOut,
   Menu,
   X,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import agencyLogo from "@/assets/agency-logo.jpg";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "KPI", href: "/kpi", icon: BarChart3 },
   { name: "Aziende", href: "/aziende", icon: Building2 },
   { name: "Clienti", href: "/clienti", icon: Users },
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },

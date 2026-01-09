@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,8 +36,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal, Loader2, Filter, Wand2, X } from "lucide-react";
-import { useClienti, useCreateCliente, useDeleteCliente, Cliente } from "@/hooks/useClienti";
+import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal, Loader2, Filter, Wand2, X, Eye, Pencil } from "lucide-react";
+import { useClienti, useCreateCliente, useDeleteCliente, useUpdateCliente, Cliente } from "@/hooks/useClienti";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -101,13 +102,38 @@ const Clienti = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Cliente["status"] | "tutti">("tutti");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [newEmail, setNewEmail] = useState("");
 
   const { data: clienti, isLoading } = useClienti(searchTerm, statusFilter);
   const createCliente = useCreateCliente();
+  const updateCliente = useUpdateCliente();
   const deleteCliente = useDeleteCliente();
+
+  const openEditDialog = (cliente: Cliente) => {
+    setEditingCliente(cliente);
+    setFormData({
+      nome: cliente.nome,
+      azienda: cliente.azienda || "",
+      email: cliente.email || "",
+      telefono: cliente.telefono || "",
+      fatturato: Number(cliente.fatturato),
+      ordini_count: cliente.ordini_count,
+      status: cliente.status,
+      partita_iva: cliente.partita_iva || "",
+      indirizzo: cliente.indirizzo || "",
+      cap: cliente.cap || "",
+      citta: cliente.citta || "",
+      provincia: cliente.provincia || "",
+      codice_sdi: cliente.codice_sdi || "",
+      pec: cliente.pec || "",
+      email_aggiuntive: cliente.email_aggiuntive || [],
+      consorzio: cliente.consorzio || "",
+    });
+    setIsDialogOpen(true);
+  };
 
   const handleLookupPiva = async () => {
     const piva = formData.partita_iva.trim();
@@ -169,7 +195,8 @@ const Clienti = () => {
 
   const handleSubmit = async () => {
     if (!formData.nome) return;
-    await createCliente.mutateAsync({
+    
+    const submitData = {
       ...formData,
       email_aggiuntive: formData.email_aggiuntive.length > 0 ? formData.email_aggiuntive : null,
       consorzio: formData.consorzio || null,
@@ -179,8 +206,26 @@ const Clienti = () => {
       provincia: formData.provincia || null,
       codice_sdi: formData.codice_sdi || null,
       pec: formData.pec || null,
-    });
+      azienda: formData.azienda || null,
+      email: formData.email || null,
+      telefono: formData.telefono || null,
+      partita_iva: formData.partita_iva || null,
+    };
+
+    if (editingCliente) {
+      await updateCliente.mutateAsync({ id: editingCliente.id, ...submitData });
+    } else {
+      await createCliente.mutateAsync(submitData);
+    }
+    
     setIsDialogOpen(false);
+    setEditingCliente(null);
+    setFormData(defaultFormData);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingCliente(null);
     setFormData(defaultFormData);
   };
 
@@ -205,8 +250,8 @@ const Clienti = () => {
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) setFormData(defaultFormData);
+            if (!open) handleCloseDialog();
+            else setIsDialogOpen(open);
           }}>
             <DialogTrigger asChild>
               <Button className="gap-2">
@@ -217,8 +262,10 @@ const Clienti = () => {
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Nuovo Cliente</DialogTitle>
-                <DialogDescription>Inserisci la P.IVA per compilare automaticamente i dati</DialogDescription>
+                <DialogTitle>{editingCliente ? "Modifica Cliente" : "Nuovo Cliente"}</DialogTitle>
+                <DialogDescription>
+                  {editingCliente ? "Modifica i dati del cliente" : "Inserisci la P.IVA per compilare automaticamente i dati"}
+                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 {/* P.IVA with lookup */}
@@ -417,12 +464,12 @@ const Clienti = () => {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button variant="outline" onClick={handleCloseDialog}>
                   Annulla
                 </Button>
-                <Button onClick={handleSubmit} disabled={createCliente.isPending || !formData.nome}>
-                  {createCliente.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Crea
+                <Button onClick={handleSubmit} disabled={(createCliente.isPending || updateCliente.isPending) || !formData.nome}>
+                  {(createCliente.isPending || updateCliente.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingCliente ? "Salva" : "Crea"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -579,6 +626,16 @@ const Clienti = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to={`/clienti/${cliente.id}`} className="flex items-center gap-2">
+                                <Eye className="h-4 w-4" />
+                                Dettaglio
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openEditDialog(cliente)}>
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Modifica
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
                               onClick={() => deleteCliente.mutate(cliente.id)}

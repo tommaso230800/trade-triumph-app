@@ -8,9 +8,11 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Aziende from "./pages/Aziende";
 import Clienti from "./pages/Clienti";
+import ClienteDettaglio from "./pages/ClienteDettaglio";
 import Ordini from "./pages/Ordini";
 import Agenda from "./pages/Agenda";
 import Promemoria from "./pages/Promemoria";
+import KPI from "./pages/KPI";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,9 +29,11 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/aziende" element={<Aziende />} />
             <Route path="/clienti" element={<Clienti />} />
+            <Route path="/clienti/:id" element={<ClienteDettaglio />} />
             <Route path="/ordini" element={<Ordini />} />
             <Route path="/agenda" element={<Agenda />} />
             <Route path="/promemoria" element={<Promemoria />} />
+            <Route path="/kpi" element={<KPI />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
