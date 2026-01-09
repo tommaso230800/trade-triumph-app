@@ -199,6 +199,7 @@ export type Database = {
           id: string
           note: string | null
           prodotti: number | null
+          provvigione_pagata: boolean
           sconto: number | null
           sconto_merce: number | null
           status: Database["public"]["Enums"]["order_status"] | null
@@ -215,6 +216,7 @@ export type Database = {
           id?: string
           note?: string | null
           prodotti?: number | null
+          provvigione_pagata?: boolean
           sconto?: number | null
           sconto_merce?: number | null
           status?: Database["public"]["Enums"]["order_status"] | null
@@ -231,6 +233,7 @@ export type Database = {
           id?: string
           note?: string | null
           prodotti?: number | null
+          provvigione_pagata?: boolean
           sconto?: number | null
           sconto_merce?: number | null
           status?: Database["public"]["Enums"]["order_status"] | null

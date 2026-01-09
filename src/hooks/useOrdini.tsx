@@ -15,6 +15,7 @@ export type Ordine = {
   sconto_merce: number;
   tipo_pagamento: string;
   status: "in_attesa" | "spedito" | "completato" | "annullato";
+  provvigione_pagata: boolean;
   created_at: string;
   clienti?: { nome: string; azienda: string | null } | null;
   aziende?: { nome: string } | null;
@@ -97,6 +98,27 @@ export function useUpdateOrdineStatus() {
       queryClient.invalidateQueries({ queryKey: ["ordini"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       toast.success("Stato ordine aggiornato!");
+    },
+    onError: (error) => {
+      toast.error("Errore: " + error.message);
+    },
+  });
+}
+
+export function useUpdateProvvigionePagata() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, provvigione_pagata }: { id: string; provvigione_pagata: boolean }) => {
+      const { error } = await supabase
+        .from("ordini")
+        .update({ provvigione_pagata })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      toast.success("Stato provvigione aggiornato!");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
