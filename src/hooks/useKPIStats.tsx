@@ -93,9 +93,12 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
         ordiniQuery = ordiniQuery.gte("created_at", startDate.toISOString());
       }
 
-      const { data: ordini, error: ordiniError } = await ordiniQuery;
+      const { data: ordiniRaw, error: ordiniError } = await ordiniQuery;
 
       if (ordiniError) throw ordiniError;
+      
+      // Filter out cancelled orders from all stats
+      const ordini = (ordiniRaw || []).filter(o => o.status !== "annullato");
 
       // Fetch all products
       const { data: prodotti, error: prodottiError } = await supabase
