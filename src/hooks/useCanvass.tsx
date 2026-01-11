@@ -124,6 +124,37 @@ export function useCanvassAttive() {
   });
 }
 
+export function useCanvassScadute() {
+  return useQuery({
+    queryKey: ["canvass", "scadute"],
+    queryFn: async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const { data, error } = await supabase
+        .from("canvass")
+        .select(`
+          *,
+          azienda:aziende(nome, logo_url),
+          canvass_clienti(cliente_id, clienti(nome, azienda)),
+          canvass_prodotti(prodotto_id, valore_override, prodotti(nome, codice)),
+          canvass_periodi(id, data_inizio, data_fine)
+        `)
+        .order("data_fine", { ascending: false });
+
+      if (error) throw error;
+      
+      // Filter canvass that are expired (all periods ended)
+      return (data as Canvass[]).filter(c => {
+        // Check if main period is expired
+        const mainExpired = c.data_fine < today;
+        // Check if all additional periods are expired
+        const allPeriodsExpired = !c.canvass_periodi?.length || 
+          c.canvass_periodi.every(p => p.data_fine < today);
+        return mainExpired && allPeriodsExpired;
+      });
+    },
+  });
+}
+
 export function useCreateCanvass() {
   const queryClient = useQueryClient();
 
