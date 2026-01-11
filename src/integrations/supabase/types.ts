@@ -428,6 +428,36 @@ export type Database = {
           },
         ]
       }
+      giri_visita: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          nome: string | null
+          note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          id?: string
+          nome?: string | null
+          note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          nome?: string | null
+          note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ordini: {
         Row: {
           azienda_id: string | null
@@ -681,6 +711,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      visite: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          esito: string | null
+          giro_id: string
+          id: string
+          note: string | null
+          orario_effettivo: string | null
+          orario_previsto: string | null
+          ordine_visita: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          esito?: string | null
+          giro_id: string
+          id?: string
+          note?: string | null
+          orario_effettivo?: string | null
+          orario_previsto?: string | null
+          ordine_visita?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          esito?: string | null
+          giro_id?: string
+          id?: string
+          note?: string | null
+          orario_effettivo?: string | null
+          orario_previsto?: string | null
+          ordine_visita?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visite_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visite_giro_id_fkey"
+            columns: ["giro_id"]
+            isOneToOne: false
+            referencedRelation: "giri_visita"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

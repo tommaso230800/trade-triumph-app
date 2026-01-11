@@ -13,6 +13,7 @@ import {
   BarChart3,
   Wallet,
   Tag,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ const navigation = [
   { name: "KPI", href: "/kpi", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
+  { name: "Giro Visite", href: "/giro-visita", icon: MapPin },
   { name: "Aziende", href: "/aziende", icon: Building2 },
   { name: "Clienti", href: "/clienti", icon: Users },
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
