@@ -242,10 +242,10 @@ const Clienti = () => {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in animate-fill-both">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">Portfolio Clienti</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <h1 className="page-title">Portfolio Clienti</h1>
+            <p className="mt-2 text-body-md text-muted-foreground">
               Gestisci i tuoi clienti e monitora le performance
             </p>
           </div>

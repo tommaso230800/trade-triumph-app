@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
 @layer base {
   :root {
     --background: 210 20% 98%;
@@ -58,12 +56,17 @@
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 50%) 0%, hsl(217 91% 40%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(152 69% 45%) 0%, hsl(152 69% 35%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 20% 98%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(220 20% 10% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(220 20% 10% / 0.1), 0 2px 4px -2px hsl(220 20% 10% / 0.1);
+    /* Shadows - enhanced */
+    --shadow-xs: 0 1px 2px 0 hsl(220 20% 10% / 0.03);
+    --shadow-sm: 0 1px 3px 0 hsl(220 20% 10% / 0.06), 0 1px 2px -1px hsl(220 20% 10% / 0.06);
+    --shadow-md: 0 4px 6px -1px hsl(220 20% 10% / 0.08), 0 2px 4px -2px hsl(220 20% 10% / 0.08);
     --shadow-lg: 0 10px 15px -3px hsl(220 20% 10% / 0.1), 0 4px 6px -4px hsl(220 20% 10% / 0.1);
-    --shadow-card: 0 1px 3px 0 hsl(220 20% 10% / 0.1), 0 1px 2px -1px hsl(220 20% 10% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(220 20% 10% / 0.1), 0 8px 10px -6px hsl(220 20% 10% / 0.1);
+    --shadow-card: 0 1px 3px 0 hsl(220 20% 10% / 0.06), 0 1px 2px -1px hsl(220 20% 10% / 0.06);
+    --shadow-card-hover: 0 10px 25px -5px hsl(220 20% 10% / 0.12), 0 4px 10px -4px hsl(220 20% 10% / 0.08);
+    --shadow-glow: 0 0 20px hsl(217 91% 50% / 0.15);
   }
 
   .dark {
@@ -103,6 +106,9 @@
     --sidebar-accent-foreground: 210 20% 95%;
     --sidebar-border: 220 25% 15%;
     --sidebar-ring: 217 91% 60%;
+
+    --shadow-card-hover: 0 10px 25px -5px hsl(220 20% 5% / 0.4);
+    --gradient-glass: linear-gradient(135deg, rgba(30,30,40,0.9) 0%, rgba(30,30,40,0.7) 100%);
   }
 }
 
@@ -114,17 +120,37 @@
   html {
     /* iOS safe areas */
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    scroll-behavior: smooth;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
     /* Prevent pull-to-refresh on iOS */
     overscroll-behavior-y: contain;
     /* Smooth scrolling on iOS */
     -webkit-overflow-scrolling: touch;
     /* Prevent text size adjustment on orientation change */
     -webkit-text-size-adjust: 100%;
+  }
+
+  /* Display headings use special font */
+  h1, h2 {
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  h3, h4 {
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+
+  /* Smooth transitions for interactive elements */
+  a, button, input, select, textarea {
+    @apply transition-all duration-200;
   }
 
   /* Prevent iOS zoom on input focus (font-size >= 16px) */
@@ -154,12 +180,29 @@
     background: var(--gradient-success);
   }
 
+  .gradient-glass {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(10px);
+  }
+
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
 
   .shadow-card-hover {
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Text gradients */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(217 91% 60%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   /* iOS safe area utilities */
@@ -184,6 +227,64 @@
     min-height: 44px;
     min-width: 44px;
   }
+
+  /* Smooth hover transitions */
+  .hover-lift {
+    @apply transition-all duration-300 ease-smooth;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-200 ease-smooth;
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+  /* Staggered animation delays */
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.1s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.2s; }
+  .stagger-5 { animation-delay: 0.25s; }
+  .stagger-6 { animation-delay: 0.3s; }
+
+  /* Animation fill mode */
+  .animate-fill-both {
+    animation-fill-mode: both;
+  }
+}
+
+@layer components {
+  /* Card with hover effect */
+  .card-interactive {
+    @apply rounded-xl bg-card shadow-card transition-all duration-300 ease-smooth;
+  }
+
+  .card-interactive:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-1px);
+  }
+
+  /* Page title */
+  .page-title {
+    @apply font-display text-display-sm lg:text-display-md tracking-tight text-foreground;
+  }
+
+  /* Section heading */
+  .section-heading {
+    @apply font-display text-heading-lg text-card-foreground;
+  }
+
+  /* Stat card */
+  .stat-value {
+    @apply font-display text-display-sm lg:text-display-md tracking-tight;
+  }
 }
 
 /* Print styles for Proforma */
@@ -194,7 +295,7 @@
     print-color-adjust: exact;
   }
   
-  .print\\:hidden {
+  .print\:hidden {
     display: none !important;
   }
   
