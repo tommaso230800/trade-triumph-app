@@ -73,16 +73,16 @@ const Index = () => {
     <MainLayout>
       <div className="space-y-6 lg:space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in animate-fill-both">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-            <p className="mt-1 text-muted-foreground text-sm lg:text-base">
+            <h1 className="page-title">Dashboard</h1>
+            <p className="mt-2 text-muted-foreground text-body-md lg:text-body-lg">
               Bentornato! Ecco il riepilogo della tua attività.
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm">
+          <div className="flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-body-md shadow-sm transition-all hover:shadow-md">
             <span className="text-muted-foreground">Oggi:</span>
-            <span className="font-medium text-foreground">
+            <span className="font-semibold text-foreground">
               {new Date().toLocaleDateString("it-IT", {
                 weekday: "short",
                 day: "numeric",
@@ -94,23 +94,23 @@ const Index = () => {
 
         {/* Alert Promozioni Attive */}
         {canvassAttive.length > 0 && (
-          <div className="rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 p-4 animate-fade-in">
+          <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 lg:p-5 animate-fade-in animate-fill-both stagger-1 hover-lift">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/20 rounded-lg">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 bg-primary/20 rounded-xl transition-transform duration-300 hover:scale-110">
                   <Tag className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground">
+                  <p className="font-display font-semibold text-foreground">
                     {canvassAttive.length} Promozioni Attive
                     {promoInScadenza.length > 0 && (
-                      <Badge variant="destructive" className="ml-2">
+                      <Badge variant="destructive" className="ml-2 animate-pulse-soft">
                         <AlertTriangle className="h-3 w-3 mr-1" />
                         {promoInScadenza.length} in scadenza
                       </Badge>
                     )}
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground mt-0.5">
                     {canvassAttive.slice(0, 2).map(c => c.nome).join(", ")}
                     {canvassAttive.length > 2 && ` e altri ${canvassAttive.length - 2}`}
                   </p>
@@ -118,7 +118,7 @@ const Index = () => {
               </div>
               <Link 
                 to="/canvass" 
-                className="text-sm font-medium text-primary hover:underline"
+                className="text-body-md font-medium text-primary hover:underline underline-offset-4 transition-all"
               >
                 Visualizza tutte
               </Link>
@@ -162,12 +162,12 @@ const Index = () => {
 
         {/* Charts Row */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in">
-            <h3 className="text-lg font-semibold text-card-foreground mb-4">Andamento Fatturato</h3>
+          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in animate-fill-both stagger-2 hover-lift">
+            <h3 className="section-heading mb-4">Andamento Fatturato</h3>
             <SalesChart data={stats?.ordiniPerMese || []} type="area" />
           </div>
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in">
-            <h3 className="text-lg font-semibold text-card-foreground mb-4">Ordini per Mese</h3>
+          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in animate-fill-both stagger-3 hover-lift">
+            <h3 className="section-heading mb-4">Ordini per Mese</h3>
             <SalesChart data={stats?.ordiniPerMese || []} type="bar" />
           </div>
         </div>
@@ -197,10 +197,10 @@ const Index = () => {
         {/* Main Content */}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Recent Orders */}
-          <div className="lg:col-span-2 rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in">
+          <div className="lg:col-span-2 rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in animate-fill-both stagger-4 hover-lift">
             <div className="mb-4 lg:mb-6 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-card-foreground">Ordini Recenti</h3>
-              <Link to="/ordini" className="text-sm font-medium text-primary hover:underline">
+              <h3 className="section-heading">Ordini Recenti</h3>
+              <Link to="/ordini" className="text-body-md font-medium text-primary hover:underline underline-offset-4 transition-all">
                 Vedi tutti
               </Link>
             </div>
@@ -209,30 +209,33 @@ const Index = () => {
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : recentOrdini.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">Nessun ordine ancora</p>
+              <p className="text-muted-foreground text-center py-8 text-body-md">Nessun ordine ancora</p>
             ) : (
               <div className="space-y-3">
-                {recentOrdini.map((order) => (
+                {recentOrdini.map((order, index) => (
                   <div
                     key={order.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border border-border p-3 lg:p-4 transition-colors hover:bg-muted/50 gap-2"
+                    className={cn(
+                      "flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-border p-3 lg:p-4 transition-all duration-200 hover:bg-muted/50 hover:border-primary/20 gap-2 animate-fade-in animate-fill-both",
+                      `stagger-${index + 1}`
+                    )}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary font-semibold text-sm">
+                      <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-display font-semibold text-body-md transition-transform hover:scale-105">
                         {order.clienti?.nome?.charAt(0) || "?"}
                       </div>
                       <div>
-                        <p className="font-medium text-card-foreground">{order.clienti?.nome || "Cliente"}</p>
-                        <p className="text-xs lg:text-sm text-muted-foreground">
+                        <p className="font-semibold text-card-foreground">{order.clienti?.nome || "Cliente"}</p>
+                        <p className="text-body-sm text-muted-foreground">
                           {order.codice} · {format(new Date(order.created_at), "dd/MM/yyyy")}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between sm:justify-end gap-3">
-                      <Badge className={statusConfig[order.status].className}>
+                      <Badge className={cn(statusConfig[order.status].className, "transition-all")}>
                         {statusConfig[order.status].label}
                       </Badge>
-                      <span className="font-semibold text-card-foreground">{formatCurrency(Number(order.totale))}</span>
+                      <span className="font-display font-semibold text-card-foreground">{formatCurrency(Number(order.totale))}</span>
                     </div>
                   </div>
                 ))}
@@ -241,13 +244,15 @@ const Index = () => {
           </div>
 
           {/* Reminders */}
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in">
+          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in animate-fill-both stagger-5 hover-lift">
             <div className="mb-4 lg:mb-6 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" />
-                <h3 className="text-lg font-semibold text-card-foreground">Promemoria</h3>
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <Bell className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="section-heading">Promemoria</h3>
               </div>
-              <Link to="/promemoria" className="text-sm font-medium text-primary hover:underline">
+              <Link to="/promemoria" className="text-body-md font-medium text-primary hover:underline underline-offset-4 transition-all">
                 Vedi tutti
               </Link>
             </div>
@@ -256,26 +261,27 @@ const Index = () => {
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : pendingPromemoria.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">Nessun promemoria</p>
+              <p className="text-muted-foreground text-center py-8 text-body-md">Nessun promemoria</p>
             ) : (
               <div className="space-y-3">
-                {pendingPromemoria.map((reminder) => {
+                {pendingPromemoria.map((reminder, index) => {
                   const Icon = tipoIcons[reminder.tipo];
                   return (
                     <div
                       key={reminder.id}
                       className={cn(
-                        "rounded-lg border-l-4 p-3 transition-colors hover:bg-muted/30",
-                        prioritaColors[reminder.priorita]
+                        "rounded-xl border-l-4 p-3 transition-all duration-200 hover:bg-muted/30 hover:translate-x-1 animate-fade-in animate-fill-both",
+                        prioritaColors[reminder.priorita],
+                        `stagger-${index + 1}`
                       )}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="rounded-lg bg-muted p-2">
+                        <div className="rounded-lg bg-muted p-2 transition-transform hover:scale-105">
                           <Icon className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-card-foreground truncate">{reminder.titolo}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="font-semibold text-card-foreground truncate">{reminder.titolo}</p>
+                          <p className="text-body-sm text-muted-foreground">
                             {getDateLabel(reminder.data)} {reminder.orario && `· ${reminder.orario?.slice(0, 5)}`}
                           </p>
                         </div>

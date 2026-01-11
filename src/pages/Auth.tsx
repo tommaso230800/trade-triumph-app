@@ -92,23 +92,23 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md animate-fade-in-up animate-fill-both">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-white shadow-lg mb-4 overflow-hidden">
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-card shadow-lg mb-6 overflow-hidden transition-transform duration-300 hover:scale-105">
             <img src={agencyLogo} alt="AMG Logo" className="w-full h-full object-contain p-2" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">AMG HO.RE.CA</h1>
-          <p className="text-muted-foreground mt-1">Business & Strategy</p>
+          <h1 className="font-display text-display-md text-foreground">AMG HO.RE.CA</h1>
+          <p className="text-muted-foreground mt-2 text-body-lg">Business & Strategy</p>
         </div>
 
-        <div className="bg-card rounded-xl shadow-card p-6 animate-fade-in">
-          <h2 className="text-xl font-semibold text-center mb-6">Accedi</h2>
+        <div className="bg-card rounded-2xl shadow-lg p-8 animate-scale-in-bounce animate-fill-both stagger-1">
+          <h2 className="font-display text-heading-lg text-center mb-8">Accedi al tuo account</h2>
           
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="login-email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="login-email" className="text-label">Email</Label>
+              <div className="relative group">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
                 <Input
                   id="login-email"
                   type="email"
@@ -116,16 +116,16 @@ export default function Auth() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="email@esempio.it"
                   disabled={loading}
-                  className="pl-10"
+                  className="pl-10 h-12 transition-all duration-200 focus:shadow-glow"
                   autoComplete="email"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="login-password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="login-password" className="text-label">Password</Label>
+              <div className="relative group">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
                 <Input
                   id="login-password"
                   type="password"
@@ -133,14 +133,18 @@ export default function Auth() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   disabled={loading}
-                  className="pl-10"
+                  className="pl-10 h-12 transition-all duration-200 focus:shadow-glow"
                   autoComplete="current-password"
                 />
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading || !email || !password}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-body-lg font-semibold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]" 
+              disabled={loading || !email || !password}
+            >
+              {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
               Accedi
             </Button>
           </form>
