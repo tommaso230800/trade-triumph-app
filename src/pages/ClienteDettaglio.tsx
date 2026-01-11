@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useCliente, useClienteOrdini } from "@/hooks/useClienti";
-import { useCanvassAttive } from "@/hooks/useCanvass";
+import { useCanvassAttive, useCanvassScadute } from "@/hooks/useCanvass";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,9 +25,13 @@ import {
   Calendar,
   Gift,
   Percent,
+  History,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useState } from "react";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -44,12 +48,40 @@ const ClienteDettaglio = () => {
   const { data: cliente, isLoading } = useCliente(id);
   const { data: ordini, isLoading: ordiniLoading } = useClienteOrdini(id);
   const { data: promozioniAttive } = useCanvassAttive();
+  const { data: promozioniScadute } = useCanvassScadute();
+  const [expandedPromo, setExpandedPromo] = useState<string | null>(null);
 
   // Filtra le promozioni applicabili a questo cliente
   const promozioniCliente = promozioniAttive?.filter(promo => 
     promo.tutti_clienti || 
     promo.canvass_clienti?.some(cc => cc.cliente_id === id)
   ) || [];
+
+  // Filtra le promozioni scadute applicabili a questo cliente
+  const promozioniScaduteCliente = promozioniScadute?.filter(promo => 
+    promo.tutti_clienti || 
+    promo.canvass_clienti?.some(cc => cc.cliente_id === id)
+  ) || [];
+
+  // Filtra gli ordini effettuati durante una promozione
+  const getOrdiniDurantePromo = (promo: any) => {
+    if (!ordini) return [];
+    return ordini.filter(ordine => {
+      const dataOrdine = ordine.data_ordine || ordine.created_at?.split("T")[0];
+      if (!dataOrdine) return false;
+      
+      // Check main period
+      if (dataOrdine >= promo.data_inizio && dataOrdine <= promo.data_fine) {
+        // Check if order is from the same company
+        return ordine.azienda_id === promo.azienda_id;
+      }
+      
+      // Check additional periods
+      return promo.canvass_periodi?.some((p: any) => 
+        dataOrdine >= p.data_inizio && dataOrdine <= p.data_fine && ordine.azienda_id === promo.azienda_id
+      );
+    });
+  };
 
   if (isLoading) {
     return (
@@ -374,6 +406,150 @@ const ClienteDettaglio = () => {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Storico Promozioni Scadute */}
+        <div className="rounded-xl bg-card p-6 shadow-card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <History className="h-5 w-5 text-primary" />
+              Storico Promozioni Scadute
+            </h3>
+            <Badge variant="outline" className="bg-muted text-muted-foreground">
+              {promozioniScaduteCliente.length} promozioni
+            </Badge>
+          </div>
+
+          {promozioniScaduteCliente.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              Nessuna promozione scaduta per questo cliente
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {promozioniScaduteCliente.map((promo) => {
+                const ordiniPromo = getOrdiniDurantePromo(promo);
+                const fatturatoPromo = ordiniPromo.reduce((sum, o) => sum + Number(o.totale), 0);
+                const isExpanded = expandedPromo === promo.id;
+                
+                return (
+                  <div
+                    key={promo.id}
+                    className="rounded-lg border border-border overflow-hidden"
+                  >
+                    <button
+                      onClick={() => setExpandedPromo(isExpanded ? null : promo.id)}
+                      className="w-full p-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="text-left">
+                          <h4 className="font-medium text-foreground">{promo.nome}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {promo.azienda?.nome}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="bg-muted/50">
+                          {promo.tipo === "sconto_percentuale" && `${promo.valore}%`}
+                          {promo.tipo === "prezzo_fisso" && `${promo.valore}€`}
+                          {promo.tipo === "premio_fine_anno" && `Premio ${promo.valore}%`}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <p className="text-sm font-medium">{ordiniPromo.length} ordini</p>
+                          <p className="text-xs text-muted-foreground">{formatCurrency(fatturatoPromo)}</p>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {format(new Date(promo.data_inizio), "dd/MM/yy", { locale: it })} - {format(new Date(promo.data_fine), "dd/MM/yy", { locale: it })}
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="border-t border-border bg-muted/20 p-4">
+                        {promo.descrizione && (
+                          <p className="text-sm text-muted-foreground mb-4">{promo.descrizione}</p>
+                        )}
+                        
+                        {promo.cartoni_acquisto && promo.cartoni_omaggio ? (
+                          <div className="flex items-center gap-2 text-sm mb-4">
+                            <Gift className="h-4 w-4 text-success" />
+                            <span className="text-success">
+                              {promo.cartoni_acquisto}+{promo.cartoni_omaggio} cartoni omaggio
+                            </span>
+                          </div>
+                        ) : null}
+
+                        {promo.canvass_prodotti && promo.canvass_prodotti.length > 0 && (
+                          <div className="mb-4">
+                            <p className="text-xs text-muted-foreground mb-2">Prodotti inclusi:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {promo.canvass_prodotti.map((cp: any) => (
+                                <Badge key={cp.prodotto_id} variant="outline" className="text-xs">
+                                  {cp.prodotti?.nome}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {ordiniPromo.length > 0 ? (
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-2">Ordini effettuati durante la promozione:</p>
+                            <div className="overflow-x-auto">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="bg-muted/50">
+                                    <TableHead className="text-xs">Codice</TableHead>
+                                    <TableHead className="text-xs">Data</TableHead>
+                                    <TableHead className="text-xs">Prodotti</TableHead>
+                                    <TableHead className="text-xs">Totale</TableHead>
+                                    <TableHead className="text-xs">Status</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {ordiniPromo.map((ordine: any) => (
+                                    <TableRow key={ordine.id} className="hover:bg-muted/30">
+                                      <TableCell className="font-mono text-xs font-medium text-primary">
+                                        {ordine.codice}
+                                      </TableCell>
+                                      <TableCell className="text-xs text-muted-foreground">
+                                        {format(new Date(ordine.data_ordine || ordine.created_at), "dd/MM/yy", { locale: it })}
+                                      </TableCell>
+                                      <TableCell className="text-xs">
+                                        {ordine.ordini_righe?.length || 0} prodotti
+                                      </TableCell>
+                                      <TableCell className="text-xs font-semibold">
+                                        {formatCurrency(Number(ordine.totale))}
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge className={`text-xs ${statusConfig[ordine.status as keyof typeof statusConfig]?.className}`}>
+                                          {statusConfig[ordine.status as keyof typeof statusConfig]?.label || ordine.status}
+                                        </Badge>
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            Nessun ordine effettuato durante questa promozione
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
