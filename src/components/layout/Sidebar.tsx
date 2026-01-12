@@ -16,6 +16,7 @@ import {
   MapPin,
   ChevronDown,
   Target,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ const navigation: NavItem[] = [
       { name: "INDIPENDENTE", href: "/clienti/consorzio/indipendente" },
     ]
   },
+  { name: "Assistente Trattativa", href: "/assistente-trattativa", icon: Zap },
   { name: "Tecniche Vendita", href: "/tecniche-vendita", icon: Target },
   { name: "Agenda", href: "/agenda", icon: Calendar },
   { name: "Promemoria", href: "/promemoria", icon: Bell },

@@ -20,6 +20,7 @@ import Provvigioni from "./pages/Provvigioni";
 import Canvass from "./pages/Canvass";
 import GiroVisita from "./pages/GiroVisita";
 import TecnicheVendita from "./pages/TecnicheVendita";
+import AssistenteTrattativa from "./pages/AssistenteTrattativa";
 import Impostazioni from "./pages/Impostazioni";
 import NotFound from "./pages/NotFound";
 
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/canvass" element={<Canvass />} />
               <Route path="/giro-visita" element={<GiroVisita />} />
               <Route path="/tecniche-vendita" element={<TecnicheVendita />} />
+              <Route path="/assistente-trattativa" element={<AssistenteTrattativa />} />
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

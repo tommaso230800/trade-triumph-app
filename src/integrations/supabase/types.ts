@@ -724,6 +724,122 @@ export type Database = {
         }
         Relationships: []
       }
+      storico_trattative: {
+        Row: {
+          carta_scelta: string | null
+          cliente_id: string | null
+          cliente_nome: string
+          costo_acquisto: number | null
+          created_at: string
+          dati_carte: Json | null
+          esito: string | null
+          id: string
+          margine_target: number | null
+          note: string | null
+          obiettivo: string
+          pezzi_per_cartone: number
+          prezzo_listino: number
+          prodotto_nome: string
+          quantita_cartoni: number
+          quantita_pezzi: number
+          sconto_richiesto: number | null
+          tipologia_cliente: string
+          user_id: string
+        }
+        Insert: {
+          carta_scelta?: string | null
+          cliente_id?: string | null
+          cliente_nome: string
+          costo_acquisto?: number | null
+          created_at?: string
+          dati_carte?: Json | null
+          esito?: string | null
+          id?: string
+          margine_target?: number | null
+          note?: string | null
+          obiettivo: string
+          pezzi_per_cartone?: number
+          prezzo_listino: number
+          prodotto_nome: string
+          quantita_cartoni?: number
+          quantita_pezzi?: number
+          sconto_richiesto?: number | null
+          tipologia_cliente?: string
+          user_id: string
+        }
+        Update: {
+          carta_scelta?: string | null
+          cliente_id?: string | null
+          cliente_nome?: string
+          costo_acquisto?: number | null
+          created_at?: string
+          dati_carte?: Json | null
+          esito?: string | null
+          id?: string
+          margine_target?: number | null
+          note?: string | null
+          obiettivo?: string
+          pezzi_per_cartone?: number
+          prezzo_listino?: number
+          prodotto_nome?: string
+          quantita_cartoni?: number
+          quantita_pezzi?: number
+          sconto_richiesto?: number | null
+          tipologia_cliente?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storico_trattative_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_trattativa: {
+        Row: {
+          created_at: string
+          extra_default: string | null
+          id: string
+          nome: string
+          note: string | null
+          obiettivo_default: string
+          omaggio_default: string | null
+          sconto_max_percentuale: number | null
+          tipologia_cliente: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extra_default?: string | null
+          id?: string
+          nome: string
+          note?: string | null
+          obiettivo_default?: string
+          omaggio_default?: string | null
+          sconto_max_percentuale?: number | null
+          tipologia_cliente?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extra_default?: string | null
+          id?: string
+          nome?: string
+          note?: string | null
+          obiettivo_default?: string
+          omaggio_default?: string | null
+          sconto_max_percentuale?: number | null
+          tipologia_cliente?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       visite: {
         Row: {
           cliente_id: string
