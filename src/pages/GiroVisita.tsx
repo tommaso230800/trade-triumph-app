@@ -77,14 +77,12 @@ const GiroVisita = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-8 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-              Giro Visite
-            </h1>
-            <p className="text-muted-foreground">
+          <div className="space-y-1">
+            <h1 className="page-title">Giro Visite</h1>
+            <p className="text-body-md text-muted-foreground">
               Pianifica e gestisci le visite ai clienti
             </p>
           </div>
