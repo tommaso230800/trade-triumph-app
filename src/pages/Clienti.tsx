@@ -78,6 +78,13 @@ type FormData = {
   pec: string;
   email_aggiuntive: string[];
   consorzio: string;
+  tipologia_cliente: string;
+  fatturato_target: number;
+  budget_promo_percentuale: number;
+  sconto_max_policy: number;
+  n_promo_concesse: number;
+  costo_promo_totale: number;
+  condizioni_attive: string[];
 };
 
 const defaultFormData: FormData = {
@@ -97,6 +104,13 @@ const defaultFormData: FormData = {
   pec: "",
   email_aggiuntive: [],
   consorzio: "",
+  tipologia_cliente: "bar",
+  fatturato_target: 0,
+  budget_promo_percentuale: 3,
+  sconto_max_policy: 15,
+  n_promo_concesse: 0,
+  costo_promo_totale: 0,
+  condizioni_attive: [],
 };
 
 const Clienti = () => {
@@ -132,6 +146,13 @@ const Clienti = () => {
       pec: cliente.pec || "",
       email_aggiuntive: cliente.email_aggiuntive || [],
       consorzio: cliente.consorzio || "",
+      tipologia_cliente: cliente.tipologia_cliente || "bar",
+      fatturato_target: Number(cliente.fatturato_target) || 0,
+      budget_promo_percentuale: Number(cliente.budget_promo_percentuale) || 3,
+      sconto_max_policy: Number(cliente.sconto_max_policy) || 15,
+      n_promo_concesse: cliente.n_promo_concesse || 0,
+      costo_promo_totale: Number(cliente.costo_promo_totale) || 0,
+      condizioni_attive: cliente.condizioni_attive || [],
     });
     setIsDialogOpen(true);
   };
