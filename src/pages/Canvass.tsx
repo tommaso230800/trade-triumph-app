@@ -197,11 +197,11 @@ export default function CanvassPage() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-8 animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Canvass/PFA</h1>
-            <p className="text-muted-foreground">Gestisci promozioni, sconti e premi fine anno</p>
+          <div className="space-y-1">
+            <h1 className="page-title">Canvass/PFA</h1>
+            <p className="text-body-md text-muted-foreground">Gestisci promozioni, sconti e premi fine anno</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />

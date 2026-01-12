@@ -17,6 +17,7 @@ import KPI from "./pages/KPI";
 import Provvigioni from "./pages/Provvigioni";
 import Canvass from "./pages/Canvass";
 import GiroVisita from "./pages/GiroVisita";
+import Impostazioni from "./pages/Impostazioni";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/provvigioni" element={<Provvigioni />} />
             <Route path="/canvass" element={<Canvass />} />
             <Route path="/giro-visita" element={<GiroVisita />} />
+            <Route path="/impostazioni" element={<Impostazioni />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -630,12 +630,12 @@ const Ordini = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-8 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">Gestione Ordini</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+          <div className="space-y-1">
+            <h1 className="page-title">Gestione Ordini</h1>
+            <p className="text-body-md text-muted-foreground">
               Crea e gestisci gli ordini dei tuoi clienti
             </p>
           </div>

@@ -145,12 +145,12 @@ const Aziende = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-8 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">Aziende Partner</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+          <div className="space-y-1">
+            <h1 className="page-title">Aziende Partner</h1>
+            <p className="text-body-md text-muted-foreground">
               Gestisci le aziende e i loro prodotti
             </p>
           </div>
@@ -291,10 +291,10 @@ const Aziende = () => {
 
         {/* Search */}
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Cerca azienda..."
-            className="pl-10"
+            className="pl-11 h-12 rounded-xl shadow-sm border-muted/50 focus:border-primary/50 transition-all duration-200"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -303,24 +303,32 @@ const Aziende = () => {
         {/* Grid */}
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="text-center space-y-4">
+              <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+              <p className="text-muted-foreground animate-pulse">Caricamento aziende...</p>
+            </div>
           </div>
         ) : !aziende?.length ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Nessuna azienda trovata</p>
-            <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
+          <div className="text-center py-16 space-y-4">
+            <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+              <Search className="h-10 w-10 text-muted-foreground/50" />
+            </div>
+            <p className="text-muted-foreground text-lg">Nessuna azienda trovata</p>
+            <Button className="mt-4 gap-2" onClick={() => setIsDialogOpen(true)}>
+              <Plus className="h-4 w-4" />
               Aggiungi la prima azienda
             </Button>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {aziende.map((azienda) => (
-              <AziendaCard
-                key={azienda.id}
-                azienda={azienda}
-                onEdit={openEditDialog}
-                onDelete={(id) => deleteAzienda.mutate(id)}
-              />
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {aziende.map((azienda, idx) => (
+              <div key={azienda.id} className="animate-fade-in animate-fill-both" style={{ animationDelay: `${idx * 50}ms` }}>
+                <AziendaCard
+                  azienda={azienda}
+                  onEdit={openEditDialog}
+                  onDelete={(id) => deleteAzienda.mutate(id)}
+                />
+              </div>
             ))}
           </div>
         )}
