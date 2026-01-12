@@ -65,7 +65,6 @@ const navigation: NavItem[] = [
     ]
   },
   { name: "Assistente Trattativa", href: "/assistente-trattativa", icon: Zap },
-  { name: "Tecniche Vendita", href: "/tecniche-vendita", icon: Target },
   { name: "Agenda", href: "/agenda", icon: Calendar },
   { name: "Promemoria", href: "/promemoria", icon: Bell },
 ];

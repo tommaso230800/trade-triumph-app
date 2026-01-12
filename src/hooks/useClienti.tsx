@@ -21,6 +21,13 @@ export type Cliente = {
   pec: string | null;
   email_aggiuntive: string[] | null;
   consorzio: string | null;
+  tipologia_cliente: string | null;
+  fatturato_target: number | null;
+  budget_promo_percentuale: number | null;
+  sconto_max_policy: number | null;
+  n_promo_concesse: number | null;
+  costo_promo_totale: number | null;
+  condizioni_attive: string[] | null;
   created_at: string;
 };
 

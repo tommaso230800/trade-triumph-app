@@ -27,9 +27,16 @@ import {
   ArrowRightLeft,
   Scale,
   Handshake,
-  Shield
+  Shield,
+  Percent,
+  DollarSign,
+  Building2,
+  Users,
+  ChevronDown
 } from "lucide-react";
-import { useClienti } from "@/hooks/useClienti";
+import { useClienti, useCliente } from "@/hooks/useClienti";
+import { useAziende } from "@/hooks/useAziende";
+import { useProdotti, type Prodotto } from "@/hooks/useProdotti";
 import { 
   useTemplateTrattativa, 
   useCreateTemplate,
@@ -46,6 +53,11 @@ import { BreakEvenCalculator } from "@/components/trattativa/BreakEvenCalculator
 import { PromoContropartitaGenerator } from "@/components/trattativa/PromoContropartitaGenerator";
 import { AntiCompetitorTool } from "@/components/trattativa/AntiCompetitorTool";
 import { ClienteScoringCard } from "@/components/trattativa/ClienteScoringCard";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 // Types
 interface CartaOutput {
@@ -66,8 +78,11 @@ interface CartaOutput {
 }
 
 interface InputTrattativa {
+  clienteId: string | null;
   clienteNome: string;
   tipologiaCliente: "bar" | "alimentari" | "ingrosso";
+  aziendaId: string | null;
+  prodottoId: string | null;
   prodottoNome: string;
   prezzoListino: number;
   costoAcquisto: number;
@@ -78,6 +93,37 @@ interface InputTrattativa {
   obiettivo: string;
   usaCosto: boolean;
 }
+
+// Template precaricati per brand
+const BRAND_TEMPLATES = [
+  {
+    brand: "Casoni",
+    schemi: [
+      { nome: "10+1 Standard", tipo: "omaggio", valore: "10+1", descrizione: "10 cartoni + 1 omaggio" },
+      { nome: "25+3 Volume", tipo: "omaggio", valore: "25+3", descrizione: "25 cartoni + 3 omaggio" },
+      { nome: "Pallet 60+8", tipo: "omaggio", valore: "60+8", descrizione: "Pallet completo con 8 omaggi" },
+      { nome: "Sconto 5%", tipo: "sconto", valore: 5, descrizione: "Sconto standard" },
+    ]
+  },
+  {
+    brand: "Polara",
+    schemi: [
+      { nome: "10+1 Bibite", tipo: "omaggio", valore: "10+1", descrizione: "10 cartoni + 1 omaggio" },
+      { nome: "20+2 Volume", tipo: "omaggio", valore: "20+2", descrizione: "20 cartoni + 2 omaggio" },
+      { nome: "38+5 Mezzo Pallet", tipo: "omaggio", valore: "38+5", descrizione: "Mezzo pallet con 5 omaggi" },
+      { nome: "Sconto 3%", tipo: "sconto", valore: 3, descrizione: "Sconto bibite" },
+    ]
+  },
+  {
+    brand: "Zuegg",
+    schemi: [
+      { nome: "12+1 Succhi", tipo: "omaggio", valore: "12+1", descrizione: "12 cartoni + 1 omaggio" },
+      { nome: "24+2 Volume", tipo: "omaggio", valore: "24+2", descrizione: "24 cartoni + 2 omaggio" },
+      { nome: "Pallet 48+6", tipo: "omaggio", valore: "48+6", descrizione: "Pallet con 6 omaggi" },
+      { nome: "Sconto 4%", tipo: "sconto", valore: 4, descrizione: "Sconto standard Zuegg" },
+    ]
+  },
+];
 
 // Obiettivi disponibili
 const OBIETTIVI = [
@@ -99,6 +145,7 @@ const SCRIPTS = [
 
 export default function AssistenteTrattativa() {
   const { data: clienti } = useClienti();
+  const { data: aziende } = useAziende();
   const { data: templates } = useTemplateTrattativa();
   const { data: storico } = useStoricoTrattative();
   const createTemplate = useCreateTemplate();
@@ -108,11 +155,15 @@ export default function AssistenteTrattativa() {
   const [activeTab, setActiveTab] = useState("input");
   const [modalitaVeloce, setModalitaVeloce] = useState(false);
   const [showEmergenza, setShowEmergenza] = useState(false);
+  const [brandTemplatesOpen, setBrandTemplatesOpen] = useState(false);
 
   // Form state
   const [input, setInput] = useState<InputTrattativa>({
+    clienteId: null,
     clienteNome: "",
     tipologiaCliente: "bar",
+    aziendaId: null,
+    prodottoId: null,
     prodottoNome: "",
     prezzoListino: 0,
     costoAcquisto: 0,
@@ -124,9 +175,107 @@ export default function AssistenteTrattativa() {
     usaCosto: true,
   });
 
+  // Calcolatore margine/ricarico state
+  const [costoAcquisto, setCostoAcquisto] = useState<string>("");
+  const [prezzoVendita, setPrezzoVendita] = useState<string>("");
+  const [marginePercentuale, setMarginePercentuale] = useState<string>("");
+  const [ricaricoPercentuale, setRicaricoPercentuale] = useState<string>("");
+
   // Emergenza prezzo
   const [prezzoCompetitor, setPrezzoCompetitor] = useState<number>(0);
   const [prezzoMio, setPrezzoMio] = useState<number>(0);
+
+  // Get prodotti for selected azienda
+  const { data: prodotti } = useProdotti(input.aziendaId || undefined);
+
+  // Get cliente data if selected
+  const { data: selectedCliente } = useCliente(input.clienteId || undefined);
+
+  // Calcoli margine/ricarico
+  const calcolaDaCostoPrezzo = () => {
+    const costo = parseFloat(costoAcquisto) || 0;
+    const prezzo = parseFloat(prezzoVendita) || 0;
+    
+    if (costo > 0 && prezzo > 0) {
+      const margine = ((prezzo - costo) / prezzo) * 100;
+      const ricarico = ((prezzo - costo) / costo) * 100;
+      return { margine: margine.toFixed(2), ricarico: ricarico.toFixed(2), utile: (prezzo - costo).toFixed(2) };
+    }
+    return { margine: "0.00", ricarico: "0.00", utile: "0.00" };
+  };
+
+  const calcolaDaMargine = () => {
+    const costo = parseFloat(costoAcquisto) || 0;
+    const margine = parseFloat(marginePercentuale) || 0;
+    
+    if (costo > 0 && margine > 0 && margine < 100) {
+      const prezzoCalcolato = costo / (1 - margine / 100);
+      const ricarico = ((prezzoCalcolato - costo) / costo) * 100;
+      return { 
+        prezzo: prezzoCalcolato.toFixed(2), 
+        ricarico: ricarico.toFixed(2),
+        utile: (prezzoCalcolato - costo).toFixed(2)
+      };
+    }
+    return { prezzo: "0.00", ricarico: "0.00", utile: "0.00" };
+  };
+
+  const calcolaDaRicarico = () => {
+    const costo = parseFloat(costoAcquisto) || 0;
+    const ricarico = parseFloat(ricaricoPercentuale) || 0;
+    
+    if (costo > 0 && ricarico > 0) {
+      const prezzoCalcolato = costo * (1 + ricarico / 100);
+      const margine = ((prezzoCalcolato - costo) / prezzoCalcolato) * 100;
+      return { 
+        prezzo: prezzoCalcolato.toFixed(2), 
+        margine: margine.toFixed(2),
+        utile: (prezzoCalcolato - costo).toFixed(2)
+      };
+    }
+    return { prezzo: "0.00", margine: "0.00", utile: "0.00" };
+  };
+
+  const risultatiCostoPrezzo = calcolaDaCostoPrezzo();
+  const risultatiMargine = calcolaDaMargine();
+  const risultatiRicarico = calcolaDaRicarico();
+
+  // Handle cliente selection
+  const handleClienteSelect = (clienteId: string) => {
+    const cliente = clienti?.find(c => c.id === clienteId);
+    if (cliente) {
+      setInput(prev => ({
+        ...prev,
+        clienteId,
+        clienteNome: cliente.nome,
+        tipologiaCliente: (cliente.tipologia_cliente as any) || "bar",
+      }));
+    }
+  };
+
+  // Handle azienda selection
+  const handleAziendaSelect = (aziendaId: string) => {
+    setInput(prev => ({
+      ...prev,
+      aziendaId,
+      prodottoId: null,
+      prodottoNome: "",
+    }));
+  };
+
+  // Handle prodotto selection
+  const handleProdottoSelect = (prodottoId: string) => {
+    const prodotto = prodotti?.find(p => p.id === prodottoId);
+    if (prodotto) {
+      setInput(prev => ({
+        ...prev,
+        prodottoId,
+        prodottoNome: prodotto.nome,
+        prezzoListino: prodotto.prezzo_listino,
+        pezziPerCartone: prodotto.pezzi_per_cartone,
+      }));
+    }
+  };
 
   // Genera le 3 carte
   const carte = useMemo((): CartaOutput[] => {
@@ -144,11 +293,11 @@ export default function AssistenteTrattativa() {
     const cartoniExtraB = input.tipologiaCliente === "ingrosso" ? Math.ceil(input.quantitaCartoni * 0.1) : 1;
     const pezziOmaggioB = cartoniExtraB * input.pezziPerCartone;
     const quantitaEffettivaB = input.quantitaCartoni + (input.obiettivo === "aumentare_quantita" ? 2 : 0);
-    const prezzoB = input.prezzoListino * 0.98; // sconto minimo 2%
+    const prezzoB = input.prezzoListino * 0.98;
     const margineB = costo > 0 ? ((prezzoB - costo) / prezzoB) * 100 : input.margineTarget - 2;
     
     // CARTA C - Extra/servizio (prezzo quasi invariato)
-    const prezzoC = input.prezzoListino * 0.99; // solo 1% sconto
+    const prezzoC = input.prezzoListino * 0.99;
     const margineC = costo > 0 ? ((prezzoC - costo) / prezzoC) * 100 : input.margineTarget - 1;
     const extraC = input.tipologiaCliente === "bar" 
       ? "esposizione + materiale POP" 
@@ -266,7 +415,7 @@ export default function AssistenteTrattativa() {
     }
     
     saveTrattativa.mutate({
-      cliente_id: null,
+      cliente_id: input.clienteId,
       cliente_nome: input.clienteNome,
       tipologia_cliente: input.tipologiaCliente,
       prodotto_nome: input.prodottoNome,
@@ -305,6 +454,25 @@ export default function AssistenteTrattativa() {
     });
   };
 
+  const handleApplyBrandTemplate = (brand: string, schema: any) => {
+    toast.success(`Template "${schema.nome}" di ${brand} applicato!`);
+    if (schema.tipo === "omaggio") {
+      // Parse omaggio (es: "10+1" -> quantitaCartoni: 10)
+      const parts = schema.valore.split("+");
+      const cartoni = parseInt(parts[0]) || 10;
+      setInput(prev => ({
+        ...prev,
+        quantitaCartoni: cartoni,
+        obiettivo: "aumentare_quantita",
+      }));
+    } else if (schema.tipo === "sconto") {
+      setInput(prev => ({
+        ...prev,
+        scontoRichiesto: schema.valore,
+      }));
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-4">
@@ -315,7 +483,7 @@ export default function AssistenteTrattativa() {
               <Target className="h-5 w-5 sm:h-6 sm:w-6" />
               Assistente Trattativa
             </h1>
-            <p className="text-sm text-muted-foreground">Il "Gioco delle 3 Carte" - Genera opzioni in 20 secondi</p>
+            <p className="text-sm text-muted-foreground">Strumenti avanzati per trattativa e calcoli</p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -400,11 +568,10 @@ export default function AssistenteTrattativa() {
 
         {/* Tabs principali */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 text-xs">
+          <TabsList className="grid w-full grid-cols-6 text-xs">
             <TabsTrigger value="input">3 Carte</TabsTrigger>
-            <TabsTrigger value="output" disabled={carte.length === 0}>
-              Output
-            </TabsTrigger>
+            <TabsTrigger value="output" disabled={carte.length === 0}>Output</TabsTrigger>
+            <TabsTrigger value="calcolatore">Calcoli</TabsTrigger>
             <TabsTrigger value="tools">Strumenti</TabsTrigger>
             <TabsTrigger value="budget">Budget</TabsTrigger>
             <TabsTrigger value="storico">Storico</TabsTrigger>
@@ -422,19 +589,86 @@ export default function AssistenteTrattativa() {
               Modalità 20 Secondi
             </Button>
 
+            {/* Template Brand Precaricati */}
+            <Collapsible open={brandTemplatesOpen} onOpenChange={setBrandTemplatesOpen}>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" className="w-full justify-between h-10">
+                  <span className="flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    Template Brand (Casoni, Polara, Zuegg)
+                  </span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${brandTemplatesOpen ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="grid gap-3">
+                  {BRAND_TEMPLATES.map((bt) => (
+                    <Card key={bt.brand} className="bg-muted/30">
+                      <CardHeader className="py-2 px-3">
+                        <CardTitle className="text-sm font-medium">{bt.brand}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-3 pb-3 pt-0">
+                        <div className="grid grid-cols-2 gap-2">
+                          {bt.schemi.map((schema) => (
+                            <Button
+                              key={schema.nome}
+                              variant="outline"
+                              size="sm"
+                              className="h-auto py-2 px-2 text-xs flex flex-col items-start"
+                              onClick={() => handleApplyBrandTemplate(bt.brand, schema)}
+                            >
+                              <span className="font-medium">{schema.nome}</span>
+                              <span className="text-muted-foreground text-[10px]">{schema.descrizione}</span>
+                            </Button>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
             {/* Form Input */}
             <Card>
               <CardContent className="pt-4 space-y-4">
-                {/* Cliente */}
+                {/* Cliente - Selezione da database */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-xs">Cliente</Label>
-                    <Input
-                      placeholder="Nome cliente"
-                      value={input.clienteNome}
-                      onChange={(e) => setInput(prev => ({ ...prev, clienteNome: e.target.value }))}
-                      className="h-10"
-                    />
+                    <Label className="text-xs flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      Cliente
+                    </Label>
+                    <Select
+                      value={input.clienteId || "manual"}
+                      onValueChange={(v) => {
+                        if (v === "manual") {
+                          setInput(prev => ({ ...prev, clienteId: null, clienteNome: "" }));
+                        } else {
+                          handleClienteSelect(v);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Seleziona cliente..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">✏️ Inserisci manualmente</SelectItem>
+                        {clienti?.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nome} {c.azienda ? `(${c.azienda})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {input.clienteId === null && (
+                      <Input
+                        placeholder="Nome cliente"
+                        value={input.clienteNome}
+                        onChange={(e) => setInput(prev => ({ ...prev, clienteNome: e.target.value }))}
+                        className="h-10 mt-2"
+                      />
+                    )}
                   </div>
                   <div>
                     <Label className="text-xs">Tipologia</Label>
@@ -454,15 +688,87 @@ export default function AssistenteTrattativa() {
                   </div>
                 </div>
 
-                {/* Prodotto */}
+                {/* Azienda - Selezione da database */}
                 <div>
-                  <Label className="text-xs">Prodotto</Label>
-                  <Input
-                    placeholder="Nome prodotto"
-                    value={input.prodottoNome}
-                    onChange={(e) => setInput(prev => ({ ...prev, prodottoNome: e.target.value }))}
-                    className="h-10"
-                  />
+                  <Label className="text-xs flex items-center gap-1">
+                    <Building2 className="h-3 w-3" />
+                    Azienda
+                  </Label>
+                  <Select
+                    value={input.aziendaId || "none"}
+                    onValueChange={(v) => {
+                      if (v === "none") {
+                        setInput(prev => ({ ...prev, aziendaId: null, prodottoId: null }));
+                      } else {
+                        handleAziendaSelect(v);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Seleziona azienda..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">-- Nessuna --</SelectItem>
+                      {aziende?.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Prodotto - Selezione da database o manuale */}
+                <div>
+                  <Label className="text-xs flex items-center gap-1">
+                    <Package className="h-3 w-3" />
+                    Prodotto
+                  </Label>
+                  {input.aziendaId && prodotti && prodotti.length > 0 ? (
+                    <Select
+                      value={input.prodottoId || "manual"}
+                      onValueChange={(v) => {
+                        if (v === "manual") {
+                          setInput(prev => ({ 
+                            ...prev, 
+                            prodottoId: null, 
+                            prodottoNome: "",
+                            prezzoListino: 0,
+                            pezziPerCartone: 6
+                          }));
+                        } else {
+                          handleProdottoSelect(v);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Seleziona prodotto..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">✏️ Inserisci manualmente</SelectItem>
+                        {prodotti.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.nome} - €{p.prezzo_listino.toFixed(2)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      placeholder="Nome prodotto"
+                      value={input.prodottoNome}
+                      onChange={(e) => setInput(prev => ({ ...prev, prodottoNome: e.target.value }))}
+                      className="h-10"
+                    />
+                  )}
+                  {input.aziendaId && input.prodottoId === null && (
+                    <Input
+                      placeholder="Nome prodotto manuale"
+                      value={input.prodottoNome}
+                      onChange={(e) => setInput(prev => ({ ...prev, prodottoNome: e.target.value }))}
+                      className="h-10 mt-2"
+                    />
+                  )}
                 </div>
 
                 {/* Prezzi */}
@@ -758,6 +1064,220 @@ export default function AssistenteTrattativa() {
             </div>
           </TabsContent>
 
+          {/* TAB CALCOLATORE - Margine/Ricarico */}
+          <TabsContent value="calcolatore" className="mt-4 space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calculator className="h-5 w-5" />
+                  Calcolatore Margine e Ricarico
+                </CardTitle>
+                <CardDescription>
+                  Calcola margine, ricarico e prezzo di vendita in tempo reale
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="da-prezzo" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="da-prezzo">Da Prezzo</TabsTrigger>
+                    <TabsTrigger value="da-margine">Da Margine</TabsTrigger>
+                    <TabsTrigger value="da-ricarico">Da Ricarico</TabsTrigger>
+                  </TabsList>
+
+                  {/* Tab: Calcolo da Prezzo */}
+                  <TabsContent value="da-prezzo" className="space-y-4 mt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Costo Acquisto (€)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Es: 5.00"
+                          value={costoAcquisto}
+                          onChange={(e) => setCostoAcquisto(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Prezzo Vendita (€)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Es: 8.00"
+                          value={prezzoVendita}
+                          onChange={(e) => setPrezzoVendita(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-3">
+                      <Card className="bg-primary/5 border-primary/20">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                            <Percent className="h-4 w-4" />
+                            Margine
+                          </div>
+                          <p className="text-2xl font-bold text-primary">{risultatiCostoPrezzo.margine}%</p>
+                          <p className="text-xs text-muted-foreground">sul prezzo</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-secondary/50 border-secondary">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                            <TrendingUp className="h-4 w-4" />
+                            Ricarico
+                          </div>
+                          <p className="text-2xl font-bold text-secondary-foreground">{risultatiCostoPrezzo.ricarico}%</p>
+                          <p className="text-xs text-muted-foreground">sul costo</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-green-500/10 border-green-500/20">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                            <DollarSign className="h-4 w-4" />
+                            Utile
+                          </div>
+                          <p className="text-2xl font-bold text-green-600">€{risultatiCostoPrezzo.utile}</p>
+                          <p className="text-xs text-muted-foreground">per unità</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                  {/* Tab: Calcolo da Margine */}
+                  <TabsContent value="da-margine" className="space-y-4 mt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Costo Acquisto (€)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Es: 5.00"
+                          value={costoAcquisto}
+                          onChange={(e) => setCostoAcquisto(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Margine Desiderato (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Es: 30"
+                          value={marginePercentuale}
+                          onChange={(e) => setMarginePercentuale(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-3">
+                      <Card className="bg-primary/5 border-primary/20">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                            <DollarSign className="h-4 w-4" />
+                            Prezzo Vendita
+                          </div>
+                          <p className="text-2xl font-bold text-primary">€{risultatiMargine.prezzo}</p>
+                          <p className="text-xs text-muted-foreground">da applicare</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-secondary/50 border-secondary">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                            <TrendingUp className="h-4 w-4" />
+                            Ricarico
+                          </div>
+                          <p className="text-2xl font-bold text-secondary-foreground">{risultatiMargine.ricarico}%</p>
+                          <p className="text-xs text-muted-foreground">sul costo</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-green-500/10 border-green-500/20">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                            <DollarSign className="h-4 w-4" />
+                            Utile
+                          </div>
+                          <p className="text-2xl font-bold text-green-600">€{risultatiMargine.utile}</p>
+                          <p className="text-xs text-muted-foreground">per unità</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+
+                  {/* Tab: Calcolo da Ricarico */}
+                  <TabsContent value="da-ricarico" className="space-y-4 mt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Costo Acquisto (€)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Es: 5.00"
+                          value={costoAcquisto}
+                          onChange={(e) => setCostoAcquisto(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Ricarico Desiderato (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Es: 50"
+                          value={ricaricoPercentuale}
+                          onChange={(e) => setRicaricoPercentuale(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-3">
+                      <Card className="bg-primary/5 border-primary/20">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                            <DollarSign className="h-4 w-4" />
+                            Prezzo Vendita
+                          </div>
+                          <p className="text-2xl font-bold text-primary">€{risultatiRicarico.prezzo}</p>
+                          <p className="text-xs text-muted-foreground">da applicare</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-secondary/50 border-secondary">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                            <Percent className="h-4 w-4" />
+                            Margine
+                          </div>
+                          <p className="text-2xl font-bold text-secondary-foreground">{risultatiRicarico.margine}%</p>
+                          <p className="text-xs text-muted-foreground">sul prezzo</p>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-green-500/10 border-green-500/20">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                            <DollarSign className="h-4 w-4" />
+                            Utile
+                          </div>
+                          <p className="text-2xl font-bold text-green-600">€{risultatiRicarico.utile}</p>
+                          <p className="text-xs text-muted-foreground">per unità</p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                {/* Formule */}
+                <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-semibold mb-2">📐 Formule:</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p><strong>Margine</strong> = (Prezzo - Costo) / Prezzo × 100</p>
+                    </div>
+                    <div>
+                      <p><strong>Ricarico</strong> = (Prezzo - Costo) / Costo × 100</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* TAB STRUMENTI */}
           <TabsContent value="tools" className="mt-4 space-y-4">
             <div className="grid gap-4">
@@ -770,18 +1290,47 @@ export default function AssistenteTrattativa() {
 
           {/* TAB BUDGET */}
           <TabsContent value="budget" className="mt-4 space-y-4">
+            {/* Select cliente per budget */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Seleziona Cliente per Analisi</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select
+                  value={input.clienteId || "example"}
+                  onValueChange={(v) => {
+                    if (v !== "example") {
+                      handleClienteSelect(v);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona cliente..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="example">-- Esempio --</SelectItem>
+                    {clienti?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+
             <ClienteScoringCard
-              fatturato={10000}
-              fatturatoTarget={15000}
-              nPromo={3}
+              fatturato={selectedCliente?.fatturato || 10000}
+              fatturatoTarget={selectedCliente?.fatturato_target || 15000}
+              nPromo={selectedCliente?.n_promo_concesse || 3}
               crescitaPercentuale={5}
-              nomeCliente="Cliente esempio"
+              nomeCliente={selectedCliente?.nome || "Cliente esempio"}
             />
             <BudgetPromoCalculator
-              clienteFatturato={10000}
-              clienteBudgetPercentuale={5}
-              clienteCostoPromoGiaConcesse={200}
-              clienteScontoMaxPolicy={15}
+              clienteFatturato={selectedCliente?.fatturato || 10000}
+              clienteBudgetPercentuale={selectedCliente?.budget_promo_percentuale || 5}
+              clienteCostoPromoGiaConcesse={selectedCliente?.costo_promo_totale || 200}
+              clienteScontoMaxPolicy={selectedCliente?.sconto_max_policy || 15}
             />
           </TabsContent>
 
