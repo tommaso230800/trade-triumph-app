@@ -399,16 +399,65 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
                             className="h-8 text-sm"
                           />
                         </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Prezzo Listino (€)</Label>
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            value={editForm.prezzo_listino}
-                            onChange={(e) => setEditForm({ ...editForm, prezzo_listino: e.target.value })}
-                            placeholder="es. 1,85"
-                            className="h-8 text-sm"
-                          />
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Prezzo Listino (€)</Label>
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              value={editForm.prezzo_listino}
+                              onChange={(e) => setEditForm({ ...editForm, prezzo_listino: e.target.value })}
+                              placeholder="es. 1,85"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Formato</Label>
+                            <Input
+                              value={editForm.formato}
+                              onChange={(e) => setEditForm({ ...editForm, formato: e.target.value })}
+                              placeholder="es. 1L, 700ml"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div className="border-t pt-3">
+                          <Label className="text-xs font-semibold text-muted-foreground">Sconti Default %</Label>
+                          <div className="grid grid-cols-3 gap-2 mt-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">Sc1</Label>
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                value={editForm.sc1_default}
+                                onChange={(e) => setEditForm({ ...editForm, sc1_default: e.target.value })}
+                                placeholder="0"
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Sc2</Label>
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                value={editForm.sc2_default}
+                                onChange={(e) => setEditForm({ ...editForm, sc2_default: e.target.value })}
+                                placeholder="0"
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Sc3</Label>
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                value={editForm.sc3_default}
+                                onChange={(e) => setEditForm({ ...editForm, sc3_default: e.target.value })}
+                                placeholder="0"
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                          </div>
                         </div>
                         <div className="border-t pt-3">
                           <Label className="text-xs font-semibold text-muted-foreground">Pallettizzazione</Label>
@@ -550,16 +599,65 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
                         className="h-8 text-sm"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Prezzo Listino (€)</Label>
-                      <Input
-                        type="text"
-                        inputMode="decimal"
-                        value={newProduct.prezzo_listino}
-                        onChange={(e) => setNewProduct({ ...newProduct, prezzo_listino: e.target.value })}
-                        placeholder="es. 1,85"
-                        className="h-8 text-sm"
-                      />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Prezzo Listino (€)</Label>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={newProduct.prezzo_listino}
+                          onChange={(e) => setNewProduct({ ...newProduct, prezzo_listino: e.target.value })}
+                          placeholder="es. 1,85"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Formato</Label>
+                        <Input
+                          value={newProduct.formato}
+                          onChange={(e) => setNewProduct({ ...newProduct, formato: e.target.value })}
+                          placeholder="es. 1L, 700ml"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="border-t pt-3">
+                      <Label className="text-xs font-semibold text-muted-foreground">Sconti Default %</Label>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Sc1</Label>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={newProduct.sc1_default}
+                            onChange={(e) => setNewProduct({ ...newProduct, sc1_default: e.target.value })}
+                            placeholder="0"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Sc2</Label>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={newProduct.sc2_default}
+                            onChange={(e) => setNewProduct({ ...newProduct, sc2_default: e.target.value })}
+                            placeholder="0"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Sc3</Label>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={newProduct.sc3_default}
+                            onChange={(e) => setNewProduct({ ...newProduct, sc3_default: e.target.value })}
+                            placeholder="0"
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                      </div>
                     </div>
                     <div className="border-t pt-3">
                       <Label className="text-xs font-semibold text-muted-foreground">Pallettizzazione</Label>
