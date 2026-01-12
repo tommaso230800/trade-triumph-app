@@ -15,7 +15,6 @@ import {
   Tag,
   MapPin,
   ChevronDown,
-  Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -28,11 +27,16 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
+type NavChild = {
+  name: string;
+  href: string;
+};
+
 type NavItem = {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  children?: { name: string; href: string; icon: React.ComponentType<{ className?: string }> }[];
+  children?: NavChild[];
 };
 
 const navigation: NavItem[] = [
@@ -48,7 +52,14 @@ const navigation: NavItem[] = [
     href: "/clienti", 
     icon: Users,
     children: [
-      { name: "Consorzi", href: "/clienti/consorzi", icon: Handshake },
+      { name: "ADAT", href: "/clienti/consorzio/adat" },
+      { name: "CBF", href: "/clienti/consorzio/cbf" },
+      { name: "BEVERAGE NETWORK", href: "/clienti/consorzio/beverage-network" },
+      { name: "BOTT. FIORENTINE", href: "/clienti/consorzio/bottiglierie-fiorentine" },
+      { name: "RASNA", href: "/clienti/consorzio/rasna" },
+      { name: "CDA", href: "/clienti/consorzio/cda" },
+      { name: "SAN GEMINIANO", href: "/clienti/consorzio/san-geminiano" },
+      { name: "INDIPENDENTE", href: "/clienti/consorzio/indipendente" },
     ]
   },
   { name: "Agenda", href: "/agenda", icon: Calendar },
@@ -76,10 +87,11 @@ export function Sidebar() {
 
   const isChildActive = (item: NavItem) => {
     if (!item.children) return false;
-    return item.children.some(child => location.pathname === child.href);
+    return item.children.some(child => location.pathname === child.href) || 
+           location.pathname.startsWith('/clienti/consorzio/');
   };
 
-  const NavItem = ({ item, index }: { item: NavItem; index: number }) => {
+  const NavItemComponent = ({ item, index }: { item: NavItem; index: number }) => {
     const isActive = location.pathname === item.href;
     const hasChildren = item.children && item.children.length > 0;
     const isOpen = openMenus.includes(item.name) || isChildActive(item);
@@ -93,7 +105,7 @@ export function Sidebar() {
               to={item.href}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-4 py-3.5 text-body-md font-medium transition-all duration-250 ease-smooth touch-target active:scale-[0.98] animate-fade-in animate-fill-both",
+                "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-all duration-250 ease-smooth touch-target active:scale-[0.98] animate-fade-in animate-fill-both",
                 `stagger-${Math.min(index + 1, 6)}`,
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
@@ -103,7 +115,7 @@ export function Sidebar() {
               )}
             >
               <item.icon className={cn("h-5 w-5 flex-shrink-0 transition-transform duration-200", (isActive || childActive) && "scale-110")} />
-              <span className="truncate flex-1">{item.name}</span>
+              <span className="truncate flex-1 text-sm sm:text-base">{item.name}</span>
               <CollapsibleTrigger asChild>
                 <button
                   onClick={(e) => {
@@ -121,23 +133,22 @@ export function Sidebar() {
               </CollapsibleTrigger>
             </Link>
             <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-              <div className="ml-4 space-y-1 border-l-2 border-sidebar-border pl-3">
+              <div className="ml-4 space-y-0.5 border-l-2 border-sidebar-border pl-3 max-h-[300px] overflow-y-auto">
                 {item.children!.map((child) => {
-                  const isChildActive = location.pathname === child.href;
+                  const isChildItemActive = location.pathname === child.href;
                   return (
                     <Link
                       key={child.name}
                       to={child.href}
                       onClick={() => setMobileOpen(false)}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-body-sm font-medium transition-all duration-200",
-                        isChildActive
+                        "flex items-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-all duration-200",
+                        isChildItemActive
                           ? "bg-sidebar-primary/80 text-sidebar-primary-foreground"
                           : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
                       )}
                     >
-                      <child.icon className="h-4 w-4" />
-                      <span>{child.name}</span>
+                      <span className="truncate">{child.name}</span>
                     </Link>
                   );
                 })}
@@ -153,7 +164,7 @@ export function Sidebar() {
         to={item.href}
         onClick={() => setMobileOpen(false)}
         className={cn(
-          "flex items-center gap-3 rounded-xl px-4 py-3.5 text-body-md font-medium transition-all duration-250 ease-smooth touch-target active:scale-[0.98] animate-fade-in animate-fill-both",
+          "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-all duration-250 ease-smooth touch-target active:scale-[0.98] animate-fade-in animate-fill-both",
           `stagger-${Math.min(index + 1, 6)}`,
           isActive
             ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
@@ -161,7 +172,7 @@ export function Sidebar() {
         )}
       >
         <item.icon className={cn("h-5 w-5 flex-shrink-0 transition-transform duration-200", isActive && "scale-110")} />
-        <span className="truncate">{item.name}</span>
+        <span className="truncate text-sm sm:text-base">{item.name}</span>
       </Link>
     );
   };
@@ -169,7 +180,7 @@ export function Sidebar() {
   const SidebarContent = () => (
     <>
       {/* Logo */}
-      <div className="flex h-16 sm:h-20 items-center gap-3 px-4 border-b border-sidebar-border">
+      <div className="flex h-16 sm:h-20 items-center gap-3 px-3 sm:px-4 border-b border-sidebar-border">
         <div className="flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-white shadow-sm overflow-hidden flex-shrink-0 transition-transform duration-300 hover:scale-105">
           <img src={agencyLogo} alt="AMG Logo" className="w-full h-full object-contain p-1" />
         </div>
@@ -191,7 +202,7 @@ export function Sidebar() {
       {/* Navigation - touch friendly */}
       <nav className="flex-1 space-y-1 px-2 sm:px-3 py-3 sm:py-4 overflow-y-auto">
         {navigation.map((item, index) => (
-          <NavItem key={item.name} item={item} index={index} />
+          <NavItemComponent key={item.name} item={item} index={index} />
         ))}
       </nav>
 
@@ -208,14 +219,14 @@ export function Sidebar() {
           )}
         >
           <Settings className="h-5 w-5 flex-shrink-0" />
-          <span className="truncate">Impostazioni</span>
+          <span className="truncate text-sm sm:text-base">Impostazioni</span>
         </Link>
         <button
           onClick={handleSignOut}
           className="flex w-full items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium text-destructive hover:bg-destructive/10 hover:translate-x-1 transition-all duration-250 ease-smooth touch-target active:scale-[0.98]"
         >
           <LogOut className="h-5 w-5 flex-shrink-0" />
-          <span className="truncate">Esci</span>
+          <span className="truncate text-sm sm:text-base">Esci</span>
         </button>
       </div>
     </>
