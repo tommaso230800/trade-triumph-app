@@ -15,6 +15,7 @@ import {
   Tag,
   MapPin,
   ChevronDown,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ const navigation: NavItem[] = [
       { name: "INDIPENDENTE", href: "/clienti/consorzio/indipendente" },
     ]
   },
+  { name: "Tecniche Vendita", href: "/tecniche-vendita", icon: Target },
   { name: "Agenda", href: "/agenda", icon: Calendar },
   { name: "Promemoria", href: "/promemoria", icon: Bell },
 ];
