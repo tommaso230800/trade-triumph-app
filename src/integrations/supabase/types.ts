@@ -249,67 +249,88 @@ export type Database = {
       clienti: {
         Row: {
           azienda: string | null
+          budget_promo_percentuale: number | null
           cap: string | null
           citta: string | null
           codice_sdi: string | null
+          condizioni_attive: string[] | null
           consorzio: string | null
+          costo_promo_totale: number | null
           created_at: string | null
           email: string | null
           email_aggiuntive: string[] | null
           fatturato: number | null
+          fatturato_target: number | null
           id: string
           indirizzo: string | null
+          n_promo_concesse: number | null
           nome: string
           ordini_count: number | null
           partita_iva: string | null
           pec: string | null
           provincia: string | null
+          sconto_max_policy: number | null
           status: Database["public"]["Enums"]["client_status"] | null
           telefono: string | null
+          tipologia_cliente: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           azienda?: string | null
+          budget_promo_percentuale?: number | null
           cap?: string | null
           citta?: string | null
           codice_sdi?: string | null
+          condizioni_attive?: string[] | null
           consorzio?: string | null
+          costo_promo_totale?: number | null
           created_at?: string | null
           email?: string | null
           email_aggiuntive?: string[] | null
           fatturato?: number | null
+          fatturato_target?: number | null
           id?: string
           indirizzo?: string | null
+          n_promo_concesse?: number | null
           nome: string
           ordini_count?: number | null
           partita_iva?: string | null
           pec?: string | null
           provincia?: string | null
+          sconto_max_policy?: number | null
           status?: Database["public"]["Enums"]["client_status"] | null
           telefono?: string | null
+          tipologia_cliente?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           azienda?: string | null
+          budget_promo_percentuale?: number | null
           cap?: string | null
           citta?: string | null
           codice_sdi?: string | null
+          condizioni_attive?: string[] | null
           consorzio?: string | null
+          costo_promo_totale?: number | null
           created_at?: string | null
           email?: string | null
           email_aggiuntive?: string[] | null
           fatturato?: number | null
+          fatturato_target?: number | null
           id?: string
           indirizzo?: string | null
+          n_promo_concesse?: number | null
           nome?: string
           ordini_count?: number | null
           partita_iva?: string | null
           pec?: string | null
           provincia?: string | null
+          sconto_max_policy?: number | null
           status?: Database["public"]["Enums"]["client_status"] | null
           telefono?: string | null
+          tipologia_cliente?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -723,6 +744,65 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      promo_clienti: {
+        Row: {
+          cliente_id: string
+          contropartita: string | null
+          costo_stimato: number | null
+          created_at: string
+          data_concessione: string
+          descrizione: string | null
+          id: string
+          note: string | null
+          prodotto_nome: string | null
+          quantita_cartoni: number | null
+          quantita_pezzi: number | null
+          tipo_promo: string
+          user_id: string
+          valore: number
+        }
+        Insert: {
+          cliente_id: string
+          contropartita?: string | null
+          costo_stimato?: number | null
+          created_at?: string
+          data_concessione?: string
+          descrizione?: string | null
+          id?: string
+          note?: string | null
+          prodotto_nome?: string | null
+          quantita_cartoni?: number | null
+          quantita_pezzi?: number | null
+          tipo_promo: string
+          user_id: string
+          valore?: number
+        }
+        Update: {
+          cliente_id?: string
+          contropartita?: string | null
+          costo_stimato?: number | null
+          created_at?: string
+          data_concessione?: string
+          descrizione?: string | null
+          id?: string
+          note?: string | null
+          prodotto_nome?: string | null
+          quantita_cartoni?: number | null
+          quantita_pezzi?: number | null
+          tipo_promo?: string
+          user_id?: string
+          valore?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_clienti_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       storico_trattative: {
         Row: {

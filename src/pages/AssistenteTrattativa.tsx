@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   Zap, 
   Target,
@@ -23,7 +22,12 @@ import {
   AlertTriangle,
   Check,
   Star,
-  Bookmark
+  Bookmark,
+  Calculator,
+  ArrowRightLeft,
+  Scale,
+  Handshake,
+  Shield
 } from "lucide-react";
 import { useClienti } from "@/hooks/useClienti";
 import { 
@@ -36,6 +40,12 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { BudgetPromoCalculator } from "@/components/trattativa/BudgetPromoCalculator";
+import { ScontoOmaggioConverter } from "@/components/trattativa/ScontoOmaggioConverter";
+import { BreakEvenCalculator } from "@/components/trattativa/BreakEvenCalculator";
+import { PromoContropartitaGenerator } from "@/components/trattativa/PromoContropartitaGenerator";
+import { AntiCompetitorTool } from "@/components/trattativa/AntiCompetitorTool";
+import { ClienteScoringCard } from "@/components/trattativa/ClienteScoringCard";
 
 // Types
 interface CartaOutput {
@@ -390,11 +400,13 @@ export default function AssistenteTrattativa() {
 
         {/* Tabs principali */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="input">Input</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 text-xs">
+            <TabsTrigger value="input">3 Carte</TabsTrigger>
             <TabsTrigger value="output" disabled={carte.length === 0}>
-              3 Carte
+              Output
             </TabsTrigger>
+            <TabsTrigger value="tools">Strumenti</TabsTrigger>
+            <TabsTrigger value="budget">Budget</TabsTrigger>
             <TabsTrigger value="storico">Storico</TabsTrigger>
           </TabsList>
 
@@ -744,6 +756,33 @@ export default function AssistenteTrattativa() {
                 Salva Trattativa
               </Button>
             </div>
+          </TabsContent>
+
+          {/* TAB STRUMENTI */}
+          <TabsContent value="tools" className="mt-4 space-y-4">
+            <div className="grid gap-4">
+              <ScontoOmaggioConverter />
+              <BreakEvenCalculator />
+              <PromoContropartitaGenerator />
+              <AntiCompetitorTool />
+            </div>
+          </TabsContent>
+
+          {/* TAB BUDGET */}
+          <TabsContent value="budget" className="mt-4 space-y-4">
+            <ClienteScoringCard
+              fatturato={10000}
+              fatturatoTarget={15000}
+              nPromo={3}
+              crescitaPercentuale={5}
+              nomeCliente="Cliente esempio"
+            />
+            <BudgetPromoCalculator
+              clienteFatturato={10000}
+              clienteBudgetPercentuale={5}
+              clienteCostoPromoGiaConcesse={200}
+              clienteScontoMaxPolicy={15}
+            />
           </TabsContent>
 
           {/* TAB STORICO */}
