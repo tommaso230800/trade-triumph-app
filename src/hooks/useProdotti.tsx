@@ -14,6 +14,10 @@ export type Prodotto = {
   strati: number;
   cartoni_per_strato: number;
   immagine_url: string | null;
+  formato: string | null;
+  sc1_default: number;
+  sc2_default: number;
+  sc3_default: number;
   created_at: string;
   updated_at: string;
 };
@@ -42,11 +46,24 @@ export function useCreateProdotto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (prodotto: Omit<Prodotto, "id" | "user_id" | "created_at" | "updated_at" | "immagine_url"> & { immagine_url?: string | null }) => {
+    mutationFn: async (prodotto: Omit<Prodotto, "id" | "user_id" | "created_at" | "updated_at" | "immagine_url" | "formato" | "sc1_default" | "sc2_default" | "sc3_default"> & { 
+      immagine_url?: string | null;
+      formato?: string | null;
+      sc1_default?: number;
+      sc2_default?: number;
+      sc3_default?: number;
+    }) => {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("prodotti")
-        .insert({ ...prodotto, user_id: user?.id })
+        .insert({ 
+          ...prodotto, 
+          user_id: user?.id,
+          formato: prodotto.formato ?? null,
+          sc1_default: prodotto.sc1_default ?? 0,
+          sc2_default: prodotto.sc2_default ?? 0,
+          sc3_default: prodotto.sc3_default ?? 0,
+        })
         .select()
         .single();
       if (error) throw error;

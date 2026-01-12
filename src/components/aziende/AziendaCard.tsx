@@ -40,6 +40,10 @@ type ProductForm = {
   strati: number;
   cartoni_per_strato: number;
   immagine_url?: string | null;
+  formato: string;
+  sc1_default: string;
+  sc2_default: string;
+  sc3_default: string;
 };
 
 const defaultProductForm: ProductForm = {
@@ -51,6 +55,10 @@ const defaultProductForm: ProductForm = {
   strati: 1,
   cartoni_per_strato: 1,
   immagine_url: null,
+  formato: "",
+  sc1_default: "0",
+  sc2_default: "0",
+  sc3_default: "0",
 };
 
 const parseDecimalInput = (value: string): number => {
@@ -102,6 +110,10 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
       strati: prodotto.strati,
       cartoni_per_strato: prodotto.cartoni_per_strato,
       immagine_url: prodotto.immagine_url,
+      formato: prodotto.formato || "",
+      sc1_default: String(prodotto.sc1_default || 0).replace(".", ","),
+      sc2_default: String(prodotto.sc2_default || 0).replace(".", ","),
+      sc3_default: String(prodotto.sc3_default || 0).replace(".", ","),
     });
   };
 
@@ -122,6 +134,10 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
       strati: editForm.strati,
       cartoni_per_strato: editForm.cartoni_per_strato,
       immagine_url: editForm.immagine_url,
+      formato: editForm.formato || null,
+      sc1_default: parseDecimalInput(editForm.sc1_default),
+      sc2_default: parseDecimalInput(editForm.sc2_default),
+      sc3_default: parseDecimalInput(editForm.sc3_default),
     });
     cancelEdit();
   };
@@ -138,6 +154,10 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
       strati: newProduct.strati,
       cartoni_per_strato: newProduct.cartoni_per_strato,
       immagine_url: newProduct.immagine_url,
+      formato: newProduct.formato || null,
+      sc1_default: parseDecimalInput(newProduct.sc1_default),
+      sc2_default: parseDecimalInput(newProduct.sc2_default),
+      sc3_default: parseDecimalInput(newProduct.sc3_default),
     });
     setNewProduct(defaultProductForm);
     setIsAdding(false);

@@ -593,12 +593,16 @@ export type Database = {
           cartoni_per_strato: number
           codice: string | null
           created_at: string
+          formato: string | null
           id: string
           immagine_url: string | null
           nome: string
           pezzi_per_cartone: number
           prezzo_listino: number
           quantita_pezzi: number
+          sc1_default: number
+          sc2_default: number
+          sc3_default: number
           strati: number
           updated_at: string
           user_id: string
@@ -608,12 +612,16 @@ export type Database = {
           cartoni_per_strato?: number
           codice?: string | null
           created_at?: string
+          formato?: string | null
           id?: string
           immagine_url?: string | null
           nome: string
           pezzi_per_cartone?: number
           prezzo_listino?: number
           quantita_pezzi?: number
+          sc1_default?: number
+          sc2_default?: number
+          sc3_default?: number
           strati?: number
           updated_at?: string
           user_id: string
@@ -623,12 +631,16 @@ export type Database = {
           cartoni_per_strato?: number
           codice?: string | null
           created_at?: string
+          formato?: string | null
           id?: string
           immagine_url?: string | null
           nome?: string
           pezzi_per_cartone?: number
           prezzo_listino?: number
           quantita_pezzi?: number
+          sc1_default?: number
+          sc2_default?: number
+          sc3_default?: number
           strati?: number
           updated_at?: string
           user_id?: string

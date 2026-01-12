@@ -70,6 +70,10 @@ type ProductForm = {
   strati: number;
   cartoni_per_strato: number;
   immagine_url?: string | null;
+  formato: string;
+  sc1_default: string;
+  sc2_default: string;
+  sc3_default: string;
 };
 
 const defaultProductForm: ProductForm = {
@@ -81,6 +85,10 @@ const defaultProductForm: ProductForm = {
   strati: 1,
   cartoni_per_strato: 1,
   immagine_url: null,
+  formato: "",
+  sc1_default: "0",
+  sc2_default: "0",
+  sc3_default: "0",
 };
 
 type AziendaFormData = {
@@ -251,6 +259,10 @@ const AziendaDettaglio = () => {
         strati: prodotto.strati,
         cartoni_per_strato: prodotto.cartoni_per_strato,
         immagine_url: prodotto.immagine_url,
+        formato: prodotto.formato || "",
+        sc1_default: String(prodotto.sc1_default || 0).replace(".", ","),
+        sc2_default: String(prodotto.sc2_default || 0).replace(".", ","),
+        sc3_default: String(prodotto.sc3_default || 0).replace(".", ","),
       });
     } else {
       setEditingProduct(null);
@@ -273,6 +285,10 @@ const AziendaDettaglio = () => {
         strati: productForm.strati,
         cartoni_per_strato: productForm.cartoni_per_strato,
         immagine_url: productForm.immagine_url,
+        formato: productForm.formato || null,
+        sc1_default: parseDecimalInput(productForm.sc1_default),
+        sc2_default: parseDecimalInput(productForm.sc2_default),
+        sc3_default: parseDecimalInput(productForm.sc3_default),
       });
     } else {
       await createProdotto.mutateAsync({
@@ -285,6 +301,10 @@ const AziendaDettaglio = () => {
         strati: productForm.strati,
         cartoni_per_strato: productForm.cartoni_per_strato,
         immagine_url: productForm.immagine_url,
+        formato: productForm.formato || null,
+        sc1_default: parseDecimalInput(productForm.sc1_default),
+        sc2_default: parseDecimalInput(productForm.sc2_default),
+        sc3_default: parseDecimalInput(productForm.sc3_default),
       });
     }
     setIsProductDialogOpen(false);
