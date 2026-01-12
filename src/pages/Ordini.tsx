@@ -84,6 +84,10 @@ type RigaOrdine = {
   sc1: string;
   sc2: string;
   sc3: string;
+  // Pallettizzazione info
+  strati: number;
+  cartoni_per_strato: number;
+  formato: string | null;
 };
 
 const Ordini = () => {
@@ -285,19 +289,24 @@ const Ordini = () => {
       quantita_pezzi: 0,
       quantita_cartoni: 0,
       pezzi_per_cartone: prodotto.pezzi_per_cartone,
-      sc1: "0",
-      sc2: "0",
-      sc3: "0",
+      // Use default discounts from product
+      sc1: String(prodotto.sc1_default || 0).replace(".", ","),
+      sc2: String(prodotto.sc2_default || 0).replace(".", ","),
+      sc3: String(prodotto.sc3_default || 0).replace(".", ","),
+      // Pallettizzazione
+      strati: prodotto.strati,
+      cartoni_per_strato: prodotto.cartoni_per_strato,
+      formato: prodotto.formato || null,
     };
 
-    // Auto-apply promotions to new product
+    // Auto-apply promotions to new product (override defaults if promo is better)
     newRiga = applyPromoToNewProduct(newRiga);
     
     // Check if promo was applied and notify
     const appliedPromo = promozioniRilevanti.find(promo => 
       promo.canvass_prodotti?.some(cp => cp.prodotto_id === prodotto.id)
     );
-    if (appliedPromo && newRiga.sc1 !== "0") {
+    if (appliedPromo && parseDecimalInput(newRiga.sc1) !== (prodotto.sc1_default || 0)) {
       toast.success(`Promozione "${appliedPromo.nome}" applicata automaticamente!`, {
         icon: <Gift className="h-4 w-4 text-success" />
       });
@@ -461,17 +470,23 @@ const Ordini = () => {
     }));
 
     // Set order lines from last order with all data
-    const newRighe: RigaOrdine[] = righe.map((r) => ({
-      prodotto_id: r.prodotto_id,
-      prodotto_nome: r.prodotti?.nome || "Prodotto",
-      prezzo_unitario: String(r.prezzo_unitario).replace(".", ","),
-      quantita_pezzi: r.quantita_pezzi,
-      quantita_cartoni: r.quantita_cartoni,
-      pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
-      sc1: String(r.sc1 || 0).replace(".", ","),
-      sc2: String(r.sc2 || 0).replace(".", ","),
-      sc3: String(r.sc3 || 0).replace(".", ","),
-    }));
+    const newRighe: RigaOrdine[] = righe.map((r) => {
+      const prodotto = allProdotti?.find(p => p.id === r.prodotto_id);
+      return {
+        prodotto_id: r.prodotto_id,
+        prodotto_nome: r.prodotti?.nome || "Prodotto",
+        prezzo_unitario: String(r.prezzo_unitario).replace(".", ","),
+        quantita_pezzi: r.quantita_pezzi,
+        quantita_cartoni: r.quantita_cartoni,
+        pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
+        sc1: String(r.sc1 || 0).replace(".", ","),
+        sc2: String(r.sc2 || 0).replace(".", ","),
+        sc3: String(r.sc3 || 0).replace(".", ","),
+        strati: prodotto?.strati || 1,
+        cartoni_per_strato: prodotto?.cartoni_per_strato || 1,
+        formato: prodotto?.formato || null,
+      };
+    });
 
     setRigheOrdine(newRighe);
     toast.success("Dati dell'ultimo ordine caricati!");
@@ -868,7 +883,14 @@ const Ordini = () => {
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-sm truncate">{riga.prodotto_nome}</p>
-                                <p className="text-xs text-muted-foreground">{riga.pezzi_per_cartone} pz/cartone</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {riga.formato && <span className="mr-2">{riga.formato}</span>}
+                                  {riga.pezzi_per_cartone} pz/cart
+                                </p>
+                                {/* Pallettizzazione */}
+                                <p className="text-xs text-primary/80 mt-1">
+                                  🧱 {riga.strati} strati × {riga.cartoni_per_strato} cart/strato = {riga.strati * riga.cartoni_per_strato} cart/pallet
+                                </p>
                               </div>
                               <Button
                                 variant="ghost"

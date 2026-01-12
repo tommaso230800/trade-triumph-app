@@ -1,10 +1,10 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useClienti } from "@/hooks/useClienti";
 import { useOrdini } from "@/hooks/useOrdini";
 import { useAziende } from "@/hooks/useAziende";
@@ -16,8 +16,9 @@ import {
   ArrowLeft,
   BarChart3,
   Phone,
-  Mail,
-  MapPin
+  MapPin,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -38,18 +39,32 @@ export const CONSORZI_SLUGS = Object.keys(CONSORZI_MAP);
 const ConsorzioDettaglio = () => {
   const { slug } = useParams<{ slug: string }>();
   const consorzioNome = slug ? CONSORZI_MAP[slug] : null;
+  const [expandedAziende, setExpandedAziende] = useState<string[]>([]);
   
   const { data: clienti = [], isLoading: loadingClienti } = useClienti();
   const { data: ordini = [], isLoading: loadingOrdini } = useOrdini();
   const { data: aziende = [], isLoading: loadingAziende } = useAziende();
+
+  const toggleAzienda = (aziendaId: string) => {
+    setExpandedAziende(prev => 
+      prev.includes(aziendaId) 
+        ? prev.filter(id => id !== aziendaId)
+        : [...prev, aziendaId]
+    );
+  };
 
   const consorzioData = useMemo(() => {
     if (!consorzioNome) return null;
 
     const clientiConsorzio = clienti.filter(c => c.consorzio === consorzioNome);
     
-    // Calculate fatturato per azienda
-    const fatturatoPerAzienda: Record<string, { nome: string; fatturato: number; ordiniCount: number }> = {};
+    // Calculate fatturato per azienda with client details
+    const fatturatoPerAzienda: Record<string, { 
+      nome: string; 
+      fatturato: number; 
+      ordiniCount: number;
+      clienti: Record<string, { nome: string; fatturato: number; ordiniCount: number }>;
+    }> = {};
     
     clientiConsorzio.forEach(cliente => {
       const clienteOrdini = ordini.filter(o => o.cliente_id === cliente.id);
@@ -63,11 +78,25 @@ const ConsorzioDettaglio = () => {
             fatturatoPerAzienda[ordine.azienda_id] = {
               nome: aziendaNome,
               fatturato: 0,
+              ordiniCount: 0,
+              clienti: {}
+            };
+          }
+          
+          // Add to azienda totals
+          fatturatoPerAzienda[ordine.azienda_id].fatturato += ordine.totale || 0;
+          fatturatoPerAzienda[ordine.azienda_id].ordiniCount += 1;
+          
+          // Add to client within azienda
+          if (!fatturatoPerAzienda[ordine.azienda_id].clienti[cliente.id]) {
+            fatturatoPerAzienda[ordine.azienda_id].clienti[cliente.id] = {
+              nome: cliente.nome,
+              fatturato: 0,
               ordiniCount: 0
             };
           }
-          fatturatoPerAzienda[ordine.azienda_id].fatturato += ordine.totale || 0;
-          fatturatoPerAzienda[ordine.azienda_id].ordiniCount += 1;
+          fatturatoPerAzienda[ordine.azienda_id].clienti[cliente.id].fatturato += ordine.totale || 0;
+          fatturatoPerAzienda[ordine.azienda_id].clienti[cliente.id].ordiniCount += 1;
         }
       });
     });
@@ -81,7 +110,13 @@ const ConsorzioDettaglio = () => {
       clienti: clientiConsorzio,
       clientiCount: clientiConsorzio.length,
       fatturatoPerAzienda: Object.entries(fatturatoPerAzienda)
-        .map(([id, data]) => ({ id, ...data }))
+        .map(([id, data]) => ({ 
+          id, 
+          ...data,
+          clientiList: Object.entries(data.clienti)
+            .map(([clienteId, clienteData]) => ({ id: clienteId, ...clienteData }))
+            .sort((a, b) => b.fatturato - a.fatturato)
+        }))
         .sort((a, b) => b.fatturato - a.fatturato),
       totaleFatturato: totale
     };
@@ -225,36 +260,73 @@ const ConsorzioDettaglio = () => {
                 ) : (
                   <div className="space-y-3">
                     {consorzioData?.fatturatoPerAzienda.map((azienda, index) => (
-                      <div
-                        key={azienda.id}
-                        className={cn(
-                          "flex items-center justify-between p-3 sm:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in",
-                          `stagger-${Math.min(index + 1, 6)}`
-                        )}
+                      <Collapsible 
+                        key={azienda.id} 
+                        open={expandedAziende.includes(azienda.id)}
+                        onOpenChange={() => toggleAzienda(azienda.id)}
                       >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
-                            <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
+                        <CollapsibleTrigger asChild>
+                          <div
+                            className={cn(
+                              "flex items-center justify-between p-3 sm:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in cursor-pointer",
+                              `stagger-${Math.min(index + 1, 6)}`
+                            )}
+                          >
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                                <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium text-sm sm:text-base truncate">{azienda.nome}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {azienda.ordiniCount} ordini • {azienda.clientiList.length} clienti
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-right flex-shrink-0">
+                                <p className="font-bold text-sm sm:text-base text-success">
+                                  {formatCurrency(azienda.fatturato)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {consorzioData.totaleFatturato > 0 
+                                    ? `${((azienda.fatturato / consorzioData.totaleFatturato) * 100).toFixed(1)}%`
+                                    : '0%'
+                                  }
+                                </p>
+                              </div>
+                              {expandedAziende.includes(azienda.id) 
+                                ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                : <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              }
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-sm sm:text-base truncate">{azienda.nome}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {azienda.ordiniCount} ordini
-                            </p>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="ml-4 sm:ml-6 mt-2 space-y-2 border-l-2 border-muted pl-4">
+                            {azienda.clientiList.map((cliente) => (
+                              <Link
+                                key={cliente.id}
+                                to={`/clienti/${cliente.id}`}
+                                className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-background hover:bg-muted/30 transition-colors"
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Users className="h-4 w-4 text-primary shrink-0" />
+                                  <span className="text-sm truncate">{cliente.nome}</span>
+                                </div>
+                                <div className="text-right shrink-0">
+                                  <p className="text-sm font-medium text-success">
+                                    {formatCurrency(cliente.fatturato)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {cliente.ordiniCount} ordini
+                                  </p>
+                                </div>
+                              </Link>
+                            ))}
                           </div>
-                        </div>
-                        <div className="text-right flex-shrink-0 ml-2">
-                          <p className="font-bold text-sm sm:text-base text-success">
-                            {formatCurrency(azienda.fatturato)}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {consorzioData.totaleFatturato > 0 
-                              ? `${((azienda.fatturato / consorzioData.totaleFatturato) * 100).toFixed(1)}%`
-                              : '0%'
-                            }
-                          </p>
-                        </div>
-                      </div>
+                        </CollapsibleContent>
+                      </Collapsible>
                     ))}
                   </div>
                 )}
