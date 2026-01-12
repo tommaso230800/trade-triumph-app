@@ -11,7 +11,7 @@ import Aziende from "./pages/Aziende";
 import AziendaDettaglio from "./pages/AziendaDettaglio";
 import Clienti from "./pages/Clienti";
 import ClienteDettaglio from "./pages/ClienteDettaglio";
-import Consorzi from "./pages/Consorzi";
+import ConsorzioDettaglio from "./pages/ConsorzioDettaglio";
 import Ordini from "./pages/Ordini";
 import Agenda from "./pages/Agenda";
 import Promemoria from "./pages/Promemoria";
@@ -39,7 +39,7 @@ const App = () => (
               <Route path="/aziende/:id" element={<AziendaDettaglio />} />
               <Route path="/clienti" element={<Clienti />} />
               <Route path="/clienti/:id" element={<ClienteDettaglio />} />
-              <Route path="/clienti/consorzi" element={<Consorzi />} />
+              <Route path="/clienti/consorzio/:slug" element={<ConsorzioDettaglio />} />
               <Route path="/ordini" element={<Ordini />} />
               <Route path="/agenda" element={<Agenda />} />
               <Route path="/promemoria" element={<Promemoria />} />
