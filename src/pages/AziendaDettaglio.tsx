@@ -688,15 +688,60 @@ const AziendaDettaglio = () => {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Prezzo Listino (€)</Label>
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={productForm.prezzo_listino}
-                onChange={(e) => setProductForm({ ...productForm, prezzo_listino: e.target.value })}
-                placeholder="es. 1,85"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Prezzo Listino (€)</Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={productForm.prezzo_listino}
+                  onChange={(e) => setProductForm({ ...productForm, prezzo_listino: e.target.value })}
+                  placeholder="es. 1,85"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Formato</Label>
+                <Input
+                  value={productForm.formato}
+                  onChange={(e) => setProductForm({ ...productForm, formato: e.target.value })}
+                  placeholder="es. 1L, 700ml, 500ml"
+                />
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <Label className="text-sm font-semibold text-muted-foreground">Sconti Default %</Label>
+              <div className="grid grid-cols-3 gap-4 mt-3">
+                <div className="space-y-2">
+                  <Label>Sc1</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={productForm.sc1_default}
+                    onChange={(e) => setProductForm({ ...productForm, sc1_default: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Sc2</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={productForm.sc2_default}
+                    onChange={(e) => setProductForm({ ...productForm, sc2_default: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Sc3</Label>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    value={productForm.sc3_default}
+                    onChange={(e) => setProductForm({ ...productForm, sc3_default: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
             </div>
             <div className="border-t pt-4">
               <Label className="text-sm font-semibold text-muted-foreground">Pallettizzazione</Label>
