@@ -67,7 +67,8 @@ const ConsorzioDettaglio = () => {
     }> = {};
     
     clientiConsorzio.forEach(cliente => {
-      const clienteOrdini = ordini.filter(o => o.cliente_id === cliente.id);
+      // Escludi ordini annullati dalle statistiche
+      const clienteOrdini = ordini.filter(o => o.cliente_id === cliente.id && o.status !== "annullato");
       
       clienteOrdini.forEach(ordine => {
         if (ordine.azienda_id) {
