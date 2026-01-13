@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -21,22 +22,96 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, User, Loader2, Trash2 } from "lucide-react";
-import { useEventi, useCreateEvento, useDeleteEvento, Evento } from "@/hooks/useEventi";
+import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, User, Loader2, Trash2, CalendarDays, History, CalendarCheck } from "lucide-react";
+import { useEventi, useCreateEvento, useDeleteEvento, useUpcomingEventi, usePastEventi, Evento } from "@/hooks/useEventi";
 import { useClienti } from "@/hooks/useClienti";
-import { format, addDays, subDays } from "date-fns";
+import { format, addDays, subDays, parseISO, isToday, isTomorrow } from "date-fns";
 import { it } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 const tipoConfig = {
-  meeting: { label: "Riunione", className: "bg-primary/10 text-primary" },
-  presentazione: { label: "Presentazione", className: "bg-info/10 text-info" },
-  visita: { label: "Visita", className: "bg-success/10 text-success" },
-  altro: { label: "Altro", className: "bg-muted text-muted-foreground" },
+  meeting: { label: "Riunione", className: "bg-primary/10 text-primary border-primary/20" },
+  presentazione: { label: "Presentazione", className: "bg-info/10 text-info border-info/20" },
+  visita: { label: "Visita", className: "bg-success/10 text-success border-success/20" },
+  altro: { label: "Altro", className: "bg-muted text-muted-foreground border-muted" },
 };
+
+const getDateLabel = (dateStr: string) => {
+  const date = parseISO(dateStr);
+  if (isToday(date)) return "Oggi";
+  if (isTomorrow(date)) return "Domani";
+  return format(date, "EEE d MMM", { locale: it });
+};
+
+// Componente per mostrare un singolo evento
+const EventoCard = ({ evento, onDelete, showDate = false, isPast = false }: { 
+  evento: Evento; 
+  onDelete: (id: string) => void;
+  showDate?: boolean;
+  isPast?: boolean;
+}) => (
+  <div
+    className={cn(
+      "group rounded-xl bg-card border p-4 lg:p-5 transition-all duration-300 hover:shadow-card animate-fade-in",
+      isPast ? "opacity-70 border-muted" : "border-border hover:border-primary/20"
+    )}
+  >
+    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+      <div className="space-y-3 flex-1">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Badge className={cn(tipoConfig[evento.tipo].className, "border")}>
+            {tipoConfig[evento.tipo].label}
+          </Badge>
+          {showDate && (
+            <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-md">
+              {getDateLabel(evento.data)}
+            </span>
+          )}
+          <h3 className="font-semibold text-card-foreground">{evento.titolo}</h3>
+        </div>
+        <div className="flex flex-wrap gap-4 text-sm">
+          {(evento.orario_inizio || evento.orario_fine) && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock className="h-4 w-4 flex-shrink-0" />
+              {evento.orario_inizio?.slice(0, 5)}
+              {evento.orario_fine && ` - ${evento.orario_fine.slice(0, 5)}`}
+            </div>
+          )}
+          {evento.luogo && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate max-w-[200px]">{evento.luogo}</span>
+            </div>
+          )}
+          {evento.clienti?.nome && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <User className="h-4 w-4 flex-shrink-0" />
+              {evento.clienti.nome}
+            </div>
+          )}
+        </div>
+        {evento.descrizione && (
+          <p className="text-sm text-muted-foreground">{evento.descrizione}</p>
+        )}
+      </div>
+      {!isPast && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive self-start"
+          onClick={() => onDelete(evento.id)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
+    </div>
+  </div>
+);
 
 const Agenda = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("calendario");
   const [formData, setFormData] = useState({
     titolo: "",
     descrizione: "",
@@ -49,6 +124,8 @@ const Agenda = () => {
   });
 
   const { data: eventi, isLoading } = useEventi(date);
+  const { data: upcomingEventi, isLoading: upcomingLoading } = useUpcomingEventi();
+  const { data: pastEventi, isLoading: pastLoading } = usePastEventi();
   const { data: clienti } = useClienti();
   const createEvento = useCreateEvento();
   const deleteEvento = useDeleteEvento();
@@ -80,7 +157,7 @@ const Agenda = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-6 lg:space-y-8 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
@@ -109,6 +186,14 @@ const Agenda = () => {
                     value={formData.titolo}
                     onChange={(e) => setFormData({ ...formData, titolo: e.target.value })}
                     placeholder="Es: Riunione con cliente"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Descrizione</Label>
+                  <Input
+                    value={formData.descrizione}
+                    onChange={(e) => setFormData({ ...formData, descrizione: e.target.value })}
+                    placeholder="Aggiungi una descrizione (opzionale)"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -196,105 +281,184 @@ const Agenda = () => {
           </Dialog>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Calendar */}
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(d) => d && setDate(d)}
-              className="rounded-md"
-              locale={it}
-            />
-            <div className="mt-4 flex items-center gap-4 border-t border-border pt-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-primary" />
-                <span className="text-xs text-muted-foreground">Riunioni</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-success" />
-                <span className="text-xs text-muted-foreground">Visite</span>
-              </div>
-            </div>
-          </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+            <TabsTrigger value="calendario" className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+              <span className="hidden sm:inline">Calendario</span>
+            </TabsTrigger>
+            <TabsTrigger value="prossimi" className="gap-2">
+              <CalendarCheck className="h-4 w-4" />
+              <span className="hidden sm:inline">Prossimi</span>
+              {upcomingEventi && upcomingEventi.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-xs">
+                  {upcomingEventi.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="passati" className="gap-2">
+              <History className="h-4 w-4" />
+              <span className="hidden sm:inline">Passati</span>
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Events */}
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between rounded-xl bg-card p-4 shadow-card">
-              <Button variant="ghost" size="icon" onClick={() => setDate(subDays(date, 1))}>
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <h2 className="text-base lg:text-lg font-semibold text-card-foreground text-center">
-                {format(date, "EEEE d MMMM yyyy", { locale: it })}
-              </h2>
-              <Button variant="ghost" size="icon" onClick={() => setDate(addDays(date, 1))}>
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-            </div>
-
-            {isLoading ? (
-              <div className="flex items-center justify-center h-48">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : !eventi?.length ? (
-              <div className="text-center py-12 bg-card rounded-xl shadow-card">
-                <p className="text-muted-foreground">Nessun evento per questa data</p>
-                <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
-                  Aggiungi evento
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {eventi.map((evento) => (
-                  <div
-                    key={evento.id}
-                    className="group rounded-xl bg-card p-4 lg:p-5 shadow-card transition-all duration-300 hover:shadow-card-hover animate-fade-in"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                      <div className="space-y-3 flex-1">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <Badge className={tipoConfig[evento.tipo].className}>
-                            {tipoConfig[evento.tipo].label}
-                          </Badge>
-                          <h3 className="font-semibold text-card-foreground">{evento.titolo}</h3>
-                        </div>
-                        <div className="space-y-1.5 text-sm">
-                          {(evento.orario_inizio || evento.orario_fine) && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Clock className="h-4 w-4 flex-shrink-0" />
-                              {evento.orario_inizio?.slice(0, 5)}
-                              {evento.orario_fine && ` - ${evento.orario_fine.slice(0, 5)}`}
-                            </div>
-                          )}
-                          {evento.luogo && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <MapPin className="h-4 w-4 flex-shrink-0" />
-                              <span className="truncate">{evento.luogo}</span>
-                            </div>
-                          )}
-                          {evento.clienti?.nome && (
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <User className="h-4 w-4 flex-shrink-0" />
-                              {evento.clienti.nome}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive self-start"
-                        onClick={() => deleteEvento.mutate(evento.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+          {/* Tab Calendario */}
+          <TabsContent value="calendario" className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Calendar */}
+              <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(d) => d && setDate(d)}
+                  className="rounded-md"
+                  locale={it}
+                />
+                <div className="mt-4 flex items-center gap-4 border-t border-border pt-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-primary" />
+                    <span className="text-xs text-muted-foreground">Riunioni</span>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-success" />
+                    <span className="text-xs text-muted-foreground">Visite</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-3 w-3 rounded-full bg-info" />
+                    <span className="text-xs text-muted-foreground">Presentazioni</span>
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
+
+              {/* Events for selected day */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="flex items-center justify-between rounded-xl bg-card p-4 shadow-card">
+                  <Button variant="ghost" size="icon" onClick={() => setDate(subDays(date, 1))}>
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  <h2 className="text-base lg:text-lg font-semibold text-card-foreground text-center">
+                    {format(date, "EEEE d MMMM yyyy", { locale: it })}
+                  </h2>
+                  <Button variant="ghost" size="icon" onClick={() => setDate(addDays(date, 1))}>
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-48">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : !eventi?.length ? (
+                  <div className="text-center py-12 bg-card rounded-xl shadow-card">
+                    <CalendarDays className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                    <p className="text-muted-foreground font-medium">Nessun evento per questa data</p>
+                    <p className="text-sm text-muted-foreground mt-1">Clicca per aggiungere un appuntamento</p>
+                    <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Aggiungi evento
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {eventi.map((evento) => (
+                      <EventoCard 
+                        key={evento.id} 
+                        evento={evento} 
+                        onDelete={(id) => deleteEvento.mutate(id)} 
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Tab Prossimi Appuntamenti */}
+          <TabsContent value="prossimi" className="space-y-6">
+            <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <CalendarCheck className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-card-foreground">Prossimi Appuntamenti</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Tutti gli appuntamenti futuri in ordine cronologico
+                  </p>
+                </div>
+              </div>
+
+              {upcomingLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : !upcomingEventi?.length ? (
+                <div className="text-center py-12">
+                  <CalendarCheck className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground font-medium">Nessun appuntamento in programma</p>
+                  <p className="text-sm text-muted-foreground mt-1">Aggiungi il tuo primo appuntamento</p>
+                  <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuovo appuntamento
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {upcomingEventi.map((evento) => (
+                    <EventoCard 
+                      key={evento.id} 
+                      evento={evento} 
+                      onDelete={(id) => deleteEvento.mutate(id)}
+                      showDate 
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* Tab Appuntamenti Passati */}
+          <TabsContent value="passati" className="space-y-6">
+            <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-muted rounded-lg">
+                  <History className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-card-foreground">Appuntamenti Passati</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Storico degli appuntamenti già svolti
+                  </p>
+                </div>
+              </div>
+
+              {pastLoading ? (
+                <div className="flex items-center justify-center h-48">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              ) : !pastEventi?.length ? (
+                <div className="text-center py-12">
+                  <History className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                  <p className="text-muted-foreground font-medium">Nessun appuntamento passato</p>
+                  <p className="text-sm text-muted-foreground mt-1">Gli appuntamenti passati appariranno qui</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pastEventi.map((evento) => (
+                    <EventoCard 
+                      key={evento.id} 
+                      evento={evento} 
+                      onDelete={(id) => deleteEvento.mutate(id)}
+                      showDate
+                      isPast 
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );

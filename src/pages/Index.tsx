@@ -1,6 +1,7 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
+import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { useStats } from "@/hooks/useStats";
 import { useOrdini } from "@/hooks/useOrdini";
 import { usePromemoria } from "@/hooks/usePromemoria";
@@ -292,6 +293,11 @@ const Index = () => {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Upcoming Appointments */}
+        <div className="animate-fade-in animate-fill-both stagger-6">
+          <UpcomingAppointments />
         </div>
       </div>
     </MainLayout>
