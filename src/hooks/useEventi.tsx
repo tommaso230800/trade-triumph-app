@@ -49,6 +49,54 @@ export function useEventi(selectedDate?: Date) {
   });
 }
 
+// Hook per recuperare tutti gli eventi futuri
+export function useUpcomingEventi() {
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  
+  return useQuery({
+    queryKey: ["eventi", "upcoming"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("eventi")
+        .select(`
+          *,
+          clienti (nome)
+        `)
+        .gte("data", todayStr)
+        .order("data", { ascending: true })
+        .order("orario_inizio", { ascending: true });
+
+      if (error) throw error;
+      return data as Evento[];
+    },
+  });
+}
+
+// Hook per recuperare tutti gli eventi passati
+export function usePastEventi() {
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  
+  return useQuery({
+    queryKey: ["eventi", "past"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("eventi")
+        .select(`
+          *,
+          clienti (nome)
+        `)
+        .lt("data", todayStr)
+        .order("data", { ascending: false })
+        .order("orario_inizio", { ascending: false });
+
+      if (error) throw error;
+      return data as Evento[];
+    },
+  });
+}
+
 export function useCreateEvento() {
   const queryClient = useQueryClient();
 
