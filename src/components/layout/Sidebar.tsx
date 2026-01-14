@@ -64,6 +64,7 @@ const navigation: NavItem[] = [
       { name: "INDIPENDENTE", href: "/clienti/consorzio/indipendente" },
     ]
   },
+  { name: "Trattative", href: "/trattative", icon: Target },
   { name: "Assistente Trattativa", href: "/assistente-trattativa", icon: Zap },
   { name: "Agenda", href: "/agenda", icon: Calendar },
   { name: "Promemoria", href: "/promemoria", icon: Bell },

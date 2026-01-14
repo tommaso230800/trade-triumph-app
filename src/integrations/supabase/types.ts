@@ -615,6 +615,67 @@ export type Database = {
         }
         Relationships: []
       }
+      increase_actions: {
+        Row: {
+          client_id: string
+          created_at: string
+          deal_id: string | null
+          id: string
+          outcome_note: string | null
+          planned_contact_date: string | null
+          price_increase_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          outcome_note?: string | null
+          planned_contact_date?: string | null
+          price_increase_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          outcome_note?: string | null
+          planned_contact_date?: string | null
+          price_increase_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "increase_actions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "increase_actions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "increase_actions_price_increase_id_fkey"
+            columns: ["price_increase_id"]
+            isOneToOne: false
+            referencedRelation: "price_increases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ordini: {
         Row: {
           azienda_id: string | null
@@ -738,6 +799,63 @@ export type Database = {
           {
             foreignKeyName: "ordini_righe_prodotto_id_fkey"
             columns: ["prodotto_id"]
+            isOneToOne: false
+            referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_increases: {
+        Row: {
+          category: string | null
+          company_id: string
+          created_at: string
+          effective_date: string
+          id: string
+          increase_type: string
+          increase_value: number
+          notes: string | null
+          product_id: string | null
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          company_id: string
+          created_at?: string
+          effective_date: string
+          id?: string
+          increase_type: string
+          increase_value: number
+          notes?: string | null
+          product_id?: string | null
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          company_id?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          increase_type?: string
+          increase_value?: number
+          notes?: string | null
+          product_id?: string | null
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_increases_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "price_increases_product_id_fkey"
+            columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "prodotti"
             referencedColumns: ["id"]
