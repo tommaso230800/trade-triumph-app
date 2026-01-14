@@ -13,19 +13,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useDeal, useUpdateDeal, useDealMessages, useCreateDealMessage } from "@/hooks/useDeals";
 import { useClientKPI } from "@/hooks/useClientKPI";
 import { useClientNotes } from "@/hooks/useClientNotes";
+import { useActivePriceIncreases, useCreateIncreaseAction, useIncreaseActions } from "@/hooks/usePriceIncreases";
 import {
   ArrowLeft,
   User,
   Building2,
   TrendingUp,
   TrendingDown,
-  Calendar,
   Target,
   Lightbulb,
   MessageSquare,
@@ -34,9 +39,9 @@ import {
   Copy,
   Check,
   AlertCircle,
-  Package,
+  ArrowUpRight,
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { toast } from "sonner";
 
@@ -65,14 +70,16 @@ export default function TrattativaDettaglio() {
   const { data: notes = [] } = useClientNotes(deal?.client_id);
   const { data: messages = [] } = useDealMessages(id);
   const createMessage = useCreateDealMessage();
+  const { data: activeIncreases = [] } = useActivePriceIncreases(deal?.company_id || undefined);
+  const { data: increaseActions = [] } = useIncreaseActions(undefined, id);
+  const createIncreaseAction = useCreateIncreaseAction();
 
   const [selectedObiezione, setSelectedObiezione] = useState("");
   const [messageType, setMessageType] = useState<"whatsapp" | "email" | "call_script">("whatsapp");
   const [generatedContent, setGeneratedContent] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
+  const [selectedIncrease, setSelectedIncrease] = useState<string>("");
   const [editingStatus, setEditingStatus] = useState(false);
-  const [newStatus, setNewStatus] = useState<"open" | "won" | "lost">("open");
 
   if (isLoading) {
     return (
@@ -116,33 +123,39 @@ export default function TrattativaDettaglio() {
     let strategia = "";
     let proposta = "";
     let sconto = "";
+    let promo = "";
 
     if (trend < -10) {
       strategia = "Cliente in CALO significativo. Serve azione aggressiva per recuperare volumi.";
       proposta = "Proponi promo 10+1 sui prodotti piu venduti o sconto extra per ordine minimo.";
       sconto = "Sconto consigliato: 15-20% o omaggio generoso (es. 25+3)";
+      promo = "PROMO CONSIGLIATA: 10+1 o 25+3 per stimolare il riordino";
     } else if (trend < 0) {
       strategia = "Cliente in leggero calo. Mantieni la relazione e stimola acquisti.";
       proposta = "Proponi bundle o promo limitata nel tempo per creare urgenza.";
       sconto = "Sconto consigliato: 10-12%";
+      promo = "PROMO CONSIGLIATA: Sconto 10% su ordine minimo o promo a tempo";
     } else if (trend < 15) {
       strategia = "Cliente stabile. Obiettivo: consolidare e fare upsell.";
       proposta = "Proponi nuovi prodotti o formati alternativi. Cross-sell su categorie non coperte.";
       sconto = "Sconto consigliato: 5-8% solo su volumi incrementali";
+      promo = "PROMO CONSIGLIATA: Cross-sell con sconto su nuovi prodotti";
     } else {
       strategia = "Cliente in CRESCITA. Obiettivo: massimizzare il potenziale.";
       proposta = "Proponi upgrade a pallet o ordine programmato. Offri condizioni premium.";
       sconto = "Sconto consigliato: 3-5% solo su contratto annuale";
+      promo = "PROMO CONSIGLIATA: Pallet 60+8 o contratto annuale con condizioni speciali";
     }
 
     const content = `STRATEGIA TRATTATIVA
+═══════════════════════════════════════
 
 CONTESTO CLIENTE:
-- Fatturato 12 mesi: ${formatCurrency(fatturato)}
-- Trend 3 mesi: ${trend >= 0 ? "+" : ""}${trend.toFixed(1)}%
-- Top prodotti: ${topProdotti || "N/D"}
-- Ultimo ordine: ${kpi.ultimoOrdine ? format(parseISO(kpi.ultimoOrdine), "d MMM yyyy", { locale: it }) : "N/D"}
-- Frequenza ordini: ogni ${kpi.frequenzaOrdini} giorni
+• Fatturato 12 mesi: ${formatCurrency(fatturato)}
+• Trend 3 mesi: ${trend >= 0 ? "+" : ""}${trend.toFixed(1)}%
+• Top prodotti: ${topProdotti || "N/D"}
+• Ultimo ordine: ${kpi.ultimoOrdine ? format(parseISO(kpi.ultimoOrdine), "d MMM yyyy", { locale: it }) : "N/D"}
+• Frequenza ordini: ogni ${kpi.frequenzaOrdini} giorni
 
 ANALISI:
 ${strategia}
@@ -152,7 +165,15 @@ ${proposta}
 
 ${sconto}
 
-PRIORITA: ${trend < -10 ? "ALTA - Recupero cliente" : trend < 0 ? "MEDIA - Stimolare acquisti" : "STANDARD - Crescita"}
+${promo}
+
+═══════════════════════════════════════
+LEVE COMMERCIALI:
+• Rotazione: ${trend >= 0 ? "buona, puntare su volumi" : "da migliorare, serve promo aggressiva"}
+• Marginalita: focus su prodotti ad alto margine
+• Mix prodotti: ${kpi.topProdotti.length > 2 ? "buon mix, proponi ampliamento" : "concentrato, diversifica"}
+
+PRIORITA: ${trend < -10 ? "ALTA - Recupero cliente urgente" : trend < 0 ? "MEDIA - Stimolare acquisti" : "STANDARD - Crescita ordinaria"}
 
 OBIETTIVO TRATTATIVA: ${deal.goal || "Non definito"}`;
 
@@ -172,6 +193,7 @@ OBIETTIVO TRATTATIVA: ${deal.goal || "Non definito"}`;
 
     const responses: Record<string, string> = {
       costo: `OBIEZIONE: "Costa troppo"
+═══════════════════════════════════════
 
 RISPOSTA PERSONALIZZATA per ${clienteNome}:
 
@@ -179,13 +201,17 @@ RISPOSTA PERSONALIZZATA per ${clienteNome}:
 
 ${trend < 0 ? "Vedo che ultimamente gli ordini sono calati - proprio per questo ho pensato a una proposta speciale per lei: " : "Dato il buon andamento, le propongo: "}
 
-Opzione 1: Promo 10+1 sui prodotti che gia prende
-Opzione 2: Sconto extra del 5% su un ordine minimo di [X] cartoni
-Opzione 3: Pagamento dilazionato a 60 giorni senza interessi
+OPZIONI CONCRETE:
+1. Promo 10+1 sui prodotti che gia prende
+2. Sconto extra del 5% su un ordine minimo di [X] cartoni
+3. Pagamento dilazionato a 60 giorni senza interessi
 
-Quale preferisce valutare?"`,
+Quale preferisce valutare?"
+
+NOTA: Non cedere subito sullo sconto. Prima proporre volume/omaggio.`,
 
       rotazione: `OBIEZIONE: "Non ruota"
+═══════════════════════════════════════
 
 RISPOSTA PERSONALIZZATA per ${clienteNome}:
 
@@ -193,14 +219,17 @@ RISPOSTA PERSONALIZZATA per ${clienteNome}:
 
 ${kpi?.topProdotti?.[0] ? `Il ${kpi.topProdotti[0].nome} ad esempio lo prende gia e funziona - ` : ""}possiamo affiancare un nuovo prodotto con garanzia di reso se non vende.
 
-Le propongo:
-- Campionatura gratuita per test
-- Ordine minimo con reso garantito dopo 30 giorni
-- Materiale POP per aumentare la visibilita
+PROPOSTA CONCRETA:
+• Campionatura gratuita per test
+• Ordine minimo con reso garantito dopo 30 giorni
+• Materiale POP per aumentare la visibilita
 
-Cosa ne pensa di un test su 1 cartone?"`,
+Cosa ne pensa di un test su 1 cartone?"
+
+NOTA: Offrire sempre la garanzia di reso per superare il blocco.`,
 
       fornitore: `OBIEZIONE: "Ho gia un fornitore"
+═══════════════════════════════════════
 
 RISPOSTA PERSONALIZZATA per ${clienteNome}:
 
@@ -208,47 +237,56 @@ RISPOSTA PERSONALIZZATA per ${clienteNome}:
 
 ${trend < 0 ? "Ho notato che il trend e in calo - forse e il momento di diversificare?" : "Con la sua esperienza, avere un'alternativa le da potere negoziale."}
 
-Le propongo di fare un test comparativo:
-- Stesso prodotto, prezzo migliore
-- Condizioni di pagamento piu flessibili
-- Servizio e consegne garantite
+PROPOSTA CONCRETA:
+• Stesso prodotto, prezzo migliore
+• Condizioni di pagamento piu flessibili
+• Servizio e consegne garantite
 
-Proviamo con un primo ordine di prova? Se non e soddisfatto, nessun impegno."`,
+Proviamo con un primo ordine di prova? Se non e soddisfatto, nessun impegno."
+
+NOTA: Non parlare male del competitor, evidenziare i nostri punti di forza.`,
 
       spazio: `OBIEZIONE: "Non ho spazio"
+═══════════════════════════════════════
 
 RISPOSTA PERSONALIZZATA per ${clienteNome}:
 
 "Capisco perfettamente il problema dello spazio. Per questo le propongo:
 
-- Consegne piu frequenti con quantitativi ridotti
-- Ordini programmati settimanali
-- Formati piu compatti se disponibili
+SOLUZIONI PRATICHE:
+• Consegne piu frequenti con quantitativi ridotti
+• Ordini programmati settimanali
+• Formati piu compatti se disponibili
 
 ${kpi?.frequenzaOrdini ? `Attualmente ordina ogni ${kpi.frequenzaOrdini} giorni circa - possiamo aumentare la frequenza dimezzando le quantita.` : ""}
 
-In questo modo:
-- Zero problemi di magazzino
-- Prodotto sempre fresco
-- Stesse condizioni economiche
+VANTAGGI:
+• Zero problemi di magazzino
+• Prodotto sempre fresco
+• Stesse condizioni economiche
 
 Le interessa esplorare questa opzione?"`,
 
       liquidita: `OBIEZIONE: "Non ho liquidita / problemi di pagamento"
+═══════════════════════════════════════
 
 RISPOSTA PERSONALIZZATA per ${clienteNome}:
 
 "Apprezzo la sua sincerita. In questo momento posso offrirle condizioni di pagamento flessibili:
 
-- Pagamento a 60 giorni
-- Rateizzazione su 2-3 consegne
-- Ordine ridotto per iniziare
+OPZIONI DI PAGAMENTO:
+• Pagamento a 60 giorni
+• Rateizzazione su 2-3 consegne
+• Ordine ridotto per iniziare
 
 ${fatturato > 3000 ? "Considerando lo storico positivo con noi, " : ""}posso proporle una soluzione su misura.
 
-Partiamo con un ordine minimo pagabile a [X] giorni?"`,
+Partiamo con un ordine minimo pagabile a [X] giorni?"
+
+NOTA: Verificare sempre lo storico pagamenti prima di offrire dilazioni.`,
 
       momento: `OBIEZIONE: "Non e il momento"
+═══════════════════════════════════════
 
 RISPOSTA PERSONALIZZATA per ${clienteNome}:
 
@@ -256,11 +294,14 @@ RISPOSTA PERSONALIZZATA per ${clienteNome}:
 
 ${trend < 0 ? "Vedo che il trend e in calo - forse e proprio ora il momento di agire con una promo per rilanciare le vendite?" : ""}
 
+PROPOSTA:
 Nel frattempo le lascio questa proposta valida per i prossimi 15 giorni:
-- [Promo speciale]
-- [Condizioni riservate]
+• [Promo speciale da definire]
+• [Condizioni riservate]
 
-Posso risentirla la prossima settimana per confermare?"`,
+Posso risentirla la prossima settimana per confermare?"
+
+NOTA: Fissare sempre un follow-up concreto con data.`,
     };
 
     setGeneratedContent(responses[selectedObiezione] || "Obiezione non riconosciuta");
@@ -270,6 +311,9 @@ Posso risentirla la prossima settimana per confermare?"`,
   const generateMessage = () => {
     const clienteNome = cliente?.nome || "Cliente";
     const aziendaNome = azienda?.nome || "";
+    const trendInfo = kpi?.trend3M !== undefined 
+      ? (kpi.trend3M < 0 ? `ho notato un calo del ${Math.abs(kpi.trend3M).toFixed(0)}% negli ultimi mesi` : `vedo un ottimo andamento con +${kpi.trend3M.toFixed(0)}%`)
+      : "";
 
     let content = "";
 
@@ -282,53 +326,204 @@ ${deal.goal ? `Ho pensato a una proposta per: ${deal.goal}` : "Ho alcune novita 
 
 ${kpi?.topProdotti?.[0] ? `So che apprezza il ${kpi.topProdotti[0].nome} - ` : ""}abbiamo una promozione speciale attiva.
 
-Quando posso passare per mostrarle i dettagli?
+${trendInfo ? `Guardando il vostro storico, ${trendInfo} - ` : ""}${kpi?.trend3M && kpi.trend3M < 0 ? "ho pensato a una proposta per rilanciare." : "vorrei proporle qualcosa di interessante."}
+
+Quando posso passare per mostrarle i dettagli? Questa settimana o la prossima?
 
 Grazie e buona giornata!`;
     } else if (messageType === "email") {
-      content = `Oggetto: Proposta commerciale ${aziendaNome || ""}
+      content = `Oggetto: Proposta commerciale ${aziendaNome || ""} - ${clienteNome}
 
 Gentile ${clienteNome},
 
 ${aziendaNome ? `Le scrivo in merito ai prodotti ${aziendaNome}.` : "Le scrivo per aggiornarla sulle nostre proposte commerciali."}
 
-${deal.goal ? `\nObiettivo: ${deal.goal}\n` : ""}
+${deal.goal ? `Obiettivo della proposta: ${deal.goal}` : ""}
 
 ${kpi ? `Dallo storico dei vostri ordini, ho notato che i prodotti piu apprezzati sono: ${kpi.topProdotti.slice(0, 3).map((p) => p.nome).join(", ") || "i nostri bestseller"}.` : ""}
 
-Abbiamo attualmente delle condizioni vantaggiose che vorrei presentarle:
+${trendInfo ? `\nAnalizzando i dati, ${trendInfo}. ` : ""}${kpi?.trend3M && kpi.trend3M < 0 ? "Per questo motivo, ho preparato una proposta speciale per rilanciare il fatturato." : ""}
+
+Le condizioni che posso riservarle sono:
 - [Dettaglio promo 1]
 - [Dettaglio promo 2]
+- [Condizioni pagamento]
 
 Resto a disposizione per un incontro o una chiamata per illustrarle i dettagli.
+
+Quando Le farebbe comodo?
 
 Cordiali saluti`;
     } else {
       content = `SCRIPT CHIAMATA - ${clienteNome}
+═══════════════════════════════════════
 
 APERTURA:
-"Buongiorno ${clienteNome}, sono [Nome] di [Azienda]. Come sta?"
+"Buongiorno ${clienteNome}, sono [Nome] di [Azienda]. Come sta? La disturbo?"
 
 MOTIVO CHIAMATA:
 "La chiamo perche ${aziendaNome ? `abbiamo novita interessanti su ${aziendaNome}` : "ho una proposta che potrebbe interessarle"}."
+
+AGGANCIO CON DATI:
+${kpi ? `"Guardando il vostro storico con noi, ${trendInfo}. ${kpi.trend3M < 0 ? "Ho pensato a come aiutarla a migliorare" : "Voglio proporle qualcosa per consolidare"}."` : '"Ho una proposta interessante per lei."'}
 
 PROPOSTA:
 "${deal.goal || "Vorrei proporle delle condizioni speciali"}"
 
 ${kpi ? `LEVE DA USARE:
-- Fatturato storico: ${formatCurrency(kpi.fatturato12M)}
-- Top prodotti: ${kpi.topProdotti.slice(0, 2).map((p) => p.nome).join(", ") || "N/D"}
-- Trend: ${kpi.trend3M >= 0 ? "positivo" : "in calo"} - ${kpi.trend3M >= 0 ? "ottimo momento per crescere" : "buon momento per una promo di rilancio"}` : ""}
+• Fatturato storico: ${formatCurrency(kpi.fatturato12M)}
+• Top prodotti: ${kpi.topProdotti.slice(0, 2).map((p) => p.nome).join(", ") || "N/D"}
+• Ultimo ordine: ${kpi.ultimoOrdine ? format(parseISO(kpi.ultimoOrdine), "d MMM", { locale: it }) : "N/D"}
+• Trend: ${kpi.trend3M >= 0 ? "positivo - ottimo momento per crescere" : "in calo - buon momento per una promo di rilancio"}` : ""}
 
 CHIUSURA:
 "Quando posso passare a mostrarle i dettagli? Questa settimana o la prossima?"
 
+═══════════════════════════════════════
 OBIEZIONI COMUNI:
-- Se dice "non ho tempo" -> "Capisco, bastano 10 minuti. Preferisce mattina o pomeriggio?"
-- Se dice "ci devo pensare" -> "Certo, quando la richiamo?"`;
+
+Se dice "non ho tempo":
+-> "Capisco, bastano 10 minuti. Preferisce mattina o pomeriggio?"
+
+Se dice "ci devo pensare":
+-> "Certo, quando la richiamo? Giovedi o venerdi?"
+
+Se dice "mandami qualcosa via email":
+-> "Certamente, ma preferisco spiegarle di persona i dettagli. 5 minuti al telefono?"`;
     }
 
     setGeneratedContent(content);
+  };
+
+  // Generate increase strategy
+  const generateIncreaseStrategy = () => {
+    const selectedIncr = activeIncreases.find(i => i.id === selectedIncrease);
+    if (!selectedIncr) {
+      toast.error("Seleziona un aumento");
+      return;
+    }
+
+    const clienteNome = cliente?.nome || "Cliente";
+    const effectiveDate = parseISO(selectedIncr.effective_date);
+    const daysUntil = differenceInDays(effectiveDate, new Date());
+    const isUpcoming = daysUntil > 0;
+    const increaseText = selectedIncr.increase_type === "percent" 
+      ? `${selectedIncr.increase_value}%` 
+      : `${formatCurrency(selectedIncr.increase_value)}`;
+
+    let strategy = "";
+    let message = "";
+
+    if (isUpcoming && daysUntil > 7) {
+      strategy = `STRATEGIA AUMENTO - ANTICIPO SCORTE
+═══════════════════════════════════════
+
+SITUAZIONE:
+Aumento del ${increaseText} in arrivo tra ${daysUntil} giorni (${format(effectiveDate, "d MMM yyyy", { locale: it })})
+
+OBIETTIVO:
+Far caricare al cliente PRIMA dell'aumento per:
+1. Bloccare il prezzo attuale
+2. Aumentare il volume ordinato
+3. Consolidare la relazione
+
+PROPOSTA CONCRETA:
+• Suggerire ordine anticipato pari a 2-3 mesi di fabbisogno
+• Offrire pagamento dilazionato per facilitare il carico
+• Proporre promo aggiuntiva (es. 25+3) sul carico
+
+SCRIPT:
+"${clienteNome}, dal ${format(effectiveDate, "d MMMM", { locale: it })} ci sara un aumento del ${increaseText}. 
+Se carica adesso, le blocco il prezzo attuale. 
+Quanto ne prende normalmente? Le consiglio di fare una scorta per 2-3 mesi."
+
+NOTA: Creare urgenza senza sembrare aggressivi.`;
+
+      message = `Buongiorno ${clienteNome},
+
+La contatto per una comunicazione importante: dal ${format(effectiveDate, "d MMMM", { locale: it })} ci sara un adeguamento prezzi del ${increaseText} su ${selectedIncr.prodotto?.nome || "i prodotti"}.
+
+Ho pensato a lei: se effettua un ordine entro ${format(effectiveDate, "d MMM", { locale: it })}, le garantisco il prezzo attuale.
+
+Le consiglio di considerare una scorta per i prossimi 2-3 mesi per ottimizzare il risparmio.
+
+Quando posso passare per definire insieme le quantita?
+
+A presto`;
+    } else if (isUpcoming) {
+      strategy = `STRATEGIA AUMENTO - URGENTE
+═══════════════════════════════════════
+
+SITUAZIONE:
+Aumento del ${increaseText} tra SOLI ${daysUntil} giorni!
+
+AZIONE IMMEDIATA:
+Contattare il cliente OGGI per:
+1. Informare dell'aumento imminente
+2. Proporre ordine last-minute
+3. Bloccare il prezzo attuale
+
+PROPOSTA URGENTE:
+"${clienteNome}, abbiamo pochissimi giorni prima dell'aumento. Se ordina entro ${format(effectiveDate, "d MMM", { locale: it })}, le garantisco ancora il prezzo attuale. Quanto riesce a caricare?"
+
+NOTA: In caso di urgenza, accettare anche ordini parziali.`;
+
+      message = `URGENTE - ${clienteNome}
+
+Dal ${format(effectiveDate, "d MMMM", { locale: it })} scatta l'aumento del ${increaseText}.
+
+Ha ancora ${daysUntil} giorni per ordinare al prezzo attuale.
+
+Quanto riesce a caricare? La chiamo oggi per definire.`;
+    } else {
+      strategy = `STRATEGIA AUMENTO - GIA ATTIVO
+═══════════════════════════════════════
+
+SITUAZIONE:
+L'aumento del ${increaseText} e gia in vigore dal ${format(effectiveDate, "d MMM yyyy", { locale: it })}
+
+GESTIONE OBIEZIONI:
+Se il cliente si lamenta del prezzo:
+
+1. RICONOSCERE: "Capisco, l'aumento c'e stato"
+2. SPIEGARE: "E dovuto a [aumento materie prime/trasporti/etc]"
+3. PROPORRE: "Posso venirle incontro con volumi o servizi"
+
+ALTERNATIVE DA PROPORRE:
+• Promo volume per ammortizzare l'aumento (10+1)
+• Mix di prodotti con margini diversi
+• Condizioni pagamento migliori
+
+SCRIPT:
+"${clienteNome}, so che c'e stato un adeguamento. Tutti i fornitori hanno dovuto adeguarsi.
+Quello che posso fare e venirle incontro sulle quantita: prenda di piu e le faccio una promo speciale."`;
+
+      message = `Buongiorno ${clienteNome},
+
+La contatto a seguito dell'adeguamento prezzi che sappiamo entrambi essere stato necessario per tutto il settore.
+
+Per venirle incontro, ho preparato alcune proposte speciali:
+- Promo volume sui prodotti che prende abitualmente
+- Condizioni di pagamento flessibili
+
+Quando posso passare per farle vedere i dettagli?
+
+A presto`;
+    }
+
+    setGeneratedContent(strategy + "\n\n═══════════════════════════════════════\nMESSAGGIO PRONTO:\n\n" + message);
+
+    // Save increase action
+    if (deal.client_id) {
+      createIncreaseAction.mutate({
+        price_increase_id: selectedIncr.id,
+        deal_id: id || null,
+        client_id: deal.client_id,
+        status: "contacted",
+        planned_contact_date: null,
+        outcome_note: `Strategia generata per aumento ${increaseText}`,
+      });
+    }
   };
 
   // Save generated content
@@ -569,14 +764,18 @@ OBIEZIONI COMUNI:
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="strategia" className="space-y-4">
-                  <TabsList className="grid w-full grid-cols-3">
+                  <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="strategia">Strategia</TabsTrigger>
                     <TabsTrigger value="obiezioni">Obiezioni</TabsTrigger>
                     <TabsTrigger value="messaggi">Messaggi</TabsTrigger>
+                    <TabsTrigger value="aumenti">Aumenti</TabsTrigger>
                   </TabsList>
 
                   {/* Strategia Tab */}
                   <TabsContent value="strategia" className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Genera una strategia personalizzata basata sui dati reali del cliente: fatturato, trend, prodotti acquistati.
+                    </p>
                     <Button onClick={generateStrategy} className="w-full">
                       <Target className="mr-2 h-4 w-4" />
                       Prepara Strategia Trattativa
@@ -585,6 +784,9 @@ OBIEZIONI COMUNI:
 
                   {/* Obiezioni Tab */}
                   <TabsContent value="obiezioni" className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Seleziona l'obiezione del cliente e ottieni una risposta personalizzata con proposte concrete.
+                    </p>
                     <div className="space-y-2">
                       <Label>Seleziona Obiezione</Label>
                       <Select value={selectedObiezione} onValueChange={setSelectedObiezione}>
@@ -608,6 +810,9 @@ OBIEZIONI COMUNI:
 
                   {/* Messaggi Tab */}
                   <TabsContent value="messaggi" className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Genera un messaggio pronto da inviare con riferimento allo storico del cliente.
+                    </p>
                     <div className="space-y-2">
                       <Label>Formato Messaggio</Label>
                       <Select
@@ -644,6 +849,93 @@ OBIEZIONI COMUNI:
                       Genera Messaggio
                     </Button>
                   </TabsContent>
+
+                  {/* Aumenti Tab */}
+                  <TabsContent value="aumenti" className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Gestisci gli aumenti di prezzo per questa azienda. Genera strategie per scaricare l'aumento o proporre anticipo scorte.
+                    </p>
+                    
+                    {activeIncreases.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        Nessun aumento previsto per {azienda?.nome || "questa azienda"}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Seleziona Aumento</Label>
+                          <Select value={selectedIncrease} onValueChange={setSelectedIncrease}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Scegli l'aumento da gestire" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {activeIncreases.map((inc) => (
+                                <SelectItem key={inc.id} value={inc.id}>
+                                  <div className="flex items-center gap-2">
+                                    <ArrowUpRight className="h-4 w-4 text-destructive" />
+                                    {inc.increase_type === "percent" ? `+${inc.increase_value}%` : `+${formatCurrency(inc.increase_value)}`}
+                                    {" - "}
+                                    {inc.prodotto?.nome || "Tutti i prodotti"}
+                                    {" - "}
+                                    {format(parseISO(inc.effective_date), "d MMM yyyy", { locale: it })}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {selectedIncrease && (
+                          <Accordion type="single" collapsible className="w-full">
+                            <AccordionItem value="details">
+                              <AccordionTrigger className="text-sm">
+                                Dettagli Aumento
+                              </AccordionTrigger>
+                              <AccordionContent>
+                                {(() => {
+                                  const inc = activeIncreases.find(i => i.id === selectedIncrease);
+                                  if (!inc) return null;
+                                  const daysUntil = differenceInDays(parseISO(inc.effective_date), new Date());
+                                  return (
+                                    <div className="space-y-2 text-sm">
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Decorrenza</span>
+                                        <span className="font-medium">
+                                          {format(parseISO(inc.effective_date), "d MMMM yyyy", { locale: it })}
+                                          {daysUntil > 0 && ` (tra ${daysUntil} giorni)`}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Valore</span>
+                                        <span className="font-medium text-destructive">
+                                          {inc.increase_type === "percent" ? `+${inc.increase_value}%` : `+${formatCurrency(inc.increase_value)}`}
+                                        </span>
+                                      </div>
+                                      {inc.reason && (
+                                        <div className="flex justify-between">
+                                          <span className="text-muted-foreground">Motivo</span>
+                                          <span className="font-medium">{inc.reason}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                              </AccordionContent>
+                            </AccordionItem>
+                          </Accordion>
+                        )}
+                        
+                        <Button 
+                          onClick={generateIncreaseStrategy} 
+                          className="w-full"
+                          disabled={!selectedIncrease}
+                        >
+                          <ArrowUpRight className="mr-2 h-4 w-4" />
+                          Gestisci Aumento
+                        </Button>
+                      </>
+                    )}
+                  </TabsContent>
                 </Tabs>
 
                 {/* Generated Content */}
@@ -668,7 +960,7 @@ OBIEZIONI COMUNI:
                     <Textarea
                       value={generatedContent}
                       onChange={(e) => setGeneratedContent(e.target.value)}
-                      rows={15}
+                      rows={18}
                       className="font-mono text-sm"
                     />
                   </div>
