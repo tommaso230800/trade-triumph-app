@@ -246,6 +246,41 @@ export type Database = {
           },
         ]
       }
+      client_notes: {
+        Row: {
+          category: string
+          client_id: string
+          created_at: string
+          id: string
+          note: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          client_id: string
+          created_at?: string
+          id?: string
+          note: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clienti: {
         Row: {
           azienda: string | null
@@ -392,6 +427,107 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_messages: {
+        Row: {
+          content: string
+          created_at: string
+          deal_id: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          deal_id: string
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          deal_id?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_messages_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deals: {
+        Row: {
+          client_id: string
+          company_id: string | null
+          created_at: string
+          estimated_value: number | null
+          goal: string | null
+          id: string
+          next_action_date: string | null
+          next_action_note: string | null
+          notes: string | null
+          probability: number | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          company_id?: string | null
+          created_at?: string
+          estimated_value?: number | null
+          goal?: string | null
+          id?: string
+          next_action_date?: string | null
+          next_action_note?: string | null
+          notes?: string | null
+          probability?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          company_id?: string | null
+          created_at?: string
+          estimated_value?: number | null
+          goal?: string | null
+          id?: string
+          next_action_date?: string | null
+          next_action_note?: string | null
+          notes?: string | null
+          probability?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
             referencedColumns: ["id"]
           },
         ]
