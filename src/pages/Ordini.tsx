@@ -282,6 +282,14 @@ const Ordini = () => {
       return;
     }
 
+    // Get azienda defaults for fallback
+    const azienda = aziende?.find((a) => a.id === formData.azienda_id);
+    
+    // Determine discounts: product override > azienda default > 0
+    const getSc1 = () => prodotto.sc1_default > 0 ? prodotto.sc1_default : (azienda?.default_sc1 || 0);
+    const getSc2 = () => prodotto.sc2_default > 0 ? prodotto.sc2_default : (azienda?.default_sc2 || 0);
+    const getSc3 = () => prodotto.sc3_default > 0 ? prodotto.sc3_default : (azienda?.default_sc3 || 0);
+
     let newRiga: RigaOrdine = {
       prodotto_id: prodotto.id,
       prodotto_nome: prodotto.nome,
@@ -289,10 +297,10 @@ const Ordini = () => {
       quantita_pezzi: 0,
       quantita_cartoni: 0,
       pezzi_per_cartone: prodotto.pezzi_per_cartone,
-      // Use default discounts from product
-      sc1: String(prodotto.sc1_default || 0).replace(".", ","),
-      sc2: String(prodotto.sc2_default || 0).replace(".", ","),
-      sc3: String(prodotto.sc3_default || 0).replace(".", ","),
+      // Use default discounts from product or fallback to azienda
+      sc1: String(getSc1()).replace(".", ","),
+      sc2: String(getSc2()).replace(".", ","),
+      sc3: String(getSc3()).replace(".", ","),
       // Pallettizzazione
       strati: prodotto.strati,
       cartoni_per_strato: prodotto.cartoni_per_strato,
@@ -566,6 +574,9 @@ const Ordini = () => {
           quantita_pezzi: riga.quantita_pezzi,
           quantita_cartoni: riga.quantita_cartoni,
           pezzi_per_cartone: riga.pezzi_per_cartone,
+          sc1: parseDecimalInput(riga.sc1),
+          sc2: parseDecimalInput(riga.sc2),
+          sc3: parseDecimalInput(riga.sc3),
           promo_applicata: promoForProduct?.nome,
           promo_tipo: promoForProduct?.tipo,
           promo_valore: promoForProduct?.valore,
@@ -618,6 +629,9 @@ const Ordini = () => {
         quantita_pezzi: r.quantita_pezzi,
         quantita_cartoni: r.quantita_cartoni,
         pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
+        sc1: Number(r.sc1) || 0,
+        sc2: Number(r.sc2) || 0,
+        sc3: Number(r.sc3) || 0,
       })),
     });
     setIsProformaOpen(true);

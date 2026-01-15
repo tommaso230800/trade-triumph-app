@@ -18,6 +18,9 @@ export type Database = {
         Row: {
           citta: string | null
           created_at: string | null
+          default_sc1: number
+          default_sc2: number
+          default_sc3: number
           email: string | null
           id: string
           indirizzo: string | null
@@ -35,6 +38,9 @@ export type Database = {
         Insert: {
           citta?: string | null
           created_at?: string | null
+          default_sc1?: number
+          default_sc2?: number
+          default_sc3?: number
           email?: string | null
           id?: string
           indirizzo?: string | null
@@ -52,6 +58,9 @@ export type Database = {
         Update: {
           citta?: string | null
           created_at?: string | null
+          default_sc1?: number
+          default_sc2?: number
+          default_sc3?: number
           email?: string | null
           id?: string
           indirizzo?: string | null

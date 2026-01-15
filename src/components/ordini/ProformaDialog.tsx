@@ -16,9 +16,12 @@ type RigaOrdine = {
   quantita_pezzi: number;
   quantita_cartoni: number;
   pezzi_per_cartone: number;
-  promo_applicata?: string; // Nome della promo applicata
-  promo_tipo?: string; // Tipo sconto
-  promo_valore?: number; // Valore dello sconto/prezzo
+  sc1?: number;
+  sc2?: number;
+  sc3?: number;
+  promo_applicata?: string;
+  promo_tipo?: string;
+  promo_valore?: number;
 };
 
 type PromoApplicata = {
@@ -104,10 +107,26 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
     }
   };
 
+  // Calculate subtotals with cascading discounts
   const subtotale = data.righe.reduce((sum, riga) => {
+    const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
+    const sc1 = riga.sc1 || 0;
+    const sc2 = riga.sc2 || 0;
+    const sc3 = riga.sc3 || 0;
+    // Cascading discount calculation
+    const prezzo1 = riga.prezzo_unitario * (1 - sc1 / 100);
+    const prezzo2 = prezzo1 * (1 - sc2 / 100);
+    const prezzoNetto = prezzo2 * (1 - sc3 / 100);
+    return sum + pezziTotali * prezzoNetto;
+  }, 0);
+
+  // Calculate total gross (before line discounts)
+  const totaleLordo = data.righe.reduce((sum, riga) => {
     const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
     return sum + pezziTotali * riga.prezzo_unitario;
   }, 0);
+
+  const totaleScontiRiga = totaleLordo - subtotale;
 
   const scontoPercentuale = subtotale * (data.sconto / 100);
 
@@ -178,26 +197,36 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
           </div>
 
           {/* Order Details Table */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="border border-gray-200 rounded-lg overflow-hidden overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">
-                  <TableHead className="font-semibold text-gray-900">Prodotto</TableHead>
-                  <TableHead className="text-right font-semibold text-gray-900">Prezzo</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900">Pz</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900">Cart.</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900">Tot.</TableHead>
-                  <TableHead className="text-right font-semibold text-gray-900">Subtot.</TableHead>
+                  <TableHead className="font-semibold text-gray-900 text-xs">Prodotto</TableHead>
+                  <TableHead className="text-right font-semibold text-gray-900 text-xs">Prezzo</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.1</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.2</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.3</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Pz</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Cart.</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Tot.</TableHead>
+                  <TableHead className="text-right font-semibold text-gray-900 text-xs">Subtot.</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.righe.map((riga, idx) => {
                   const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
-                  const rigaSubtotale = pezziTotali * riga.prezzo_unitario;
+                  const sc1 = riga.sc1 || 0;
+                  const sc2 = riga.sc2 || 0;
+                  const sc3 = riga.sc3 || 0;
+                  // Cascading discount
+                  const prezzo1 = riga.prezzo_unitario * (1 - sc1 / 100);
+                  const prezzo2 = prezzo1 * (1 - sc2 / 100);
+                  const prezzoNetto = prezzo2 * (1 - sc3 / 100);
+                  const rigaSubtotale = pezziTotali * prezzoNetto;
                   return (
                     <TableRow key={idx} className="border-b border-gray-100">
-                      <TableCell>
-                        <p className="font-medium text-gray-900">{riga.prodotto_nome}</p>
+                      <TableCell className="py-2">
+                        <p className="font-medium text-gray-900 text-sm">{riga.prodotto_nome}</p>
                         <p className="text-xs text-gray-500">{riga.pezzi_per_cartone} pz/cart</p>
                         {riga.promo_applicata && (
                           <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
@@ -206,18 +235,22 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                           </p>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <span className="text-gray-700">{formatCurrency(riga.prezzo_unitario)}</span>
-                        {riga.promo_applicata && (
-                          <p className="text-xs text-green-600 font-medium">
-                            (come da promo)
-                          </p>
-                        )}
+                      <TableCell className="text-right py-2">
+                        <span className="text-gray-700 text-sm">{formatCurrency(riga.prezzo_unitario)}</span>
                       </TableCell>
-                      <TableCell className="text-center text-gray-700">{riga.quantita_pezzi}</TableCell>
-                      <TableCell className="text-center text-gray-700">{riga.quantita_cartoni}</TableCell>
-                      <TableCell className="text-center font-medium text-gray-900">{pezziTotali}</TableCell>
-                      <TableCell className="text-right font-semibold text-gray-900">{formatCurrency(rigaSubtotale)}</TableCell>
+                      <TableCell className="text-center text-gray-700 text-sm py-2">
+                        {sc1 > 0 ? `${sc1}%` : "—"}
+                      </TableCell>
+                      <TableCell className="text-center text-gray-700 text-sm py-2">
+                        {sc2 > 0 ? `${sc2}%` : "—"}
+                      </TableCell>
+                      <TableCell className="text-center text-gray-700 text-sm py-2">
+                        {sc3 > 0 ? `${sc3}%` : "—"}
+                      </TableCell>
+                      <TableCell className="text-center text-gray-700 text-sm py-2">{riga.quantita_pezzi}</TableCell>
+                      <TableCell className="text-center text-gray-700 text-sm py-2">{riga.quantita_cartoni}</TableCell>
+                      <TableCell className="text-center font-medium text-gray-900 text-sm py-2">{pezziTotali}</TableCell>
+                      <TableCell className="text-right font-semibold text-gray-900 text-sm py-2">{formatCurrency(rigaSubtotale)}</TableCell>
                     </TableRow>
                   );
                 })}
@@ -227,14 +260,24 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
 
           {/* Totals */}
           <div className="flex justify-end">
-            <div className="w-72 space-y-2">
+            <div className="w-80 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Subtotale:</span>
+                <span className="text-gray-600">Totale Lordo:</span>
+                <span className="font-medium text-gray-900">{formatCurrency(totaleLordo)}</span>
+              </div>
+              {totaleScontiRiga > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Totale Sconti Riga:</span>
+                  <span className="font-medium text-red-600">-{formatCurrency(totaleScontiRiga)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Subtotale Netto:</span>
                 <span className="font-medium text-gray-900">{formatCurrency(subtotale)}</span>
               </div>
               {data.sconto > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Sconto ({data.sconto}%):</span>
+                  <span className="text-gray-600">Sconto Documento ({data.sconto}%):</span>
                   <span className="font-medium text-red-600">-{formatCurrency(scontoPercentuale)}</span>
                 </div>
               )}
@@ -249,6 +292,12 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                 <span className="font-semibold text-gray-900">Totale:</span>
                 <span className="font-bold text-blue-600">{formatCurrency(data.totale)}</span>
               </div>
+              {totaleLordo > data.totale && (
+                <div className="flex justify-between text-sm bg-green-50 p-2 rounded">
+                  <span className="text-green-700">Risparmio Totale:</span>
+                  <span className="font-semibold text-green-700">{formatCurrency(totaleLordo - data.totale)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Pagamento:</span>
                 <span className="font-medium text-gray-900">{data.tipo_pagamento}</span>

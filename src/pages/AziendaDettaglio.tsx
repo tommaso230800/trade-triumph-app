@@ -101,6 +101,9 @@ type AziendaFormData = {
   status: "attivo" | "in_pausa";
   partita_iva: string;
   provvigione_percentuale: string;
+  default_sc1: string;
+  default_sc2: string;
+  default_sc3: string;
 };
 
 const AziendaDettaglio = () => {
@@ -191,6 +194,9 @@ const AziendaDettaglio = () => {
       status: azienda.status,
       partita_iva: azienda.partita_iva || "",
       provvigione_percentuale: String(azienda.provvigione_percentuale || 0),
+      default_sc1: String(azienda.default_sc1 || 0).replace(".", ","),
+      default_sc2: String(azienda.default_sc2 || 0).replace(".", ","),
+      default_sc3: String(azienda.default_sc3 || 0).replace(".", ","),
     });
     setIsEditDialogOpen(true);
   };
@@ -235,14 +241,18 @@ const AziendaDettaglio = () => {
     
     await updateAzienda.mutateAsync({
       id: azienda.id,
-      ...aziendaForm,
+      nome: aziendaForm.nome,
       settore: aziendaForm.settore || null,
       citta: aziendaForm.citta || null,
       indirizzo: aziendaForm.indirizzo || null,
       telefono: aziendaForm.telefono || null,
       email: aziendaForm.email || null,
       partita_iva: aziendaForm.partita_iva || null,
+      status: aziendaForm.status,
       provvigione_percentuale: parseDecimalInput(aziendaForm.provvigione_percentuale),
+      default_sc1: parseDecimalInput(aziendaForm.default_sc1),
+      default_sc2: parseDecimalInput(aziendaForm.default_sc2),
+      default_sc3: parseDecimalInput(aziendaForm.default_sc3),
     });
     setIsEditDialogOpen(false);
   };
@@ -627,6 +637,42 @@ const AziendaDettaglio = () => {
                     placeholder="Es: 5"
                     type="text"
                   />
+                </div>
+              </div>
+              {/* Sconti Default Azienda */}
+              <div className="border-t pt-4">
+                <Label className="text-sm font-semibold text-muted-foreground">Sconti Default Azienda %</Label>
+                <div className="grid grid-cols-3 gap-4 mt-3">
+                  <div className="space-y-2">
+                    <Label>Sc.1</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={aziendaForm.default_sc1}
+                      onChange={(e) => setAziendaForm({ ...aziendaForm, default_sc1: e.target.value })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sc.2</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={aziendaForm.default_sc2}
+                      onChange={(e) => setAziendaForm({ ...aziendaForm, default_sc2: e.target.value })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Sc.3</Label>
+                    <Input
+                      type="text"
+                      inputMode="decimal"
+                      value={aziendaForm.default_sc3}
+                      onChange={(e) => setAziendaForm({ ...aziendaForm, default_sc3: e.target.value })}
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
