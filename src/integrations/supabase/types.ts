@@ -431,6 +431,51 @@ export type Database = {
           },
         ]
       }
+      daily_reports: {
+        Row: {
+          campioni_consegnati: boolean | null
+          created_at: string
+          data_report: string
+          id: string
+          incassi: boolean | null
+          ordini_fatti: boolean | null
+          problemi: boolean | null
+          promo_proposte: boolean | null
+          testo_report: string | null
+          titolo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          campioni_consegnati?: boolean | null
+          created_at?: string
+          data_report?: string
+          id?: string
+          incassi?: boolean | null
+          ordini_fatti?: boolean | null
+          problemi?: boolean | null
+          promo_proposte?: boolean | null
+          testo_report?: string | null
+          titolo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          campioni_consegnati?: boolean | null
+          created_at?: string
+          data_report?: string
+          id?: string
+          incassi?: boolean | null
+          ordini_fatti?: boolean | null
+          problemi?: boolean | null
+          promo_proposte?: boolean | null
+          testo_report?: string | null
+          titolo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deal_messages: {
         Row: {
           content: string
@@ -1054,6 +1099,145 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_activities: {
+        Row: {
+          azienda_id: string | null
+          cliente_id: string | null
+          created_at: string
+          descrizione: string | null
+          esito: string | null
+          id: string
+          prossimo_step: string | null
+          report_id: string
+          tipo_attivita: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          descrizione?: string | null
+          esito?: string | null
+          id?: string
+          prossimo_step?: string | null
+          report_id: string
+          tipo_attivita: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          descrizione?: string | null
+          esito?: string | null
+          id?: string
+          prossimo_step?: string | null
+          report_id?: string
+          tipo_attivita?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_activities_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_activities_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_activities_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "daily_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_clients: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          id: string
+          report_id: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          id?: string
+          report_id: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          report_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_clients_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_clients_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "daily_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_orders: {
+        Row: {
+          created_at: string
+          id: string
+          ordine_id: string
+          report_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ordine_id: string
+          report_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ordine_id?: string
+          report_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_orders_ordine_id_fkey"
+            columns: ["ordine_id"]
+            isOneToOne: false
+            referencedRelation: "ordini"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_orders_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "daily_reports"
             referencedColumns: ["id"]
           },
         ]

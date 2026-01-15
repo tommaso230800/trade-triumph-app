@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useCliente, useClienteOrdini } from "@/hooks/useClienti";
 import { useCanvassAttive, useCanvassScadute } from "@/hooks/useCanvass";
+import { useClientReports } from "@/hooks/useDailyReports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -30,6 +31,7 @@ import {
   ChevronUp,
   Target,
   TrendingUp,
+  BookOpen,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -53,6 +55,7 @@ const ClienteDettaglio = () => {
   const { data: ordini, isLoading: ordiniLoading } = useClienteOrdini(id);
   const { data: promozioniAttive } = useCanvassAttive();
   const { data: promozioniScadute } = useCanvassScadute();
+  const { data: clientReports = [] } = useClientReports(id);
   const [expandedPromo, setExpandedPromo] = useState<string | null>(null);
 
   // Filtra le promozioni applicabili a questo cliente
@@ -571,6 +574,49 @@ const ClienteDettaglio = () => {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        {/* Ultimi Report/Note */}
+        <div className="rounded-xl bg-card p-6 shadow-card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              Ultimi Report
+            </h3>
+            <Link to="/diario">
+              <Button variant="outline" size="sm">
+                Vai al Diario
+              </Button>
+            </Link>
+          </div>
+
+          {clientReports.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              Nessun report per questo cliente
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {clientReports.map((report) => (
+                <Link
+                  key={report.id}
+                  to="/diario"
+                  className="block p-3 rounded-lg border border-border hover:border-primary/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium text-sm">{report.titolo}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {format(new Date(report.data_report), "dd MMM", { locale: it })}
+                    </Badge>
+                  </div>
+                  {report.testo_report && (
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {report.testo_report}
+                    </p>
+                  )}
+                </Link>
+              ))}
             </div>
           )}
         </div>
