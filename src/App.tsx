@@ -22,6 +22,7 @@ import GiroVisita from "./pages/GiroVisita";
 import AssistenteTrattativa from "./pages/AssistenteTrattativa";
 import Trattative from "./pages/Trattative";
 import TrattativaDettaglio from "./pages/TrattativaDettaglio";
+import DiarioGiornaliero from "./pages/DiarioGiornaliero";
 import Impostazioni from "./pages/Impostazioni";
 import NotFound from "./pages/NotFound";
 
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/assistente-trattativa" element={<AssistenteTrattativa />} />
               <Route path="/trattative" element={<Trattative />} />
               <Route path="/trattative/:id" element={<TrattativaDettaglio />} />
+              <Route path="/diario" element={<DiarioGiornaliero />} />
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
