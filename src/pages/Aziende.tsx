@@ -38,6 +38,9 @@ type FormData = {
   prodotti: number;
   partita_iva: string;
   provvigione_percentuale: string;
+  default_sc1: string;
+  default_sc2: string;
+  default_sc3: string;
 };
 
 const defaultFormData: FormData = {
@@ -51,6 +54,9 @@ const defaultFormData: FormData = {
   prodotti: 0,
   partita_iva: "",
   provvigione_percentuale: "0",
+  default_sc1: "0",
+  default_sc2: "0",
+  default_sc3: "0",
 };
 
 const Aziende = () => {
@@ -78,6 +84,9 @@ const Aziende = () => {
       prodotti: azienda.prodotti,
       partita_iva: azienda.partita_iva || "",
       provvigione_percentuale: String(azienda.provvigione_percentuale || 0),
+      default_sc1: String(azienda.default_sc1 || 0).replace(".", ","),
+      default_sc2: String(azienda.default_sc2 || 0).replace(".", ","),
+      default_sc3: String(azienda.default_sc3 || 0).replace(".", ","),
     });
     setIsDialogOpen(true);
   };
@@ -125,6 +134,8 @@ const Aziende = () => {
   const handleSubmit = async () => {
     if (!formData.nome) return;
     
+    const parseDecimal = (v: string) => parseFloat(v.replace(",", ".")) || 0;
+    
     const submitData = {
       ...formData,
       settore: formData.settore || null,
@@ -133,7 +144,10 @@ const Aziende = () => {
       telefono: formData.telefono || null,
       email: formData.email || null,
       partita_iva: formData.partita_iva || null,
-      provvigione_percentuale: parseFloat(formData.provvigione_percentuale.replace(",", ".")) || 0,
+      provvigione_percentuale: parseDecimal(formData.provvigione_percentuale),
+      default_sc1: parseDecimal(formData.default_sc1),
+      default_sc2: parseDecimal(formData.default_sc2),
+      default_sc3: parseDecimal(formData.default_sc3),
     };
 
     if (editingAzienda) {
@@ -275,6 +289,43 @@ const Aziende = () => {
                       placeholder="Es: 5"
                       type="text"
                     />
+                  </div>
+                </div>
+                {/* Sconti Default Azienda */}
+                <div className="border-t pt-4">
+                  <Label className="text-sm font-semibold text-muted-foreground">Sconti Default Azienda %</Label>
+                  <p className="text-xs text-muted-foreground mb-3">Applicati automaticamente ai prodotti senza override</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Sc.1</Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={formData.default_sc1}
+                        onChange={(e) => setFormData({ ...formData, default_sc1: e.target.value })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sc.2</Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={formData.default_sc2}
+                        onChange={(e) => setFormData({ ...formData, default_sc2: e.target.value })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Sc.3</Label>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={formData.default_sc3}
+                        onChange={(e) => setFormData({ ...formData, default_sc3: e.target.value })}
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
