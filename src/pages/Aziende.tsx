@@ -22,8 +22,10 @@ import {
 import { Plus, Search, Loader2, Wand2 } from "lucide-react";
 import { useAziende, useCreateAzienda, useDeleteAzienda, useUpdateAzienda, Azienda } from "@/hooks/useAziende";
 import { AziendaCard } from "@/components/aziende/AziendaCard";
+import { PriceIncreaseManager } from "@/components/aziende/PriceIncreaseManager";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type FormData = {
   nome: string;
@@ -289,49 +291,63 @@ const Aziende = () => {
           </Dialog>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Cerca azienda..."
-            className="pl-11 h-12 rounded-xl shadow-sm border-muted/50 focus:border-primary/50 transition-all duration-200"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+        {/* Tabs for Aziende and Aumenti */}
+        <Tabs defaultValue="aziende" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="aziende">Aziende</TabsTrigger>
+            <TabsTrigger value="aumenti">Aumenti Prezzo</TabsTrigger>
+          </TabsList>
 
-        {/* Grid */}
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center space-y-4">
-              <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-              <p className="text-muted-foreground animate-pulse">Caricamento aziende...</p>
+          <TabsContent value="aziende" className="space-y-6">
+            {/* Search */}
+            <div className="relative max-w-md">
+              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Cerca azienda..."
+                className="pl-11 h-12 rounded-xl shadow-sm border-muted/50 focus:border-primary/50 transition-all duration-200"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-          </div>
-        ) : !aziende?.length ? (
-          <div className="text-center py-16 space-y-4">
-            <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
-              <Search className="h-10 w-10 text-muted-foreground/50" />
-            </div>
-            <p className="text-muted-foreground text-lg">Nessuna azienda trovata</p>
-            <Button className="mt-4 gap-2" onClick={() => setIsDialogOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Aggiungi la prima azienda
-            </Button>
-          </div>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {aziende.map((azienda, idx) => (
-              <div key={azienda.id} className="animate-fade-in animate-fill-both" style={{ animationDelay: `${idx * 50}ms` }}>
-                <AziendaCard
-                  azienda={azienda}
-                  onEdit={openEditDialog}
-                  onDelete={(id) => deleteAzienda.mutate(id)}
-                />
+
+            {/* Grid */}
+            {isLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center space-y-4">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                  <p className="text-muted-foreground animate-pulse">Caricamento aziende...</p>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
+            ) : !aziende?.length ? (
+              <div className="text-center py-16 space-y-4">
+                <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+                  <Search className="h-10 w-10 text-muted-foreground/50" />
+                </div>
+                <p className="text-muted-foreground text-lg">Nessuna azienda trovata</p>
+                <Button className="mt-4 gap-2" onClick={() => setIsDialogOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  Aggiungi la prima azienda
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {aziende.map((azienda, idx) => (
+                  <div key={azienda.id} className="animate-fade-in animate-fill-both" style={{ animationDelay: `${idx * 50}ms` }}>
+                    <AziendaCard
+                      azienda={azienda}
+                      onEdit={openEditDialog}
+                      onDelete={(id) => deleteAzienda.mutate(id)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="aumenti">
+            <PriceIncreaseManager />
+          </TabsContent>
+        </Tabs>
       </div>
     </MainLayout>
   );

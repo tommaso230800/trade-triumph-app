@@ -18,7 +18,6 @@ import Promemoria from "./pages/Promemoria";
 import KPI from "./pages/KPI";
 import Provvigioni from "./pages/Provvigioni";
 import Canvass from "./pages/Canvass";
-import GiroVisita from "./pages/GiroVisita";
 import AssistenteTrattativa from "./pages/AssistenteTrattativa";
 import Trattative from "./pages/Trattative";
 import TrattativaDettaglio from "./pages/TrattativaDettaglio";
@@ -50,7 +49,6 @@ const App = () => (
               <Route path="/kpi" element={<KPI />} />
               <Route path="/provvigioni" element={<Provvigioni />} />
               <Route path="/canvass" element={<Canvass />} />
-              <Route path="/giro-visita" element={<GiroVisita />} />
               <Route path="/assistente-trattativa" element={<AssistenteTrattativa />} />
               <Route path="/trattative" element={<Trattative />} />
               <Route path="/trattative/:id" element={<TrattativaDettaglio />} />

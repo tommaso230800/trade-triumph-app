@@ -2,6 +2,8 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
+import { WeeklyActivityWidget } from "@/components/dashboard/WeeklyActivityWidget";
+import { ClientsNotVisitedWidget } from "@/components/dashboard/ClientsNotVisitedWidget";
 import { useStats } from "@/hooks/useStats";
 import { useOrdini } from "@/hooks/useOrdini";
 import { usePromemoria } from "@/hooks/usePromemoria";
@@ -295,8 +297,14 @@ const Index = () => {
           </div>
         </div>
 
+        {/* New Widgets Row */}
+        <div className="grid gap-6 lg:grid-cols-2 animate-fade-in animate-fill-both stagger-6">
+          <WeeklyActivityWidget />
+          <ClientsNotVisitedWidget />
+        </div>
+
         {/* Upcoming Appointments */}
-        <div className="animate-fade-in animate-fill-both stagger-6">
+        <div className="animate-fade-in animate-fill-both stagger-7">
           <UpcomingAppointments />
         </div>
       </div>
