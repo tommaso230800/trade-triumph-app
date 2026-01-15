@@ -13,7 +13,6 @@ import {
   BarChart3,
   Wallet,
   Tag,
-  MapPin,
   ChevronDown,
   Target,
   Zap,
@@ -48,7 +47,6 @@ const navigation: NavItem[] = [
   { name: "KPI", href: "/kpi", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
-  { name: "Giro Visite", href: "/giro-visita", icon: MapPin },
   { name: "Aziende", href: "/aziende", icon: Building2 },
   { 
     name: "Clienti", 
