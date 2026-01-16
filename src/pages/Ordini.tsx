@@ -603,7 +603,7 @@ const Ordini = () => {
       .from("ordini_righe")
       .select(`
         *,
-        prodotti (nome, pezzi_per_cartone)
+        prodotti (nome, codice, pezzi_per_cartone)
       `)
       .eq("ordine_id", ordine.id);
     
@@ -624,6 +624,7 @@ const Ordini = () => {
       totale: Number(ordine.totale),
       note: ordine.note || undefined,
       righe: (righeData || []).map((r: any) => ({
+        prodotto_codice: r.prodotti?.codice || undefined,
         prodotto_nome: r.prodotti?.nome || "Prodotto",
         prezzo_unitario: Number(r.prezzo_unitario),
         quantita_pezzi: r.quantita_pezzi,

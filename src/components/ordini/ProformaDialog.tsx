@@ -11,6 +11,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
 type RigaOrdine = {
+  prodotto_codice?: string;
   prodotto_nome: string;
   prezzo_unitario: number;
   quantita_pezzi: number;
@@ -107,9 +108,9 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
     }
   };
 
-  // Calculate subtotals with cascading discounts
+  // Calculate subtotals with cascading discounts - pieces auto-calculated from cartons
   const subtotale = data.righe.reduce((sum, riga) => {
-    const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
+    const pezziTotali = riga.quantita_cartoni * riga.pezzi_per_cartone;
     const sc1 = riga.sc1 || 0;
     const sc2 = riga.sc2 || 0;
     const sc3 = riga.sc3 || 0;
@@ -119,14 +120,6 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
     const prezzoNetto = prezzo2 * (1 - sc3 / 100);
     return sum + pezziTotali * prezzoNetto;
   }, 0);
-
-  // Calculate total gross (before line discounts)
-  const totaleLordo = data.righe.reduce((sum, riga) => {
-    const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
-    return sum + pezziTotali * riga.prezzo_unitario;
-  }, 0);
-
-  const totaleScontiRiga = totaleLordo - subtotale;
 
   const scontoPercentuale = subtotale * (data.sconto / 100);
 
@@ -201,20 +194,20 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">
+                  <TableHead className="font-semibold text-gray-900 text-xs">C.P</TableHead>
                   <TableHead className="font-semibold text-gray-900 text-xs">Prodotto</TableHead>
                   <TableHead className="text-right font-semibold text-gray-900 text-xs">Prezzo</TableHead>
                   <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.1</TableHead>
                   <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.2</TableHead>
                   <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.3</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Pz</TableHead>
                   <TableHead className="text-center font-semibold text-gray-900 text-xs">Cart.</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Tot.</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Tot. Pz</TableHead>
                   <TableHead className="text-right font-semibold text-gray-900 text-xs">Subtot.</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.righe.map((riga, idx) => {
-                  const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
+                  const pezziTotali = riga.quantita_cartoni * riga.pezzi_per_cartone;
                   const sc1 = riga.sc1 || 0;
                   const sc2 = riga.sc2 || 0;
                   const sc3 = riga.sc3 || 0;
@@ -225,6 +218,9 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                   const rigaSubtotale = pezziTotali * prezzoNetto;
                   return (
                     <TableRow key={idx} className="border-b border-gray-100">
+                      <TableCell className="py-2 text-xs text-gray-600">
+                        {riga.prodotto_codice || "—"}
+                      </TableCell>
                       <TableCell className="py-2">
                         <p className="font-medium text-gray-900 text-sm">{riga.prodotto_nome}</p>
                         <p className="text-xs text-gray-500">{riga.pezzi_per_cartone} pz/cart</p>
@@ -247,7 +243,6 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                       <TableCell className="text-center text-gray-700 text-sm py-2">
                         {sc3 > 0 ? `${sc3}%` : "—"}
                       </TableCell>
-                      <TableCell className="text-center text-gray-700 text-sm py-2">{riga.quantita_pezzi}</TableCell>
                       <TableCell className="text-center text-gray-700 text-sm py-2">{riga.quantita_cartoni}</TableCell>
                       <TableCell className="text-center font-medium text-gray-900 text-sm py-2">{pezziTotali}</TableCell>
                       <TableCell className="text-right font-semibold text-gray-900 text-sm py-2">{formatCurrency(rigaSubtotale)}</TableCell>
@@ -261,16 +256,6 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
           {/* Totals */}
           <div className="flex justify-end">
             <div className="w-80 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Totale Lordo:</span>
-                <span className="font-medium text-gray-900">{formatCurrency(totaleLordo)}</span>
-              </div>
-              {totaleScontiRiga > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Totale Sconti Riga:</span>
-                  <span className="font-medium text-red-600">-{formatCurrency(totaleScontiRiga)}</span>
-                </div>
-              )}
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotale Netto:</span>
                 <span className="font-medium text-gray-900">{formatCurrency(subtotale)}</span>
@@ -292,12 +277,6 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                 <span className="font-semibold text-gray-900">Totale:</span>
                 <span className="font-bold text-blue-600">{formatCurrency(data.totale)}</span>
               </div>
-              {totaleLordo > data.totale && (
-                <div className="flex justify-between text-sm bg-green-50 p-2 rounded">
-                  <span className="text-green-700">Risparmio Totale:</span>
-                  <span className="font-semibold text-green-700">{formatCurrency(totaleLordo - data.totale)}</span>
-                </div>
-              )}
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Pagamento:</span>
                 <span className="font-medium text-gray-900">{data.tipo_pagamento}</span>
