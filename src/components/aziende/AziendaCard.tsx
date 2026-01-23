@@ -44,6 +44,7 @@ type ProductForm = {
   sc1_default: string;
   sc2_default: string;
   sc3_default: string;
+  brand_id: string | null;
 };
 
 const defaultProductForm: ProductForm = {
@@ -59,6 +60,7 @@ const defaultProductForm: ProductForm = {
   sc1_default: "0",
   sc2_default: "0",
   sc3_default: "0",
+  brand_id: null,
 };
 
 const parseDecimalInput = (value: string): number => {
@@ -114,6 +116,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
       sc1_default: String(prodotto.sc1_default || 0).replace(".", ","),
       sc2_default: String(prodotto.sc2_default || 0).replace(".", ","),
       sc3_default: String(prodotto.sc3_default || 0).replace(".", ","),
+      brand_id: prodotto.brand_id,
     });
   };
 
@@ -158,6 +161,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
       sc1_default: parseDecimalInput(newProduct.sc1_default),
       sc2_default: parseDecimalInput(newProduct.sc2_default),
       sc3_default: parseDecimalInput(newProduct.sc3_default),
+      brand_id: newProduct.brand_id,
     });
     setNewProduct(defaultProductForm);
     setIsAdding(false);

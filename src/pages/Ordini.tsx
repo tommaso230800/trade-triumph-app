@@ -44,11 +44,13 @@ import { useProdotti, Prodotto } from "@/hooks/useProdotti";
 import { useCreateOrdineRigheBatch, useOrdiniRighe, useUpdateOrdineRiga, useUpdateOrdineTotale } from "@/hooks/useOrdiniRighe";
 import { useLastOrdineForClient } from "@/hooks/useLastOrdineRighe";
 import { useCanvassAttive } from "@/hooks/useCanvass";
+import { useBrands } from "@/hooks/useBrands";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ProformaDialog } from "@/components/ordini/ProformaDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -169,12 +171,50 @@ const Ordini = () => {
   const { data: aziende } = useAziende();
   const { data: allProdotti, refetch: refetchProdotti } = useProdotti();
   const { data: canvassAttive = [] } = useCanvassAttive();
+  const { data: brands } = useBrands();
   const createOrdine = useCreateOrdine();
   const createRigheBatch = useCreateOrdineRigheBatch();
   const updateStatus = useUpdateOrdineStatus();
   const updateRigaMutation = useUpdateOrdineRiga();
   const updateOrdineTotale = useUpdateOrdineTotale();
   const updateOrdine = useUpdateOrdine();
+
+  // Searchable options for dropdowns
+  const clientiOptions = useMemo(() => 
+    clienti?.map(c => ({
+      value: c.id,
+      label: c.nome,
+      searchTerms: [c.azienda || "", c.citta || "", c.consorzio || "", c.partita_iva || ""]
+    })) || [], 
+    [clienti]
+  );
+
+  const aziendeOptions = useMemo(() => 
+    aziende?.map(a => ({
+      value: a.id,
+      label: a.nome,
+      searchTerms: [a.settore || "", a.citta || "", a.partita_iva || ""]
+    })) || [], 
+    [aziende]
+  );
+
+  const prodottiOptions = useMemo(() => {
+    if (!formData.azienda_id || !allProdotti) return [];
+    const prodotti = allProdotti.filter(p => p.azienda_id === formData.azienda_id);
+    return prodotti.map(p => {
+      const brand = brands?.find(b => b.id === p.brand_id);
+      return {
+        value: p.id,
+        label: `${p.nome} - ${formatCurrency(p.prezzo_listino)}`,
+        searchTerms: [
+          p.codice || "", 
+          p.formato || "", 
+          brand?.name || "",
+          aziende?.find(a => a.id === p.azienda_id)?.nome || ""
+        ]
+      };
+    }).filter(p => !righeOrdine.some(r => r.prodotto_id === p.value));
+  }, [formData.azienda_id, allProdotti, brands, aziende, righeOrdine]);
   
   // State for applied promotions
   const [appliedPromos, setAppliedPromos] = useState<string[]>([]);
@@ -707,44 +747,33 @@ const Ordini = () => {
                   />
                 </div>
 
-                {/* Cliente e Azienda */}
+                {/* Cliente e Azienda con ricerca */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <Label className="text-sm">Cliente</Label>
-                    <Select value={formData.cliente_id} onValueChange={(v) => setFormData({ ...formData, cliente_id: v })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleziona cliente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clienti?.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                      options={clientiOptions}
+                      value={formData.cliente_id}
+                      onValueChange={(v) => setFormData({ ...formData, cliente_id: v })}
+                      placeholder="Seleziona cliente"
+                      searchPlaceholder="Cerca cliente..."
+                      emptyMessage="Nessun cliente trovato"
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-sm">Azienda Fornitrice *</Label>
-                    <Select 
-                      value={formData.azienda_id} 
+                    <SearchableSelect
+                      options={aziendeOptions}
+                      value={formData.azienda_id}
                       onValueChange={(v) => {
                         setFormData({ ...formData, azienda_id: v });
                         setRigheOrdine([]);
                         setSelectedProdotto("");
                       }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleziona azienda" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {aziende?.map((a) => (
-                          <SelectItem key={a.id} value={a.id}>
-                            {a.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Seleziona azienda"
+                      searchPlaceholder="Cerca azienda..."
+                      emptyMessage="Nessuna azienda trovata"
+                    />
                   </div>
                 </div>
 
@@ -856,18 +885,16 @@ const Ordini = () => {
                   <div className="space-y-4 border-t pt-4">
                     <h4 className="font-medium">Aggiungi Prodotti</h4>
                     <div className="flex gap-2">
-                      <Select value={selectedProdotto} onValueChange={setSelectedProdotto}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Seleziona prodotto" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {prodottiAzienda.map((p) => (
-                            <SelectItem key={p.id} value={p.id} disabled={righeOrdine.some((r) => r.prodotto_id === p.id)}>
-                              {p.nome} - {formatCurrency(p.prezzo_listino)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex-1">
+                        <SearchableSelect
+                          options={prodottiOptions}
+                          value={selectedProdotto}
+                          onValueChange={setSelectedProdotto}
+                          placeholder="Cerca prodotto..."
+                          searchPlaceholder="Cerca per nome, codice, brand..."
+                          emptyMessage="Nessun prodotto trovato"
+                        />
+                      </div>
                       <Button onClick={addProdottoToOrder} disabled={!selectedProdotto}>
                         <Plus className="h-4 w-4" />
                       </Button>
