@@ -77,6 +77,44 @@ export type Database = {
         }
         Relationships: []
       }
+      brands: {
+        Row: {
+          azienda_id: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brands_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canvass: {
         Row: {
           attivo: boolean
@@ -919,6 +957,7 @@ export type Database = {
       prodotti: {
         Row: {
           azienda_id: string
+          brand_id: string | null
           cartoni_per_strato: number
           codice: string | null
           created_at: string
@@ -938,6 +977,7 @@ export type Database = {
         }
         Insert: {
           azienda_id: string
+          brand_id?: string | null
           cartoni_per_strato?: number
           codice?: string | null
           created_at?: string
@@ -957,6 +997,7 @@ export type Database = {
         }
         Update: {
           azienda_id?: string
+          brand_id?: string | null
           cartoni_per_strato?: number
           codice?: string | null
           created_at?: string
@@ -980,6 +1021,13 @@ export type Database = {
             columns: ["azienda_id"]
             isOneToOne: false
             referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prodotti_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
             referencedColumns: ["id"]
           },
         ]

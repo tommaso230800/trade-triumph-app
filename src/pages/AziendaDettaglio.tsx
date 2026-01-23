@@ -44,13 +44,16 @@ import {
   Upload, 
   ImageIcon,
   FileUp,
-  Wand2
+  Wand2,
+  Tag
 } from "lucide-react";
 import { useAziende, useUpdateAzienda, Azienda } from "@/hooks/useAziende";
 import { useProdotti, useCreateProdotto, useDeleteProdotto, useUpdateProdotto, Prodotto } from "@/hooks/useProdotti";
+import { useBrands, useCreateBrand } from "@/hooks/useBrands";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImportProductsPDFDialog } from "@/components/aziende/ImportProductsPDFDialog";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
@@ -74,6 +77,7 @@ type ProductForm = {
   sc1_default: string;
   sc2_default: string;
   sc3_default: string;
+  brand_id: string | null;
 };
 
 const defaultProductForm: ProductForm = {
@@ -89,6 +93,7 @@ const defaultProductForm: ProductForm = {
   sc1_default: "0",
   sc2_default: "0",
   sc3_default: "0",
+  brand_id: null,
 };
 
 type AziendaFormData = {
@@ -128,6 +133,30 @@ const AziendaDettaglio = () => {
   const updateProdotto = useUpdateProdotto();
   const deleteProdotto = useDeleteProdotto();
   const updateAzienda = useUpdateAzienda();
+  const { data: brands } = useBrands(id);
+  const createBrand = useCreateBrand();
+
+  // State for new brand creation
+  const [isNewBrandDialogOpen, setIsNewBrandDialogOpen] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+
+  // Brand options for searchable select
+  const brandOptions = (brands || []).map(b => ({
+    value: b.id,
+    label: b.name,
+    searchTerms: []
+  }));
+
+  const handleCreateNewBrand = async () => {
+    if (!newBrandName.trim() || !id) return;
+    const newBrand = await createBrand.mutateAsync({
+      name: newBrandName.trim(),
+      azienda_id: id
+    });
+    setProductForm({ ...productForm, brand_id: newBrand.id });
+    setNewBrandName("");
+    setIsNewBrandDialogOpen(false);
+  };
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -273,6 +302,7 @@ const AziendaDettaglio = () => {
         sc1_default: String(prodotto.sc1_default || 0).replace(".", ","),
         sc2_default: String(prodotto.sc2_default || 0).replace(".", ","),
         sc3_default: String(prodotto.sc3_default || 0).replace(".", ","),
+        brand_id: prodotto.brand_id,
       });
     } else {
       setEditingProduct(null);
@@ -299,6 +329,7 @@ const AziendaDettaglio = () => {
         sc1_default: parseDecimalInput(productForm.sc1_default),
         sc2_default: parseDecimalInput(productForm.sc2_default),
         sc3_default: parseDecimalInput(productForm.sc3_default),
+        brand_id: productForm.brand_id,
       });
     } else {
       await createProdotto.mutateAsync({
@@ -315,6 +346,7 @@ const AziendaDettaglio = () => {
         sc1_default: parseDecimalInput(productForm.sc1_default),
         sc2_default: parseDecimalInput(productForm.sc2_default),
         sc3_default: parseDecimalInput(productForm.sc3_default),
+        brand_id: productForm.brand_id,
       });
     }
     setIsProductDialogOpen(false);
@@ -754,6 +786,23 @@ const AziendaDettaglio = () => {
                 />
               </div>
             </div>
+            {/* Brand Select */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Tag className="h-4 w-4" />
+                Marchio / Brand
+              </Label>
+              <SearchableSelect
+                options={brandOptions}
+                value={productForm.brand_id || ""}
+                onValueChange={(v) => setProductForm({ ...productForm, brand_id: v || null })}
+                placeholder="Seleziona marchio..."
+                searchPlaceholder="Cerca marchio..."
+                emptyMessage="Nessun marchio trovato"
+                onCreateNew={() => setIsNewBrandDialogOpen(true)}
+                createNewLabel="+ Nuovo Marchio"
+              />
+            </div>
             <div className="border-t pt-4">
               <Label className="text-sm font-semibold text-muted-foreground">Sconti Default %</Label>
               <div className="grid grid-cols-3 gap-4 mt-3">
@@ -849,6 +898,37 @@ const AziendaDettaglio = () => {
         aziendaNome={azienda.nome}
         onImportComplete={refetchProdotti}
       />
+
+      {/* New Brand Dialog */}
+      <Dialog open={isNewBrandDialogOpen} onOpenChange={setIsNewBrandDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nuovo Marchio</DialogTitle>
+            <DialogDescription>
+              Crea un nuovo marchio per questa azienda
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nome Marchio *</Label>
+              <Input
+                value={newBrandName}
+                onChange={(e) => setNewBrandName(e.target.value)}
+                placeholder="es. Polara, Zuegg..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewBrandDialogOpen(false)}>
+              Annulla
+            </Button>
+            <Button onClick={handleCreateNewBrand} disabled={!newBrandName.trim() || createBrand.isPending}>
+              {createBrand.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Crea Marchio
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
