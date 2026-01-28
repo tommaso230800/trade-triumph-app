@@ -36,7 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal, Loader2, Filter, Wand2, X, Eye, Pencil } from "lucide-react";
+import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal, Loader2, Filter, Wand2, X, Eye, Pencil, Users } from "lucide-react";
 import { useClienti, useCreateCliente, useDeleteCliente, useUpdateCliente, Cliente } from "@/hooks/useClienti";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -266,8 +266,8 @@ const Clienti = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in animate-fill-both">
           <div>
-            <h1 className="page-title">Portfolio Clienti</h1>
-            <p className="mt-2 text-body-md text-muted-foreground">
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Portfolio Clienti</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Gestisci i tuoi clienti e monitora le performance
             </p>
           </div>
@@ -518,12 +518,12 @@ const Clienti = () => {
           </div>
         </div>
 
-        {/* Search & Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1 max-w-md">
+        {/* Search & Filters - Improved */}
+        <div className="flex flex-col sm:flex-row gap-3 p-4 rounded-xl bg-card border shadow-sm">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Cerca cliente..."
+              placeholder="Cerca cliente, azienda, città..."
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -535,7 +535,7 @@ const Clienti = () => {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="tutti">Tutti</SelectItem>
+              <SelectItem value="tutti">Tutti gli status</SelectItem>
               <SelectItem value="nuovo">Nuovo</SelectItem>
               <SelectItem value="standard">Standard</SelectItem>
               <SelectItem value="premium">Premium</SelectItem>
@@ -546,13 +546,19 @@ const Clienti = () => {
         {/* Table */}
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="text-center space-y-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+              <p className="text-sm text-muted-foreground">Caricamento clienti...</p>
+            </div>
           </div>
         ) : !clienti?.length ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Nessun cliente trovato</p>
-            <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
-              Aggiungi il primo cliente
+          <div className="text-center py-16 rounded-xl border-2 border-dashed bg-muted/30">
+            <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <p className="text-lg font-medium text-muted-foreground">Nessun cliente trovato</p>
+            <p className="text-sm text-muted-foreground/70 mb-4">Inizia aggiungendo il tuo primo cliente</p>
+            <Button onClick={() => setIsDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Aggiungi Cliente
             </Button>
           </div>
         ) : (
