@@ -42,7 +42,7 @@ import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
 import { useProdotti, Prodotto } from "@/hooks/useProdotti";
 import { useCreateOrdineRigheBatch, useOrdiniRighe, useUpdateOrdineRiga, useUpdateOrdineTotale } from "@/hooks/useOrdiniRighe";
-import { useLastOrdineForClient } from "@/hooks/useLastOrdineRighe";
+import { useClientProductHistory } from "@/hooks/useClientProductHistory";
 import { useCanvassAttive } from "@/hooks/useCanvass";
 import { useBrands } from "@/hooks/useBrands";
 import { format } from "date-fns";
@@ -307,8 +307,8 @@ const Ordini = () => {
   // Fetch righe for editing
   const { data: righeForEdit, refetch: refetchRighe } = useOrdiniRighe(editingOrdine?.id);
 
-  // Get last order for restock functionality
-  const { data: lastOrdineData } = useLastOrdineForClient(
+  // Get all products ever purchased by this client from this company
+  const { data: productHistory } = useClientProductHistory(
     formData.cliente_id || undefined,
     formData.azienda_id || undefined
   );
@@ -511,42 +511,41 @@ const Ordini = () => {
   };
 
   const handleRiassortimento = () => {
-    if (!lastOrdineData) {
-      toast.error("Nessun ordine precedente trovato per questo cliente/azienda");
+    if (!productHistory || productHistory.products.length === 0) {
+      toast.error("Nessun prodotto acquistato precedentemente da questo cliente/azienda");
       return;
     }
 
-    const { ordine, righe } = lastOrdineData;
+    const { products, defaults } = productHistory;
 
     // Set payment info from last order
     setFormData((prev) => ({
       ...prev,
-      sconto: String(ordine.sconto || 0).replace(".", ","),
-      sconto_merce: String(ordine.sconto_merce || 0).replace(".", ","),
-      tipo_pagamento: ordine.tipo_pagamento || "Contanti",
+      sconto: String(defaults.sconto || 0).replace(".", ","),
+      sconto_merce: String(defaults.sconto_merce || 0).replace(".", ","),
+      tipo_pagamento: defaults.tipo_pagamento || "Contanti",
     }));
 
-    // Set order lines from last order with all data
-    const newRighe: RigaOrdine[] = righe.map((r) => {
-      const prodotto = allProdotti?.find(p => p.id === r.prodotto_id);
-      return {
-        prodotto_id: r.prodotto_id,
-        prodotto_nome: r.prodotti?.nome || "Prodotto",
-        prezzo_unitario: String(r.prezzo_unitario).replace(".", ","),
-        quantita_pezzi: r.quantita_pezzi,
-        quantita_cartoni: r.quantita_cartoni,
-        pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
-        sc1: String(r.sc1 || 0).replace(".", ","),
-        sc2: String(r.sc2 || 0).replace(".", ","),
-        sc3: String(r.sc3 || 0).replace(".", ","),
-        strati: prodotto?.strati || 1,
-        cartoni_per_strato: prodotto?.cartoni_per_strato || 1,
-        formato: prodotto?.formato || null,
-      };
-    });
+    // Set order lines from ALL products ever purchased
+    const newRighe: RigaOrdine[] = products.map((p) => ({
+      prodotto_id: p.prodotto_id,
+      prodotto_nome: p.prodotto_nome,
+      prodotto_codice: p.prodotto_codice || undefined,
+      prodotto_brand_id: p.brand_id || undefined,
+      prezzo_unitario: String(p.last_prezzo_unitario).replace(".", ","),
+      quantita_pezzi: 0, // Reset to 0 so user can fill new quantities
+      quantita_cartoni: 0,
+      pezzi_per_cartone: p.pezzi_per_cartone,
+      sc1: String(p.last_sc1).replace(".", ","),
+      sc2: String(p.last_sc2).replace(".", ","),
+      sc3: String(p.last_sc3).replace(".", ","),
+      strati: p.strati,
+      cartoni_per_strato: p.cartoni_per_strato,
+      formato: p.formato,
+    }));
 
     setRigheOrdine(newRighe);
-    toast.success("Dati dell'ultimo ordine caricati!");
+    toast.success(`${products.length} prodotti caricati da ${productHistory.totalOrders} ordini precedenti!`);
   };
 
   const handleSubmit = async () => {
@@ -845,15 +844,15 @@ const Ordini = () => {
                 )}
 
                 {/* Riassortimento Button */}
-                {formData.cliente_id && formData.azienda_id && lastOrdineData && (
+                {formData.cliente_id && formData.azienda_id && productHistory && productHistory.products.length > 0 && (
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full gap-2"
+                    className="w-full gap-2 border-primary/50 text-primary hover:bg-primary/10"
                     onClick={handleRiassortimento}
                   >
                     <RefreshCw className="h-4 w-4" />
-                    Riassortimento (carica ultimo ordine)
+                    Riassortimento ({productHistory.products.length} prodotti da {productHistory.totalOrders} ordini)
                   </Button>
                 )}
 
