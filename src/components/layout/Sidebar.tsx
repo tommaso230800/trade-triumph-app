@@ -16,7 +16,7 @@ import {
   ChevronDown,
   Target,
   Zap,
-  BookOpen,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -65,7 +65,7 @@ const navigation: NavItem[] = [
   },
   { name: "Trattative", href: "/trattative", icon: Target },
   { name: "Assistente Trattativa", href: "/assistente-trattativa", icon: Zap },
-  { name: "Diario", href: "/diario", icon: BookOpen },
+  { name: "Visite Clienti", href: "/visite", icon: ClipboardList },
   { name: "Agenda", href: "/agenda", icon: Calendar },
   { name: "Promemoria", href: "/promemoria", icon: Bell },
 ];
