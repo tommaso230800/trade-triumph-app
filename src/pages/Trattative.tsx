@@ -154,118 +154,111 @@ export default function Trattative() {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-8 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Trattative</h1>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-primary">Trattative</p>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+              Gestione Trattative
+            </h1>
             <p className="text-muted-foreground">Gestisci le tue trattative commerciali</p>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
             Nuova Trattativa
           </Button>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Target className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Trattative Aperte</p>
-                  <p className="text-2xl font-bold">{openDeals.length}</p>
-                </div>
+        {/* Summary Cards - Modern */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 animate-fade-in stagger-1">
+          <div className="rounded-2xl bg-card border border-primary/20 p-5 shadow-sm bg-gradient-to-br from-card to-primary/5">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Target className="h-5 w-5 text-primary" />
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Valore Potenziale</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalValue)}</p>
-                </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Trattative Aperte</p>
+                <p className="text-2xl font-bold">{openDeals.length}</p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Urgenti (7 giorni)</p>
-                  <p className="text-2xl font-bold">{urgentDeals.length}</p>
-                </div>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-card border border-success/20 p-5 shadow-sm bg-gradient-to-br from-card to-success/5">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-xl bg-success/10 flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 text-success" />
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                  <Calendar className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Prob. Media</p>
-                  <p className="text-2xl font-bold">
-                    {openDeals.length > 0
-                      ? Math.round(openDeals.reduce((s, d) => s + d.probability, 0) / openDeals.length)
-                      : 0}
-                    %
-                  </p>
-                </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Valore Potenziale</p>
+                <p className="text-2xl font-bold">{formatCurrency(totalValue)}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-card border border-warning/20 p-5 shadow-sm bg-gradient-to-br from-card to-warning/5">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-xl bg-warning/10 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Urgenti (7g)</p>
+                <p className="text-2xl font-bold">{urgentDeals.length}</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-card border border-info/20 p-5 shadow-sm bg-gradient-to-br from-card to-info/5">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-xl bg-info/10 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-info" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Prob. Media</p>
+                <p className="text-2xl font-bold">
+                  {openDeals.length > 0
+                    ? Math.round(openDeals.reduce((s, d) => s + d.probability, 0) / openDeals.length)
+                    : 0}
+                  %
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Filters */}
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Cerca trattativa o cliente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as Deal["status"] | "tutti")}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tutti">Tutti</SelectItem>
-                  <SelectItem value="open">Aperte</SelectItem>
-                  <SelectItem value="won">Vinte</SelectItem>
-                  <SelectItem value="lost">Perse</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Urgenza" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tutti">Tutte</SelectItem>
-                  <SelectItem value="scadute">Scadute</SelectItem>
-                  <SelectItem value="oggi">Oggi</SelectItem>
-                  <SelectItem value="settimana">Prossimi 7 giorni</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Filters - Modern */}
+        <div className="rounded-2xl bg-card border border-border/50 p-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cerca trattativa o cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-11 h-11 rounded-xl bg-muted/30"
+              />
             </div>
-          </CardContent>
-        </Card>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as Deal["status"] | "tutti")}>
+              <SelectTrigger className="w-[140px] h-11 rounded-xl">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tutti">Tutti</SelectItem>
+                <SelectItem value="open">Aperte</SelectItem>
+                <SelectItem value="won">Vinte</SelectItem>
+                <SelectItem value="lost">Perse</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
+              <SelectTrigger className="w-[160px] h-11 rounded-xl">
+                <SelectValue placeholder="Urgenza" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tutti">Tutte</SelectItem>
+                <SelectItem value="scadute">Scadute</SelectItem>
+                <SelectItem value="oggi">Oggi</SelectItem>
+                <SelectItem value="settimana">Prossimi 7g</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         {/* Deals Table */}
         <Card>

@@ -103,13 +103,16 @@ const PromemoriaPage = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">Promemoria</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Gestisci le tue attività e scadenze
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-primary">Promemoria</p>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+              Le tue attività
+            </h1>
+            <p className="text-muted-foreground">
+              Gestisci le attività e scadenze
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -209,23 +212,51 @@ const PromemoriaPage = () => {
           </Dialog>
         </div>
 
-        {/* Stats */}
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-xs lg:text-sm text-muted-foreground">Da completare</p>
-            <p className="text-xl lg:text-2xl font-bold text-card-foreground">{stats.pendenti}</p>
+        {/* Stats - Modern Cards */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 animate-fade-in stagger-1">
+          <div className="rounded-2xl bg-card border border-border/50 p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Da completare</p>
+                <p className="text-xl font-bold text-card-foreground">{stats.pendenti}</p>
+              </div>
+            </div>
           </div>
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-xs lg:text-sm text-muted-foreground">Priorità Alta</p>
-            <p className="text-xl lg:text-2xl font-bold text-destructive">{stats.altaPriorita}</p>
+          <div className="rounded-2xl bg-card border border-destructive/20 p-5 shadow-sm bg-gradient-to-br from-card to-destructive/5">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <Bell className="h-5 w-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Priorità Alta</p>
+                <p className="text-xl font-bold text-destructive">{stats.altaPriorita}</p>
+              </div>
+            </div>
           </div>
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-xs lg:text-sm text-muted-foreground">Per Oggi</p>
-            <p className="text-xl lg:text-2xl font-bold text-warning">{stats.oggi}</p>
+          <div className="rounded-2xl bg-card border border-warning/20 p-5 shadow-sm bg-gradient-to-br from-card to-warning/5">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Per Oggi</p>
+                <p className="text-xl font-bold text-warning">{stats.oggi}</p>
+              </div>
+            </div>
           </div>
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-xs lg:text-sm text-muted-foreground">Completati</p>
-            <p className="text-xl lg:text-2xl font-bold text-success">{stats.completati}</p>
+          <div className="rounded-2xl bg-card border border-success/20 p-5 shadow-sm bg-gradient-to-br from-card to-success/5">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center">
+                <Bell className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Completati</p>
+                <p className="text-xl font-bold text-success">{stats.completati}</p>
+              </div>
+            </div>
           </div>
         </div>
 

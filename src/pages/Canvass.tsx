@@ -200,8 +200,9 @@ export default function CanvassPage() {
       <div className="space-y-8 animate-fade-in">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="page-title">Canvass/PFA</h1>
-            <p className="text-body-md text-muted-foreground">Gestisci promozioni, sconti e premi fine anno</p>
+            <p className="text-sm font-medium text-primary">Canvass</p>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">Promozioni & PFA</h1>
+            <p className="text-muted-foreground">Gestisci promozioni, sconti e premi fine anno</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
@@ -212,17 +213,58 @@ export default function CanvassPage() {
             <Button variant="outline" onClick={() => { setEditingContratto(null); setIsContrattoDialogOpen(true); }}>
               <Trophy className="h-4 w-4 mr-2" />Nuovo Contratto
             </Button>
-            <Button onClick={() => { setEditingPromo(null); setIsPromoDialogOpen(true); }}>
-              <Plus className="h-4 w-4 mr-2" />Nuova Promozione
+            <Button onClick={() => { setEditingPromo(null); setIsPromoDialogOpen(true); }} className="gap-2">
+              <Plus className="h-4 w-4" />Nuova Promozione
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><div className="p-2 bg-green-100 rounded-lg"><CheckCircle2 className="h-5 w-5 text-green-600" /></div><div><p className="text-2xl font-bold">{promozioniAttive}</p><p className="text-sm text-muted-foreground">Promo Attive</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><div className="p-2 bg-orange-100 rounded-lg"><AlertTriangle className="h-5 w-5 text-orange-600" /></div><div><p className="text-2xl font-bold">{promozioniInScadenza}</p><p className="text-sm text-muted-foreground">In Scadenza</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><div className="p-2 bg-purple-100 rounded-lg"><Clock className="h-5 w-5 text-purple-600" /></div><div><p className="text-2xl font-bold">{promozioniFuture}</p><p className="text-sm text-muted-foreground">Future</p></div></div></CardContent></Card>
-          <Card><CardContent className="pt-6"><div className="flex items-center gap-3"><div className="p-2 bg-amber-100 rounded-lg"><Trophy className="h-5 w-5 text-amber-600" /></div><div><p className="text-2xl font-bold">{contrattiAnnoCorrente}</p><p className="text-sm text-muted-foreground">Contratti {today.getFullYear()}</p></div></div></CardContent></Card>
+        {/* Stats - Modern */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in stagger-1">
+          <div className="rounded-2xl bg-card border border-success/20 p-5 shadow-sm bg-gradient-to-br from-card to-success/5">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-xl bg-success/10 flex items-center justify-center">
+                <CheckCircle2 className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{promozioniAttive}</p>
+                <p className="text-xs text-muted-foreground">Promo Attive</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-card border border-warning/20 p-5 shadow-sm bg-gradient-to-br from-card to-warning/5">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-xl bg-warning/10 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{promozioniInScadenza}</p>
+                <p className="text-xs text-muted-foreground">In Scadenza</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-card border border-info/20 p-5 shadow-sm bg-gradient-to-br from-card to-info/5">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-xl bg-info/10 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-info" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{promozioniFuture}</p>
+                <p className="text-xs text-muted-foreground">Future</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-card border border-primary/20 p-5 shadow-sm bg-gradient-to-br from-card to-primary/5">
+            <div className="flex items-center gap-3">
+              <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Trophy className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{contrattiAnnoCorrente}</p>
+                <p className="text-xs text-muted-foreground">Contratti {today.getFullYear()}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <ActivePromosSection promos={canvassAttive} onViewDetail={(promo) => setViewingPromo(promo)} />
