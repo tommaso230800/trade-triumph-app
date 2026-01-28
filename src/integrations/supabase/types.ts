@@ -328,6 +328,53 @@ export type Database = {
           },
         ]
       }
+      client_visits: {
+        Row: {
+          azioni_future: string | null
+          client_id: string
+          created_at: string
+          data_visita: string
+          esito: string | null
+          id: string
+          note_visita: string | null
+          titolo: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azioni_future?: string | null
+          client_id: string
+          created_at?: string
+          data_visita?: string
+          esito?: string | null
+          id?: string
+          note_visita?: string | null
+          titolo?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azioni_future?: string | null
+          client_id?: string
+          created_at?: string
+          data_visita?: string
+          esito?: string | null
+          id?: string
+          note_visita?: string | null
+          titolo?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_visits_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clienti: {
         Row: {
           azienda: string | null
