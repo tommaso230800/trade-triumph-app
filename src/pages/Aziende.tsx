@@ -165,8 +165,11 @@ const Aziende = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="page-title">Aziende Partner</h1>
-            <p className="text-body-md text-muted-foreground">
+            <p className="text-sm font-medium text-primary">Aziende</p>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+              Aziende Partner
+            </h1>
+            <p className="text-muted-foreground">
               Gestisci le aziende e i loro prodotti
             </p>
           </div>
@@ -350,12 +353,12 @@ const Aziende = () => {
           </TabsList>
 
           <TabsContent value="aziende" className="space-y-6">
-            {/* Search */}
+            {/* Search - Modern */}
             <div className="relative max-w-md">
               <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Cerca azienda..."
-                className="pl-11 h-12 rounded-xl shadow-sm border-muted/50 focus:border-primary/50 transition-all duration-200"
+                className="pl-11 h-11 rounded-xl bg-card shadow-sm border-border/50 focus:border-primary/50"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

@@ -32,41 +32,48 @@ export function KPICard({
     return "text-destructive";
   };
 
-  const iconBgVariants = {
-    default: "bg-muted",
-    primary: "gradient-primary",
-    success: "gradient-success",
-    warning: "bg-warning",
+  const iconContainerStyles = {
+    default: "bg-muted text-muted-foreground",
+    primary: "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25",
+    success: "bg-gradient-to-br from-success to-success/80 text-success-foreground shadow-lg shadow-success/25",
+    warning: "bg-gradient-to-br from-warning to-warning/80 text-warning-foreground shadow-lg shadow-warning/25",
   };
 
-  const iconColorVariants = {
-    default: "text-muted-foreground",
-    primary: "text-primary-foreground",
-    success: "text-success-foreground",
-    warning: "text-warning-foreground",
+  const cardStyles = {
+    default: "border-border/50",
+    primary: "border-primary/20 bg-gradient-to-br from-card to-primary/5",
+    success: "border-success/20 bg-gradient-to-br from-card to-success/5",
+    warning: "border-warning/20 bg-gradient-to-br from-card to-warning/5",
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-xl bg-card p-4 lg:p-6 shadow-card transition-all duration-300 ease-smooth hover:shadow-card-hover hover:-translate-y-0.5 animate-fade-in animate-fill-both">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1 lg:space-y-2 min-w-0">
-          <p className="text-body-sm lg:text-body-md font-medium text-muted-foreground truncate">{title}</p>
-          <p className="font-display text-display-sm lg:text-display-md tracking-tight text-card-foreground truncate">
+    <div className={cn(
+      "group relative overflow-hidden rounded-2xl bg-card p-5 lg:p-6 border shadow-sm transition-all duration-300 ease-smooth hover:shadow-md hover:-translate-y-0.5",
+      cardStyles[variant]
+    )}>
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/[0.02] pointer-events-none" />
+      
+      <div className="relative flex items-start justify-between gap-3">
+        <div className="space-y-2 min-w-0 flex-1">
+          <p className="text-xs lg:text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-2xl lg:text-3xl font-bold tracking-tight text-card-foreground">
             {value}
           </p>
           {change !== undefined && (
-            <div className={cn("flex items-center gap-1 text-body-sm font-medium flex-wrap transition-colors", getTrendColor())}>
-              <span className="transition-transform duration-200 group-hover:scale-110">{getTrendIcon()}</span>
-              <span>{change > 0 ? "+" : ""}{change}%</span>
+            <div className={cn("flex items-center gap-1.5 text-xs font-medium flex-wrap", getTrendColor())}>
+              <span className="flex items-center gap-1 bg-current/10 rounded-full px-2 py-0.5">
+                {getTrendIcon()}
+                <span>{change > 0 ? "+" : ""}{change}%</span>
+              </span>
               {changeLabel && <span className="text-muted-foreground hidden sm:inline">{changeLabel}</span>}
             </div>
           )}
         </div>
         <div
           className={cn(
-            "flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-xl transition-all duration-300 ease-spring group-hover:scale-110 group-hover:shadow-md flex-shrink-0",
-            iconBgVariants[variant],
-            iconColorVariants[variant]
+            "flex h-11 w-11 lg:h-12 lg:w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 flex-shrink-0",
+            iconContainerStyles[variant]
           )}
         >
           {icon}

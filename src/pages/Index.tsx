@@ -8,18 +8,19 @@ import { useStats } from "@/hooks/useStats";
 import { useOrdini } from "@/hooks/useOrdini";
 import { usePromemoria } from "@/hooks/usePromemoria";
 import { useCanvassAttive } from "@/hooks/useCanvass";
-import { ShoppingCart, Users, Building2, Euro, TrendingUp, Target, Bell, Phone, Calendar, Mail, Loader2, Tag, AlertTriangle } from "lucide-react";
+import { ShoppingCart, Users, Building2, Euro, TrendingUp, Target, Bell, Phone, Calendar, Mail, Loader2, Tag, AlertTriangle, ArrowRight, BarChart3, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { format, isToday, isTomorrow, parseISO, differenceInDays } from "date-fns";
 import { it } from "date-fns/locale";
 
 const statusConfig = {
-  completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
-  in_attesa: { label: "In Attesa", className: "bg-warning/10 text-warning hover:bg-warning/20" },
-  spedito: { label: "Spedito", className: "bg-info/10 text-info hover:bg-info/20" },
-  annullato: { label: "Annullato", className: "bg-destructive/10 text-destructive hover:bg-destructive/20" },
+  completato: { label: "Completato", className: "bg-success/10 text-success" },
+  in_attesa: { label: "In Attesa", className: "bg-warning/10 text-warning" },
+  spedito: { label: "Spedito", className: "bg-info/10 text-info" },
+  annullato: { label: "Annullato", className: "bg-destructive/10 text-destructive" },
 };
 
 const tipoIcons = {
@@ -30,9 +31,9 @@ const tipoIcons = {
 };
 
 const prioritaColors = {
-  alta: "border-l-destructive bg-destructive/5",
-  media: "border-l-warning bg-warning/5",
-  bassa: "border-l-info bg-info/5",
+  alta: "border-l-destructive bg-gradient-to-r from-destructive/10 to-transparent",
+  media: "border-l-warning bg-gradient-to-r from-warning/10 to-transparent",
+  bassa: "border-l-info bg-gradient-to-r from-info/10 to-transparent",
 };
 
 const formatCurrency = (value: number) =>
@@ -66,7 +67,10 @@ const Index = () => {
     return (
       <MainLayout>
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="text-center space-y-3">
+            <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+            <p className="text-sm text-muted-foreground animate-pulse">Caricamento dashboard...</p>
+          </div>
         </div>
       </MainLayout>
     );
@@ -74,63 +78,71 @@ const Index = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6 lg:space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in animate-fill-both">
-          <div>
-            <h1 className="page-title">Dashboard</h1>
-            <p className="mt-2 text-muted-foreground text-body-md lg:text-body-lg">
-              Bentornato! Ecco il riepilogo della tua attività.
+      <div className="space-y-8">
+        {/* Header - Modern & Clean */}
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+          <div className="space-y-2 animate-fade-in">
+            <p className="text-sm font-medium text-primary">Dashboard</p>
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
+              Bentornato! 👋
+            </h1>
+            <p className="text-muted-foreground max-w-lg">
+              Ecco il riepilogo della tua attività commerciale
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-xl bg-card px-4 py-2.5 text-body-md shadow-sm transition-all hover:shadow-md">
-            <span className="text-muted-foreground">Oggi:</span>
-            <span className="font-semibold text-foreground">
-              {new Date().toLocaleDateString("it-IT", {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-              })}
-            </span>
+          <div className="flex items-center gap-3 animate-fade-in stagger-1">
+            <div className="flex items-center gap-2 rounded-full bg-card px-4 py-2 shadow-sm border border-border/50">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">
+                {new Date().toLocaleDateString("it-IT", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Alert Promozioni Attive */}
+        {/* Alert Promozioni Attive - Glass Effect */}
         {canvassAttive.length > 0 && (
-          <div className="rounded-xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 p-4 lg:p-5 animate-fade-in animate-fill-both stagger-1 hover-lift">
-            <div className="flex items-center justify-between">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/15 via-primary/5 to-transparent border border-primary/20 p-5 animate-fade-in stagger-1">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="relative flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="p-2.5 bg-primary/20 rounded-xl transition-transform duration-300 hover:scale-110">
+                <div className="p-3 bg-primary/20 rounded-xl">
                   <Tag className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-display font-semibold text-foreground">
-                    {canvassAttive.length} Promozioni Attive
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-foreground">
+                      {canvassAttive.length} Promozioni Attive
+                    </p>
                     {promoInScadenza.length > 0 && (
-                      <Badge variant="destructive" className="ml-2 animate-pulse-soft">
+                      <Badge variant="destructive" className="animate-pulse-soft">
                         <AlertTriangle className="h-3 w-3 mr-1" />
                         {promoInScadenza.length} in scadenza
                       </Badge>
                     )}
-                  </p>
-                  <p className="text-body-sm text-muted-foreground mt-0.5">
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-0.5">
                     {canvassAttive.slice(0, 2).map(c => c.nome).join(", ")}
-                    {canvassAttive.length > 2 && ` e altri ${canvassAttive.length - 2}`}
+                    {canvassAttive.length > 2 && ` +${canvassAttive.length - 2}`}
                   </p>
                 </div>
               </div>
-              <Link 
-                to="/canvass" 
-                className="text-body-md font-medium text-primary hover:underline underline-offset-4 transition-all"
-              >
-                Visualizza tutte
+              <Link to="/canvass">
+                <Button variant="ghost" size="sm" className="gap-2 text-primary">
+                  Vedi tutte
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </Link>
             </div>
           </div>
         )}
 
-        {/* KPI Grid */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        {/* KPI Grid - Modern Cards */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 animate-fade-in stagger-2">
           <KPICard
             title="Fatturato Mensile"
             value={formatCurrency(stats?.fatturatoMensile || 0)}
@@ -163,48 +175,85 @@ const Index = () => {
           />
         </div>
 
-        {/* Charts Row */}
+        {/* Charts Row - Clean Design */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in animate-fill-both stagger-2 hover-lift">
-            <h3 className="section-heading mb-4">Andamento Fatturato</h3>
+          <div className="rounded-2xl bg-card p-6 shadow-sm border border-border/50 animate-fade-in stagger-3">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="font-semibold text-card-foreground">Andamento Fatturato</h3>
+              </div>
+            </div>
             <SalesChart data={stats?.ordiniPerMese || []} type="area" />
           </div>
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in animate-fill-both stagger-3 hover-lift">
-            <h3 className="section-heading mb-4">Ordini per Mese</h3>
+          <div className="rounded-2xl bg-card p-6 shadow-sm border border-border/50 animate-fade-in stagger-4">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-success/10 rounded-lg">
+                  <ShoppingCart className="h-4 w-4 text-success" />
+                </div>
+                <h3 className="font-semibold text-card-foreground">Ordini per Mese</h3>
+              </div>
+            </div>
             <SalesChart data={stats?.ordiniPerMese || []} type="bar" />
           </div>
         </div>
 
-        {/* Secondary KPIs */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
-          <KPICard
-            title="Tasso Conversione"
-            value={`${stats?.tassoConversione || 0}%`}
-            icon={<TrendingUp className="h-5 w-5 lg:h-6 lg:w-6" />}
-            variant="default"
-          />
-          <KPICard
-            title="Ordini Completati"
-            value={stats?.ordiniCompletati || 0}
-            icon={<Target className="h-5 w-5 lg:h-6 lg:w-6" />}
-            variant="success"
-          />
-          <KPICard
-            title="Valore Medio Ordine"
-            value={formatCurrency(stats?.valoremedioOrdine || 0)}
-            icon={<Euro className="h-5 w-5 lg:h-6 lg:w-6" />}
-            variant="default"
-          />
+        {/* Secondary KPIs - Compact Row */}
+        <div className="grid gap-4 grid-cols-3 animate-fade-in stagger-5">
+          <div className="rounded-2xl bg-card p-5 shadow-sm border border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-muted rounded-xl">
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Tasso Conversione</p>
+                <p className="text-xl font-bold">{stats?.tassoConversione || 0}%</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-card p-5 shadow-sm border border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-success/10 rounded-xl">
+                <Target className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Ordini Completati</p>
+                <p className="text-xl font-bold">{stats?.ordiniCompletati || 0}</p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-card p-5 shadow-sm border border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-primary/10 rounded-xl">
+                <Euro className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Valore Medio</p>
+                <p className="text-xl font-bold">{formatCurrency(stats?.valoremedioOrdine || 0)}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Main Content */}
+        {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Recent Orders */}
-          <div className="lg:col-span-2 rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in animate-fill-both stagger-4 hover-lift">
-            <div className="mb-4 lg:mb-6 flex items-center justify-between">
-              <h3 className="section-heading">Ordini Recenti</h3>
-              <Link to="/ordini" className="text-body-md font-medium text-primary hover:underline underline-offset-4 transition-all">
-                Vedi tutti
+          {/* Recent Orders - Clean List */}
+          <div className="lg:col-span-2 rounded-2xl bg-card p-6 shadow-sm border border-border/50 animate-fade-in stagger-5">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <ShoppingCart className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="font-semibold text-card-foreground">Ordini Recenti</h3>
+              </div>
+              <Link to="/ordini">
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
+                  Vedi tutti
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </Link>
             </div>
             {ordiniLoading ? (
@@ -212,33 +261,40 @@ const Index = () => {
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : recentOrdini.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8 text-body-md">Nessun ordine ancora</p>
+              <div className="text-center py-12">
+                <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                  <ShoppingCart className="h-8 w-8 text-muted-foreground/50" />
+                </div>
+                <p className="text-muted-foreground">Nessun ordine ancora</p>
+                <Link to="/ordini">
+                  <Button variant="outline" size="sm" className="mt-4">
+                    Crea il primo ordine
+                  </Button>
+                </Link>
+              </div>
             ) : (
               <div className="space-y-3">
                 {recentOrdini.map((order, index) => (
                   <div
                     key={order.id}
-                    className={cn(
-                      "flex flex-col sm:flex-row sm:items-center justify-between rounded-xl border border-border p-3 lg:p-4 transition-all duration-200 hover:bg-muted/50 hover:border-primary/20 gap-2 animate-fade-in animate-fill-both",
-                      `stagger-${index + 1}`
-                    )}
+                    className="group flex items-center justify-between rounded-xl bg-muted/30 hover:bg-muted/50 p-4 transition-all duration-200"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="hidden sm:flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-display font-semibold text-body-md transition-transform hover:scale-105">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
                         {order.clienti?.nome?.charAt(0) || "?"}
                       </div>
                       <div>
-                        <p className="font-semibold text-card-foreground">{order.clienti?.nome || "Cliente"}</p>
-                        <p className="text-body-sm text-muted-foreground">
-                          {order.codice} · {format(new Date(order.created_at), "dd/MM/yyyy")}
+                        <p className="font-medium text-card-foreground">{order.clienti?.nome || "Cliente"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {order.codice} · {format(new Date(order.created_at), "dd/MM")}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between sm:justify-end gap-3">
-                      <Badge className={cn(statusConfig[order.status].className, "transition-all")}>
+                    <div className="flex items-center gap-3">
+                      <Badge className={cn("text-xs", statusConfig[order.status].className)}>
                         {statusConfig[order.status].label}
                       </Badge>
-                      <span className="font-display font-semibold text-card-foreground">{formatCurrency(Number(order.totale))}</span>
+                      <span className="font-semibold text-card-foreground">{formatCurrency(Number(order.totale))}</span>
                     </div>
                   </div>
                 ))}
@@ -246,17 +302,20 @@ const Index = () => {
             )}
           </div>
 
-          {/* Reminders */}
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card animate-fade-in animate-fill-both stagger-5 hover-lift">
-            <div className="mb-4 lg:mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-primary/10 rounded-lg">
-                  <Bell className="h-4 w-4 text-primary" />
+          {/* Reminders - Clean Card */}
+          <div className="rounded-2xl bg-card p-6 shadow-sm border border-border/50 animate-fade-in stagger-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-warning/10 rounded-lg">
+                  <Bell className="h-4 w-4 text-warning" />
                 </div>
-                <h3 className="section-heading">Promemoria</h3>
+                <h3 className="font-semibold text-card-foreground">Promemoria</h3>
               </div>
-              <Link to="/promemoria" className="text-body-md font-medium text-primary hover:underline underline-offset-4 transition-all">
-                Vedi tutti
+              <Link to="/promemoria">
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
+                  Tutti
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </Link>
             </div>
             {promemoriaLoading ? (
@@ -264,27 +323,31 @@ const Index = () => {
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : pendingPromemoria.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8 text-body-md">Nessun promemoria</p>
+              <div className="text-center py-8">
+                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                  <Bell className="h-6 w-6 text-muted-foreground/50" />
+                </div>
+                <p className="text-sm text-muted-foreground">Nessun promemoria</p>
+              </div>
             ) : (
               <div className="space-y-3">
-                {pendingPromemoria.map((reminder, index) => {
+                {pendingPromemoria.map((reminder) => {
                   const Icon = tipoIcons[reminder.tipo];
                   return (
                     <div
                       key={reminder.id}
                       className={cn(
-                        "rounded-xl border-l-4 p-3 transition-all duration-200 hover:bg-muted/30 hover:translate-x-1 animate-fade-in animate-fill-both",
-                        prioritaColors[reminder.priorita],
-                        `stagger-${index + 1}`
+                        "rounded-xl border-l-4 p-4 transition-all duration-200 hover:translate-x-1",
+                        prioritaColors[reminder.priorita]
                       )}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="rounded-lg bg-muted p-2 transition-transform hover:scale-105">
+                        <div className="rounded-lg bg-card p-2 shadow-sm">
                           <Icon className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-card-foreground truncate">{reminder.titolo}</p>
-                          <p className="text-body-sm text-muted-foreground">
+                          <p className="font-medium text-card-foreground text-sm truncate">{reminder.titolo}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
                             {getDateLabel(reminder.data)} {reminder.orario && `· ${reminder.orario?.slice(0, 5)}`}
                           </p>
                         </div>
@@ -297,14 +360,14 @@ const Index = () => {
           </div>
         </div>
 
-        {/* New Widgets Row */}
-        <div className="grid gap-6 lg:grid-cols-2 animate-fade-in animate-fill-both stagger-6">
+        {/* Bottom Widgets Row */}
+        <div className="grid gap-6 lg:grid-cols-2 animate-fade-in stagger-6">
           <WeeklyActivityWidget />
           <ClientsNotVisitedWidget />
         </div>
 
         {/* Upcoming Appointments */}
-        <div className="animate-fade-in animate-fill-both stagger-7">
+        <div className="animate-fade-in stagger-7">
           <UpcomingAppointments />
         </div>
       </div>
