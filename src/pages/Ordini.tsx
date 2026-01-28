@@ -79,6 +79,8 @@ const parseDecimalInput = (value: string): number => {
 type RigaOrdine = {
   prodotto_id: string;
   prodotto_nome: string;
+  prodotto_codice?: string;
+  prodotto_brand_id?: string;
   prezzo_unitario: string;
   quantita_pezzi: number;
   quantita_cartoni: number;
@@ -154,11 +156,16 @@ const Ordini = () => {
     totale: number;
     note?: string;
     righe: { 
+      prodotto_codice?: string;
       prodotto_nome: string; 
+      prodotto_brand?: string;
       prezzo_unitario: number; 
       quantita_pezzi: number; 
       quantita_cartoni: number; 
       pezzi_per_cartone: number;
+      sc1?: number;
+      sc2?: number;
+      sc3?: number;
       promo_applicata?: string;
       promo_tipo?: string;
       promo_valore?: number;
@@ -333,6 +340,8 @@ const Ordini = () => {
     let newRiga: RigaOrdine = {
       prodotto_id: prodotto.id,
       prodotto_nome: prodotto.nome,
+      prodotto_codice: prodotto.codice || undefined,
+      prodotto_brand_id: prodotto.brand_id || undefined,
       prezzo_unitario: String(prodotto.prezzo_listino).replace(".", ","),
       quantita_pezzi: 0,
       quantita_cartoni: 0,
@@ -608,8 +617,11 @@ const Ordini = () => {
         const promoForProduct = promozioniRilevanti.find(promo => 
           promo.canvass_prodotti?.some(cp => cp.prodotto_id === riga.prodotto_id)
         );
+        const brandName = brands?.find(b => b.id === riga.prodotto_brand_id)?.name;
         return {
+          prodotto_codice: riga.prodotto_codice,
           prodotto_nome: riga.prodotto_nome,
+          prodotto_brand: brandName,
           prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
           quantita_pezzi: riga.quantita_pezzi,
           quantita_cartoni: riga.quantita_cartoni,
@@ -643,7 +655,7 @@ const Ordini = () => {
       .from("ordini_righe")
       .select(`
         *,
-        prodotti (nome, codice, pezzi_per_cartone)
+        prodotti (nome, codice, pezzi_per_cartone, brand_id)
       `)
       .eq("ordine_id", ordine.id);
     
@@ -663,17 +675,21 @@ const Ordini = () => {
       sconto_merce: Number(ordine.sconto_merce) || 0,
       totale: Number(ordine.totale),
       note: ordine.note || undefined,
-      righe: (righeData || []).map((r: any) => ({
-        prodotto_codice: r.prodotti?.codice || undefined,
-        prodotto_nome: r.prodotti?.nome || "Prodotto",
-        prezzo_unitario: Number(r.prezzo_unitario),
-        quantita_pezzi: r.quantita_pezzi,
-        quantita_cartoni: r.quantita_cartoni,
-        pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
-        sc1: Number(r.sc1) || 0,
-        sc2: Number(r.sc2) || 0,
-        sc3: Number(r.sc3) || 0,
-      })),
+      righe: (righeData || []).map((r: any) => {
+        const brandName = brands?.find(b => b.id === r.prodotti?.brand_id)?.name;
+        return {
+          prodotto_codice: r.prodotti?.codice || undefined,
+          prodotto_nome: r.prodotti?.nome || "Prodotto",
+          prodotto_brand: brandName,
+          prezzo_unitario: Number(r.prezzo_unitario),
+          quantita_pezzi: r.quantita_pezzi,
+          quantita_cartoni: r.quantita_cartoni,
+          pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
+          sc1: Number(r.sc1) || 0,
+          sc2: Number(r.sc2) || 0,
+          sc3: Number(r.sc3) || 0,
+        };
+      }),
     });
     setIsProformaOpen(true);
   };

@@ -518,6 +518,7 @@ const AziendaDettaglio = () => {
                     <TableHead>Immagine</TableHead>
                     <TableHead>Codice</TableHead>
                     <TableHead>Nome</TableHead>
+                    <TableHead>Marchio</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
                     <TableHead className="text-right">Pz/Cart</TableHead>
                     <TableHead className="text-right">Strati</TableHead>
@@ -527,7 +528,9 @@ const AziendaDettaglio = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {prodotti.map((prodotto) => (
+                  {prodotti.map((prodotto) => {
+                    const brandName = brands?.find(b => b.id === prodotto.brand_id)?.name;
+                    return (
                     <TableRow key={prodotto.id}>
                       <TableCell>
                         {prodotto.immagine_url ? (
@@ -540,6 +543,7 @@ const AziendaDettaglio = () => {
                       </TableCell>
                       <TableCell className="font-mono text-xs">{prodotto.codice || "—"}</TableCell>
                       <TableCell className="font-medium">{prodotto.nome}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{brandName || "—"}</TableCell>
                       <TableCell className="text-right">{formatCurrency(prodotto.prezzo_listino)}</TableCell>
                       <TableCell className="text-right">{prodotto.pezzi_per_cartone}</TableCell>
                       <TableCell className="text-right">{prodotto.strati}</TableCell>
@@ -556,7 +560,7 @@ const AziendaDettaglio = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )})}
                 </TableBody>
               </Table>
             </div>

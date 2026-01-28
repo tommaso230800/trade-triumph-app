@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { useKPIStats, PeriodFilter } from "@/hooks/useKPIStats";
+import { useAdvancedKPIStats, AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
-import { YearComparisonChart } from "@/components/dashboard/YearComparisonChart";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { format, startOfMonth, endOfMonth, subMonths, startOfYear } from "date-fns";
+import { it } from "date-fns/locale";
 import {
   Table,
   TableBody,
@@ -26,6 +32,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Euro,
   TrendingUp,
+  TrendingDown,
   Users,
   Package,
   Building2,
@@ -33,20 +40,104 @@ import {
   Search,
   Loader2,
   BarChart3,
-  PieChart,
-  Calendar,
-  GitCompare,
+  CalendarIcon,
+  Tag,
+  BoxIcon,
+  Filter,
+  RotateCcw,
 } from "lucide-react";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
 
+type PeriodPreset = "mese" | "trimestre" | "semestre" | "anno" | "custom";
+
 const KPI = () => {
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>("tutti");
-  const { data: stats, isLoading } = useKPIStats(periodFilter);
+  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>("anno");
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+  const [selectedClienti, setSelectedClienti] = useState<string[]>([]);
+  const [selectedAziende, setSelectedAziende] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [clientSearch, setClientSearch] = useState("");
   const [prodottoSearch, setProdottoSearch] = useState("");
-  const [consorzioFilter, setConsorzioFilter] = useState<string>("tutti");
+
+  // Calculate date range from preset
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    switch (periodPreset) {
+      case "mese":
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      case "trimestre":
+        return { start: startOfMonth(subMonths(now, 2)), end: endOfMonth(now) };
+      case "semestre":
+        return { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) };
+      case "anno":
+        return { start: startOfYear(now), end: now };
+      case "custom":
+        return { start: customStartDate || null, end: customEndDate || null };
+      default:
+        return { start: null, end: null };
+    }
+  }, [periodPreset, customStartDate, customEndDate]);
+
+  const filters: AdvancedKPIFilters = {
+    clienteIds: selectedClienti,
+    aziendaIds: selectedAziende,
+    brandIds: selectedBrands,
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+  };
+
+  const { data: stats, isLoading } = useAdvancedKPIStats(filters);
+
+  const resetFilters = () => {
+    setSelectedClienti([]);
+    setSelectedAziende([]);
+    setSelectedBrands([]);
+    setPeriodPreset("anno");
+    setCustomStartDate(undefined);
+    setCustomEndDate(undefined);
+  };
+
+  const hasActiveFilters = selectedClienti.length > 0 || selectedAziende.length > 0 || selectedBrands.length > 0;
+
+  // Build options for multi-select
+  const clientiOptions = useMemo(() => 
+    (stats?.allClienti || []).map(c => ({ value: c.id, label: c.nome })),
+    [stats?.allClienti]
+  );
+
+  const aziendeOptions = useMemo(() => 
+    (stats?.allAziende || []).map(a => ({ value: a.id, label: a.nome })),
+    [stats?.allAziende]
+  );
+
+  const brandsOptions = useMemo(() => 
+    (stats?.allBrands || []).map(b => ({ value: b.id, label: b.name })),
+    [stats?.allBrands]
+  );
+
+  // Filter tables by search
+  const filteredClienti = useMemo(() => 
+    (stats?.clientiKPI || []).filter((c) =>
+      c.nome.toLowerCase().includes(clientSearch.toLowerCase()) ||
+      c.azienda?.toLowerCase().includes(clientSearch.toLowerCase())
+    ),
+    [stats?.clientiKPI, clientSearch]
+  );
+
+  const filteredProdotti = useMemo(() =>
+    (stats?.prodottiKPI || []).filter((p) =>
+      p.nome.toLowerCase().includes(prodottoSearch.toLowerCase()) ||
+      p.azienda_nome.toLowerCase().includes(prodottoSearch.toLowerCase()) ||
+      p.brand_nome?.toLowerCase().includes(prodottoSearch.toLowerCase())
+    ),
+    [stats?.prodottiKPI, prodottoSearch]
+  );
+
+  const maxFatturato = Math.max(...(stats?.clientiKPI?.map((c) => c.fatturato) || [1]));
+  const maxProdottoFatturato = Math.max(...(stats?.prodottiKPI?.map((p) => p.fatturato_totale) || [1]));
 
   if (isLoading) {
     return (
@@ -58,116 +149,219 @@ const KPI = () => {
     );
   }
 
-  const filteredClienti = stats?.clientiKPI.filter((c) => {
-    const matchSearch = c.nome.toLowerCase().includes(clientSearch.toLowerCase()) ||
-      c.azienda?.toLowerCase().includes(clientSearch.toLowerCase());
-    const matchConsorzio = consorzioFilter === "tutti" || c.consorzio === consorzioFilter;
-    return matchSearch && matchConsorzio;
-  }) || [];
-
-  const filteredProdotti = stats?.prodottiKPI.filter((p) =>
-    p.nome.toLowerCase().includes(prodottoSearch.toLowerCase()) ||
-    p.azienda_nome.toLowerCase().includes(prodottoSearch.toLowerCase())
-  ) || [];
-
-  const maxFatturato = Math.max(...(stats?.clientiKPI.map((c) => c.fatturato) || [1]));
-  const maxProdottoFatturato = Math.max(...(stats?.prodottiKPI.map((p) => p.fatturato_totale) || [1]));
-
-  const consorzi = [...new Set(stats?.clientiKPI.map((c) => c.consorzio).filter(Boolean))] as string[];
-
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Header with Period Filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-              Analisi KPI
+              Analisi KPI Avanzata
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Analisi dettagliata delle performance aziendali
+              Filtra e analizza le performance per cliente, azienda, brand e periodo
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as PeriodFilter)}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Periodo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">Tutti i periodi</SelectItem>
-                <SelectItem value="mese">Questo Mese</SelectItem>
-                <SelectItem value="trimestre">Questo Trimestre</SelectItem>
-                <SelectItem value="anno">Quest'Anno</SelectItem>
-              </SelectContent>
-            </Select>
+          {hasActiveFilters && (
+            <Button variant="outline" size="sm" onClick={resetFilters} className="gap-2">
+              <RotateCcw className="h-4 w-4" />
+              Reset Filtri
+            </Button>
+          )}
+        </div>
+
+        {/* Filters Bar */}
+        <div className="rounded-xl bg-card p-4 shadow-card space-y-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Filter className="h-4 w-4" />
+            Filtri Avanzati
           </div>
+          
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {/* Period Preset */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Periodo</label>
+              <Select value={periodPreset} onValueChange={(v) => setPeriodPreset(v as PeriodPreset)}>
+                <SelectTrigger>
+                  <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Periodo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mese">Questo Mese</SelectItem>
+                  <SelectItem value="trimestre">Ultimi 3 Mesi</SelectItem>
+                  <SelectItem value="semestre">Ultimi 6 Mesi</SelectItem>
+                  <SelectItem value="anno">Anno in Corso</SelectItem>
+                  <SelectItem value="custom">Personalizzato</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Custom Date Range */}
+            {periodPreset === "custom" && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Da</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !customStartDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customStartDate ? format(customStartDate, "dd/MM/yyyy", { locale: it }) : "Seleziona"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customStartDate}
+                        onSelect={setCustomStartDate}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">A</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !customEndDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customEndDate ? format(customEndDate, "dd/MM/yyyy", { locale: it }) : "Seleziona"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customEndDate}
+                        onSelect={setCustomEndDate}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </>
+            )}
+
+            {/* Clienti Multi-Select */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Clienti</label>
+              <MultiSelect
+                options={clientiOptions}
+                values={selectedClienti}
+                onValuesChange={setSelectedClienti}
+                placeholder="Tutti i clienti"
+              />
+            </div>
+
+            {/* Aziende Multi-Select */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Aziende</label>
+              <MultiSelect
+                options={aziendeOptions}
+                values={selectedAziende}
+                onValuesChange={setSelectedAziende}
+                placeholder="Tutte le aziende"
+              />
+            </div>
+
+            {/* Brands Multi-Select */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Marchi</label>
+              <MultiSelect
+                options={brandsOptions}
+                values={selectedBrands}
+                onValuesChange={setSelectedBrands}
+                placeholder="Tutti i marchi"
+              />
+            </div>
+          </div>
+
+          {/* Active filters summary */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+              {selectedClienti.length > 0 && (
+                <Badge variant="secondary" className="gap-1">
+                  <Users className="h-3 w-3" />
+                  {selectedClienti.length} clienti
+                </Badge>
+              )}
+              {selectedAziende.length > 0 && (
+                <Badge variant="secondary" className="gap-1">
+                  <Building2 className="h-3 w-3" />
+                  {selectedAziende.length} aziende
+                </Badge>
+              )}
+              {selectedBrands.length > 0 && (
+                <Badge variant="secondary" className="gap-1">
+                  <Tag className="h-3 w-3" />
+                  {selectedBrands.length} marchi
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Main KPIs */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-6">
           <KPICard
             title="Fatturato Totale"
             value={formatCurrency(stats?.fatturatoTotale || 0)}
+            change={stats?.trendPercentage ? Math.round(stats.trendPercentage) : undefined}
+            changeLabel="vs periodo precedente"
             icon={<Euro className="h-5 w-5 lg:h-6 lg:w-6" />}
             variant="primary"
           />
           <KPICard
-            title="Valore Medio Ordine"
-            value={formatCurrency(stats?.valoremedioOrdine || 0)}
+            title="Ordini"
+            value={stats?.ordiniTotali || 0}
             icon={<ShoppingCart className="h-5 w-5 lg:h-6 lg:w-6" />}
             variant="success"
           />
           <KPICard
-            title="Prezzo Medio Listino"
-            value={formatCurrency(stats?.prezzoMedioProdotto || 0)}
+            title="Cartoni Totali"
+            value={(stats?.cartoniTotali || 0).toLocaleString("it-IT")}
+            icon={<BoxIcon className="h-5 w-5 lg:h-6 lg:w-6" />}
+            variant="default"
+          />
+          <KPICard
+            title="Pezzi Totali"
+            value={(stats?.pezziTotali || 0).toLocaleString("it-IT")}
             icon={<Package className="h-5 w-5 lg:h-6 lg:w-6" />}
             variant="default"
           />
           <KPICard
-            title="Prezzo Medio Vendita"
-            value={formatCurrency(stats?.prezzoMedioVendita || 0)}
+            title="Scontrino Medio"
+            value={formatCurrency(stats?.scontrinoMedio || 0)}
             icon={<TrendingUp className="h-5 w-5 lg:h-6 lg:w-6" />}
             variant="default"
           />
-        </div>
-
-        {/* Secondary Stats */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
           <div className="rounded-lg bg-card p-4 shadow-card">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Clienti</p>
+              {(stats?.trendPercentage || 0) >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-success" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-destructive" />
+              )}
+              <p className="text-xs text-muted-foreground">Trend</p>
             </div>
-            <p className="text-2xl font-bold mt-1">{stats?.clientiTotali || 0}</p>
-          </div>
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <div className="flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Ordini</p>
-            </div>
-            <p className="text-2xl font-bold mt-1">{stats?.ordiniTotali || 0}</p>
-          </div>
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Prodotti</p>
-            </div>
-            <p className="text-2xl font-bold mt-1">{stats?.prodottiTotali || 0}</p>
-          </div>
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-              <p className="text-xs text-muted-foreground">Aziende</p>
-            </div>
-            <p className="text-2xl font-bold mt-1">{stats?.aziendeTotali || 0}</p>
-          </div>
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-success" />
-              <p className="text-xs text-muted-foreground">Completati</p>
-            </div>
-            <p className="text-2xl font-bold mt-1 text-success">{stats?.ordiniCompletati || 0}</p>
+            <p className={cn(
+              "text-2xl font-bold mt-1",
+              (stats?.trendPercentage || 0) >= 0 ? "text-success" : "text-destructive"
+            )}>
+              {(stats?.trendPercentage || 0) >= 0 ? "+" : ""}{(stats?.trendPercentage || 0).toFixed(1)}%
+            </p>
           </div>
         </div>
 
@@ -180,91 +374,34 @@ const KPI = () => {
             </div>
             <SalesChart data={stats?.ordiniPerMese || []} type="area" />
           </div>
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card max-h-[500px] overflow-y-auto">
+          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
             <div className="flex items-center gap-2 mb-4">
-              <PieChart className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Fatturato per Consorzio e Azienda</h3>
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">Ordini per Mese</h3>
             </div>
-            <div className="space-y-4">
-              {stats?.consorzioAziendeStats.map((cs) => (
-                <div key={cs.consorzio} className="space-y-2">
-                  <div className="flex justify-between text-sm border-b border-border pb-1">
-                    <span className="font-semibold text-primary">{cs.consorzio}</span>
-                    <span className="font-semibold">
-                      {formatCurrency(cs.fatturato_totale)}
-                    </span>
-                  </div>
-                  <div className="space-y-3 pl-3">
-                    {cs.aziende.map((azienda, idx) => (
-                      <div key={idx} className="space-y-1.5">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground font-medium">{azienda.azienda_nome}</span>
-                          <span className="font-medium">{formatCurrency(azienda.fatturato)}</span>
-                        </div>
-                        <Progress
-                          value={(azienda.fatturato / (cs.fatturato_totale || 1)) * 100}
-                          className="h-1.5"
-                        />
-                        {/* Clienti breakdown */}
-                        <div className="pl-3 space-y-1 border-l border-border/50">
-                          {azienda.clienti.map((cliente) => (
-                            <div key={cliente.cliente_id} className="flex justify-between text-xs">
-                              <span className="text-muted-foreground/80">{cliente.cliente_nome}</span>
-                              <span className="text-muted-foreground">{formatCurrency(cliente.fatturato)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <SalesChart data={stats?.ordiniPerMese || []} type="bar" />
           </div>
-        </div>
-
-        {/* Year Comparison */}
-        <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
-          <div className="flex items-center gap-2 mb-4">
-            <GitCompare className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Confronto 2025 vs 2026</h3>
-          </div>
-          <YearComparisonChart data2026={stats?.ordiniPerMese || []} />
         </div>
 
         {/* Detailed Tabs */}
         <Tabs defaultValue="clienti" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-4 max-w-lg">
             <TabsTrigger value="clienti">Clienti</TabsTrigger>
-            <TabsTrigger value="prodotti">Prodotti</TabsTrigger>
             <TabsTrigger value="aziende">Aziende</TabsTrigger>
+            <TabsTrigger value="brands">Marchi</TabsTrigger>
+            <TabsTrigger value="prodotti">Prodotti</TabsTrigger>
           </TabsList>
 
           {/* Clienti Tab */}
           <TabsContent value="clienti" className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Cerca cliente..."
-                  className="pl-10"
-                  value={clientSearch}
-                  onChange={(e) => setClientSearch(e.target.value)}
-                />
-              </div>
-              <Select value={consorzioFilter} onValueChange={setConsorzioFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Consorzio" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tutti">Tutti i Consorzi</SelectItem>
-                  {consorzi.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Cerca cliente..."
+                className="pl-10"
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+              />
             </div>
 
             <div className="rounded-xl bg-card shadow-card overflow-hidden">
@@ -275,8 +412,10 @@ const KPI = () => {
                       <TableHead>Cliente</TableHead>
                       <TableHead>Consorzio</TableHead>
                       <TableHead>Città</TableHead>
-                      <TableHead>Ordini</TableHead>
-                      <TableHead>Fatturato</TableHead>
+                      <TableHead className="text-right">Ordini</TableHead>
+                      <TableHead className="text-right">Cartoni</TableHead>
+                      <TableHead className="text-right">Pezzi</TableHead>
+                      <TableHead className="text-right">Fatturato</TableHead>
                       <TableHead className="w-32">Performance</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -299,8 +438,10 @@ const KPI = () => {
                         <TableCell className="text-muted-foreground">
                           {cliente.citta || "—"}
                         </TableCell>
-                        <TableCell>{cliente.ordini_count}</TableCell>
-                        <TableCell className="font-semibold">
+                        <TableCell className="text-right">{cliente.ordini_count}</TableCell>
+                        <TableCell className="text-right">{cliente.cartoni_totali.toLocaleString("it-IT")}</TableCell>
+                        <TableCell className="text-right">{cliente.pezzi_totali.toLocaleString("it-IT")}</TableCell>
+                        <TableCell className="text-right font-semibold">
                           {formatCurrency(cliente.fatturato)}
                         </TableCell>
                         <TableCell>
@@ -311,59 +452,13 @@ const KPI = () => {
                         </TableCell>
                       </TableRow>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Prodotti Tab */}
-          <TabsContent value="prodotti" className="space-y-4">
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Cerca prodotto..."
-                className="pl-10"
-                value={prodottoSearch}
-                onChange={(e) => setProdottoSearch(e.target.value)}
-              />
-            </div>
-
-            <div className="rounded-xl bg-card shadow-card overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Prodotto</TableHead>
-                      <TableHead>Azienda</TableHead>
-                      <TableHead>Prezzo Listino</TableHead>
-                      <TableHead>Pz Venduti</TableHead>
-                      <TableHead>N° Ordini</TableHead>
-                      <TableHead>Fatturato</TableHead>
-                      <TableHead className="w-32">Performance</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProdotti.map((prodotto) => (
-                      <TableRow key={prodotto.id} className="hover:bg-muted/30">
-                        <TableCell className="font-medium">{prodotto.nome}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {prodotto.azienda_nome}
-                        </TableCell>
-                        <TableCell>{formatCurrency(prodotto.prezzo_listino)}</TableCell>
-                        <TableCell>{prodotto.quantita_venduta}</TableCell>
-                        <TableCell>{prodotto.ordini_count}</TableCell>
-                        <TableCell className="font-semibold">
-                          {formatCurrency(prodotto.fatturato_totale)}
-                        </TableCell>
-                        <TableCell>
-                          <Progress
-                            value={(prodotto.fatturato_totale / maxProdottoFatturato) * 100}
-                            className="h-2"
-                          />
+                    {filteredClienti.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                          Nessun cliente trovato
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -379,9 +474,10 @@ const KPI = () => {
                     <TableRow className="bg-muted/50">
                       <TableHead>Azienda</TableHead>
                       <TableHead>Settore</TableHead>
-                      <TableHead>Ordini</TableHead>
-                      <TableHead>Pz Venduti</TableHead>
-                      <TableHead>Fatturato</TableHead>
+                      <TableHead className="text-right">Ordini</TableHead>
+                      <TableHead className="text-right">Cartoni</TableHead>
+                      <TableHead className="text-right">Pezzi</TableHead>
+                      <TableHead className="text-right">Fatturato</TableHead>
                       <TableHead className="w-32">Performance</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -396,9 +492,10 @@ const KPI = () => {
                           <TableCell className="text-muted-foreground">
                             {azienda.settore || "—"}
                           </TableCell>
-                          <TableCell>{azienda.ordini_count}</TableCell>
-                          <TableCell>{azienda.prodotti_venduti}</TableCell>
-                          <TableCell className="font-semibold">
+                          <TableCell className="text-right">{azienda.ordini_count}</TableCell>
+                          <TableCell className="text-right">{azienda.cartoni_venduti.toLocaleString("it-IT")}</TableCell>
+                          <TableCell className="text-right">{azienda.prodotti_venduti.toLocaleString("it-IT")}</TableCell>
+                          <TableCell className="text-right font-semibold">
                             {formatCurrency(azienda.fatturato_totale)}
                           </TableCell>
                           <TableCell>
@@ -410,6 +507,144 @@ const KPI = () => {
                         </TableRow>
                       );
                     })}
+                    {(stats?.aziendeKPI?.length || 0) === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          Nessuna azienda trovata
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Brands Tab */}
+          <TabsContent value="brands" className="space-y-4">
+            <div className="rounded-xl bg-card shadow-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Marchio</TableHead>
+                      <TableHead>Azienda</TableHead>
+                      <TableHead className="text-right">Ordini</TableHead>
+                      <TableHead className="text-right">Pezzi Venduti</TableHead>
+                      <TableHead className="text-right">Fatturato</TableHead>
+                      <TableHead className="w-32">Performance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stats?.brandsKPI.map((brand) => {
+                      const maxBrandFatturato = Math.max(
+                        ...(stats?.brandsKPI.map((b) => b.fatturato_totale) || [1])
+                      );
+                      return (
+                        <TableRow key={brand.id} className="hover:bg-muted/30">
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <Tag className="h-4 w-4 text-primary" />
+                              {brand.name}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {brand.azienda_nome || "—"}
+                          </TableCell>
+                          <TableCell className="text-right">{brand.ordini_count}</TableCell>
+                          <TableCell className="text-right">{brand.quantita_venduta.toLocaleString("it-IT")}</TableCell>
+                          <TableCell className="text-right font-semibold">
+                            {formatCurrency(brand.fatturato_totale)}
+                          </TableCell>
+                          <TableCell>
+                            <Progress
+                              value={(brand.fatturato_totale / maxBrandFatturato) * 100}
+                              className="h-2"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {(stats?.brandsKPI?.length || 0) === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          Nessun marchio trovato
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Prodotti Tab */}
+          <TabsContent value="prodotti" className="space-y-4">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Cerca prodotto, azienda o marchio..."
+                className="pl-10"
+                value={prodottoSearch}
+                onChange={(e) => setProdottoSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="rounded-xl bg-card shadow-card overflow-hidden">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Prodotto</TableHead>
+                      <TableHead>Azienda</TableHead>
+                      <TableHead>Marchio</TableHead>
+                      <TableHead className="text-right">Prezzo</TableHead>
+                      <TableHead className="text-right">Cartoni</TableHead>
+                      <TableHead className="text-right">Pezzi</TableHead>
+                      <TableHead className="text-right">N° Ordini</TableHead>
+                      <TableHead className="text-right">Fatturato</TableHead>
+                      <TableHead className="w-32">Performance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredProdotti.map((prodotto) => (
+                      <TableRow key={prodotto.id} className="hover:bg-muted/30">
+                        <TableCell className="font-medium">{prodotto.nome}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {prodotto.azienda_nome}
+                        </TableCell>
+                        <TableCell>
+                          {prodotto.brand_nome ? (
+                            <Badge variant="outline" className="gap-1">
+                              <Tag className="h-3 w-3" />
+                              {prodotto.brand_nome}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(prodotto.prezzo_listino)}</TableCell>
+                        <TableCell className="text-right">{prodotto.cartoni_venduti.toLocaleString("it-IT")}</TableCell>
+                        <TableCell className="text-right">{prodotto.quantita_venduta.toLocaleString("it-IT")}</TableCell>
+                        <TableCell className="text-right">{prodotto.ordini_count}</TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {formatCurrency(prodotto.fatturato_totale)}
+                        </TableCell>
+                        <TableCell>
+                          <Progress
+                            value={(prodotto.fatturato_totale / maxProdottoFatturato) * 100}
+                            className="h-2"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredProdotti.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                          Nessun prodotto trovato
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>

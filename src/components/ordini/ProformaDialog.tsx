@@ -13,6 +13,7 @@ import jsPDF from "jspdf";
 type RigaOrdine = {
   prodotto_codice?: string;
   prodotto_nome: string;
+  prodotto_brand?: string;
   prezzo_unitario: number;
   quantita_pezzi: number;
   quantita_cartoni: number;
@@ -196,6 +197,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                 <TableRow className="bg-gray-100">
                   <TableHead className="font-semibold text-gray-900 text-xs">C.P</TableHead>
                   <TableHead className="font-semibold text-gray-900 text-xs">Prodotto</TableHead>
+                  <TableHead className="font-semibold text-gray-900 text-xs">Marchio</TableHead>
                   <TableHead className="text-right font-semibold text-gray-900 text-xs">Prezzo</TableHead>
                   <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.1</TableHead>
                   <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.2</TableHead>
@@ -230,6 +232,9 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                             {riga.promo_applicata}
                           </p>
                         )}
+                      </TableCell>
+                      <TableCell className="py-2 text-xs text-gray-600">
+                        {riga.prodotto_brand || "—"}
                       </TableCell>
                       <TableCell className="text-right py-2">
                         <span className="text-gray-700 text-sm">{formatCurrency(riga.prezzo_unitario)}</span>
