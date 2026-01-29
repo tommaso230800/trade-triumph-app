@@ -25,6 +25,7 @@ export type ClienteKPI = {
   consorzio: string | null;
   citta: string | null;
   fatturato: number;
+  fatturato_2025: number | null;
   ordini_count: number;
   cartoni_totali: number;
   pezzi_totali: number;
@@ -258,6 +259,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
               consorzio: cliente?.consorzio || null,
               citta: cliente?.citta || null,
               fatturato: totaleOrdine,
+              fatturato_2025: cliente?.fatturato_2025 || null,
               ordini_count: 1,
               cartoni_totali: ordineCartoni,
               pezzi_totali: ordinePezzi,
