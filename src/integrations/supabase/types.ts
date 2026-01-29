@@ -395,6 +395,7 @@ export type Database = {
           indirizzo: string | null
           n_promo_concesse: number | null
           nome: string
+          obiezione_principale: string | null
           ordini_count: number | null
           partita_iva: string | null
           pec: string | null
@@ -425,6 +426,7 @@ export type Database = {
           indirizzo?: string | null
           n_promo_concesse?: number | null
           nome: string
+          obiezione_principale?: string | null
           ordini_count?: number | null
           partita_iva?: string | null
           pec?: string | null
@@ -455,6 +457,7 @@ export type Database = {
           indirizzo?: string | null
           n_promo_concesse?: number | null
           nome?: string
+          obiezione_principale?: string | null
           ordini_count?: number | null
           partita_iva?: string | null
           pec?: string | null

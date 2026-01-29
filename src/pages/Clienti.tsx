@@ -233,6 +233,7 @@ const Clienti = () => {
       telefono: formData.telefono || null,
       partita_iva: formData.partita_iva || null,
       fatturato_2025: null,
+      obiezione_principale: null,
     };
 
     if (editingCliente) {

@@ -17,6 +17,8 @@ import {
   Target,
   Zap,
   ClipboardList,
+  Eye,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -64,7 +66,9 @@ const navigation: NavItem[] = [
     ]
   },
   { name: "Trattative", href: "/trattative", icon: Target },
+  { name: "Pre-Visita", href: "/assistente-pre-visita", icon: Eye },
   { name: "Assistente Trattativa", href: "/assistente-trattativa", icon: Zap },
+  { name: "AI Commerciale", href: "/ai-commerciale", icon: Bot },
   { name: "Visite Clienti", href: "/visite", icon: ClipboardList },
   { name: "Agenda", href: "/agenda", icon: Calendar },
   { name: "Promemoria", href: "/promemoria", icon: Bell },

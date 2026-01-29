@@ -29,6 +29,7 @@ export type Cliente = {
   costo_promo_totale: number | null;
   condizioni_attive: string[] | null;
   fatturato_2025: number | null;
+  obiezione_principale: string | null;
   created_at: string;
 };
 
