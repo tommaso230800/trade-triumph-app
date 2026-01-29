@@ -232,6 +232,7 @@ const Clienti = () => {
       email: formData.email || null,
       telefono: formData.telefono || null,
       partita_iva: formData.partita_iva || null,
+      fatturato_2025: null,
     };
 
     if (editingCliente) {

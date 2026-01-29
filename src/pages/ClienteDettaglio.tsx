@@ -233,17 +233,46 @@ const ClienteDettaglio = () => {
             </div>
           </div>
 
-          {/* Stats */}
+          {/* Stats con confronto 2025 */}
           <div className="rounded-xl bg-card p-6 shadow-card space-y-4">
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <Euro className="h-5 w-5 text-primary" />
-              Statistiche
+              Statistiche & Confronto 2025
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-2xl font-bold">{formatCurrency(fatturatoTotale)}</p>
-                <p className="text-xs text-muted-foreground">Fatturato Totale</p>
+                <p className="text-xs text-muted-foreground">Fatturato 2026</p>
               </div>
+              <div>
+                <p className="text-2xl font-bold text-orange-500">
+                  {cliente.fatturato_2025 ? formatCurrency(cliente.fatturato_2025) : "—"}
+                </p>
+                <p className="text-xs text-muted-foreground">Fatturato 2025</p>
+              </div>
+              {cliente.fatturato_2025 && cliente.fatturato_2025 > 0 && (
+                <>
+                  <div className="col-span-2 border-t border-border pt-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Avanzamento vs 2025:</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{ width: `${Math.min((fatturatoTotale / cliente.fatturato_2025) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <span className={`text-sm font-semibold ${fatturatoTotale >= cliente.fatturato_2025 ? 'text-success' : 'text-muted-foreground'}`}>
+                          {((fatturatoTotale / cliente.fatturato_2025) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Mancano {formatCurrency(Math.max(0, cliente.fatturato_2025 - fatturatoTotale))} per raggiungere il 2025
+                    </p>
+                  </div>
+                </>
+              )}
               <div>
                 <p className="text-2xl font-bold">{ordini?.length || 0}</p>
                 <p className="text-xs text-muted-foreground">Ordini Totali</p>
@@ -251,12 +280,6 @@ const ClienteDettaglio = () => {
               <div>
                 <p className="text-2xl font-bold text-success">{ordiniCompletati}</p>
                 <p className="text-xs text-muted-foreground">Completati</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {ordini?.length ? formatCurrency(fatturatoTotale / ordini.length) : "—"}
-                </p>
-                <p className="text-xs text-muted-foreground">Media Ordine</p>
               </div>
             </div>
           </div>
