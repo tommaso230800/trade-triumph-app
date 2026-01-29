@@ -389,6 +389,7 @@ export type Database = {
           email: string | null
           email_aggiuntive: string[] | null
           fatturato: number | null
+          fatturato_2025: number | null
           fatturato_target: number | null
           id: string
           indirizzo: string | null
@@ -418,6 +419,7 @@ export type Database = {
           email?: string | null
           email_aggiuntive?: string[] | null
           fatturato?: number | null
+          fatturato_2025?: number | null
           fatturato_target?: number | null
           id?: string
           indirizzo?: string | null
@@ -447,6 +449,7 @@ export type Database = {
           email?: string | null
           email_aggiuntive?: string[] | null
           fatturato?: number | null
+          fatturato_2025?: number | null
           fatturato_target?: number | null
           id?: string
           indirizzo?: string | null
