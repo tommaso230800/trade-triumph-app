@@ -4,6 +4,7 @@ import { SalesChart } from "@/components/dashboard/SalesChart";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { WeeklyActivityWidget } from "@/components/dashboard/WeeklyActivityWidget";
 import { ClientsNotVisitedWidget } from "@/components/dashboard/ClientsNotVisitedWidget";
+import { PriorityClientsWidget } from "@/components/dashboard/PriorityClientsWidget";
 import { useStats } from "@/hooks/useStats";
 import { useOrdini } from "@/hooks/useOrdini";
 import { usePromemoria } from "@/hooks/usePromemoria";
@@ -361,7 +362,8 @@ const Index = () => {
         </div>
 
         {/* Bottom Widgets Row */}
-        <div className="grid gap-6 lg:grid-cols-2 animate-fade-in stagger-6">
+        <div className="grid gap-6 lg:grid-cols-3 animate-fade-in stagger-6">
+          <PriorityClientsWidget />
           <WeeklyActivityWidget />
           <ClientsNotVisitedWidget />
         </div>
