@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.parse-canvass-document]
 verify_jwt = false
+
+[functions.ai-commercial-assistant]
+verify_jwt = false
