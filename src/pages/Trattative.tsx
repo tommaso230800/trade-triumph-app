@@ -27,12 +27,28 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useDeals, useCreateDeal, Deal } from "@/hooks/useDeals";
+import { useDeals, useCreateDeal, useUpdateDeal, useDeleteDeal, Deal } from "@/hooks/useDeals";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
-import { Plus, Search, Target, Calendar, TrendingUp, AlertCircle } from "lucide-react";
+import { Plus, Search, Target, Calendar, TrendingUp, AlertCircle, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { format, isToday, isBefore, addDays, parseISO } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -55,11 +71,15 @@ export default function Trattative() {
   const [searchTerm, setSearchTerm] = useState("");
   const [urgencyFilter, setUrgencyFilter] = useState<string>("tutti");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
+  const [deletingDealId, setDeletingDealId] = useState<string | null>(null);
   
   const { data: deals = [], isLoading } = useDeals(statusFilter);
   const { data: clienti = [] } = useClienti();
   const { data: aziende = [] } = useAziende();
   const createDeal = useCreateDeal();
+  const updateDeal = useUpdateDeal();
+  const deleteDeal = useDeleteDeal();
 
   const [formData, setFormData] = useState({
     client_id: "",
@@ -71,7 +91,60 @@ export default function Trattative() {
     next_action_date: "",
     next_action_note: "",
     notes: "",
+    status: "open" as Deal["status"],
   });
+
+  const resetForm = () => {
+    setFormData({
+      client_id: "",
+      company_id: "",
+      title: "",
+      goal: "",
+      estimated_value: 0,
+      probability: 50,
+      next_action_date: "",
+      next_action_note: "",
+      notes: "",
+      status: "open",
+    });
+    setEditingDeal(null);
+  };
+
+  const openCreateDialog = () => {
+    resetForm();
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (deal: Deal, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingDeal(deal);
+    setFormData({
+      client_id: deal.client_id,
+      company_id: deal.company_id || "",
+      title: deal.title,
+      goal: deal.goal || "",
+      estimated_value: deal.estimated_value,
+      probability: deal.probability,
+      next_action_date: deal.next_action_date || "",
+      next_action_note: deal.next_action_note || "",
+      notes: deal.notes || "",
+      status: deal.status,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeletingDealId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deletingDealId) {
+      deleteDeal.mutate(deletingDealId, {
+        onSuccess: () => setDeletingDealId(null),
+      });
+    }
+  };
 
   // Filter deals
   const filteredDeals = deals.filter((deal) => {
@@ -101,36 +174,50 @@ export default function Trattative() {
   const handleSubmit = () => {
     if (!formData.client_id || !formData.title) return;
 
-    createDeal.mutate(
-      {
-        client_id: formData.client_id,
-        company_id: formData.company_id || null,
-        title: formData.title,
-        status: "open",
-        goal: formData.goal || null,
-        estimated_value: formData.estimated_value,
-        probability: formData.probability,
-        next_action_date: formData.next_action_date || null,
-        next_action_note: formData.next_action_note || null,
-        notes: formData.notes || null,
-      },
-      {
-        onSuccess: () => {
-          setIsDialogOpen(false);
-          setFormData({
-            client_id: "",
-            company_id: "",
-            title: "",
-            goal: "",
-            estimated_value: 0,
-            probability: 50,
-            next_action_date: "",
-            next_action_note: "",
-            notes: "",
-          });
+    if (editingDeal) {
+      updateDeal.mutate(
+        {
+          id: editingDeal.id,
+          client_id: formData.client_id,
+          company_id: formData.company_id || null,
+          title: formData.title,
+          status: formData.status,
+          goal: formData.goal || null,
+          estimated_value: formData.estimated_value,
+          probability: formData.probability,
+          next_action_date: formData.next_action_date || null,
+          next_action_note: formData.next_action_note || null,
+          notes: formData.notes || null,
         },
-      }
-    );
+        {
+          onSuccess: () => {
+            setIsDialogOpen(false);
+            resetForm();
+          },
+        }
+      );
+    } else {
+      createDeal.mutate(
+        {
+          client_id: formData.client_id,
+          company_id: formData.company_id || null,
+          title: formData.title,
+          status: "open",
+          goal: formData.goal || null,
+          estimated_value: formData.estimated_value,
+          probability: formData.probability,
+          next_action_date: formData.next_action_date || null,
+          next_action_note: formData.next_action_note || null,
+          notes: formData.notes || null,
+        },
+        {
+          onSuccess: () => {
+            setIsDialogOpen(false);
+            resetForm();
+          },
+        }
+      );
+    }
   };
 
   // Calculate summary stats
@@ -164,7 +251,7 @@ export default function Trattative() {
             </h1>
             <p className="text-muted-foreground">Gestisci le tue trattative commerciali</p>
           </div>
-          <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+          <Button onClick={openCreateDialog} className="gap-2">
             <Plus className="h-4 w-4" />
             Nuova Trattativa
           </Button>
@@ -273,12 +360,13 @@ export default function Trattative() {
                   <TableHead className="text-right">Valore</TableHead>
                   <TableHead className="text-center">Prob.</TableHead>
                   <TableHead>Prossima Azione</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredDeals.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       Nessuna trattativa trovata
                     </TableCell>
                   </TableRow>
@@ -323,6 +411,28 @@ export default function Trattative() {
                             "-"
                           )}
                         </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => openEditDialog(deal, e)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Modifica
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={(e) => handleDelete(deal.id, e)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Elimina
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
                       </TableRow>
                     );
                   })
@@ -333,11 +443,11 @@ export default function Trattative() {
         </Card>
       </div>
 
-      {/* New Deal Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Create/Edit Deal Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Nuova Trattativa</DialogTitle>
+            <DialogTitle>{editingDeal ? "Modifica Trattativa" : "Nuova Trattativa"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -378,6 +488,21 @@ export default function Trattative() {
                 placeholder="Es: Promo Borgofulvia gennaio"
               />
             </div>
+            {editingDeal && (
+              <div>
+                <Label>Stato</Label>
+                <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as Deal["status"] })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Aperta</SelectItem>
+                    <SelectItem value="won">Vinta</SelectItem>
+                    <SelectItem value="lost">Persa</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label>Obiettivo</Label>
               <Input
@@ -434,15 +559,33 @@ export default function Trattative() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => { setIsDialogOpen(false); resetForm(); }}>
               Annulla
             </Button>
-            <Button onClick={handleSubmit} disabled={createDeal.isPending}>
-              Crea Trattativa
+            <Button onClick={handleSubmit} disabled={createDeal.isPending || updateDeal.isPending}>
+              {editingDeal ? "Salva Modifiche" : "Crea Trattativa"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingDealId} onOpenChange={(open) => !open && setDeletingDealId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare questa trattativa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Questa azione non può essere annullata. La trattativa verrà eliminata definitivamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 }
