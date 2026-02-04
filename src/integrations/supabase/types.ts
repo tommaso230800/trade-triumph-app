@@ -1352,6 +1352,81 @@ export type Database = {
           },
         ]
       }
+      scadenziario_fatture: {
+        Row: {
+          azienda_id: string | null
+          azienda_nome: string
+          cliente_id: string | null
+          cliente_nome: string
+          created_at: string
+          data_fattura: string
+          data_incasso: string | null
+          data_scadenza: string
+          id: string
+          importo: number
+          numero_fattura: string
+          percentuale_provvigione: number
+          provvigione_calcolata: number
+          stato: string
+          trimestre_provvigione: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          azienda_nome: string
+          cliente_id?: string | null
+          cliente_nome: string
+          created_at?: string
+          data_fattura: string
+          data_incasso?: string | null
+          data_scadenza: string
+          id?: string
+          importo?: number
+          numero_fattura: string
+          percentuale_provvigione?: number
+          provvigione_calcolata?: number
+          stato?: string
+          trimestre_provvigione?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string | null
+          azienda_nome?: string
+          cliente_id?: string | null
+          cliente_nome?: string
+          created_at?: string
+          data_fattura?: string
+          data_incasso?: string | null
+          data_scadenza?: string
+          id?: string
+          importo?: number
+          numero_fattura?: string
+          percentuale_provvigione?: number
+          provvigione_calcolata?: number
+          stato?: string
+          trimestre_provvigione?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scadenziario_fatture_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scadenziario_fatture_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       storico_trattative: {
         Row: {
           carta_scelta: string | null
