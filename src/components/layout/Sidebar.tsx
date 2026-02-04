@@ -19,7 +19,6 @@ import {
   ClipboardList,
   Eye,
   Bot,
-  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -49,7 +48,6 @@ const navigation: NavItem[] = [
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
   { name: "KPI", href: "/kpi", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
-  { name: "Scadenziario", href: "/scadenziario", icon: Receipt },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
   { name: "Aziende", href: "/aziende", icon: Building2 },
   { 

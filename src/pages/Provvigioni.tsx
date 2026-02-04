@@ -34,7 +34,9 @@ import {
   FileText,
   Check,
   X,
+  Receipt,
 } from "lucide-react";
+import { ScadenziarioTab } from "@/components/provvigioni/ScadenziarioTab";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -398,6 +400,10 @@ const Provvigioni = () => {
               <CalendarDays className="h-4 w-4" />
               Riepilogo Annuale
             </TabsTrigger>
+            <TabsTrigger value="scadenziario" className="gap-2">
+              <Receipt className="h-4 w-4" />
+              Scadenziario
+            </TabsTrigger>
           </TabsList>
 
           {/* Orders Tab - Main view for tracking payments */}
@@ -635,6 +641,11 @@ const Provvigioni = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Scadenziario Tab */}
+          <TabsContent value="scadenziario">
+            <ScadenziarioTab />
           </TabsContent>
         </Tabs>
       </div>
