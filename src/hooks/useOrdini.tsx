@@ -33,7 +33,7 @@ export function useOrdini(searchTerm?: string, statusFilter?: Ordine["status"] |
           clienti (nome, azienda),
           aziende (nome)
         `)
-        .order("created_at", { ascending: false });
+        .order("data_ordine", { ascending: false });
 
       if (searchTerm) {
         query = query.or(`codice.ilike.%${searchTerm}%`);
