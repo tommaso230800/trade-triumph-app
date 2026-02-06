@@ -103,16 +103,14 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
           )
         `)
         .neq("status", "annullato")
-        .order("created_at", { ascending: false });
+        .order("data_ordine", { ascending: false });
 
       // Apply date filters
       if (filters.startDate) {
-        ordiniQuery = ordiniQuery.gte("created_at", filters.startDate.toISOString());
+        ordiniQuery = ordiniQuery.gte("data_ordine", filters.startDate.toISOString().split("T")[0]);
       }
       if (filters.endDate) {
-        const endOfDay = new Date(filters.endDate);
-        endOfDay.setHours(23, 59, 59, 999);
-        ordiniQuery = ordiniQuery.lte("created_at", endOfDay.toISOString());
+        ordiniQuery = ordiniQuery.lte("data_ordine", filters.endDate.toISOString().split("T")[0]);
       }
 
       // Apply client filter
@@ -164,7 +162,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         fatturatoTotale += totaleOrdine;
 
         // Monthly stats
-        const date = new Date(ordine.created_at);
+        const date = new Date(ordine.data_ordine || ordine.created_at);
         const meseIndex = date.getMonth();
         const mese = mesiNomi[meseIndex];
         ordiniPerMeseMap[mese].fatturato += totaleOrdine;
@@ -318,8 +316,8 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
           .from("ordini")
           .select("totale")
           .neq("status", "annullato")
-          .gte("created_at", previousStart.toISOString())
-          .lte("created_at", previousEnd.toISOString());
+          .gte("data_ordine", previousStart.toISOString().split("T")[0])
+          .lte("data_ordine", previousEnd.toISOString().split("T")[0]);
 
         const previousFatturato = (previousOrdini || []).reduce((sum, o) => sum + Number(o.totale), 0);
         if (previousFatturato > 0) {
