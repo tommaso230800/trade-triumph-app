@@ -43,7 +43,7 @@ export function useStats() {
       const aziendeList = aziende || [];
 
       // Calculate stats
-      const ordiniMese = ordiniList.filter(o => o.created_at >= startOfMonth);
+      const ordiniMese = ordiniList.filter(o => (o.data_ordine || o.created_at) >= startOfMonth);
       const fatturatoMensile = ordiniMese.reduce((sum, o) => sum + Number(o.totale || 0), 0);
       const ordiniCompletati = ordiniList.filter(o => o.status === "completato").length;
       const ordiniInAttesa = ordiniList.filter(o => o.status === "in_attesa").length;
@@ -66,7 +66,7 @@ export function useStats() {
         const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
         const monthOrdini = ordiniList.filter(o => {
-          const date = new Date(o.created_at);
+          const date = new Date(o.data_ordine || o.created_at);
           return date >= monthStart && date <= monthEnd;
         });
         ordiniPerMese.push({

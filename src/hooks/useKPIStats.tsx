@@ -87,10 +87,10 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
             prodotti (id, nome, pezzi_per_cartone, prezzo_listino, azienda_id)
           )
         `)
-        .order("created_at", { ascending: false });
+        .order("data_ordine", { ascending: false });
       
       if (startDate) {
-        ordiniQuery = ordiniQuery.gte("created_at", startDate.toISOString());
+        ordiniQuery = ordiniQuery.gte("data_ordine", startDate.toISOString().split("T")[0]);
       }
 
       const { data: ordiniRaw, error: ordiniError } = await ordiniQuery;
@@ -207,7 +207,7 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
       // Monthly trend - ensure all 12 months in order
       const mesiNomi = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
       const ordiniPerMeseMap = ordini.reduce((acc, o) => {
-        const date = new Date(o.created_at);
+        const date = new Date(o.data_ordine || o.created_at);
         const meseIndex = date.getMonth();
         const mese = mesiNomi[meseIndex];
         if (!acc[mese]) {

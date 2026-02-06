@@ -287,7 +287,7 @@ const Index = () => {
                       <div>
                         <p className="font-medium text-card-foreground">{order.clienti?.nome || "Cliente"}</p>
                         <p className="text-xs text-muted-foreground">
-                          {order.codice} · {format(new Date(order.created_at), "dd/MM")}
+                          {order.codice} · {format(new Date(order.data_ordine || order.created_at), "dd/MM")}
                         </p>
                       </div>
                     </div>

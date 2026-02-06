@@ -44,11 +44,11 @@ export function useClientProductHistory(clienteId?: string, aziendaId?: string) 
       // Get all orders for this client and company
       const { data: ordini, error: ordiniError } = await supabase
         .from("ordini")
-        .select("id, sconto, sconto_merce, tipo_pagamento, created_at")
+        .select("id, sconto, sconto_merce, tipo_pagamento, created_at, data_ordine")
         .eq("cliente_id", clienteId)
         .eq("azienda_id", aziendaId)
         .neq("status", "annullato")
-        .order("created_at", { ascending: false });
+        .order("data_ordine", { ascending: false });
 
       if (ordiniError) throw ordiniError;
       if (!ordini || ordini.length === 0) return null;
@@ -88,11 +88,11 @@ export function useClientProductHistory(clienteId?: string, aziendaId?: string) 
 
       // Group by product and aggregate
       const productMap = new Map<string, ClientProductHistoryItem>();
-      const orderDateMap = new Map<string, { ordine_id: string; created_at: string }>();
+      const orderDateMap = new Map<string, { ordine_id: string; data_ordine: string }>();
 
       // Build order date map
       ordini.forEach(o => {
-        orderDateMap.set(o.id, { ordine_id: o.id, created_at: o.created_at });
+        orderDateMap.set(o.id, { ordine_id: o.id, data_ordine: o.data_ordine || o.created_at });
       });
 
       righe.forEach((riga) => {
@@ -110,8 +110,8 @@ export function useClientProductHistory(clienteId?: string, aziendaId?: string) 
           existing.total_pezzi += riga.quantita_pezzi;
           
           // Keep most recent order data
-          if (orderInfo && orderInfo.created_at > existing.last_order_date) {
-            existing.last_order_date = orderInfo.created_at;
+          if (orderInfo && orderInfo.data_ordine > existing.last_order_date) {
+            existing.last_order_date = orderInfo.data_ordine;
             existing.last_quantita_cartoni = riga.quantita_cartoni;
             existing.last_quantita_pezzi = riga.quantita_pezzi;
             existing.last_prezzo_unitario = Number(riga.prezzo_unitario);
@@ -139,7 +139,7 @@ export function useClientProductHistory(clienteId?: string, aziendaId?: string) 
             ordini_count: 1,
             total_cartoni: riga.quantita_cartoni,
             total_pezzi: riga.quantita_pezzi,
-            last_order_date: orderInfo?.created_at || "",
+            last_order_date: orderInfo?.data_ordine || "",
           });
         }
       });
