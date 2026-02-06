@@ -1361,12 +1361,14 @@ export type Database = {
           created_at: string
           data_fattura: string
           data_incasso: string | null
+          data_incasso_provvigione: string | null
           data_scadenza: string
           id: string
           importo: number
           numero_fattura: string
           percentuale_provvigione: number
           provvigione_calcolata: number
+          provvigione_incassata: boolean
           stato: string
           trimestre_provvigione: string | null
           updated_at: string
@@ -1380,12 +1382,14 @@ export type Database = {
           created_at?: string
           data_fattura: string
           data_incasso?: string | null
+          data_incasso_provvigione?: string | null
           data_scadenza: string
           id?: string
           importo?: number
           numero_fattura: string
           percentuale_provvigione?: number
           provvigione_calcolata?: number
+          provvigione_incassata?: boolean
           stato?: string
           trimestre_provvigione?: string | null
           updated_at?: string
@@ -1399,12 +1403,14 @@ export type Database = {
           created_at?: string
           data_fattura?: string
           data_incasso?: string | null
+          data_incasso_provvigione?: string | null
           data_scadenza?: string
           id?: string
           importo?: number
           numero_fattura?: string
           percentuale_provvigione?: number
           provvigione_calcolata?: number
+          provvigione_incassata?: boolean
           stato?: string
           trimestre_provvigione?: string | null
           updated_at?: string

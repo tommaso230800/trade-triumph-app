@@ -19,6 +19,8 @@ export interface ScadenziarioFattura {
   stato: 'scaduta' | 'incassata';
   data_incasso: string | null;
   trimestre_provvigione: string | null;
+  provvigione_incassata: boolean;
+  data_incasso_provvigione: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -146,6 +148,31 @@ export const useScadenziario = () => {
     },
   });
 
+  // Segna provvigione come incassata
+  const segnaProvvigioneIncassata = useMutation({
+    mutationFn: async ({ id, data_incasso_provvigione }: { id: string; data_incasso_provvigione: string }) => {
+      const { data, error } = await supabase
+        .from('scadenziario_fatture')
+        .update({
+          provvigione_incassata: true,
+          data_incasso_provvigione,
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scadenziario'] });
+      toast.success('Provvigione segnata come incassata');
+    },
+    onError: (error) => {
+      toast.error(`Errore: ${error.message}`);
+    },
+  });
+
   // Elimina fattura mutation
   const eliminaFattura = useMutation({
     mutationFn: async (id: string) => {
@@ -166,6 +193,11 @@ export const useScadenziario = () => {
   });
 
   // Calcolo statistiche
+  // Fatture incassate con provvigione ancora da riscuotere
+  const provvigioniDaIncassare = fattureIncassate.filter(f => !f.provvigione_incassata);
+  const provvigioniIncassate = fattureIncassate.filter(f => f.provvigione_incassata);
+  const totaleProvvigioniDaIncassare = provvigioniDaIncassare.reduce((sum, f) => sum + Number(f.provvigione_calcolata), 0);
+  const totaleProvvigioniIncassate = provvigioniIncassate.reduce((sum, f) => sum + Number(f.provvigione_calcolata), 0);
   const totaleScaduto = fattureScadute.reduce((sum, f) => sum + Number(f.importo), 0);
   const provvigionePotenziale = fattureScadute.reduce((sum, f) => sum + Number(f.provvigione_calcolata), 0);
   const totaleIncassato = fattureIncassate.reduce((sum, f) => sum + Number(f.importo), 0);
@@ -174,14 +206,19 @@ export const useScadenziario = () => {
   return {
     fattureScadute,
     fattureIncassate,
+    provvigioniDaIncassare,
+    provvigioniIncassate,
     loadingScadute,
     loadingIncassate,
     importFatture,
     segnaIncassata,
+    segnaProvvigioneIncassata,
     eliminaFattura,
     totaleScaduto,
     provvigionePotenziale,
     totaleIncassato,
     provvigioneMaturata,
+    totaleProvvigioniDaIncassare,
+    totaleProvvigioniIncassate,
   };
 };
