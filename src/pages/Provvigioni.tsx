@@ -37,6 +37,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { ScadenziarioTab } from "@/components/provvigioni/ScadenziarioTab";
+import { useScadenziario } from "@/hooks/useScadenziario";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -68,6 +69,7 @@ const Provvigioni = () => {
   const { data: aziende, isLoading: aziendeLoading } = useAziende();
   const { data: ordini, isLoading: ordiniLoading } = useOrdini();
   const updateProvvigionePagata = useUpdateProvvigionePagata();
+  const { fattureIncassate, segnaProvvigioneIncassata } = useScadenziario();
 
   const years = useMemo(() => {
     const yearsSet = new Set<number>();
@@ -79,11 +81,40 @@ const Provvigioni = () => {
   }, [ordini, currentYear]);
 
   // Filter orders based on year and quarter, exclude cancelled orders
+  // Scadenziario invoices mapped to look like orders for the Ordini tab
+  const scadenziarioAsOrdini = useMemo(() => {
+    return fattureIncassate.filter((f) => {
+      const incassoDate = new Date(f.data_incasso!);
+      const incassoYear = incassoDate.getFullYear();
+      const incassoMonth = incassoDate.getMonth();
+
+      if (incassoYear !== selectedYear) return false;
+
+      if (selectedTrimestre !== "tutti") {
+        const trimestreMesi = trimestreConfig[selectedTrimestre].mesi;
+        if (!trimestreMesi.includes(incassoMonth)) return false;
+      }
+
+      return true;
+    }).map((f) => ({
+      id: f.id,
+      codice: f.numero_fattura,
+      data_ordine: f.data_incasso,
+      created_at: f.created_at,
+      aziendaNome: f.azienda_nome,
+      clienteNome: f.cliente_nome,
+      totale: Number(f.importo),
+      provvigionePercentuale: Number(f.percentuale_provvigione),
+      provvigioneCalcolata: Number(f.provvigione_calcolata),
+      provvigione_pagata: f.provvigione_incassata,
+      fromScadenziario: true as const,
+    }));
+  }, [fattureIncassate, selectedYear, selectedTrimestre]);
+
   const filteredOrdini = useMemo(() => {
     if (!ordini || !aziende) return [];
 
     return ordini.filter((o) => {
-      // Exclude cancelled orders from commissions
       if (o.status === "annullato") return false;
       
       const orderDate = new Date(o.data_ordine || o.created_at);
@@ -103,13 +134,28 @@ const Provvigioni = () => {
       const provvigionePercentuale = azienda?.provvigione_percentuale || 0;
       const provvigioneCalcolata = Number(o.totale) * (provvigionePercentuale / 100);
       return {
-        ...o,
+        id: o.id,
+        codice: o.codice,
+        data_ordine: o.data_ordine,
+        created_at: o.created_at,
         aziendaNome: azienda?.nome || "—",
+        clienteNome: o.clienti?.nome || "—",
+        totale: Number(o.totale),
         provvigionePercentuale,
         provvigioneCalcolata,
+        provvigione_pagata: o.provvigione_pagata,
+        fromScadenziario: false as const,
       };
     });
   }, [ordini, aziende, selectedYear, selectedTrimestre]);
+
+  const allProvvigioniRows = useMemo(() => {
+    return [...filteredOrdini, ...scadenziarioAsOrdini].sort((a, b) => {
+      const dateA = new Date(a.data_ordine || a.created_at);
+      const dateB = new Date(b.data_ordine || b.created_at);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [filteredOrdini, scadenziarioAsOrdini]);
 
   const provvigioniData = useMemo(() => {
     if (!aziende || !ordini) return [];
@@ -390,7 +436,7 @@ const Provvigioni = () => {
           <TabsList>
             <TabsTrigger value="ordini" className="gap-2">
               <FileText className="h-4 w-4" />
-              Ordini ({filteredOrdini.length})
+              Ordini ({allProvvigioniRows.length})
             </TabsTrigger>
             <TabsTrigger value="aziende" className="gap-2">
               <Building2 className="h-4 w-4" />
@@ -424,6 +470,7 @@ const Provvigioni = () => {
                         <TableHead>Data</TableHead>
                         <TableHead>Azienda</TableHead>
                         <TableHead>Cliente</TableHead>
+                        <TableHead>Origine</TableHead>
                         <TableHead className="text-right">Totale</TableHead>
                         <TableHead className="text-center">%</TableHead>
                         <TableHead className="text-right">Provvigione</TableHead>
@@ -431,49 +478,71 @@ const Provvigioni = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredOrdini.length === 0 ? (
+                      {allProvvigioniRows.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                             Nessun ordine per il periodo selezionato
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredOrdini.map((ordine) => (
+                        allProvvigioniRows.map((row) => (
                           <TableRow 
-                            key={ordine.id} 
-                            className={`hover:bg-muted/30 ${ordine.provvigione_pagata ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}
+                            key={`${row.fromScadenziario ? 'sc' : 'ord'}-${row.id}`} 
+                            className={`hover:bg-muted/30 ${row.provvigione_pagata ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}
                           >
                             <TableCell className="font-mono font-medium">
-                              {ordine.codice}
+                              {row.codice}
                             </TableCell>
                             <TableCell>
-                              {format(new Date(ordine.data_ordine || ordine.created_at), "dd MMM yyyy", { locale: it })}
+                              {format(new Date(row.data_ordine || row.created_at), "dd MMM yyyy", { locale: it })}
                             </TableCell>
                             <TableCell className="font-medium">
-                              {ordine.aziendaNome}
+                              {row.aziendaNome}
                             </TableCell>
                             <TableCell>
-                              {ordine.clienti?.nome || "—"}
+                              {row.clienteNome}
+                            </TableCell>
+                            <TableCell>
+                              {row.fromScadenziario ? (
+                                <Badge variant="secondary" className="text-xs">
+                                  <Receipt className="h-3 w-3 mr-1" />
+                                  Scadenziario
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">
+                                  <FileText className="h-3 w-3 mr-1" />
+                                  Ordine
+                                </Badge>
+                              )}
                             </TableCell>
                             <TableCell className="text-right">
-                              {formatCurrency(Number(ordine.totale))}
+                              {formatCurrency(row.totale)}
                             </TableCell>
                             <TableCell className="text-center">
                               <Badge variant="outline" className="font-mono">
-                                {ordine.provvigionePercentuale}%
+                                {row.provvigionePercentuale}%
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right font-bold text-primary">
-                              {formatCurrency(ordine.provvigioneCalcolata)}
+                              {formatCurrency(row.provvigioneCalcolata)}
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-2">
                                 <Switch
-                                  checked={ordine.provvigione_pagata}
-                                  onCheckedChange={() => handleToggleProvvigione(ordine.id, ordine.provvigione_pagata)}
-                                  disabled={updateProvvigionePagata.isPending}
+                                  checked={row.provvigione_pagata}
+                                  onCheckedChange={() => {
+                                    if (row.fromScadenziario) {
+                                      segnaProvvigioneIncassata.mutate({
+                                        id: row.id,
+                                        data_incasso_provvigione: new Date().toISOString().split('T')[0],
+                                      });
+                                    } else {
+                                      handleToggleProvvigione(row.id, row.provvigione_pagata);
+                                    }
+                                  }}
+                                  disabled={updateProvvigionePagata.isPending || segnaProvvigioneIncassata.isPending}
                                 />
-                                {ordine.provvigione_pagata ? (
+                                {row.provvigione_pagata ? (
                                   <Check className="h-4 w-4 text-green-600" />
                                 ) : (
                                   <X className="h-4 w-4 text-muted-foreground" />
