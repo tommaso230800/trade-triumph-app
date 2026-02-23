@@ -103,11 +103,6 @@ Restituisci un JSON con questa struttura:
       "soglia_fatturato": 10000,
       "percentuale_premio": 3,
       "descrizione": "Primo scaglione"
-    },
-    {
-      "soglia_fatturato": 20000,
-      "percentuale_premio": 4,
-      "descrizione": "Secondo scaglione"
     }
   ],
   
@@ -131,47 +126,44 @@ Restituisci un JSON con questa struttura:
     }
   ],
   
-  "promozione": {
-    "nome": "Nome della promozione",
-    "tipo": "sconto_percentuale" | "prezzo_fisso" | "premio_fine_anno",
-    "valore": 10,
-    "data_inizio": "2024-01-01",
-    "data_fine": "2024-12-31",
-    "prodotti": ["nome prodotto 1", "nome prodotto 2"],
-    "cartoni_omaggio": 1,
-    "cartoni_acquisto": 10,
-    "periodi": [
-      { "data_inizio": "2024-03-01", "data_fine": "2024-03-31" },
-      { "data_inizio": "2024-06-01", "data_fine": "2024-06-30" }
-    ]
-  },
-  
   "note": "eventuali note aggiuntive estratte dal documento",
   "confidence": 0.95
 }
 
-REGOLE INTELLIGENTI:
-1. Se il documento contiene SOLO un contratto premio annuale, usa tipo="contratto"
-2. Se contiene SOLO promozioni/canvass, usa tipo="promozione"
-3. Se contiene ENTRAMBI (es. contratto con promozioni incluse), usa tipo="misto"
+REGOLE CRITICHE:
 
-4. Per contratti con OBBIETTIVI MULTIPLI/SCAGLIONI:
+1. TIPI PROMOZIONE VALIDI - usa SOLO questi tre valori per il campo "tipo" delle promozioni:
+   - "sconto_percentuale" = sconto in percentuale (es. 5%, 3%)
+   - "prezzo_fisso" = prezzo netto specifico in euro (es. €1,85)
+   - "premio_fine_anno" = premio percentuale a fine anno
+   NON INVENTARE ALTRI TIPI. Se una condizione ha sia prezzo fisso che sconto, CREA DUE PROMOZIONI SEPARATE.
+
+2. OGNI CONDIZIONE COMMERCIALE DIVENTA UNA PROMOZIONE SEPARATA:
+   - "Prezzo netto €1,85 su prodotto X" → promozione tipo "prezzo_fisso", valore 1.85
+   - "Extra sconto 3% per ritiro 16 bancali" → promozione tipo "sconto_percentuale", valore 3, cartoni_acquisto 16
+   - "Extra sconto 5% nei periodi promozionali" → promozione tipo "sconto_percentuale", valore 5, con periodi
+
+3. IL CAMPO "valore" NON DEVE MAI ESSERE null. Metti sempre un numero:
+   - Per prezzo_fisso: il prezzo in euro (es. 1.85)
+   - Per sconto_percentuale: la percentuale (es. 5)
+   - Per premio_fine_anno: la percentuale premio (es. 2.5)
+
+4. DATE: Se non ci sono date specifiche per una promozione, usa l'anno del contratto (es. "2026-01-01" e "2026-12-31")
+
+5. Per contratti con OBBIETTIVI MULTIPLI/SCAGLIONI (premi fine anno):
    - Popola l'array "obbiettivi" con tutte le soglie e premi trovati
    - Usa anche percentuale_premio e soglia_fatturato per il primo/principale obbiettivo
 
-5. Per promozioni MULTIPLE nello stesso documento:
-   - Popola l'array "promozioni" con tutte le promozioni trovate
-   - Usa anche "promozione" per la prima/principale (retrocompatibilità)
-
 6. Per promozioni con PERIODI MULTIPLI (es. valida a Marzo, Giugno, Ottobre):
    - Usa data_inizio e data_fine per il primo periodo
-   - Usa l'array "periodi" per tutti i periodi aggiuntivi
+   - Usa l'array "periodi" per TUTTI i periodi (incluso il primo)
 
-7. Per promozioni "prendi X paghi Y" o "cartoni omaggio", usa cartoni_omaggio e cartoni_acquisto
+7. Se il documento è SOLO un contratto premio annuale, usa tipo="contratto"
+8. Se contiene SOLO promozioni/canvass, usa tipo="promozione"  
+9. Se contiene ENTRAMBI, usa tipo="misto"
 
-8. Usa i nomi ESATTI di clienti, aziende e prodotti dalla lista fornita quando possibile
-9. Se non riesci a identificare qualcosa, usa null
-10. Imposta confidence da 0 a 1 in base a quanto sei sicuro dell'interpretazione
+10. Usa i nomi ESATTI di clienti, aziende e prodotti dalla lista fornita quando possibile
+11. Imposta confidence da 0 a 1 in base a quanto sei sicuro dell'interpretazione
 
 Rispondi SOLO con il JSON, senza markdown o testo aggiuntivo.`;
 

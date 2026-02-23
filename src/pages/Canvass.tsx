@@ -245,13 +245,21 @@ export default function CanvassPage() {
                 .filter((p: any) => p.data_inizio && p.data_fine)
                 .slice(1); // first period is the main one
 
+              // Normalize tipo to valid values
+              const validTipi = ["sconto_percentuale", "prezzo_fisso", "premio_fine_anno"];
+              let tipo = promo.tipo || "sconto_percentuale";
+              if (!validTipi.includes(tipo)) {
+                tipo = tipo.includes("prezzo") ? "prezzo_fisso" : "sconto_percentuale";
+              }
+
+              const defaultYear = parsed.anno || new Date().getFullYear();
               const canvassData = {
                 nome: promo.nome || "Promozione importata",
                 descrizione: (promo as any).note || parsed.note || null,
-                tipo: promo.tipo || "sconto_percentuale",
+                tipo: tipo as "sconto_percentuale" | "prezzo_fisso" | "premio_fine_anno",
                 valore: promo.valore || 0,
-                data_inizio: promo.data_inizio || promo.periodi?.[0]?.data_inizio || `${parsed.anno || new Date().getFullYear()}-01-01`,
-                data_fine: promo.data_fine || promo.periodi?.[0]?.data_fine || `${parsed.anno || new Date().getFullYear()}-12-31`,
+                data_inizio: promo.data_inizio || promo.periodi?.[0]?.data_inizio || `${defaultYear}-01-01`,
+                data_fine: promo.data_fine || promo.periodi?.[0]?.data_fine || `${defaultYear}-12-31`,
                 attivo: true,
                 tutti_clienti: true,
                 azienda_id: aziendaId,
