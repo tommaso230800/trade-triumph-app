@@ -153,6 +153,23 @@ export default function CanvassPage() {
     setIsContrattoDialogOpen(false);
   };
 
+  const findAziendaId = (nome: string | undefined) => {
+    if (!nome) return null;
+    const lower = nome.toLowerCase();
+    return aziende.find(a => a.nome.toLowerCase().includes(lower) || lower.includes(a.nome.toLowerCase()))?.id || null;
+  };
+
+  const findClienteId = (nome: string | undefined) => {
+    if (!nome) return null;
+    const lower = nome.toLowerCase();
+    return clienti.find(c => c.nome.toLowerCase().includes(lower) || lower.includes(c.nome.toLowerCase()))?.id || null;
+  };
+
+  const findProdottoId = (nome: string) => {
+    const lower = nome.toLowerCase();
+    return prodotti.find(p => p.nome.toLowerCase().includes(lower) || lower.includes(p.nome.toLowerCase()) || p.codice?.toLowerCase().includes(lower))?.id || null;
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -163,15 +180,107 @@ export default function CanvassPage() {
     try {
       const reader = new FileReader();
       reader.onload = async () => {
-        const { data, error } = await supabase.functions.invoke("parse-canvass-document", {
-          body: { file_base64: reader.result, file_type: file.type, clienti: clienti.map(c => ({ nome: c.nome, azienda: c.azienda, consorzio: c.consorzio })), aziende: aziende.map(a => ({ nome: a.nome })), prodotti: prodotti.map(p => ({ nome: p.nome, codice: p.codice })) },
-        });
-        if (error || data.error) { toast.error(data?.error || "Errore nell'analisi"); setIsParsingAI(false); return; }
-        toast.success("Documento analizzato! Controlla i risultati.");
+        try {
+          const { data, error } = await supabase.functions.invoke("parse-canvass-document", {
+            body: { file_base64: reader.result, file_type: file.type, clienti: clienti.map(c => ({ nome: c.nome, azienda: c.azienda, consorzio: c.consorzio })), aziende: aziende.map(a => ({ nome: a.nome })), prodotti: prodotti.map(p => ({ nome: p.nome, codice: p.codice })) },
+          });
+          if (error || data.error) { toast.error(data?.error || "Errore nell'analisi"); setIsParsingAI(false); return; }
+          
+          const parsed = data.data;
+          const aziendaId = findAziendaId(parsed.azienda_nome);
+          if (!aziendaId) { toast.error(`Azienda "${parsed.azienda_nome}" non trovata. Creala prima.`); setIsParsingAI(false); return; }
+
+          let savedContratti = 0;
+          let savedPromo = 0;
+
+          // Save contratti/obiettivi
+          if (parsed.tipo === "contratto" || parsed.tipo === "misto") {
+            const clienteId = findClienteId(parsed.cliente_nome);
+            const isConsorzio = !!parsed.consorzio && !clienteId;
+            
+            if (parsed.obbiettivi && parsed.obbiettivi.length > 0) {
+              for (const obj of parsed.obbiettivi) {
+                const contrattoData = {
+                  cliente_id: clienteId || clienti[0]?.id, // fallback
+                  azienda_id: aziendaId,
+                  anno: parsed.anno || new Date().getFullYear(),
+                  percentuale_premio: obj.percentuale_premio || 0,
+                  soglia_fatturato: obj.soglia_fatturato || 0,
+                  note: [obj.descrizione, parsed.note].filter(Boolean).join(" - ") || null,
+                  consorzio: parsed.consorzio || null,
+                  is_consorzio: isConsorzio,
+                };
+                await createContratto.mutateAsync(contrattoData);
+                savedContratti++;
+              }
+            } else if (parsed.percentuale_premio) {
+              const contrattoData = {
+                cliente_id: clienteId || clienti[0]?.id,
+                azienda_id: aziendaId,
+                anno: parsed.anno || new Date().getFullYear(),
+                percentuale_premio: parsed.percentuale_premio || 0,
+                soglia_fatturato: parsed.soglia_fatturato || 0,
+                note: parsed.note || null,
+                consorzio: parsed.consorzio || null,
+                is_consorzio: isConsorzio,
+              };
+              await createContratto.mutateAsync(contrattoData);
+              savedContratti++;
+            }
+          }
+
+          // Save promozioni
+          if (parsed.tipo === "promozione" || parsed.tipo === "misto") {
+            const promoList = parsed.promozioni && parsed.promozioni.length > 0 
+              ? parsed.promozioni 
+              : parsed.promozione ? [parsed.promozione] : [];
+
+            for (const promo of promoList) {
+              const prodottiIds = (promo.prodotti || [])
+                .map((nome: string) => findProdottoId(nome))
+                .filter(Boolean)
+                .map((id: string) => ({ prodotto_id: id }));
+
+              const periodi = (promo.periodi || [])
+                .filter((p: any) => p.data_inizio && p.data_fine)
+                .slice(1); // first period is the main one
+
+              const canvassData = {
+                nome: promo.nome || "Promozione importata",
+                descrizione: (promo as any).note || parsed.note || null,
+                tipo: promo.tipo || "sconto_percentuale",
+                valore: promo.valore || 0,
+                data_inizio: promo.data_inizio || promo.periodi?.[0]?.data_inizio || `${parsed.anno || new Date().getFullYear()}-01-01`,
+                data_fine: promo.data_fine || promo.periodi?.[0]?.data_fine || `${parsed.anno || new Date().getFullYear()}-12-31`,
+                attivo: true,
+                tutti_clienti: true,
+                azienda_id: aziendaId,
+                cartoni_omaggio: promo.cartoni_omaggio || 0,
+                cartoni_acquisto: promo.cartoni_acquisto || 0,
+              };
+
+              await createCanvass.mutateAsync({
+                canvass: canvassData,
+                clienti_ids: [],
+                prodotti: prodottiIds,
+                periodi,
+              });
+              savedPromo++;
+            }
+          }
+
+          const messages = [];
+          if (savedContratti > 0) messages.push(`${savedContratti} contratt${savedContratti === 1 ? 'o' : 'i'}`);
+          if (savedPromo > 0) messages.push(`${savedPromo} promozion${savedPromo === 1 ? 'e' : 'i'}`);
+          toast.success(`Importati: ${messages.join(" e ")}!`);
+        } catch (err: any) {
+          toast.error("Errore nel salvataggio: " + (err.message || "Errore sconosciuto"));
+        }
         setIsParsingAI(false);
       };
       reader.readAsDataURL(file);
     } catch { toast.error("Errore nella lettura"); setIsParsingAI(false); }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const getPromoStatus = (promo: Canvass) => {
