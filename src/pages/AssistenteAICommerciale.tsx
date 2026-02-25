@@ -614,7 +614,7 @@ REGOLE FONDAMENTALI:
 
           {/* Response Panel */}
           <div className="lg:col-span-7">
-            <Card className="h-[calc(100vh-200px)] flex flex-col">
+            <Card className="h-[calc(100dvh-200px)] min-h-[400px] flex flex-col">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Bot className="h-5 w-5 text-primary" />
