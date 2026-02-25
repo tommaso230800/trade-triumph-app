@@ -141,6 +141,12 @@ export default function CanvassPage() {
       note: form.note || null,
       consorzio: form.is_consorzio ? form.consorzio : null,
       is_consorzio: form.is_consorzio,
+      obbiettivi: form.obbiettivi?.map(o => ({
+        tipo: o.tipo,
+        percentuale_premio: o.percentuale_premio,
+        soglia_fatturato: o.tipo === "incondizionato" ? 0 : o.soglia_fatturato,
+        descrizione: o.descrizione || "",
+      })),
     };
 
     if (editingContratto) {
@@ -198,31 +204,35 @@ export default function CanvassPage() {
             const clienteId = findClienteId(parsed.cliente_nome);
             const isConsorzio = !!parsed.consorzio && !clienteId;
             
-            if (parsed.obbiettivi && parsed.obbiettivi.length > 0) {
-              for (const obj of parsed.obbiettivi) {
-                const contrattoData = {
-                  cliente_id: clienteId || clienti[0]?.id, // fallback
-                  azienda_id: aziendaId,
-                  anno: parsed.anno || new Date().getFullYear(),
+            // Build obbiettivi array from parsed data
+            const obbiettivi = (parsed.obbiettivi && parsed.obbiettivi.length > 0)
+              ? parsed.obbiettivi.map((obj: any) => ({
+                  tipo: (obj.soglia_fatturato && obj.soglia_fatturato > 0) ? "condizionato" : "incondizionato",
                   percentuale_premio: obj.percentuale_premio || 0,
                   soglia_fatturato: obj.soglia_fatturato || 0,
-                  note: [obj.descrizione, parsed.note].filter(Boolean).join(" - ") || null,
-                  consorzio: parsed.consorzio || null,
-                  is_consorzio: isConsorzio,
-                };
-                await createContratto.mutateAsync(contrattoData);
-                savedContratti++;
-              }
-            } else if (parsed.percentuale_premio) {
+                  descrizione: obj.descrizione || "",
+                }))
+              : parsed.percentuale_premio
+                ? [{
+                    tipo: (parsed.soglia_fatturato && parsed.soglia_fatturato > 0) ? "condizionato" : "incondizionato",
+                    percentuale_premio: parsed.percentuale_premio || 0,
+                    soglia_fatturato: parsed.soglia_fatturato || 0,
+                    descrizione: "",
+                  }]
+                : [];
+
+            if (obbiettivi.length > 0) {
+              const mainObj = obbiettivi[0];
               const contrattoData = {
                 cliente_id: clienteId || clienti[0]?.id,
                 azienda_id: aziendaId,
                 anno: parsed.anno || new Date().getFullYear(),
-                percentuale_premio: parsed.percentuale_premio || 0,
-                soglia_fatturato: parsed.soglia_fatturato || 0,
+                percentuale_premio: mainObj.percentuale_premio,
+                soglia_fatturato: mainObj.tipo === "incondizionato" ? 0 : mainObj.soglia_fatturato,
                 note: parsed.note || null,
                 consorzio: parsed.consorzio || null,
                 is_consorzio: isConsorzio,
+                obbiettivi,
               };
               await createContratto.mutateAsync(contrattoData);
               savedContratti++;
@@ -411,13 +421,94 @@ export default function CanvassPage() {
               <CardHeader><CardTitle>Contratti Premio Fine Anno</CardTitle><CardDescription>Clienti e consorzi contrattizzati</CardDescription></CardHeader>
               <CardContent>
                 {contratti.length === 0 ? <div className="text-center py-8 text-muted-foreground"><Trophy className="h-12 w-12 mx-auto mb-4 opacity-50" /><p>Nessun contratto</p></div> : (
-                  <Table><TableHeader><TableRow><TableHead>Cliente/Consorzio</TableHead><TableHead>Azienda</TableHead><TableHead>Anno</TableHead><TableHead>Premio</TableHead><TableHead>Avanzamento</TableHead><TableHead>Premio Stimato</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                    <TableBody>
-                      {contratti.map((contratto) => { let fatturatoReale = 0; if (contratto.is_consorzio) { fatturatoReale = fatturatoConsorzioData[`${contratto.consorzio}_${contratto.azienda_id}`]?.totale || 0; } else { fatturatoReale = fatturatoData[`${contratto.cliente_id}_${contratto.azienda_id}`]?.totale || 0; } const soglia = contratto.soglia_fatturato || 0; const sogliaRaggiunta = soglia === 0 || fatturatoReale >= soglia; const progressPercent = soglia > 0 ? Math.min((fatturatoReale / soglia) * 100, 100) : 100; const premioStimato = sogliaRaggiunta ? (fatturatoReale * contratto.percentuale_premio / 100) : 0;
-                        return (<TableRow key={contratto.id}><TableCell><div className="flex items-center gap-2">{contratto.is_consorzio ? <Building2 className="h-4 w-4 text-primary" /> : <Users className="h-4 w-4 text-muted-foreground" />}<div>{contratto.is_consorzio ? <><p className="font-medium">{contratto.consorzio}</p><p className="text-xs text-muted-foreground">{clienti.filter(c => c.consorzio === contratto.consorzio).length} clienti</p></> : <><p className="font-medium">{contratto.clienti?.nome}</p>{contratto.clienti?.azienda && <p className="text-sm text-muted-foreground">{contratto.clienti.azienda}</p>}</>}</div></div></TableCell><TableCell>{contratto.aziende?.nome || "-"}</TableCell><TableCell><Badge variant="outline">{contratto.anno}</Badge></TableCell><TableCell className="font-bold text-primary">{contratto.percentuale_premio}%</TableCell><TableCell className="min-w-[180px]"><div className="space-y-1"><div className="flex justify-between text-sm"><span className="font-medium">{formatCurrency(fatturatoReale)}</span>{soglia > 0 && <span className="text-muted-foreground">/ {formatCurrency(soglia)}</span>}</div><Progress value={progressPercent} className={`h-2 ${sogliaRaggiunta ? '[&>div]:bg-green-500' : '[&>div]:bg-amber-500'}`} /><span className={`text-xs ${sogliaRaggiunta ? "text-green-600" : "text-amber-600"}`}>{sogliaRaggiunta ? <span className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" />Target raggiunto!</span> : `${Math.round(progressPercent)}%`}</span></div></TableCell><TableCell>{sogliaRaggiunta ? <span className="font-bold text-green-600 text-lg">{formatCurrency(premioStimato)}</span> : <span className="text-sm text-muted-foreground">-</span>}</TableCell><TableCell><div className="flex gap-1"><Button variant="ghost" size="icon" onClick={() => { setEditingContratto(contratto); setIsContrattoDialogOpen(true); }}><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => deleteContratto.mutate(contratto.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div></TableCell></TableRow>);
-                      })}
-                    </TableBody>
-                  </Table>
+                  <div className="space-y-4">
+                    {contratti.map((contratto) => {
+                      let fatturatoReale = 0;
+                      if (contratto.is_consorzio) {
+                        fatturatoReale = fatturatoConsorzioData[`${contratto.consorzio}_${contratto.azienda_id}`]?.totale || 0;
+                      } else {
+                        fatturatoReale = fatturatoData[`${contratto.cliente_id}_${contratto.azienda_id}`]?.totale || 0;
+                      }
+
+                      const obbiettivi = contratto.contratti_obbiettivi && contratto.contratti_obbiettivi.length > 0
+                        ? [...contratto.contratti_obbiettivi].sort((a, b) => a.ordine - b.ordine)
+                        : [{ id: "legacy", contratto_id: contratto.id, user_id: contratto.user_id, tipo: (contratto.soglia_fatturato || 0) > 0 ? "condizionato" : "incondizionato", percentuale_premio: contratto.percentuale_premio, soglia_fatturato: contratto.soglia_fatturato, descrizione: null, ordine: 0, created_at: "" }];
+
+                      // Calculate total premio
+                      let premioTotaleStimato = 0;
+                      obbiettivi.forEach(obj => {
+                        const soglia = obj.soglia_fatturato || 0;
+                        const raggiunto = obj.tipo === "incondizionato" || soglia === 0 || fatturatoReale >= soglia;
+                        if (raggiunto) premioTotaleStimato += fatturatoReale * obj.percentuale_premio / 100;
+                      });
+
+                      return (
+                        <Card key={contratto.id} className="overflow-hidden">
+                          <div className="p-4 flex items-center justify-between border-b bg-muted/30">
+                            <div className="flex items-center gap-3">
+                              {contratto.is_consorzio ? <Building2 className="h-5 w-5 text-primary" /> : <Users className="h-5 w-5 text-muted-foreground" />}
+                              <div>
+                                <p className="font-semibold">{contratto.is_consorzio ? contratto.consorzio : contratto.clienti?.nome}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {contratto.aziende?.nome} • <Badge variant="outline" className="text-xs">{contratto.anno}</Badge>
+                                  {contratto.is_consorzio && ` • ${clienti.filter(c => c.consorzio === contratto.consorzio).length} clienti`}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-right mr-2">
+                                <p className="text-xs text-muted-foreground">Fatturato</p>
+                                <p className="font-bold">{formatCurrency(fatturatoReale)}</p>
+                              </div>
+                              <div className="text-right mr-2">
+                                <p className="text-xs text-muted-foreground">Premio Stimato</p>
+                                <p className="font-bold text-green-600">{formatCurrency(premioTotaleStimato)}</p>
+                              </div>
+                              <Button variant="ghost" size="icon" onClick={() => { setEditingContratto(contratto); setIsContrattoDialogOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                              <Button variant="ghost" size="icon" onClick={() => deleteContratto.mutate(contratto.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </div>
+                          </div>
+                          <div className="p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            {obbiettivi.map((obj, idx) => {
+                              const soglia = obj.soglia_fatturato || 0;
+                              const isIncondizionato = obj.tipo === "incondizionato" || soglia === 0;
+                              const raggiunto = isIncondizionato || fatturatoReale >= soglia;
+                              const progress = isIncondizionato ? 100 : soglia > 0 ? Math.min((fatturatoReale / soglia) * 100, 100) : 100;
+                              const premio = raggiunto ? fatturatoReale * obj.percentuale_premio / 100 : 0;
+
+                              return (
+                                <div key={obj.id} className={`p-3 rounded-xl border-2 ${
+                                  raggiunto 
+                                    ? "border-green-200 bg-green-50/50 dark:bg-green-900/10 dark:border-green-800" 
+                                    : "border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-800"
+                                }`}>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <Badge variant="outline" className="text-xs">
+                                      {isIncondizionato ? "Incondizionato" : `Target €${soglia.toLocaleString("it-IT")}`}
+                                    </Badge>
+                                    <span className="text-lg font-bold text-primary">{obj.percentuale_premio}%</span>
+                                  </div>
+                                  {obj.descrizione && <p className="text-xs text-muted-foreground mb-2">{obj.descrizione}</p>}
+                                  {!isIncondizionato && (
+                                    <div className="space-y-1">
+                                      <Progress value={progress} className={`h-1.5 ${raggiunto ? '[&>div]:bg-green-500' : '[&>div]:bg-amber-500'}`} />
+                                      <p className={`text-xs ${raggiunto ? "text-green-600" : "text-amber-600"}`}>
+                                        {raggiunto ? "✓ Raggiunto" : `${Math.round(progress)}%`}
+                                      </p>
+                                    </div>
+                                  )}
+                                  {raggiunto && (
+                                    <p className="text-sm font-semibold text-green-600 mt-1">{formatCurrency(premio)}</p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {contratto.note && <div className="px-4 pb-3 text-xs text-muted-foreground">{contratto.note}</div>}
+                        </Card>
+                      );
+                    })}
+                  </div>
                 )}
               </CardContent>
             </Card>
