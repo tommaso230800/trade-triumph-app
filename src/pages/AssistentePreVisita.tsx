@@ -157,7 +157,7 @@ export default function AssistentePreVisita() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100vh-280px)]">
+                <ScrollArea className="h-[calc(100dvh-280px)] max-h-[600px]">
                   <div className="p-3 space-y-4">
                     {clientiLoading ? (
                       <div className="flex items-center justify-center py-8">
