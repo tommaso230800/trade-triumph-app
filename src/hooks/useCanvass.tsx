@@ -49,6 +49,18 @@ export type Canvass = {
   canvass_periodi?: CanvassPeriodo[];
 };
 
+export type ContrattoObbiettivo = {
+  id: string;
+  contratto_id: string;
+  user_id: string;
+  tipo: string;
+  percentuale_premio: number;
+  soglia_fatturato: number | null;
+  descrizione: string | null;
+  ordine: number;
+  created_at: string;
+};
+
 export type ContrattoCliente = {
   id: string;
   user_id: string;
@@ -71,6 +83,7 @@ export type ContrattoCliente = {
   aziende?: {
     nome: string;
   };
+  contratti_obbiettivi?: ContrattoObbiettivo[];
 };
 
 export function useCanvass() {
@@ -113,11 +126,8 @@ export function useCanvassAttive() {
 
       if (error) throw error;
       
-      // Filter canvass that are active now (check main period OR additional periods)
       return (data as Canvass[]).filter(c => {
-        // Check main period
         if (c.data_inizio <= today && c.data_fine >= today) return true;
-        // Check additional periods
         return c.canvass_periodi?.some(p => p.data_inizio <= today && p.data_fine >= today);
       });
     },
@@ -142,11 +152,8 @@ export function useCanvassScadute() {
 
       if (error) throw error;
       
-      // Filter canvass that are expired (all periods ended)
       return (data as Canvass[]).filter(c => {
-        // Check if main period is expired
         const mainExpired = c.data_fine < today;
-        // Check if all additional periods are expired
         const allPeriodsExpired = !c.canvass_periodi?.length || 
           c.canvass_periodi.every(p => p.data_fine < today);
         return mainExpired && allPeriodsExpired;
@@ -180,7 +187,6 @@ export function useCreateCanvass() {
       
       if (error) throw error;
 
-      // Aggiungi clienti specifici
       if (clienti_ids && clienti_ids.length > 0) {
         const { error: clientiError } = await supabase
           .from("canvass_clienti")
@@ -192,7 +198,6 @@ export function useCreateCanvass() {
         if (clientiError) throw clientiError;
       }
 
-      // Aggiungi prodotti specifici
       if (prodotti && prodotti.length > 0) {
         const { error: prodottiError } = await supabase
           .from("canvass_prodotti")
@@ -205,7 +210,6 @@ export function useCreateCanvass() {
         if (prodottiError) throw prodottiError;
       }
 
-      // Aggiungi periodi aggiuntivi
       if (periodi && periodi.length > 0) {
         const { error: periodiError } = await supabase
           .from("canvass_periodi")
@@ -256,7 +260,6 @@ export function useUpdateCanvass() {
       
       if (error) throw error;
 
-      // Aggiorna clienti
       if (clienti_ids !== undefined) {
         await supabase.from("canvass_clienti").delete().eq("canvass_id", id);
         if (clienti_ids.length > 0) {
@@ -271,7 +274,6 @@ export function useUpdateCanvass() {
         }
       }
 
-      // Aggiorna prodotti
       if (prodotti !== undefined) {
         await supabase.from("canvass_prodotti").delete().eq("canvass_id", id);
         if (prodotti.length > 0) {
@@ -287,7 +289,6 @@ export function useUpdateCanvass() {
         }
       }
 
-      // Aggiorna periodi
       if (periodi !== undefined) {
         await supabase.from("canvass_periodi").delete().eq("canvass_id", id);
         if (periodi.length > 0) {
@@ -341,7 +342,8 @@ export function useContrattiClienti() {
         .select(`
           *,
           clienti(nome, azienda, fatturato, consorzio),
-          aziende(nome)
+          aziende(nome),
+          contratti_obbiettivi(id, tipo, percentuale_premio, soglia_fatturato, descrizione, ordine)
         `)
         .order("anno", { ascending: false });
 
@@ -355,7 +357,9 @@ export function useCreateContrattoCliente() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (contratto: Omit<ContrattoCliente, "id" | "user_id" | "created_at" | "updated_at" | "clienti" | "aziende">) => {
+    mutationFn: async ({ obbiettivi, ...contratto }: Omit<ContrattoCliente, "id" | "user_id" | "created_at" | "updated_at" | "clienti" | "aziende" | "contratti_obbiettivi"> & {
+      obbiettivi?: { tipo: string; percentuale_premio: number; soglia_fatturato: number; descrizione: string }[];
+    }) => {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("contratti_clienti")
@@ -363,6 +367,23 @@ export function useCreateContrattoCliente() {
         .select()
         .single();
       if (error) throw error;
+
+      // Save obbiettivi if provided
+      if (obbiettivi && obbiettivi.length > 0) {
+        const { error: objError } = await supabase
+          .from("contratti_obbiettivi")
+          .insert(obbiettivi.map((o, i) => ({
+            contratto_id: data.id,
+            user_id: user?.id,
+            tipo: o.tipo,
+            percentuale_premio: o.percentuale_premio,
+            soglia_fatturato: o.tipo === "incondizionato" ? 0 : o.soglia_fatturato,
+            descrizione: o.descrizione || null,
+            ordine: i,
+          })));
+        if (objError) throw objError;
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -379,12 +400,39 @@ export function useUpdateContrattoCliente() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<ContrattoCliente> & { id: string }) => {
+    mutationFn: async ({ id, obbiettivi, ...updates }: Partial<ContrattoCliente> & { 
+      id: string;
+      obbiettivi?: { tipo: string; percentuale_premio: number; soglia_fatturato: number; descrizione: string }[];
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Remove relation fields before update
+      const { clienti, aziende, contratti_obbiettivi, ...cleanUpdates } = updates as any;
+      
       const { error } = await supabase
         .from("contratti_clienti")
-        .update(updates)
+        .update(cleanUpdates)
         .eq("id", id);
       if (error) throw error;
+
+      // Update obbiettivi if provided
+      if (obbiettivi !== undefined) {
+        await supabase.from("contratti_obbiettivi").delete().eq("contratto_id", id);
+        if (obbiettivi.length > 0) {
+          const { error: objError } = await supabase
+            .from("contratti_obbiettivi")
+            .insert(obbiettivi.map((o, i) => ({
+              contratto_id: id,
+              user_id: user?.id,
+              tipo: o.tipo,
+              percentuale_premio: o.percentuale_premio,
+              soglia_fatturato: o.tipo === "incondizionato" ? 0 : o.soglia_fatturato,
+              descrizione: o.descrizione || null,
+              ordine: i,
+            })));
+          if (objError) throw objError;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contratti_clienti"] });

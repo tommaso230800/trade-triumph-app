@@ -531,6 +531,50 @@ export type Database = {
           },
         ]
       }
+      contratti_obbiettivi: {
+        Row: {
+          contratto_id: string
+          created_at: string
+          descrizione: string | null
+          id: string
+          ordine: number
+          percentuale_premio: number
+          soglia_fatturato: number | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          contratto_id: string
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          ordine?: number
+          percentuale_premio?: number
+          soglia_fatturato?: number | null
+          tipo?: string
+          user_id: string
+        }
+        Update: {
+          contratto_id?: string
+          created_at?: string
+          descrizione?: string | null
+          id?: string
+          ordine?: number
+          percentuale_premio?: number
+          soglia_fatturato?: number | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratti_obbiettivi_contratto_id_fkey"
+            columns: ["contratto_id"]
+            isOneToOne: false
+            referencedRelation: "contratti_clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_reports: {
         Row: {
           campioni_consegnati: boolean | null

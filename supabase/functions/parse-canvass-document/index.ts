@@ -100,9 +100,19 @@ Restituisci un JSON con questa struttura:
   
   "obbiettivi": [
     {
-      "soglia_fatturato": 10000,
-      "percentuale_premio": 3,
-      "descrizione": "Primo scaglione"
+      "soglia_fatturato": 0,
+      "percentuale_premio": 2.5,
+      "descrizione": "Incondizionato sul fatturato totale"
+    },
+    {
+      "soglia_fatturato": 65000,
+      "percentuale_premio": 1.5,
+      "descrizione": "Condizionato al raggiungimento €65.000"
+    },
+    {
+      "soglia_fatturato": 75000,
+      "percentuale_premio": 1.0,
+      "descrizione": "Condizionato al raggiungimento €75.000"
     }
   ],
   
