@@ -5,6 +5,7 @@ import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointment
 import { WeeklyActivityWidget } from "@/components/dashboard/WeeklyActivityWidget";
 import { ClientsNotVisitedWidget } from "@/components/dashboard/ClientsNotVisitedWidget";
 import { PriorityClientsWidget } from "@/components/dashboard/PriorityClientsWidget";
+import { ReorderAlertsWidget } from "@/components/dashboard/ReorderAlertsWidget";
 import { useStats } from "@/hooks/useStats";
 import { useOrdini } from "@/hooks/useOrdini";
 import { usePromemoria } from "@/hooks/usePromemoria";
