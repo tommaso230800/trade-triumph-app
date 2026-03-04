@@ -356,16 +356,14 @@ const Ordini = () => {
       formato: prodotto.formato || null,
     };
 
-    // Auto-apply promotions to new product (override defaults if promo is better)
-    newRiga = applyPromoToNewProduct(newRiga);
-    
-    // Check if promo was applied and notify
-    const appliedPromo = promozioniRilevanti.find(promo => 
+    // Show info if there's a promo available (but don't auto-apply)
+    const availablePromo = promozioniRilevanti.find(promo => 
       promo.canvass_prodotti?.some(cp => cp.prodotto_id === prodotto.id)
     );
-    if (appliedPromo && parseDecimalInput(newRiga.sc1) !== (prodotto.sc1_default || 0)) {
-      toast.success(`Promozione "${appliedPromo.nome}" applicata automaticamente!`, {
-        icon: <Gift className="h-4 w-4 text-success" />
+    if (availablePromo) {
+      toast.info(`Promozione "${availablePromo.nome}" disponibile per questo prodotto. Clicca "Applica" nella sezione promozioni.`, {
+        icon: <Gift className="h-4 w-4 text-primary" />,
+        duration: 4000,
       });
     }
 
