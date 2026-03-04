@@ -366,7 +366,6 @@ const Index = () => {
           <ReorderAlertsWidget />
           <PriorityClientsWidget />
           <WeeklyActivityWidget />
-          <ClientsNotVisitedWidget />
         </div>
 
         {/* Upcoming Appointments */}
