@@ -59,6 +59,7 @@ const ClienteDettaglio = () => {
   const { data: promozioniAttive } = useCanvassAttive();
   const { data: promozioniScadute } = useCanvassScadute();
   const { data: clientReports = [] } = useClientReports(id);
+  const { data: reorderData = [] } = useClienteReorderTracking(id);
   const [expandedPromo, setExpandedPromo] = useState<string | null>(null);
 
   // Filtra le promozioni applicabili a questo cliente
