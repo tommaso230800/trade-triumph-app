@@ -33,6 +33,8 @@ import {
   Target,
   TrendingUp,
   BookOpen,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
