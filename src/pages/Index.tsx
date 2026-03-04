@@ -3,7 +3,6 @@ import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { WeeklyActivityWidget } from "@/components/dashboard/WeeklyActivityWidget";
-import { ClientsNotVisitedWidget } from "@/components/dashboard/ClientsNotVisitedWidget";
 import { PriorityClientsWidget } from "@/components/dashboard/PriorityClientsWidget";
 import { ReorderAlertsWidget } from "@/components/dashboard/ReorderAlertsWidget";
 import { useStats } from "@/hooks/useStats";
