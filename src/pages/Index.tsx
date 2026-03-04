@@ -364,6 +364,7 @@ const Index = () => {
 
         {/* Bottom Widgets Row */}
         <div className="grid gap-6 lg:grid-cols-3 animate-fade-in stagger-6">
+          <ReorderAlertsWidget />
           <PriorityClientsWidget />
           <WeeklyActivityWidget />
           <ClientsNotVisitedWidget />

@@ -17,7 +17,6 @@ import {
   Target,
   Zap,
   ClipboardList,
-  Eye,
   Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
