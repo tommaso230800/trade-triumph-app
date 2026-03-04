@@ -306,7 +306,53 @@ const ClienteDettaglio = () => {
           />
         </div>
 
-        {/* Order History */}
+        {/* Frequenza Riordino per Azienda */}
+        {reorderData.length > 0 && (
+          <div className="rounded-xl bg-card p-6 shadow-card">
+            <h3 className="font-semibold text-lg flex items-center gap-2 mb-4">
+              <RefreshCw className="h-5 w-5 text-primary" />
+              Frequenza Riordino per Azienda
+            </h3>
+            <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {reorderData.map((rt: any) => {
+                const oggi = new Date();
+                const previsto = rt.prossimo_riordino_previsto ? new Date(rt.prossimo_riordino_previsto) : null;
+                const inRitardo = previsto && oggi > previsto;
+                const giorniRitardo = previsto ? Math.max(0, Math.floor((oggi.getTime() - previsto.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+
+                return (
+                  <div
+                    key={rt.id}
+                    className={`rounded-lg border p-4 space-y-2 ${inRitardo ? 'border-destructive/50 bg-destructive/5' : 'border-border'}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium text-sm">{rt.azienda_nome}</p>
+                      {inRitardo && (
+                        <Badge variant="destructive" className="text-xs">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          +{giorniRitardo} gg
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>Media riordino: <span className="font-semibold text-foreground">{Math.round(rt.media_giorni_riordino)} giorni</span></p>
+                      <p>Ordini totali: {rt.numero_ordini}</p>
+                      {rt.ultimo_ordine_data && (
+                        <p>Ultimo ordine: {format(new Date(rt.ultimo_ordine_data), "d MMM yyyy", { locale: it })}</p>
+                      )}
+                      {previsto && (
+                        <p>Prossimo previsto: <span className={inRitardo ? 'text-destructive font-semibold' : 'text-foreground font-semibold'}>
+                          {format(previsto, "d MMM yyyy", { locale: it })}
+                        </span></p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="rounded-xl bg-card p-6 shadow-card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-lg flex items-center gap-2">
