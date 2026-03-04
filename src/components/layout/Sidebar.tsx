@@ -66,7 +66,7 @@ const navigation: NavItem[] = [
     ]
   },
   { name: "Trattative", href: "/trattative", icon: Target },
-  { name: "Pre-Visita", href: "/assistente-pre-visita", icon: Eye },
+  
   { name: "Assistente Trattativa", href: "/assistente-trattativa", icon: Zap },
   { name: "AI Commerciale", href: "/ai-commerciale", icon: Bot },
   { name: "Visite Clienti", href: "/visite", icon: ClipboardList },

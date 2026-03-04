@@ -1257,6 +1257,63 @@ export type Database = {
           },
         ]
       }
+      reorder_tracking: {
+        Row: {
+          azienda_id: string
+          cliente_id: string
+          created_at: string
+          id: string
+          media_giorni_riordino: number | null
+          numero_ordini: number | null
+          penultimo_ordine_data: string | null
+          prossimo_riordino_previsto: string | null
+          ultimo_ordine_data: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id: string
+          cliente_id: string
+          created_at?: string
+          id?: string
+          media_giorni_riordino?: number | null
+          numero_ordini?: number | null
+          penultimo_ordine_data?: string | null
+          prossimo_riordino_previsto?: string | null
+          ultimo_ordine_data?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string
+          cliente_id?: string
+          created_at?: string
+          id?: string
+          media_giorni_riordino?: number | null
+          numero_ordini?: number | null
+          penultimo_ordine_data?: string | null
+          prossimo_riordino_previsto?: string | null
+          ultimo_ordine_data?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reorder_tracking_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reorder_tracking_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       report_activities: {
         Row: {
           azienda_id: string | null
