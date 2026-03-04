@@ -19,7 +19,7 @@ import KPI from "./pages/KPI";
 import Provvigioni from "./pages/Provvigioni";
 import Canvass from "./pages/Canvass";
 import AssistenteTrattativa from "./pages/AssistenteTrattativa";
-import AssistentePreVisita from "./pages/AssistentePreVisita";
+
 import AssistenteAICommerciale from "./pages/AssistenteAICommerciale";
 import Trattative from "./pages/Trattative";
 import TrattativaDettaglio from "./pages/TrattativaDettaglio";
