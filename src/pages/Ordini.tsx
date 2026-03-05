@@ -244,6 +244,17 @@ const Ordini = () => {
     );
   }, [righeOrdine, promozioniRilevanti]);
 
+  // Determine which sc slot to use for promo based on company defaults
+  const getPromoScSlot = (): "sc1" | "sc2" | "sc3" => {
+    const azienda = aziende?.find((a) => a.id === formData.azienda_id);
+    if (!azienda) return "sc1";
+    const hasSc1 = (azienda.default_sc1 || 0) > 0;
+    const hasSc2 = (azienda.default_sc2 || 0) > 0;
+    if (hasSc1 && hasSc2) return "sc3";
+    if (hasSc1) return "sc2";
+    return "sc1";
+  };
+
   // Apply promotion to order
   const handleApplyPromo = (promo: typeof canvassAttive[0]) => {
     if (appliedPromos.includes(promo.id)) return;
@@ -252,12 +263,13 @@ const Ordini = () => {
     if (promo.tipo === "sconto_percentuale") {
       // Apply percentage discount to relevant products or globally
       if (promo.canvass_prodotti && promo.canvass_prodotti.length > 0) {
+        const scSlot = getPromoScSlot();
         // Apply to specific products
         const updatedRighe = righeOrdine.map(riga => {
           const promoProduct = promo.canvass_prodotti?.find(cp => cp.prodotto_id === riga.prodotto_id);
           if (promoProduct) {
             const scontoValue = promoProduct.valore_override ?? promo.valore;
-            return { ...riga, sc1: String(scontoValue).replace(".", ",") };
+            return { ...riga, [scSlot]: String(scontoValue).replace(".", ",") };
           }
           return riga;
         });
@@ -290,12 +302,13 @@ const Ordini = () => {
 
   // Auto-apply promos when adding products
   const applyPromoToNewProduct = (riga: RigaOrdine): RigaOrdine => {
+    const scSlot = getPromoScSlot();
     for (const promo of promozioniRilevanti) {
       const promoProduct = promo.canvass_prodotti?.find(cp => cp.prodotto_id === riga.prodotto_id);
       if (promoProduct) {
         const scontoValue = promoProduct.valore_override ?? promo.valore;
         if (promo.tipo === "sconto_percentuale") {
-          return { ...riga, sc1: String(scontoValue).replace(".", ",") };
+          return { ...riga, [scSlot]: String(scontoValue).replace(".", ",") };
         } else if (promo.tipo === "prezzo_fisso") {
           return { ...riga, prezzo_unitario: String(scontoValue).replace(".", ",") };
         }
