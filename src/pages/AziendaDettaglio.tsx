@@ -794,6 +794,18 @@ const AziendaDettaglio = () => {
                 />
               </div>
             </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label>Costo di Acquisto (€) <span className="text-xs text-muted-foreground">— per calcolo margine</span></Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={productForm.costo_acquisto}
+                  onChange={(e) => setProductForm({ ...productForm, costo_acquisto: e.target.value })}
+                  placeholder="es. 0,95"
+                />
+              </div>
+            </div>
             {/* Brand Select */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
