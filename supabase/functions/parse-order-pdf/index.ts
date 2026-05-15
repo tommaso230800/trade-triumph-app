@@ -8,40 +8,44 @@ const corsHeaders = {
 // Funzione per chiamare l'AI con retry
 async function callAIWithRetry(pdfBase64: string, apiKey: string, maxRetries = 3): Promise<Response> {
   const systemPrompt = `Sei un assistente specializzato nell'estrazione di dati da ordini PDF italiani.
-Analizza il documento PDF e estrai le seguenti informazioni in formato JSON:
+Analizza il documento PDF ed estrai i dati in formato JSON RIGOROSO.
 
+OBIETTIVO PRIMARIO: l'IMPONIBILE TOTALE deve TORNARE ESATTO. Devi quindi:
+1. Lavorare SEMPRE in CARTONI (mai in pezzi). Se in fattura ci sono "pezzi", convertili in cartoni dividendo per i pezzi/cartone.
+2. Per ogni riga restituire prezzo_per_cartone (= prezzo del singolo cartone, NON il prezzo a pezzo).
+3. Riconoscere e separare gli SCONTI applicati: sconto pagamento % (es. "sconto pag.", "sc. pag.", "sconto cassa"), sconti riga sc1/sc2/sc3 a cascata, sconto merce totale in euro.
+4. Riconoscere CARTONI OMAGGIO (gratis fattura, GF, G.F., omaggio, gratis, free, campione). Vanno inseriti come riga separata con prezzo_per_cartone=0 e is_omaggio=true. NON devono contribuire all'imponibile.
+5. Verificare che la somma di (quantita_cartoni × prezzo_per_cartone × cascata sconti riga) - sconto_merce, scontata di sconto_pagamento_percentuale, dia l'imponibile_totale dichiarato. Se non torna, riprova ad estrarre meglio i dati.
+
+Restituisci JSON in questa forma:
 {
-  "data_ordine": "YYYY-MM-DD", // data dell'ordine se presente
-  "cliente_nome": "nome del cliente se presente",
-  "azienda_nome": "nome dell'azienda fornitrice se presente",
-  "sconto_percentuale": 0, // sconto % applicato sull'ordine
-  "sconto_merce": 0, // sconto merce in euro
-  "tipo_pagamento": "tipo di pagamento se presente",
-  "imponibile_totale": 0, // totale imponibile in euro (senza IVA)
-  "note": "eventuali note",
+  "data_ordine": "YYYY-MM-DD",
+  "cliente_nome": "...",
+  "azienda_nome": "...",
+  "tipo_pagamento": "...",
+  "sconto_pagamento_percentuale": 0,    // % sconto cassa/pagamento sull'imponibile
+  "sconto_merce": 0,                    // sconto merce totale in euro
+  "imponibile_totale": 0,               // imponibile dichiarato in fattura (senza IVA)
+  "note": "...",
   "righe": [
     {
-      "codice_prodotto": "codice articolo",
-      "nome_prodotto": "descrizione prodotto",
-      "quantita_pezzi": 0,
-      "quantita_cartoni": 0,
-      "prezzo_unitario": 0,
-      "importo_riga": 0,
+      "codice_prodotto": "...",
+      "nome_prodotto": "...",
+      "quantita_cartoni": 0,            // SEMPRE in cartoni
+      "pezzi_per_cartone": 0,           // info di palletizzazione, se visibile
+      "prezzo_per_cartone": 0,          // prezzo del singolo cartone (non a pezzo)
+      "sc1": 0, "sc2": 0, "sc3": 0,     // % sconti a cascata di riga
+      "importo_riga": 0,                // importo finale netto della riga (= cartoni × prezzo × cascata)
       "is_omaggio": false
     }
   ]
 }
 
-REGOLE IMPORTANTI:
-- Estrai SOLO i dati presenti nel documento
-- I prezzi devono essere numeri (es: 12.50 non "12,50€")
-- Le date devono essere in formato YYYY-MM-DD
-- Se un campo non è presente, usa null
-- Cerca codici prodotto (es: ART001, COD-123, etc.)
-- L'imponibile_totale è il totale senza IVA
-- IMPORTANTE: NON includere righe con quantità totale 0 (pezzi e cartoni entrambi 0). Saltale.
-- IMPORTANTE: identifica prodotti OMAGGIO / GRATIS FATTURA. Indicatori: sigla "GF" / "G.F." nel codice o nella descrizione, parole "OMAGGIO", "GRATIS", "FREE", "CAMPIONE", colonna dedicata omaggio, oppure prezzo unitario 0 con quantità > 0. Per queste righe imposta is_omaggio=true e prezzo_unitario=0.
-- Restituisci SOLO il JSON, senza spiegazioni`;
+REGOLE:
+- Numeri numerici (12.50 non "12,50€"). Date YYYY-MM-DD.
+- NON restituire campi quantita_pezzi: usa SOLO quantita_cartoni.
+- Salta righe con quantita_cartoni = 0 a meno che non siano omaggio.
+- Restituisci SOLO il JSON, senza spiegazioni.`;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     console.log(`Tentativo ${attempt} di ${maxRetries}...`);
