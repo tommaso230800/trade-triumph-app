@@ -34,10 +34,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 type ParsedRiga = {
   codice_prodotto: string | null;
   nome_prodotto: string;
-  quantita_pezzi: number;
+  quantita_pezzi?: number;          // legacy, ignorato dopo normalizzazione
   quantita_cartoni: number;
-  prezzo_unitario: number;
+  pezzi_per_cartone?: number;
+  prezzo_per_cartone?: number;       // nuovo
+  prezzo_unitario: number;           // = prezzo per cartone (normalizzato)
   importo_riga: number;
+  sc1?: number;
+  sc2?: number;
+  sc3?: number;
+  is_omaggio?: boolean;
   prodotto_id?: string;
   createNew?: boolean;
 };
@@ -46,7 +52,8 @@ type ParsedOrderData = {
   data_ordine: string | null;
   cliente_nome: string | null;
   azienda_nome: string | null;
-  sconto_percentuale: number;
+  sconto_percentuale: number;                // legacy
+  sconto_pagamento_percentuale?: number;     // nuovo
   sconto_merce: number;
   tipo_pagamento: string | null;
   imponibile_totale: number;
