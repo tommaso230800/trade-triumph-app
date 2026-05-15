@@ -497,10 +497,10 @@ export function ImportPDFDialog({
       totale: parsedData?.imponibile_totale || 0,
       note: parsedData?.note || "",
       righe: validRighe.map((r) => ({
-        prodotto_id: r.prodotto_id,
-        quantita_pezzi: r.quantita_pezzi,
+        prodotto_id: r.prodotto_id!,
+        quantita_pezzi: 0, // SEMPRE 0: ordine salvato in soli cartoni per coerenza alla riapertura
         quantita_cartoni: r.quantita_cartoni,
-        prezzo_unitario: r.prezzo_unitario,
+        prezzo_unitario: r.prezzo_unitario, // prezzo per cartone
       })),
     });
 
