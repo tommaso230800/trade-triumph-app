@@ -1117,11 +1117,11 @@ const Ordini = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 animate-fade-in">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Cerca ordine..."
+              placeholder="Cerca per cliente, azienda o prodotto..."
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1140,6 +1140,24 @@ const Ordini = () => {
               <SelectItem value="annullato">Annullato</SelectItem>
             </SelectContent>
           </Select>
+          <MultiSelect
+            className="w-full sm:w-64"
+            placeholder="Filtra per mese"
+            values={monthFilters}
+            onValuesChange={setMonthFilters}
+            options={(() => {
+              // Ultimi 24 mesi
+              const opts: { value: string; label: string }[] = [];
+              const now = new Date();
+              for (let i = 0; i < 24; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                const label = d.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+                opts.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
+              }
+              return opts;
+            })()}
+          />
         </div>
 
         {/* Table */}
