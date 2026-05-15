@@ -393,12 +393,14 @@ export type Database = {
           fatturato_target: number | null
           id: string
           indirizzo: string | null
+          livello_relazione: number | null
           n_promo_concesse: number | null
           nome: string
           obiezione_principale: string | null
           ordini_count: number | null
           partita_iva: string | null
           pec: string | null
+          potenziale_cliente: string | null
           provincia: string | null
           sconto_max_policy: number | null
           status: Database["public"]["Enums"]["client_status"] | null
@@ -424,12 +426,14 @@ export type Database = {
           fatturato_target?: number | null
           id?: string
           indirizzo?: string | null
+          livello_relazione?: number | null
           n_promo_concesse?: number | null
           nome: string
           obiezione_principale?: string | null
           ordini_count?: number | null
           partita_iva?: string | null
           pec?: string | null
+          potenziale_cliente?: string | null
           provincia?: string | null
           sconto_max_policy?: number | null
           status?: Database["public"]["Enums"]["client_status"] | null
@@ -455,12 +459,14 @@ export type Database = {
           fatturato_target?: number | null
           id?: string
           indirizzo?: string | null
+          livello_relazione?: number | null
           n_promo_concesse?: number | null
           nome?: string
           obiezione_principale?: string | null
           ordini_count?: number | null
           partita_iva?: string | null
           pec?: string | null
+          potenziale_cliente?: string | null
           provincia?: string | null
           sconto_max_policy?: number | null
           status?: Database["public"]["Enums"]["client_status"] | null
@@ -468,6 +474,105 @@ export type Database = {
           tipologia_cliente?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      competitor_products: {
+        Row: {
+          agente_concorrente: string | null
+          categoria: string | null
+          cliente_id: string
+          condizioni: string | null
+          created_at: string
+          formato: string | null
+          foto_url: string | null
+          frequenza: string | null
+          id: string
+          last_updated_at: string | null
+          marca: string | null
+          margine_stimato: number | null
+          nome: string
+          nostro_prezzo: number | null
+          nostro_prodotto_id: string | null
+          note: string | null
+          omaggi: string | null
+          pagamento: string | null
+          prezzo_acquisto: number | null
+          prezzo_vendita: number | null
+          priorita: string | null
+          punti_deboli: string | null
+          punti_forti: string | null
+          quantita_abituale: string | null
+          sconto: number | null
+          soddisfazione: number | null
+          stato: string | null
+          updated_at: string
+          user_id: string
+          vantaggio: string | null
+        }
+        Insert: {
+          agente_concorrente?: string | null
+          categoria?: string | null
+          cliente_id: string
+          condizioni?: string | null
+          created_at?: string
+          formato?: string | null
+          foto_url?: string | null
+          frequenza?: string | null
+          id?: string
+          last_updated_at?: string | null
+          marca?: string | null
+          margine_stimato?: number | null
+          nome: string
+          nostro_prezzo?: number | null
+          nostro_prodotto_id?: string | null
+          note?: string | null
+          omaggi?: string | null
+          pagamento?: string | null
+          prezzo_acquisto?: number | null
+          prezzo_vendita?: number | null
+          priorita?: string | null
+          punti_deboli?: string | null
+          punti_forti?: string | null
+          quantita_abituale?: string | null
+          sconto?: number | null
+          soddisfazione?: number | null
+          stato?: string | null
+          updated_at?: string
+          user_id: string
+          vantaggio?: string | null
+        }
+        Update: {
+          agente_concorrente?: string | null
+          categoria?: string | null
+          cliente_id?: string
+          condizioni?: string | null
+          created_at?: string
+          formato?: string | null
+          foto_url?: string | null
+          frequenza?: string | null
+          id?: string
+          last_updated_at?: string | null
+          marca?: string | null
+          margine_stimato?: number | null
+          nome?: string
+          nostro_prezzo?: number | null
+          nostro_prodotto_id?: string | null
+          note?: string | null
+          omaggi?: string | null
+          pagamento?: string | null
+          prezzo_acquisto?: number | null
+          prezzo_vendita?: number | null
+          priorita?: string | null
+          punti_deboli?: string | null
+          punti_forti?: string | null
+          quantita_abituale?: string | null
+          sconto?: number | null
+          soddisfazione?: number | null
+          stato?: string | null
+          updated_at?: string
+          user_id?: string
+          vantaggio?: string | null
         }
         Relationships: []
       }
@@ -1706,6 +1811,158 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      visit_preparations: {
+        Row: {
+          analisi_concorrenza: string | null
+          argomenti_vendita: string | null
+          cliente_id: string
+          contenuto_completo: Json | null
+          created_at: string
+          domande_consigliate: string | null
+          id: string
+          obiettivo_visita: string | null
+          obiezioni_previste: string | null
+          proposta_consigliata: string | null
+          prossima_azione: string | null
+          riepilogo_cliente: string | null
+          status: string
+          storico_commerciale: string | null
+          updated_at: string
+          user_id: string
+          visit_date: string | null
+        }
+        Insert: {
+          analisi_concorrenza?: string | null
+          argomenti_vendita?: string | null
+          cliente_id: string
+          contenuto_completo?: Json | null
+          created_at?: string
+          domande_consigliate?: string | null
+          id?: string
+          obiettivo_visita?: string | null
+          obiezioni_previste?: string | null
+          proposta_consigliata?: string | null
+          prossima_azione?: string | null
+          riepilogo_cliente?: string | null
+          status?: string
+          storico_commerciale?: string | null
+          updated_at?: string
+          user_id: string
+          visit_date?: string | null
+        }
+        Update: {
+          analisi_concorrenza?: string | null
+          argomenti_vendita?: string | null
+          cliente_id?: string
+          contenuto_completo?: Json | null
+          created_at?: string
+          domande_consigliate?: string | null
+          id?: string
+          obiettivo_visita?: string | null
+          obiezioni_previste?: string | null
+          proposta_consigliata?: string | null
+          prossima_azione?: string | null
+          riepilogo_cliente?: string | null
+          status?: string
+          storico_commerciale?: string | null
+          updated_at?: string
+          user_id?: string
+          visit_date?: string | null
+        }
+        Relationships: []
+      }
+      visit_reports: {
+        Row: {
+          campioni_lasciati: string | null
+          cliente_id: string
+          concorrenza_rilevata: Json | null
+          created_at: string
+          data_follow_up: string | null
+          data_visita: string
+          esito: string | null
+          espositori_richiesti: string | null
+          id: string
+          interesse_cliente: string | null
+          materiale_promozionale: string | null
+          note: string | null
+          obiezioni: string | null
+          ordine_preso: boolean | null
+          prodotti_ordinati: Json | null
+          prodotti_proposti: Json | null
+          prodotti_proposti_non_ordinati: Json | null
+          promozioni_discusse: string | null
+          prossima_azione: string | null
+          risposte_date: string | null
+          umore_cliente: string | null
+          updated_at: string
+          user_id: string
+          valore_ordine: number | null
+          visit_preparation_id: string | null
+        }
+        Insert: {
+          campioni_lasciati?: string | null
+          cliente_id: string
+          concorrenza_rilevata?: Json | null
+          created_at?: string
+          data_follow_up?: string | null
+          data_visita?: string
+          esito?: string | null
+          espositori_richiesti?: string | null
+          id?: string
+          interesse_cliente?: string | null
+          materiale_promozionale?: string | null
+          note?: string | null
+          obiezioni?: string | null
+          ordine_preso?: boolean | null
+          prodotti_ordinati?: Json | null
+          prodotti_proposti?: Json | null
+          prodotti_proposti_non_ordinati?: Json | null
+          promozioni_discusse?: string | null
+          prossima_azione?: string | null
+          risposte_date?: string | null
+          umore_cliente?: string | null
+          updated_at?: string
+          user_id: string
+          valore_ordine?: number | null
+          visit_preparation_id?: string | null
+        }
+        Update: {
+          campioni_lasciati?: string | null
+          cliente_id?: string
+          concorrenza_rilevata?: Json | null
+          created_at?: string
+          data_follow_up?: string | null
+          data_visita?: string
+          esito?: string | null
+          espositori_richiesti?: string | null
+          id?: string
+          interesse_cliente?: string | null
+          materiale_promozionale?: string | null
+          note?: string | null
+          obiezioni?: string | null
+          ordine_preso?: boolean | null
+          prodotti_ordinati?: Json | null
+          prodotti_proposti?: Json | null
+          prodotti_proposti_non_ordinati?: Json | null
+          promozioni_discusse?: string | null
+          prossima_azione?: string | null
+          risposte_date?: string | null
+          umore_cliente?: string | null
+          updated_at?: string
+          user_id?: string
+          valore_ordine?: number | null
+          visit_preparation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_reports_visit_preparation_id_fkey"
+            columns: ["visit_preparation_id"]
+            isOneToOne: false
+            referencedRelation: "visit_preparations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       visite: {
         Row: {
