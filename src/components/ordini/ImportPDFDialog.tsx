@@ -271,26 +271,55 @@ export function ImportPDFDialog({
     if (!source) return;
 
     const aziendaProdotti = allProdotti.filter((p) => p.azienda_id === aziendaId);
-    
-    const mapped = source.righe.map((riga) => {
-      // Try to match by codice
-      let matchedProdotto = aziendaProdotti.find(
-        (p) => p.codice && riga.codice_prodotto && 
-               p.codice.toLowerCase() === riga.codice_prodotto.toLowerCase()
-      );
-      
-      // Try to match by nome if codice didn't match
-      if (!matchedProdotto) {
-        matchedProdotto = aziendaProdotti.find(
-          (p) => p.nome.toLowerCase().includes(riga.nome_prodotto.toLowerCase()) ||
-                 riga.nome_prodotto.toLowerCase().includes(p.nome.toLowerCase())
-        );
-      }
 
+    // Normalizzazioni: rimuove spazi/punteggiatura, abbassa, toglie zeri iniziali
+    const normCode = (s?: string | null) =>
+      (s || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^0+/, "");
+    const normName = (s?: string | null) =>
+      (s || "")
+        .toString()
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // accenti
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    const tokens = (s: string) => normName(s).split(" ").filter((t) => t.length >= 2);
+
+    const findMatch = (riga: ParsedRiga) => {
+      const rCode = normCode(riga.codice_prodotto);
+      // 1) match esatto per codice normalizzato
+      if (rCode) {
+        const byCode = aziendaProdotti.find((p) => normCode(p.codice) === rCode);
+        if (byCode) return byCode;
+      }
+      // 2) match nome normalizzato uguale
+      const rName = normName(riga.nome_prodotto);
+      if (rName) {
+        const byNameExact = aziendaProdotti.find((p) => normName(p.nome) === rName);
+        if (byNameExact) return byNameExact;
+      }
+      // 3) match per token in comune (almeno 60% dei token, min 2)
+      const rTok = tokens(riga.nome_prodotto);
+      if (rTok.length === 0) return undefined;
+      let best: { p: Prodotto; score: number } | null = null;
+      for (const p of aziendaProdotti) {
+        const pTok = tokens(p.nome);
+        if (pTok.length === 0) continue;
+        const common = rTok.filter((t) => pTok.includes(t)).length;
+        const ratio = common / Math.min(rTok.length, pTok.length);
+        if (common >= 2 && ratio >= 0.6 && (!best || ratio > best.score)) {
+          best = { p, score: ratio };
+        }
+      }
+      return best?.p;
+    };
+
+    const mapped = source.righe.map((riga) => {
+      const matched = findMatch(riga);
       return {
         ...riga,
-        prodotto_id: matchedProdotto?.id || "",
-        createNew: !matchedProdotto,
+        prodotto_id: matched?.id || "",
+        createNew: !matched,
       };
     });
 
