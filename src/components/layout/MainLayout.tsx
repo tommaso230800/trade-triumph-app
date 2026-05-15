@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
+import { QuickActions } from "./QuickActions";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
@@ -56,8 +57,9 @@ export function MainLayout({ children }: MainLayoutProps) {
       </div>
       <Sidebar />
       <main className="lg:pl-64 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div key={location.pathname} className="p-4 pt-16 pb-20 lg:pt-6 lg:p-8 lg:pb-8 animate-rise-in">{children}</div>
+        <div key={location.pathname} className="p-4 pt-16 pb-24 lg:pt-6 lg:p-8 lg:pb-8 animate-rise-in">{children}</div>
       </main>
+      <QuickActions />
     </div>
   );
 }
