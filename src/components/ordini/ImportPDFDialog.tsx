@@ -204,13 +204,29 @@ export function ImportPDFDialog({
       }
 
       // Sanitize numeri (l'AI a volte restituisce stringhe)
-      parsed.righe = (parsed.righe || []).map((r) => ({
-        ...r,
-        quantita_pezzi: Number(r.quantita_pezzi) || 0,
-        quantita_cartoni: Number(r.quantita_cartoni) || 0,
-        prezzo_unitario: Number(r.prezzo_unitario) || 0,
-        importo_riga: Number(r.importo_riga) || 0,
-      }));
+      // - filtra righe con quantità totale 0
+      // - rileva prodotti GF/omaggio (gratis fattura) e imposta prezzo a 0
+      const isOmaggio = (r: any) => {
+        const txt = `${r.nome_prodotto || ""} ${r.codice_prodotto || ""}`.toLowerCase();
+        if (r.is_omaggio === true) return true;
+        // match "gf", "g.f.", "omaggio", "gratis", "free", "campione"
+        return /\b(g\.?f\.?|omagg|gratis|free|campion)/i.test(txt);
+      };
+
+      parsed.righe = (parsed.righe || [])
+        .map((r) => {
+          const pezzi = Number(r.quantita_pezzi) || 0;
+          const cartoni = Number(r.quantita_cartoni) || 0;
+          const omaggio = isOmaggio(r);
+          return {
+            ...r,
+            quantita_pezzi: pezzi,
+            quantita_cartoni: cartoni,
+            prezzo_unitario: omaggio ? 0 : (Number(r.prezzo_unitario) || 0),
+            importo_riga: omaggio ? 0 : (Number(r.importo_riga) || 0),
+          };
+        })
+        .filter((r) => r.quantita_pezzi > 0 || r.quantita_cartoni > 0);
 
       setParsedData(parsed);
 
