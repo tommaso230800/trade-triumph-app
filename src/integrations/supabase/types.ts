@@ -865,6 +865,60 @@ export type Database = {
           },
         ]
       }
+      notes: {
+        Row: {
+          azienda_id: string | null
+          categoria: string
+          checklist: Json
+          cliente_id: string | null
+          colore: string | null
+          completata: boolean
+          contenuto: string | null
+          created_at: string
+          data_promemoria: string | null
+          id: string
+          pinned: boolean
+          priorita: string
+          titolo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          categoria?: string
+          checklist?: Json
+          cliente_id?: string | null
+          colore?: string | null
+          completata?: boolean
+          contenuto?: string | null
+          created_at?: string
+          data_promemoria?: string | null
+          id?: string
+          pinned?: boolean
+          priorita?: string
+          titolo?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string | null
+          categoria?: string
+          checklist?: Json
+          cliente_id?: string | null
+          colore?: string | null
+          completata?: boolean
+          contenuto?: string | null
+          created_at?: string
+          data_promemoria?: string | null
+          id?: string
+          pinned?: boolean
+          priorita?: string
+          titolo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ordini: {
         Row: {
           azienda_id: string | null
