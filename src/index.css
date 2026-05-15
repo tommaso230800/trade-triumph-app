@@ -4,69 +4,70 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 20% 10%;
+    /* Navy Trust palette - professional CRM */
+    --background: 213 30% 97%;
+    --foreground: 221 60% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 221 60% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 221 60% 12%;
 
-    --primary: 217 91% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 213 55% 26%;
+    --primary-foreground: 213 25% 96%;
 
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 220 20% 20%;
+    --secondary: 213 25% 94%;
+    --secondary-foreground: 221 50% 20%;
 
-    --muted: 210 15% 94%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 213 22% 93%;
+    --muted-foreground: 215 16% 42%;
 
-    --accent: 152 69% 45%;
+    --accent: 209 50% 45%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 70% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
-    --ring: 217 91% 50%;
+    --border: 213 22% 88%;
+    --input: 213 22% 88%;
+    --ring: 213 55% 35%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
     /* Custom tokens */
-    --success: 152 69% 45%;
+    --success: 158 60% 38%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 36 90% 48%;
     --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
+    --info: 209 70% 48%;
     --info-foreground: 0 0% 100%;
 
-    /* Sidebar */
-    --sidebar-background: 220 25% 12%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 217 91% 60%;
+    /* Sidebar - deep navy */
+    --sidebar-background: 221 60% 11%;
+    --sidebar-foreground: 213 25% 88%;
+    --sidebar-primary: 209 70% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 18%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 220 20% 20%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 221 45% 18%;
+    --sidebar-accent-foreground: 213 25% 96%;
+    --sidebar-border: 221 40% 18%;
+    --sidebar-ring: 209 70% 58%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 50%) 0%, hsl(217 91% 40%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(152 69% 45%) 0%, hsl(152 69% 35%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 20% 98%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(213 55% 26%) 0%, hsl(221 60% 18%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(158 60% 38%) 0%, hsl(158 60% 28%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(213 30% 98%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(232,237,243,0.75) 100%);
 
-    /* Shadows - enhanced */
-    --shadow-xs: 0 1px 2px 0 hsl(220 20% 10% / 0.03);
-    --shadow-sm: 0 1px 3px 0 hsl(220 20% 10% / 0.06), 0 1px 2px -1px hsl(220 20% 10% / 0.06);
-    --shadow-md: 0 4px 6px -1px hsl(220 20% 10% / 0.08), 0 2px 4px -2px hsl(220 20% 10% / 0.08);
-    --shadow-lg: 0 10px 15px -3px hsl(220 20% 10% / 0.1), 0 4px 6px -4px hsl(220 20% 10% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(220 20% 10% / 0.1), 0 8px 10px -6px hsl(220 20% 10% / 0.1);
-    --shadow-card: 0 1px 3px 0 hsl(220 20% 10% / 0.06), 0 1px 2px -1px hsl(220 20% 10% / 0.06);
-    --shadow-card-hover: 0 10px 25px -5px hsl(220 20% 10% / 0.12), 0 4px 10px -4px hsl(220 20% 10% / 0.08);
-    --shadow-glow: 0 0 20px hsl(217 91% 50% / 0.15);
+    /* Shadows - softer, more refined */
+    --shadow-xs: 0 1px 2px 0 hsl(221 60% 12% / 0.04);
+    --shadow-sm: 0 1px 2px 0 hsl(221 60% 12% / 0.05), 0 1px 1px -1px hsl(221 60% 12% / 0.04);
+    --shadow-md: 0 4px 8px -2px hsl(221 60% 12% / 0.06), 0 2px 4px -2px hsl(221 60% 12% / 0.05);
+    --shadow-lg: 0 10px 20px -4px hsl(221 60% 12% / 0.08), 0 4px 8px -4px hsl(221 60% 12% / 0.06);
+    --shadow-xl: 0 20px 30px -6px hsl(221 60% 12% / 0.1), 0 8px 12px -6px hsl(221 60% 12% / 0.06);
+    --shadow-card: 0 1px 2px 0 hsl(221 60% 12% / 0.04), 0 1px 3px 0 hsl(221 60% 12% / 0.05);
+    --shadow-card-hover: 0 8px 24px -6px hsl(221 60% 12% / 0.12), 0 4px 8px -4px hsl(221 60% 12% / 0.06);
+    --shadow-glow: 0 0 24px hsl(209 70% 48% / 0.18);
   }
 
   .dark {
