@@ -26,7 +26,8 @@ Restituisci ESATTAMENTE questo JSON:
       "quantita_pezzi": number,
       "quantita_cartoni": number,
       "prezzo_unitario": number,
-      "importo_riga": number
+      "importo_riga": number,
+      "is_omaggio": boolean
     }
   ]
 }
@@ -35,6 +36,8 @@ REGOLE:
 - Numeri come number (12.50, non "12,50€"). Converti virgole decimali italiane in punti.
 - Date in YYYY-MM-DD.
 - Ignora righe di intestazione, totali, righe vuote.
+- IMPORTANTE: NON includere righe con quantità totale 0 (sia pezzi che cartoni a 0). Saltale completamente.
+- IMPORTANTE: rileva prodotti OMAGGIO / GRATIS FATTURA. Indicatori: sigla "GF" o "G.F." nel codice/descrizione, parole "OMAGGIO", "GRATIS", "FREE", "CAMPIONE", oppure colonna dedicata "Om"/"Omaggio"/"GF" con quantità, oppure prezzo 0 con quantità > 0. Per queste righe imposta is_omaggio=true e prezzo_unitario=0.
 - Se manca quantità cartoni ma c'è quantità pezzi (o viceversa), inseriscine almeno uno coerente.
 - Se non riesci a determinare un campo opzionale, usa null o 0.
 - Restituisci SOLO JSON valido, niente testo prima/dopo, niente markdown.`;
