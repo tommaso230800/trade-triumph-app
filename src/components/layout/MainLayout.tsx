@@ -47,10 +47,12 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="relative min-h-screen min-h-[100dvh] bg-background safe-top safe-bottom overflow-hidden">
-      {/* Ambient gold glow */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/10 blur-[140px]" />
-        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-accent/10 blur-[140px]" />
+      {/* Ambient aurora multi-color */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-40 -left-40 w-[620px] h-[620px] rounded-full bg-brand-blue/20 blur-[140px] animate-float" />
+        <div className="absolute -top-20 right-0 w-[480px] h-[480px] rounded-full bg-brand-green/15 blur-[140px] animate-float" style={{ animationDelay: '1.5s' }} />
+        <div className="absolute -bottom-40 -right-40 w-[560px] h-[560px] rounded-full bg-brand-red/15 blur-[140px] animate-float" style={{ animationDelay: '3s' }} />
+        <div className="absolute -bottom-32 left-10 w-[420px] h-[420px] rounded-full bg-brand-yellow/12 blur-[140px] animate-float" style={{ animationDelay: '4.5s' }} />
       </div>
       <Sidebar />
       <main className="lg:pl-64 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>

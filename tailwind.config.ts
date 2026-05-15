@@ -76,6 +76,16 @@ export default {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
         },
+        danger: {
+          DEFAULT: "hsl(var(--danger))",
+          foreground: "hsl(var(--danger-foreground))",
+        },
+        brand: {
+          blue: "hsl(var(--accent-blue))",
+          red: "hsl(var(--accent-red))",
+          green: "hsl(var(--accent-green))",
+          yellow: "hsl(var(--accent-yellow))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
