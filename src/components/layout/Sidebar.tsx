@@ -18,6 +18,7 @@ import {
   Zap,
   ClipboardList,
   Bot,
+  StickyNote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,7 @@ type NavItem = {
 
 const navigation: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Note", href: "/note", icon: StickyNote },
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
   { name: "KPI", href: "/kpi", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },

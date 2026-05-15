@@ -25,6 +25,7 @@ import Trattative from "./pages/Trattative";
 import TrattativaDettaglio from "./pages/TrattativaDettaglio";
 import VisiteClienti from "./pages/VisiteClienti";
 import Impostazioni from "./pages/Impostazioni";
+import NotePage from "./pages/Note";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/trattative/:id" element={<TrattativaDettaglio />} />
               <Route path="/visite" element={<VisiteClienti />} />
               <Route path="/impostazioni" element={<Impostazioni />} />
+              <Route path="/note" element={<NotePage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
