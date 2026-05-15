@@ -643,16 +643,15 @@ export function ImportPDFDialog({
                         <TableHead className="w-24">Codice</TableHead>
                         <TableHead>Prodotto PDF</TableHead>
                         <TableHead className="w-48">Associa Prodotto</TableHead>
-                        <TableHead className="w-20 text-right">Qtà Pz</TableHead>
-                        <TableHead className="w-20 text-right">Qtà Ct</TableHead>
-                        <TableHead className="w-24 text-right">Prezzo</TableHead>
+                        <TableHead className="w-20 text-right">Cartoni</TableHead>
+                        <TableHead className="w-28 text-right">Prezzo/Ct</TableHead>
                         <TableHead className="w-24 text-right">Importo</TableHead>
                         <TableHead className="w-12"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(mappedRighe.length > 0 ? mappedRighe : parsedData.righe.map(r => ({ ...r, prodotto_id: "", createNew: true }))).map((riga, index) => (
-                        <TableRow key={index}>
+                      {(mappedRighe.length > 0 ? mappedRighe : parsedData.righe.map(r => ({ ...r, prodotto_id: "", createNew: true }))).map((riga: any, index: number) => (
+                        <TableRow key={index} className={riga.is_omaggio ? "bg-success/10" : ""}>
                           <TableCell>
                             <Checkbox
                               checked={riga.createNew && !riga.prodotto_id}
@@ -663,15 +662,22 @@ export function ImportPDFDialog({
                           <TableCell className="font-mono text-xs">
                             {riga.codice_prodotto || "-"}
                           </TableCell>
-                          <TableCell className="text-sm">{riga.nome_prodotto}</TableCell>
+                          <TableCell className="text-sm">
+                            <span className="flex items-center gap-2">
+                              {riga.nome_prodotto}
+                              {riga.is_omaggio && (
+                                <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-success/20 text-success border border-success/40">Omaggio</span>
+                              )}
+                            </span>
+                          </TableCell>
                           <TableCell>
                             {riga.createNew && !riga.prodotto_id ? (
                               <span className="text-xs text-muted-foreground italic">
                                 Verrà creato automaticamente
                               </span>
                             ) : (
-                              <Select 
-                                value={riga.prodotto_id || ""} 
+                              <Select
+                                value={riga.prodotto_id || ""}
                                 onValueChange={(v) => updateRigaProdotto(index, v)}
                                 disabled={!selectedAzienda}
                               >
@@ -688,8 +694,7 @@ export function ImportPDFDialog({
                               </Select>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">{riga.quantita_pezzi}</TableCell>
-                          <TableCell className="text-right">{riga.quantita_cartoni}</TableCell>
+                          <TableCell className="text-right font-medium">{riga.quantita_cartoni}</TableCell>
                           <TableCell className="text-right">{formatCurrency(riga.prezzo_unitario)}</TableCell>
                           <TableCell className="text-right">{formatCurrency(riga.importo_riga)}</TableCell>
                           <TableCell>
