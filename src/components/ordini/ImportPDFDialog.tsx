@@ -272,46 +272,67 @@ export function ImportPDFDialog({
 
     const aziendaProdotti = allProdotti.filter((p) => p.azienda_id === aziendaId);
 
-    // Normalizzazioni: rimuove spazi/punteggiatura, abbassa, toglie zeri iniziali
+    // Normalizzazioni
     const normCode = (s?: string | null) =>
       (s || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^0+/, "");
     const normName = (s?: string | null) =>
       (s || "")
         .toString()
         .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // accenti
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9\s]/g, " ")
         .replace(/\s+/g, " ")
         .trim();
     const tokens = (s: string) => normName(s).split(" ").filter((t) => t.length >= 2);
 
+    // Cerca SEMPRE prima nei prodotti dell'azienda, poi globalmente.
+    // Un prodotto già esistente (anche di altra azienda) viene riutilizzato:
+    // così non si creano duplicati.
     const findMatch = (riga: ParsedRiga) => {
       const rCode = normCode(riga.codice_prodotto);
-      // 1) match esatto per codice normalizzato
-      if (rCode) {
-        const byCode = aziendaProdotti.find((p) => normCode(p.codice) === rCode);
-        if (byCode) return byCode;
-      }
-      // 2) match nome normalizzato uguale
       const rName = normName(riga.nome_prodotto);
-      if (rName) {
-        const byNameExact = aziendaProdotti.find((p) => normName(p.nome) === rName);
-        if (byNameExact) return byNameExact;
-      }
-      // 3) match per token in comune (almeno 60% dei token, min 2)
       const rTok = tokens(riga.nome_prodotto);
-      if (rTok.length === 0) return undefined;
-      let best: { p: Prodotto; score: number } | null = null;
-      for (const p of aziendaProdotti) {
-        const pTok = tokens(p.nome);
-        if (pTok.length === 0) continue;
-        const common = rTok.filter((t) => pTok.includes(t)).length;
-        const ratio = common / Math.min(rTok.length, pTok.length);
-        if (common >= 2 && ratio >= 0.6 && (!best || ratio > best.score)) {
-          best = { p, score: ratio };
+
+      const tryIn = (pool: Prodotto[]): Prodotto | undefined => {
+        // 1) codice esatto normalizzato
+        if (rCode) {
+          const byCode = pool.find((p) => p.codice && normCode(p.codice) === rCode);
+          if (byCode) return byCode;
         }
+        // 2) nome esatto normalizzato
+        if (rName) {
+          const byNameExact = pool.find((p) => normName(p.nome) === rName);
+          if (byNameExact) return byNameExact;
+        }
+        // 3) token in comune (>=60%, min 2)
+        if (rTok.length === 0) return undefined;
+        let best: { p: Prodotto; score: number } | null = null;
+        for (const p of pool) {
+          const pTok = tokens(p.nome);
+          if (pTok.length === 0) continue;
+          const common = rTok.filter((t) => pTok.includes(t)).length;
+          const ratio = common / Math.min(rTok.length, pTok.length);
+          if (common >= 2 && ratio >= 0.6 && (!best || ratio > best.score)) {
+            best = { p, score: ratio };
+          }
+        }
+        return best?.p;
+      };
+
+      // Prima nell'azienda selezionata
+      const inAzienda = tryIn(aziendaProdotti);
+      if (inAzienda) return inAzienda;
+
+      // Poi cerca globalmente (codice esatto o nome esatto): evita duplicati
+      if (rCode) {
+        const byCodeGlobal = allProdotti.find((p) => p.codice && normCode(p.codice) === rCode);
+        if (byCodeGlobal) return byCodeGlobal;
       }
-      return best?.p;
+      if (rName) {
+        const byNameGlobal = allProdotti.find((p) => normName(p.nome) === rName);
+        if (byNameGlobal) return byNameGlobal;
+      }
+      return undefined;
     };
 
     const mapped = source.righe.map((riga) => {
