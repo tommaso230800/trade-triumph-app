@@ -9,6 +9,7 @@ export type Prodotto = {
   nome: string;
   codice: string | null;
   prezzo_listino: number;
+  costo_acquisto: number;
   quantita_pezzi: number;
   pezzi_per_cartone: number;
   strati: number;
