@@ -6,11 +6,9 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  isAppAuthenticated: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  appLogout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,13 +17,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAppAuthenticated, setIsAppAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check simple password auth
-    const appAuth = sessionStorage.getItem("app_authenticated");
-    setIsAppAuthenticated(appAuth === "true");
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -68,13 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  const appLogout = () => {
-    sessionStorage.removeItem("app_authenticated");
-    setIsAppAuthenticated(false);
-  };
-
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAppAuthenticated, signUp, signIn, signOut, appLogout }}>
+    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

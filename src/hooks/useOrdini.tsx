@@ -30,7 +30,7 @@ export function useOrdini(
   return useQuery({
     queryKey: ["ordini", searchTerm, statusFilter, monthFilters?.join(",")],
     queryFn: async () => {
-      const term = (searchTerm || "").trim();
+      const term = (searchTerm || "").trim().slice(0, 100);
 
       // Quando l'utente cerca: troviamo gli ID degli ordini il cui cliente,
       // azienda o prodotto corrispondono. Poi filtriamo per ID.

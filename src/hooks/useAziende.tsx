@@ -31,8 +31,9 @@ export function useAziende(searchTerm?: string) {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (searchTerm) {
-        query = query.or(`nome.ilike.%${searchTerm}%,settore.ilike.%${searchTerm}%,citta.ilike.%${searchTerm}%`);
+      const safeTerm = searchTerm?.trim().slice(0, 100);
+      if (safeTerm) {
+        query = query.or(`nome.ilike.%${safeTerm}%,settore.ilike.%${safeTerm}%,citta.ilike.%${safeTerm}%`);
       }
 
       const { data, error } = await query;
