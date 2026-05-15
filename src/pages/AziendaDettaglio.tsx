@@ -85,6 +85,7 @@ const defaultProductForm: ProductForm = {
   nome: "",
   codice: "",
   prezzo_listino: "0",
+  costo_acquisto: "0",
   quantita_pezzi: 0,
   pezzi_per_cartone: 1,
   strati: 1,
