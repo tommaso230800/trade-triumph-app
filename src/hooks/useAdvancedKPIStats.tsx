@@ -99,6 +99,9 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
             quantita_pezzi,
             quantita_cartoni,
             prezzo_unitario,
+            sc1,
+            sc2,
+            sc3,
             prodotti (id, nome, pezzi_per_cartone, prezzo_listino, azienda_id, brand_id)
           )
         `)
