@@ -210,30 +210,71 @@ export function ImportPDFDialog({
         parsed = data.data as ParsedOrderData;
       }
 
-      // Sanitize numeri (l'AI a volte restituisce stringhe)
-      // - filtra righe con quantità totale 0
-      // - rileva prodotti GF/omaggio (gratis fattura) e imposta prezzo a 0
+      // Normalizza in SOLI CARTONI (mai pezzi) per evitare disallineamenti alla riapertura.
+      // Se l'AI ha restituito pezzi ma non cartoni, deduco i cartoni da pezzi_per_cartone.
       const isOmaggio = (r: any) => {
         const txt = `${r.nome_prodotto || ""} ${r.codice_prodotto || ""}`.toLowerCase();
         if (r.is_omaggio === true) return true;
-        // match "gf", "g.f.", "omaggio", "gratis", "free", "campione"
         return /\b(g\.?f\.?|omagg|gratis|free|campion)/i.test(txt);
       };
 
+      // Backward-compat: alcuni campi nuovi
+      if (parsed.sconto_pagamento_percentuale == null && parsed.sconto_percentuale != null) {
+        parsed.sconto_pagamento_percentuale = Number(parsed.sconto_percentuale) || 0;
+      }
+      parsed.sconto_percentuale = Number(parsed.sconto_pagamento_percentuale) || 0;
+
       parsed.righe = (parsed.righe || [])
-        .map((r) => {
-          const pezzi = Number(r.quantita_pezzi) || 0;
-          const cartoni = Number(r.quantita_cartoni) || 0;
+        .map((r: any) => {
           const omaggio = isOmaggio(r);
+          const pezziPerCartone = Number(r.pezzi_per_cartone) || 0;
+          let cartoni = Number(r.quantita_cartoni) || 0;
+          const pezzi = Number(r.quantita_pezzi) || 0;
+          // Se viene solo "pezzi", convertili in cartoni (regola: tutto in cartoni)
+          if (cartoni === 0 && pezzi > 0) {
+            cartoni = pezziPerCartone > 0 ? Math.max(1, Math.round(pezzi / pezziPerCartone)) : pezzi;
+          }
+          // Prezzo per cartone (preferito), altrimenti deriva da prezzo_unitario × pezzi_per_cartone
+          let prezzoCartone = Number(r.prezzo_per_cartone);
+          if (!prezzoCartone || isNaN(prezzoCartone)) {
+            const pu = Number(r.prezzo_unitario) || 0;
+            prezzoCartone = pezziPerCartone > 0 ? pu * pezziPerCartone : pu;
+          }
           return {
             ...r,
-            quantita_pezzi: pezzi,
+            quantita_pezzi: 0, // SEMPRE 0: lavoriamo in cartoni
             quantita_cartoni: cartoni,
-            prezzo_unitario: omaggio ? 0 : (Number(r.prezzo_unitario) || 0),
-            importo_riga: omaggio ? 0 : (Number(r.importo_riga) || 0),
+            pezzi_per_cartone: pezziPerCartone || undefined,
+            prezzo_per_cartone: omaggio ? 0 : prezzoCartone,
+            prezzo_unitario: omaggio ? 0 : prezzoCartone, // alias usato dal salvataggio
+            sc1: Number(r.sc1) || 0,
+            sc2: Number(r.sc2) || 0,
+            sc3: Number(r.sc3) || 0,
+            is_omaggio: omaggio,
+            importo_riga: omaggio
+              ? 0
+              : Number(r.importo_riga) ||
+                cartoni *
+                  prezzoCartone *
+                  (1 - (Number(r.sc1) || 0) / 100) *
+                  (1 - (Number(r.sc2) || 0) / 100) *
+                  (1 - (Number(r.sc3) || 0) / 100),
           };
         })
-        .filter((r) => r.quantita_pezzi > 0 || r.quantita_cartoni > 0);
+        .filter((r: any) => r.quantita_cartoni > 0);
+
+      // Verifica imponibile: somma righe - sconto_merce, scontato di sconto_pagamento
+      const sommaNetta = parsed.righe.reduce((s: number, r: any) => s + (Number(r.importo_riga) || 0), 0);
+      const dopoMerce = Math.max(0, sommaNetta - (Number(parsed.sconto_merce) || 0));
+      const calcolato = dopoMerce * (1 - (Number(parsed.sconto_pagamento_percentuale) || 0) / 100);
+      const dichiarato = Number(parsed.imponibile_totale) || 0;
+      const delta = Math.abs(calcolato - dichiarato);
+      if (dichiarato > 0 && delta > Math.max(0.5, dichiarato * 0.005)) {
+        toast.warning(
+          `Imponibile non torna esattamente: calcolato ${calcolato.toFixed(2)}€ vs dichiarato ${dichiarato.toFixed(2)}€ (delta ${delta.toFixed(2)}€). Controlla sconti e omaggi.`,
+          { duration: 8000 }
+        );
+      }
 
       setParsedData(parsed);
 
