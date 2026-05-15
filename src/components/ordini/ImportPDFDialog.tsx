@@ -248,10 +248,11 @@ export function ImportPDFDialog({
   };
 
   // Auto-match products when azienda changes
-  const handleAziendaChange = (aziendaId: string) => {
+  const handleAziendaChange = (aziendaId: string, override?: ParsedOrderData) => {
     setSelectedAzienda(aziendaId);
-    
-    if (!parsedData) return;
+
+    const source = override || parsedData;
+    if (!source) return;
 
     const aziendaProdotti = allProdotti.filter((p) => p.azienda_id === aziendaId);
     
