@@ -206,6 +206,10 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
           subtotaleRigheTotale += rigaFatturato;
           scontoRigheNumeratore += scontoCascata * rigaFatturato;
 
+          // Costo acquisto per calcolare margine reale
+          const costoAcq = Number(riga.prodotti.costo_acquisto) || 0;
+          costoAcquistoTotale += costoAcq * pezzi;
+
           ordineCartoni += cartoni;
           ordinePezzi += pezzi;
 
