@@ -97,6 +97,7 @@ type RigaOrdine = {
 const Ordini = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Ordine["status"] | "tutti">("tutti");
+  const [monthFilters, setMonthFilters] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     cliente_id: "",
