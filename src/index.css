@@ -71,45 +71,45 @@
   }
 
   .dark {
-    --background: 220 25% 8%;
-    --foreground: 210 20% 95%;
+    --background: 221 50% 7%;
+    --foreground: 213 25% 92%;
 
-    --card: 220 25% 12%;
-    --card-foreground: 210 20% 95%;
+    --card: 221 45% 11%;
+    --card-foreground: 213 25% 92%;
 
-    --popover: 220 25% 12%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 221 45% 11%;
+    --popover-foreground: 213 25% 92%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 209 70% 58%;
+    --primary-foreground: 221 60% 10%;
 
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 221 35% 17%;
+    --secondary-foreground: 213 25% 90%;
 
-    --muted: 220 20% 18%;
-    --muted-foreground: 210 15% 55%;
+    --muted: 221 35% 17%;
+    --muted-foreground: 213 18% 60%;
 
-    --accent: 152 69% 50%;
+    --accent: 209 60% 50%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62% 45%;
+    --destructive: 0 62% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 20%;
-    --input: 220 20% 20%;
-    --ring: 217 91% 60%;
+    --border: 221 35% 20%;
+    --input: 221 35% 20%;
+    --ring: 209 70% 58%;
 
-    --sidebar-background: 220 30% 6%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 221 60% 6%;
+    --sidebar-foreground: 213 25% 88%;
+    --sidebar-primary: 209 70% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 25% 12%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 220 25% 15%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 221 45% 12%;
+    --sidebar-accent-foreground: 213 25% 95%;
+    --sidebar-border: 221 40% 14%;
+    --sidebar-ring: 209 70% 58%;
 
-    --shadow-card-hover: 0 10px 25px -5px hsl(220 20% 5% / 0.4);
-    --gradient-glass: linear-gradient(135deg, rgba(30,30,40,0.9) 0%, rgba(30,30,40,0.7) 100%);
+    --shadow-card-hover: 0 10px 25px -5px hsl(221 60% 4% / 0.5);
+    --gradient-glass: linear-gradient(135deg, rgba(20,28,48,0.92) 0%, rgba(20,28,48,0.72) 100%);
   }
 }
 
