@@ -167,12 +167,33 @@ const KPI = () => {
               Filtra e analizza le performance per cliente, azienda, brand e periodo
             </p>
           </div>
-          {hasActiveFilters && (
-            <Button variant="outline" size="sm" onClick={resetFilters} className="gap-2">
-              <RotateCcw className="h-4 w-4" />
-              Reset Filtri
+          <div className="flex flex-wrap items-center gap-2">
+            {hasActiveFilters && (
+              <Button variant="outline" size="sm" onClick={resetFilters} className="gap-2">
+                <RotateCcw className="h-4 w-4" />
+                Reset Filtri
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              disabled={!stats}
+              onClick={() => stats && exportKPIToCSV({ ...stats, periodoLabel: getPeriodoLabel() } as any)}
+            >
+              <Download className="h-4 w-4" />
+              Esporta CSV
             </Button>
-          )}
+            <Button
+              size="sm"
+              className="gap-2"
+              disabled={!stats}
+              onClick={() => stats && exportKPIToPDF({ ...stats, periodoLabel: getPeriodoLabel() } as any)}
+            >
+              <FileText className="h-4 w-4" />
+              Esporta PDF
+            </Button>
+          </div>
         </div>
 
         {/* Filters Bar */}
