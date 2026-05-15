@@ -262,7 +262,7 @@ export function exportKPIToPDF(d: KPIExportData) {
     ["Cliente", "Ordini", "Fatturato", "vs 2025"],
     d.clientiKPI.slice(0, 15).map((c) => [
       c.nome,
-      c.ordini_count,
+      String(c.ordini_count),
       fmtEUR(c.fatturato),
       fmtEUR(c.fatturato_2025 || 0),
     ]),
