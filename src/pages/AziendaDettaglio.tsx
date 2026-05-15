@@ -323,6 +323,7 @@ const AziendaDettaglio = () => {
         nome: productForm.nome,
         codice: productForm.codice || null,
         prezzo_listino: parseDecimalInput(productForm.prezzo_listino),
+        costo_acquisto: parseDecimalInput(productForm.costo_acquisto),
         quantita_pezzi: productForm.quantita_pezzi,
         pezzi_per_cartone: productForm.pezzi_per_cartone,
         strati: productForm.strati,
