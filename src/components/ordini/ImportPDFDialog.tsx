@@ -593,13 +593,20 @@ export function ImportPDFDialog({
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Sconto %</Label>
-                  <p className="font-medium">{parsedData.sconto_percentuale}%</p>
+                  <Label className="text-xs text-muted-foreground">Sconto Pagamento %</Label>
+                  <p className="font-medium">{(parsedData.sconto_pagamento_percentuale ?? parsedData.sconto_percentuale) || 0}%</p>
                 </div>
 
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Sconto Merce</Label>
-                  <p className="font-medium">{formatCurrency(parsedData.sconto_merce)}</p>
+                  <p className="font-medium">{formatCurrency(parsedData.sconto_merce || 0)}</p>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Cartoni Omaggio</Label>
+                  <p className="font-medium">
+                    {parsedData.righe.filter((r: any) => r.is_omaggio).reduce((s: number, r: any) => s + (r.quantita_cartoni || 0), 0)}
+                  </p>
                 </div>
 
                 <div className="space-y-1">
