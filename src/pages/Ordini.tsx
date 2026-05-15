@@ -738,8 +738,8 @@ const Ordini = () => {
           <div className="flex gap-2">
             <Button variant="outline" className="gap-2" onClick={() => setIsImportPDFOpen(true)}>
               <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">Importa PDF</span>
-              <span className="sm:hidden">PDF</span>
+              <span className="hidden sm:inline">Importa PDF / Excel</span>
+              <span className="sm:hidden">Importa</span>
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={(open) => {
               setIsDialogOpen(open);
