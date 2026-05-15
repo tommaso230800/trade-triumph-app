@@ -129,10 +129,10 @@ export function exportKPIToPDF(d: KPIExportData) {
   y += 6;
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(10);
-  pdf.setTextColor(100);
+  pdf.setTextColor(100, 100, 100);
   pdf.text(`Periodo: ${d.periodoLabel}`, margin, y);
   pdf.text(`Generato: ${new Date().toLocaleString("it-IT")}`, pageW - margin, y, { align: "right" });
-  pdf.setTextColor(0);
+  pdf.setTextColor(0, 0, 0);
   y += 8;
 
   // Riepilogo
@@ -157,9 +157,9 @@ export function exportKPIToPDF(d: KPIExportData) {
     const row = Math.floor(i / 2);
     const x = margin + col * colW;
     const ry = y + row * 6;
-    pdf.setTextColor(110);
+    pdf.setTextColor(110, 110, 110);
     pdf.text(r[0], x, ry);
-    pdf.setTextColor(0);
+    pdf.setTextColor(0, 0, 0);
     pdf.setFont("helvetica", "bold");
     pdf.text(r[1], x + colW - 2, ry, { align: "right" });
     pdf.setFont("helvetica", "normal");
@@ -185,9 +185,9 @@ export function exportKPIToPDF(d: KPIExportData) {
     const row = Math.floor(i / 2);
     const x = margin + col * colW;
     const ry = y + row * 6;
-    pdf.setTextColor(110);
+    pdf.setTextColor(110, 110, 110);
     pdf.text(r[0], x, ry);
-    pdf.setTextColor(0);
+    pdf.setTextColor(0, 0, 0);
     pdf.setFont("helvetica", "bold");
     pdf.text(r[1], x + colW - 2, ry, { align: "right" });
     pdf.setFont("helvetica", "normal");
@@ -215,9 +215,9 @@ export function exportKPIToPDF(d: KPIExportData) {
     const row = Math.floor(i / 2);
     const x = margin + col * colW;
     const ry = y + row * 6;
-    pdf.setTextColor(110);
+    pdf.setTextColor(110, 110, 110);
     pdf.text(r[0], x, ry);
-    pdf.setTextColor(0);
+    pdf.setTextColor(0, 0, 0);
     pdf.setFont("helvetica", "bold");
     pdf.text(r[1], x + colW - 2, ry, { align: "right" });
     pdf.setFont("helvetica", "normal");
