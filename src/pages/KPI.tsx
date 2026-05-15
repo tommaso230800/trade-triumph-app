@@ -47,7 +47,10 @@ import {
   BoxIcon,
   Filter,
   RotateCcw,
+  Download,
+  FileText,
 } from "lucide-react";
+import { exportKPIToPDF, exportKPIToCSV } from "@/lib/exportKPI";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
