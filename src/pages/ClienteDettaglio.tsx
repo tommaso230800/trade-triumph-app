@@ -1,5 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { VisitsSection } from "@/components/visite/VisitsSection";
+import { CompetitorSection } from "@/components/visite/CompetitorSection";
 import { useCliente, useClienteOrdini } from "@/hooks/useClienti";
 import { useCanvassAttive, useCanvassScadute } from "@/hooks/useCanvass";
 import { useClientReports } from "@/hooks/useDailyReports";
