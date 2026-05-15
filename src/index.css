@@ -102,15 +102,15 @@
     --primary: 220 95% 62%;
     --primary-foreground: 0 0% 100%;
     --secondary: 222 22% 14%;
-    --secondary-foreground: 210 30% 94%;
+    --secondary-foreground: 210 35% 96%;
     --muted: 222 20% 13%;
-    --muted-foreground: 215 16% 65%;
+    --muted-foreground: 215 22% 78%;
     --accent: 152 75% 50%;
     --accent-foreground: 152 100% 8%;
     --destructive: 358 80% 58%;
     --destructive-foreground: 0 0% 100%;
-    --border: 222 20% 16%;
-    --input: 222 20% 16%;
+    --border: 222 18% 22%;
+    --input: 222 18% 22%;
     --ring: 220 95% 62%;
   }
 }
