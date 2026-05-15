@@ -151,6 +151,12 @@ const ClienteDettaglio = () => {
           </Badge>
         </div>
 
+        {/* Preparazione visite AI + Storico */}
+        <VisitsSection clienteId={cliente.id} />
+
+        {/* Concorrenza cliente */}
+        <CompetitorSection clienteId={cliente.id} />
+
         {/* Info Cards */}
         <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
           {/* Contact Info */}
