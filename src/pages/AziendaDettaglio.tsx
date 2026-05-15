@@ -68,6 +68,7 @@ type ProductForm = {
   nome: string;
   codice: string;
   prezzo_listino: string;
+  costo_acquisto: string;
   quantita_pezzi: number;
   pezzi_per_cartone: number;
   strati: number;
