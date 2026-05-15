@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, StickyNote } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Plus, Search, StickyNote, Archive } from "lucide-react";
 import { useNotes, NOTE_CATEGORIES, Note } from "@/hooks/useNotes";
 import { NoteEditor } from "@/components/notes/NoteEditor";
 import { NoteCard } from "@/components/notes/NoteCard";
@@ -14,9 +14,12 @@ export default function NotePage() {
   const [editing, setEditing] = useState<Note | null>(null);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>("all");
+  const [view, setView] = useState<"attive" | "archivio">("attive");
+
+  const baseList = notes.filter((n) => (view === "attive" ? !n.completata : n.completata));
 
   const filtered = useMemo(() => {
-    return notes.filter((n) => {
+    return baseList.filter((n) => {
       if (cat !== "all" && n.categoria !== cat) return false;
       if (q) {
         const hay = `${n.titolo} ${n.contenuto || ""} ${(n.checklist || []).map(i => i.text).join(" ")}`.toLowerCase();
@@ -24,10 +27,12 @@ export default function NotePage() {
       }
       return true;
     });
-  }, [notes, q, cat]);
+  }, [baseList, q, cat]);
 
   const pinned = filtered.filter((n) => n.pinned);
   const others = filtered.filter((n) => !n.pinned);
+  const archivedCount = notes.filter((n) => n.completata).length;
+  const activeCount = notes.filter((n) => !n.completata).length;
 
   const openNew = () => { setEditing(null); setOpen(true); };
   const openEdit = (n: Note) => { setEditing(n); setOpen(true); };
@@ -60,9 +65,9 @@ export default function NotePage() {
           </div>
           <Tabs value={cat} onValueChange={setCat}>
             <TabsList className="flex-wrap h-auto">
-              <TabsTrigger value="all">Tutte ({notes.length})</TabsTrigger>
+              <TabsTrigger value="all">Tutte ({baseList.length})</TabsTrigger>
               {NOTE_CATEGORIES.map((c) => {
-                const count = notes.filter((n) => n.categoria === c.value).length;
+                const count = baseList.filter((n) => n.categoria === c.value).length;
                 if (count === 0) return null;
                 return (
                   <TabsTrigger key={c.value} value={c.value}>
@@ -73,6 +78,17 @@ export default function NotePage() {
             </TabsList>
           </Tabs>
         </div>
+
+        <Tabs value={view} onValueChange={(v) => { setView(v as any); setCat("all"); }}>
+          <TabsList>
+            <TabsTrigger value="attive">
+              <StickyNote className="h-4 w-4 mr-1" /> Attive ({activeCount})
+            </TabsTrigger>
+            <TabsTrigger value="archivio">
+              <Archive className="h-4 w-4 mr-1" /> Archivio ({archivedCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {isLoading ? (
           <p className="text-muted-foreground">Caricamento...</p>
