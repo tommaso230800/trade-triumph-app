@@ -25,8 +25,9 @@ Analizza il documento PDF e estrai le seguenti informazioni in formato JSON:
       "nome_prodotto": "descrizione prodotto",
       "quantita_pezzi": 0,
       "quantita_cartoni": 0,
-      "prezzo_unitario": 0, // prezzo per pezzo in euro
-      "importo_riga": 0 // importo totale della riga
+      "prezzo_unitario": 0,
+      "importo_riga": 0,
+      "is_omaggio": false
     }
   ]
 }
@@ -38,6 +39,8 @@ REGOLE IMPORTANTI:
 - Se un campo non è presente, usa null
 - Cerca codici prodotto (es: ART001, COD-123, etc.)
 - L'imponibile_totale è il totale senza IVA
+- IMPORTANTE: NON includere righe con quantità totale 0 (pezzi e cartoni entrambi 0). Saltale.
+- IMPORTANTE: identifica prodotti OMAGGIO / GRATIS FATTURA. Indicatori: sigla "GF" / "G.F." nel codice o nella descrizione, parole "OMAGGIO", "GRATIS", "FREE", "CAMPIONE", colonna dedicata omaggio, oppure prezzo unitario 0 con quantità > 0. Per queste righe imposta is_omaggio=true e prezzo_unitario=0.
 - Restituisci SOLO il JSON, senza spiegazioni`;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
