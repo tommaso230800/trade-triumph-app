@@ -174,7 +174,7 @@ const Ordini = () => {
     promozioni_applicate?: { nome: string; tipo: string; valore: number }[];
   } | null>(null);
 
-  const { data: ordini, isLoading } = useOrdini(searchTerm, statusFilter);
+  const { data: ordini, isLoading } = useOrdini(searchTerm, statusFilter, monthFilters);
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
   const { data: allProdotti, refetch: refetchProdotti } = useProdotti();
