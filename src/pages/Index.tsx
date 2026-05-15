@@ -3,13 +3,11 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { NotesWidget } from "@/components/dashboard/NotesWidget";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
-import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { WeeklyActivityWidget } from "@/components/dashboard/WeeklyActivityWidget";
 import { PriorityClientsWidget } from "@/components/dashboard/PriorityClientsWidget";
 import { ReorderAlertsWidget } from "@/components/dashboard/ReorderAlertsWidget";
 import { useStats } from "@/hooks/useStats";
 import { useOrdini } from "@/hooks/useOrdini";
-import { usePromemoria } from "@/hooks/usePromemoria";
 import { useCanvassAttive } from "@/hooks/useCanvass";
 import { ShoppingCart, Users, Building2, Euro, TrendingUp, Target, Bell, Phone, Calendar, Mail, Loader2, Tag, AlertTriangle, ArrowRight, BarChart3, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -26,30 +24,15 @@ const statusConfig = {
   annullato: { label: "Annullato", className: "bg-destructive/10 text-destructive" },
 };
 
-const tipoIcons = {
-  call: Phone,
-  email: Mail,
-  documento: Calendar,
-  scadenza: Calendar,
-};
-
-const prioritaColors = {
-  alta: "border-l-destructive bg-gradient-to-r from-destructive/10 to-transparent",
-  media: "border-l-warning bg-gradient-to-r from-warning/10 to-transparent",
-  bassa: "border-l-info bg-gradient-to-r from-info/10 to-transparent",
-};
-
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
 
 const Index = () => {
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: ordini, isLoading: ordiniLoading } = useOrdini();
-  const { data: promemoria, isLoading: promemoriaLoading } = usePromemoria();
   const { data: canvassAttive = [] } = useCanvassAttive();
 
   const recentOrdini = ordini?.slice(0, 5) || [];
-  const pendingPromemoria = promemoria?.filter((p) => !p.completato).slice(0, 3) || [];
   
   // Promozioni in scadenza (entro 7 giorni)
   const today = new Date();
