@@ -295,6 +295,7 @@ const AziendaDettaglio = () => {
         nome: prodotto.nome,
         codice: prodotto.codice || "",
         prezzo_listino: String(prodotto.prezzo_listino).replace(".", ","),
+        costo_acquisto: String((prodotto as any).costo_acquisto ?? 0).replace(".", ","),
         quantita_pezzi: prodotto.quantita_pezzi,
         pezzi_per_cartone: prodotto.pezzi_per_cartone,
         strati: prodotto.strati,
