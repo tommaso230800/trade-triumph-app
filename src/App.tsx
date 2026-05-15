@@ -25,6 +25,7 @@ import Trattative from "./pages/Trattative";
 import TrattativaDettaglio from "./pages/TrattativaDettaglio";
 import Impostazioni from "./pages/Impostazioni";
 import NotePage from "./pages/Note";
+import PreparaVisita from "./pages/PreparaVisita";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/trattative/:id" element={<TrattativaDettaglio />} />
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="/note" element={<NotePage />} />
+              <Route path="/prepara-visita" element={<PreparaVisita />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
