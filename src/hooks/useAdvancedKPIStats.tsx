@@ -194,6 +194,14 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
           const pezzi = riga.quantita_pezzi + cartoni * (riga.prodotti.pezzi_per_cartone || 1);
           const rigaFatturato = pezzi * Number(riga.prezzo_unitario);
 
+          // Sconto cascata sc1/sc2/sc3 ponderato sul subtotale lordo
+          const sc1 = Number(riga.sc1) || 0;
+          const sc2 = Number(riga.sc2) || 0;
+          const sc3 = Number(riga.sc3) || 0;
+          const scontoCascata = (1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100)) * 100;
+          subtotaleRigheTotale += rigaFatturato;
+          scontoRigheNumeratore += scontoCascata * rigaFatturato;
+
           ordineCartoni += cartoni;
           ordinePezzi += pezzi;
 
