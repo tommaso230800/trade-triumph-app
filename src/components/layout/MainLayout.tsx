@@ -46,10 +46,15 @@ export function MainLayout({ children }: MainLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-background safe-top safe-bottom">
+    <div className="relative min-h-screen min-h-[100dvh] bg-background safe-top safe-bottom overflow-hidden">
+      {/* Ambient gold glow */}
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-primary/10 blur-[140px]" />
+        <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-accent/10 blur-[140px]" />
+      </div>
       <Sidebar />
       <main className="lg:pl-64 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div key={location.pathname} className="p-4 pt-16 pb-20 lg:pt-4 lg:p-8 lg:pb-8 animate-fade-in">{children}</div>
+        <div key={location.pathname} className="p-4 pt-16 pb-20 lg:pt-6 lg:p-8 lg:pb-8 animate-rise-in">{children}</div>
       </main>
     </div>
   );
