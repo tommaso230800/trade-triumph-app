@@ -233,7 +233,7 @@ export function exportKPIToPDF(d: KPIExportData) {
     y += 5;
     pdf.setFontSize(9);
     // header
-    pdf.setFillColor(240);
+    pdf.setFillColor(240, 240, 240);
     pdf.rect(margin, y, pageW - margin * 2, 6, "F");
     let x = margin + 1;
     headers.forEach((h, i) => {
