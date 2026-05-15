@@ -1,4 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  sendTestNotification,
+  isNativeApp,
+  type PermissionState,
+} from "@/lib/pushNotifications";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +25,12 @@ import {
   Shield, 
   Loader2,
   Save,
-  Mail,
+  Mail, 
   Phone,
   Building2,
-  Check
+  Check,
+  BellRing,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +49,39 @@ const Impostazioni = () => {
     ordini: true,
     promemoria: true,
   });
+  const [pushPermission, setPushPermission] = useState<PermissionState>("prompt");
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    getNotificationPermission().then(setPushPermission);
+  }, []);
+
+  const handleEnablePush = async () => {
+    setPushBusy(true);
+    try {
+      const p = await requestNotificationPermission();
+      setPushPermission(p);
+      if (p === "granted") toast.success("Notifiche attivate");
+      else if (p === "denied") toast.error("Permesso negato. Abilitalo dalle impostazioni di sistema.");
+      else toast.message("Notifiche non supportate su questo dispositivo");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Errore attivazione notifiche");
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
+  const handleSendTest = async () => {
+    setPushBusy(true);
+    try {
+      await sendTestNotification();
+      toast.success("Notifica di test inviata");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Impossibile inviare la notifica");
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -238,6 +280,50 @@ const Impostazioni = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-3 p-4 sm:p-6 pt-0 sm:pt-0">
+            {/* Push system permission + test */}
+            <div className="p-3 sm:p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+                  <BellRing className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-sm sm:text-base">Notifiche del dispositivo</p>
+                    <Badge
+                      variant={pushPermission === "granted" ? "default" : pushPermission === "denied" ? "destructive" : "secondary"}
+                      className="text-[10px] uppercase tracking-wide"
+                    >
+                      {pushPermission === "granted" ? "Attive" : pushPermission === "denied" ? "Negate" : pushPermission === "unsupported" ? "Non supportate" : "Non attive"}
+                    </Badge>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                    {isNativeApp() ? "App nativa: notifiche push e locali" : "Browser: usa l'API Notification del sistema"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={handleEnablePush}
+                  disabled={pushBusy || pushPermission === "granted" || pushPermission === "unsupported"}
+                  className="gap-2 h-10 flex-1"
+                  size="sm"
+                >
+                  {pushBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
+                  {pushPermission === "granted" ? "Permesso concesso" : "Richiedi permesso"}
+                </Button>
+                <Button
+                  onClick={handleSendTest}
+                  disabled={pushBusy || pushPermission === "denied" || pushPermission === "unsupported"}
+                  variant="outline"
+                  className="gap-2 h-10 flex-1"
+                  size="sm"
+                >
+                  <Send className="h-4 w-4" />
+                  Invia notifica di test
+                </Button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between p-3 sm:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors touch-target">
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-sm sm:text-base">Notifiche Email</p>
