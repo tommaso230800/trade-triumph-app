@@ -48,15 +48,11 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="relative min-h-screen min-h-[100dvh] bg-background safe-top safe-bottom overflow-hidden">
-      {/* Ambient aurora multi-color (very subtle, behind content) */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden opacity-60">
-        <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-brand-blue/10 blur-[160px] animate-float" />
-        <div className="absolute -top-20 right-0 w-[420px] h-[420px] rounded-full bg-brand-green/8 blur-[160px] animate-float" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute -bottom-40 -right-40 w-[480px] h-[480px] rounded-full bg-brand-red/8 blur-[160px] animate-float" style={{ animationDelay: '3s' }} />
-        <div className="absolute -bottom-32 left-10 w-[380px] h-[380px] rounded-full bg-brand-yellow/6 blur-[160px] animate-float" style={{ animationDelay: '4.5s' }} />
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden opacity-100">
+        <div className="absolute inset-0 aurora-bg" />
       </div>
       <Sidebar />
-      <main className="lg:pl-64 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <main className="lg:pl-64 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden text-foreground" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div key={location.pathname} className="p-4 pt-16 pb-24 lg:pt-6 lg:p-8 lg:pb-8 animate-rise-in">{children}</div>
       </main>
       <QuickActions />

@@ -9,21 +9,21 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-primary/30 bg-primary/15 text-primary-glow hover:bg-primary/25 hover:shadow-glow",
+          "border-primary/25 bg-primary/12 text-[hsl(var(--primary))] hover:bg-primary/20 hover:shadow-glow",
         secondary:
           "border-border bg-secondary text-secondary-foreground hover:border-primary/40",
         destructive:
-          "border-destructive/35 bg-destructive/15 text-[hsl(var(--accent-red))] hover:bg-destructive/25 hover:shadow-glow-red",
+          "border-destructive/35 bg-destructive/12 text-[hsl(var(--accent-red))] hover:bg-destructive/18 hover:shadow-glow-red",
         success:
-          "border-success/35 bg-success/15 text-[hsl(var(--accent-green))] hover:bg-success/25 hover:shadow-glow-green",
+          "border-success/35 bg-success/12 text-[hsl(var(--accent-green))] hover:bg-success/18 hover:shadow-glow-green",
         warning:
-          "border-warning/35 bg-warning/15 text-[hsl(var(--accent-yellow))] hover:bg-warning/25 hover:shadow-glow-yellow",
+          "border-warning/35 bg-warning/14 text-[hsl(var(--warning-foreground))] hover:bg-warning/22 hover:shadow-glow-yellow",
         info:
-          "border-info/35 bg-info/15 text-primary-glow hover:bg-info/25 hover:shadow-glow",
+          "border-info/35 bg-info/12 text-[hsl(var(--primary))] hover:bg-info/18 hover:shadow-glow",
         spectrum:
           "border-transparent text-white [background:var(--gradient-spectrum)] [background-size:200%_200%] [animation:spectrum-shift_8s_ease-in-out_infinite] hover:shadow-glow",
         outline:
-          "border-border text-foreground hover:border-primary/50 hover:text-primary-glow",
+          "border-border bg-card text-foreground hover:border-primary/50 hover:text-primary",
       },
     },
     defaultVariants: {
