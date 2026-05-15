@@ -13,8 +13,6 @@ import Clienti from "./pages/Clienti";
 import ClienteDettaglio from "./pages/ClienteDettaglio";
 import ConsorzioDettaglio from "./pages/ConsorzioDettaglio";
 import Ordini from "./pages/Ordini";
-import Agenda from "./pages/Agenda";
-import Promemoria from "./pages/Promemoria";
 import KPI from "./pages/KPI";
 import Provvigioni from "./pages/Provvigioni";
 import Canvass from "./pages/Canvass";
@@ -23,7 +21,6 @@ import AssistenteTrattativa from "./pages/AssistenteTrattativa";
 import AssistenteAICommerciale from "./pages/AssistenteAICommerciale";
 import Trattative from "./pages/Trattative";
 import TrattativaDettaglio from "./pages/TrattativaDettaglio";
-import VisiteClienti from "./pages/VisiteClienti";
 import Impostazioni from "./pages/Impostazioni";
 import NotePage from "./pages/Note";
 import NotFound from "./pages/NotFound";
@@ -47,8 +44,6 @@ const App = () => (
               <Route path="/clienti/:id" element={<ClienteDettaglio />} />
               <Route path="/clienti/consorzio/:slug" element={<ConsorzioDettaglio />} />
               <Route path="/ordini" element={<Ordini />} />
-              <Route path="/agenda" element={<Agenda />} />
-              <Route path="/promemoria" element={<Promemoria />} />
               <Route path="/kpi" element={<KPI />} />
               <Route path="/provvigioni" element={<Provvigioni />} />
               <Route path="/canvass" element={<Canvass />} />
@@ -57,7 +52,6 @@ const App = () => (
               <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
               <Route path="/trattative" element={<Trattative />} />
               <Route path="/trattative/:id" element={<TrattativaDettaglio />} />
-              <Route path="/visite" element={<VisiteClienti />} />
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="/note" element={<NotePage />} />
               <Route path="*" element={<NotFound />} />
