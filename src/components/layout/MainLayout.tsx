@@ -47,12 +47,12 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="relative min-h-screen min-h-[100dvh] bg-background safe-top safe-bottom overflow-hidden">
-      {/* Ambient aurora multi-color */}
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[620px] h-[620px] rounded-full bg-brand-blue/20 blur-[140px] animate-float" />
-        <div className="absolute -top-20 right-0 w-[480px] h-[480px] rounded-full bg-brand-green/15 blur-[140px] animate-float" style={{ animationDelay: '1.5s' }} />
-        <div className="absolute -bottom-40 -right-40 w-[560px] h-[560px] rounded-full bg-brand-red/15 blur-[140px] animate-float" style={{ animationDelay: '3s' }} />
-        <div className="absolute -bottom-32 left-10 w-[420px] h-[420px] rounded-full bg-brand-yellow/12 blur-[140px] animate-float" style={{ animationDelay: '4.5s' }} />
+      {/* Ambient aurora multi-color (very subtle, behind content) */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden opacity-60">
+        <div className="absolute -top-40 -left-40 w-[520px] h-[520px] rounded-full bg-brand-blue/10 blur-[160px] animate-float" />
+        <div className="absolute -top-20 right-0 w-[420px] h-[420px] rounded-full bg-brand-green/8 blur-[160px] animate-float" style={{ animationDelay: '1.5s' }} />
+        <div className="absolute -bottom-40 -right-40 w-[480px] h-[480px] rounded-full bg-brand-red/8 blur-[160px] animate-float" style={{ animationDelay: '3s' }} />
+        <div className="absolute -bottom-32 left-10 w-[380px] h-[380px] rounded-full bg-brand-yellow/6 blur-[160px] animate-float" style={{ animationDelay: '4.5s' }} />
       </div>
       <Sidebar />
       <main className="lg:pl-64 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch' }}>
