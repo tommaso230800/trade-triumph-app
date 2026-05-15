@@ -34,10 +34,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 type ParsedRiga = {
   codice_prodotto: string | null;
   nome_prodotto: string;
-  quantita_pezzi: number;
+  quantita_pezzi?: number;          // legacy, ignorato dopo normalizzazione
   quantita_cartoni: number;
-  prezzo_unitario: number;
+  pezzi_per_cartone?: number;
+  prezzo_per_cartone?: number;       // nuovo
+  prezzo_unitario: number;           // = prezzo per cartone (normalizzato)
   importo_riga: number;
+  sc1?: number;
+  sc2?: number;
+  sc3?: number;
+  is_omaggio?: boolean;
   prodotto_id?: string;
   createNew?: boolean;
 };
@@ -46,7 +52,8 @@ type ParsedOrderData = {
   data_ordine: string | null;
   cliente_nome: string | null;
   azienda_nome: string | null;
-  sconto_percentuale: number;
+  sconto_percentuale: number;                // legacy
+  sconto_pagamento_percentuale?: number;     // nuovo
   sconto_merce: number;
   tipo_pagamento: string | null;
   imponibile_totale: number;
@@ -203,30 +210,71 @@ export function ImportPDFDialog({
         parsed = data.data as ParsedOrderData;
       }
 
-      // Sanitize numeri (l'AI a volte restituisce stringhe)
-      // - filtra righe con quantità totale 0
-      // - rileva prodotti GF/omaggio (gratis fattura) e imposta prezzo a 0
+      // Normalizza in SOLI CARTONI (mai pezzi) per evitare disallineamenti alla riapertura.
+      // Se l'AI ha restituito pezzi ma non cartoni, deduco i cartoni da pezzi_per_cartone.
       const isOmaggio = (r: any) => {
         const txt = `${r.nome_prodotto || ""} ${r.codice_prodotto || ""}`.toLowerCase();
         if (r.is_omaggio === true) return true;
-        // match "gf", "g.f.", "omaggio", "gratis", "free", "campione"
         return /\b(g\.?f\.?|omagg|gratis|free|campion)/i.test(txt);
       };
 
+      // Backward-compat: alcuni campi nuovi
+      if (parsed.sconto_pagamento_percentuale == null && parsed.sconto_percentuale != null) {
+        parsed.sconto_pagamento_percentuale = Number(parsed.sconto_percentuale) || 0;
+      }
+      parsed.sconto_percentuale = Number(parsed.sconto_pagamento_percentuale) || 0;
+
       parsed.righe = (parsed.righe || [])
-        .map((r) => {
-          const pezzi = Number(r.quantita_pezzi) || 0;
-          const cartoni = Number(r.quantita_cartoni) || 0;
+        .map((r: any) => {
           const omaggio = isOmaggio(r);
+          const pezziPerCartone = Number(r.pezzi_per_cartone) || 0;
+          let cartoni = Number(r.quantita_cartoni) || 0;
+          const pezzi = Number(r.quantita_pezzi) || 0;
+          // Se viene solo "pezzi", convertili in cartoni (regola: tutto in cartoni)
+          if (cartoni === 0 && pezzi > 0) {
+            cartoni = pezziPerCartone > 0 ? Math.max(1, Math.round(pezzi / pezziPerCartone)) : pezzi;
+          }
+          // Prezzo per cartone (preferito), altrimenti deriva da prezzo_unitario × pezzi_per_cartone
+          let prezzoCartone = Number(r.prezzo_per_cartone);
+          if (!prezzoCartone || isNaN(prezzoCartone)) {
+            const pu = Number(r.prezzo_unitario) || 0;
+            prezzoCartone = pezziPerCartone > 0 ? pu * pezziPerCartone : pu;
+          }
           return {
             ...r,
-            quantita_pezzi: pezzi,
+            quantita_pezzi: 0, // SEMPRE 0: lavoriamo in cartoni
             quantita_cartoni: cartoni,
-            prezzo_unitario: omaggio ? 0 : (Number(r.prezzo_unitario) || 0),
-            importo_riga: omaggio ? 0 : (Number(r.importo_riga) || 0),
+            pezzi_per_cartone: pezziPerCartone || undefined,
+            prezzo_per_cartone: omaggio ? 0 : prezzoCartone,
+            prezzo_unitario: omaggio ? 0 : prezzoCartone, // alias usato dal salvataggio
+            sc1: Number(r.sc1) || 0,
+            sc2: Number(r.sc2) || 0,
+            sc3: Number(r.sc3) || 0,
+            is_omaggio: omaggio,
+            importo_riga: omaggio
+              ? 0
+              : Number(r.importo_riga) ||
+                cartoni *
+                  prezzoCartone *
+                  (1 - (Number(r.sc1) || 0) / 100) *
+                  (1 - (Number(r.sc2) || 0) / 100) *
+                  (1 - (Number(r.sc3) || 0) / 100),
           };
         })
-        .filter((r) => r.quantita_pezzi > 0 || r.quantita_cartoni > 0);
+        .filter((r: any) => r.quantita_cartoni > 0);
+
+      // Verifica imponibile: somma righe - sconto_merce, scontato di sconto_pagamento
+      const sommaNetta = parsed.righe.reduce((s: number, r: any) => s + (Number(r.importo_riga) || 0), 0);
+      const dopoMerce = Math.max(0, sommaNetta - (Number(parsed.sconto_merce) || 0));
+      const calcolato = dopoMerce * (1 - (Number(parsed.sconto_pagamento_percentuale) || 0) / 100);
+      const dichiarato = Number(parsed.imponibile_totale) || 0;
+      const delta = Math.abs(calcolato - dichiarato);
+      if (dichiarato > 0 && delta > Math.max(0.5, dichiarato * 0.005)) {
+        toast.warning(
+          `Imponibile non torna esattamente: calcolato ${calcolato.toFixed(2)}€ vs dichiarato ${dichiarato.toFixed(2)}€ (delta ${delta.toFixed(2)}€). Controlla sconti e omaggi.`,
+          { duration: 8000 }
+        );
+      }
 
       setParsedData(parsed);
 
@@ -387,10 +435,11 @@ export function ImportPDFDialog({
             nome: riga.nome_prodotto,
             codice: riga.codice_prodotto,
             azienda_id: selectedAzienda,
-            prezzo_listino: riga.prezzo_unitario,
-            pezzi_per_cartone: riga.quantita_cartoni > 0 && riga.quantita_pezzi > 0 
-              ? Math.round(riga.quantita_pezzi / riga.quantita_cartoni) 
-              : 1,
+            // prezzo per pezzo (= prezzo_cartone / pezzi_per_cartone), fallback al prezzo cartone
+            prezzo_listino: (riga.pezzi_per_cartone && riga.pezzi_per_cartone > 0)
+              ? Number((riga.prezzo_unitario / riga.pezzi_per_cartone).toFixed(4))
+              : riga.prezzo_unitario,
+            pezzi_per_cartone: riga.pezzi_per_cartone && riga.pezzi_per_cartone > 0 ? riga.pezzi_per_cartone : 1,
             user_id: user.id,
           })
           .select()
@@ -448,10 +497,10 @@ export function ImportPDFDialog({
       totale: parsedData?.imponibile_totale || 0,
       note: parsedData?.note || "",
       righe: validRighe.map((r) => ({
-        prodotto_id: r.prodotto_id,
-        quantita_pezzi: r.quantita_pezzi,
+        prodotto_id: r.prodotto_id!,
+        quantita_pezzi: 0, // SEMPRE 0: ordine salvato in soli cartoni per coerenza alla riapertura
         quantita_cartoni: r.quantita_cartoni,
-        prezzo_unitario: r.prezzo_unitario,
+        prezzo_unitario: r.prezzo_unitario, // prezzo per cartone
       })),
     });
 
@@ -544,13 +593,20 @@ export function ImportPDFDialog({
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Sconto %</Label>
-                  <p className="font-medium">{parsedData.sconto_percentuale}%</p>
+                  <Label className="text-xs text-muted-foreground">Sconto Pagamento %</Label>
+                  <p className="font-medium">{(parsedData.sconto_pagamento_percentuale ?? parsedData.sconto_percentuale) || 0}%</p>
                 </div>
 
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Sconto Merce</Label>
-                  <p className="font-medium">{formatCurrency(parsedData.sconto_merce)}</p>
+                  <p className="font-medium">{formatCurrency(parsedData.sconto_merce || 0)}</p>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Cartoni Omaggio</Label>
+                  <p className="font-medium">
+                    {parsedData.righe.filter((r: any) => r.is_omaggio).reduce((s: number, r: any) => s + (r.quantita_cartoni || 0), 0)}
+                  </p>
                 </div>
 
                 <div className="space-y-1">
@@ -587,16 +643,15 @@ export function ImportPDFDialog({
                         <TableHead className="w-24">Codice</TableHead>
                         <TableHead>Prodotto PDF</TableHead>
                         <TableHead className="w-48">Associa Prodotto</TableHead>
-                        <TableHead className="w-20 text-right">Qtà Pz</TableHead>
-                        <TableHead className="w-20 text-right">Qtà Ct</TableHead>
-                        <TableHead className="w-24 text-right">Prezzo</TableHead>
+                        <TableHead className="w-20 text-right">Cartoni</TableHead>
+                        <TableHead className="w-28 text-right">Prezzo/Ct</TableHead>
                         <TableHead className="w-24 text-right">Importo</TableHead>
                         <TableHead className="w-12"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(mappedRighe.length > 0 ? mappedRighe : parsedData.righe.map(r => ({ ...r, prodotto_id: "", createNew: true }))).map((riga, index) => (
-                        <TableRow key={index}>
+                      {(mappedRighe.length > 0 ? mappedRighe : parsedData.righe.map(r => ({ ...r, prodotto_id: "", createNew: true }))).map((riga: any, index: number) => (
+                        <TableRow key={index} className={riga.is_omaggio ? "bg-success/10" : ""}>
                           <TableCell>
                             <Checkbox
                               checked={riga.createNew && !riga.prodotto_id}
@@ -607,15 +662,22 @@ export function ImportPDFDialog({
                           <TableCell className="font-mono text-xs">
                             {riga.codice_prodotto || "-"}
                           </TableCell>
-                          <TableCell className="text-sm">{riga.nome_prodotto}</TableCell>
+                          <TableCell className="text-sm">
+                            <span className="flex items-center gap-2">
+                              {riga.nome_prodotto}
+                              {riga.is_omaggio && (
+                                <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-success/20 text-success border border-success/40">Omaggio</span>
+                              )}
+                            </span>
+                          </TableCell>
                           <TableCell>
                             {riga.createNew && !riga.prodotto_id ? (
                               <span className="text-xs text-muted-foreground italic">
                                 Verrà creato automaticamente
                               </span>
                             ) : (
-                              <Select 
-                                value={riga.prodotto_id || ""} 
+                              <Select
+                                value={riga.prodotto_id || ""}
                                 onValueChange={(v) => updateRigaProdotto(index, v)}
                                 disabled={!selectedAzienda}
                               >
@@ -632,8 +694,7 @@ export function ImportPDFDialog({
                               </Select>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">{riga.quantita_pezzi}</TableCell>
-                          <TableCell className="text-right">{riga.quantita_cartoni}</TableCell>
+                          <TableCell className="text-right font-medium">{riga.quantita_cartoni}</TableCell>
                           <TableCell className="text-right">{formatCurrency(riga.prezzo_unitario)}</TableCell>
                           <TableCell className="text-right">{formatCurrency(riga.importo_riga)}</TableCell>
                           <TableCell>
