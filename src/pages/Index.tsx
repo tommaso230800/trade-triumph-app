@@ -1,5 +1,6 @@
 // Dashboard principale
 import { MainLayout } from "@/components/layout/MainLayout";
+import { NotesWidget } from "@/components/dashboard/NotesWidget";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
