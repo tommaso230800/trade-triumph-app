@@ -42,8 +42,9 @@ export function useClienti(searchTerm?: string, statusFilter?: Cliente["status"]
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (searchTerm) {
-        query = query.or(`nome.ilike.%${searchTerm}%,azienda.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      const safeTerm = searchTerm?.trim().slice(0, 100);
+      if (safeTerm) {
+        query = query.or(`nome.ilike.%${safeTerm}%,azienda.ilike.%${safeTerm}%,email.ilike.%${safeTerm}%`);
       }
 
       if (statusFilter && statusFilter !== "tutti") {
