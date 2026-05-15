@@ -435,10 +435,11 @@ export function ImportPDFDialog({
             nome: riga.nome_prodotto,
             codice: riga.codice_prodotto,
             azienda_id: selectedAzienda,
-            prezzo_listino: riga.prezzo_unitario,
-            pezzi_per_cartone: riga.quantita_cartoni > 0 && riga.quantita_pezzi > 0 
-              ? Math.round(riga.quantita_pezzi / riga.quantita_cartoni) 
-              : 1,
+            // prezzo per pezzo (= prezzo_cartone / pezzi_per_cartone), fallback al prezzo cartone
+            prezzo_listino: (riga.pezzi_per_cartone && riga.pezzi_per_cartone > 0)
+              ? Number((riga.prezzo_unitario / riga.pezzi_per_cartone).toFixed(4))
+              : riga.prezzo_unitario,
+            pezzi_per_cartone: riga.pezzi_per_cartone && riga.pezzi_per_cartone > 0 ? riga.pezzi_per_cartone : 1,
             user_id: user.id,
           })
           .select()
