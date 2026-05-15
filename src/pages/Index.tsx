@@ -107,6 +107,9 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Note - sempre visibili in alto */}
+        <NotesWidget />
+
         {/* Alert Promozioni Attive - Glass Effect */}
         {canvassAttive.length > 0 && (
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/15 via-primary/5 to-transparent border border-primary/20 p-5 animate-fade-in stagger-1">
