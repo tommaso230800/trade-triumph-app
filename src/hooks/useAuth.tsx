@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { queryClient } from "@/lib/queryClient";
 
 interface AuthContextType {
   user: User | null;
@@ -19,18 +20,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let prevUserId: string | null = null;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        const newUserId = session?.user?.id ?? null;
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Se l'utente cambia (login, logout, switch), pulisci cache stale
+        if (newUserId !== prevUserId) {
+          queryClient.clear();
+          prevUserId = newUserId;
+        } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+          queryClient.invalidateQueries();
+        }
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      prevUserId = session?.user?.id ?? null;
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      // Forza refetch all'avvio per non mostrare cache vuota da sessione precedente
+      if (session?.user) queryClient.invalidateQueries();
     });
 
     return () => subscription.unsubscribe();
