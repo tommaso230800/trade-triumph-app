@@ -49,6 +49,39 @@ const Impostazioni = () => {
     ordini: true,
     promemoria: true,
   });
+  const [pushPermission, setPushPermission] = useState<PermissionState>("prompt");
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    getNotificationPermission().then(setPushPermission);
+  }, []);
+
+  const handleEnablePush = async () => {
+    setPushBusy(true);
+    try {
+      const p = await requestNotificationPermission();
+      setPushPermission(p);
+      if (p === "granted") toast.success("Notifiche attivate");
+      else if (p === "denied") toast.error("Permesso negato. Abilitalo dalle impostazioni di sistema.");
+      else toast.message("Notifiche non supportate su questo dispositivo");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Errore attivazione notifiche");
+    } finally {
+      setPushBusy(false);
+    }
+  };
+
+  const handleSendTest = async () => {
+    setPushBusy(true);
+    try {
+      await sendTestNotification();
+      toast.success("Notifica di test inviata");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Impossibile inviare la notifica");
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const handleSaveProfile = async () => {
     if (!user) return;
