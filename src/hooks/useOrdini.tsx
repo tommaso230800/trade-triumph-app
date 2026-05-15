@@ -22,10 +22,27 @@ export type Ordine = {
   aziende?: { nome: string } | null;
 };
 
-export function useOrdini(searchTerm?: string, statusFilter?: Ordine["status"] | "tutti") {
+export function useOrdini(
+  searchTerm?: string,
+  statusFilter?: Ordine["status"] | "tutti",
+  monthFilters?: string[] // ["YYYY-MM", ...]
+) {
   return useQuery({
-    queryKey: ["ordini", searchTerm, statusFilter],
+    queryKey: ["ordini", searchTerm, statusFilter, monthFilters?.join(",")],
     queryFn: async () => {
+      // Se cerchiamo un prodotto, prima troviamo gli ordini che lo contengono
+      let ordineIdsByProduct: string[] | null = null;
+      const term = (searchTerm || "").trim();
+      if (term.length >= 2) {
+        const { data: righeMatch } = await supabase
+          .from("ordini_righe")
+          .select("ordine_id, prodotti!inner(nome, codice)")
+          .or(`nome.ilike.%${term}%,codice.ilike.%${term}%`, { foreignTable: "prodotti" });
+        if (righeMatch) {
+          ordineIdsByProduct = Array.from(new Set(righeMatch.map((r: any) => r.ordine_id)));
+        }
+      }
+
       let query = supabase
         .from("ordini")
         .select(`
@@ -35,12 +52,32 @@ export function useOrdini(searchTerm?: string, statusFilter?: Ordine["status"] |
         `)
         .order("data_ordine", { ascending: false });
 
-      if (searchTerm) {
-        query = query.or(`codice.ilike.%${searchTerm}%`);
+      if (term) {
+        const orParts = [
+          `codice.ilike.%${term}%`,
+          `clienti.nome.ilike.%${term}%`,
+          `clienti.azienda.ilike.%${term}%`,
+          `aziende.nome.ilike.%${term}%`,
+        ];
+        if (ordineIdsByProduct && ordineIdsByProduct.length > 0) {
+          orParts.push(`id.in.(${ordineIdsByProduct.join(",")})`);
+        }
+        query = query.or(orParts.join(","));
       }
 
       if (statusFilter && statusFilter !== "tutti") {
         query = query.eq("status", statusFilter as Ordine["status"]);
+      }
+
+      if (monthFilters && monthFilters.length > 0) {
+        // Costruisce range OR: data_ordine compresa in uno dei mesi selezionati
+        const ranges = monthFilters.map((m) => {
+          const [y, mo] = m.split("-").map(Number);
+          const start = new Date(Date.UTC(y, mo - 1, 1)).toISOString().slice(0, 10);
+          const end = new Date(Date.UTC(y, mo, 1)).toISOString().slice(0, 10);
+          return `and(data_ordine.gte.${start},data_ordine.lt.${end})`;
+        });
+        query = query.or(ranges.join(","));
       }
 
       const { data, error } = await query;
