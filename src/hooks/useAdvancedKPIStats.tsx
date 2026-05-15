@@ -102,7 +102,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
             sc1,
             sc2,
             sc3,
-            prodotti (id, nome, pezzi_per_cartone, prezzo_listino, azienda_id, brand_id)
+            prodotti (id, nome, pezzi_per_cartone, prezzo_listino, costo_acquisto, azienda_id, brand_id)
           )
         `)
         .neq("status", "annullato")
@@ -147,6 +147,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       let ordiniTotali = ordini.length;
       let cartoniTotali = 0;
       let pezziTotali = 0;
+      let costoAcquistoTotale = 0;  // somma costi acquisto pezzi venduti
       // Sconto medio (ponderato sul fatturato)
       let scontoNumeratore = 0;       // somma sconto% * totale
       let scontoMerceTotale = 0;      // somma sconto_merce €
@@ -204,6 +205,10 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
           const scontoCascata = (1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100)) * 100;
           subtotaleRigheTotale += rigaFatturato;
           scontoRigheNumeratore += scontoCascata * rigaFatturato;
+
+          // Costo acquisto per calcolare margine reale
+          const costoAcq = Number(riga.prodotti.costo_acquisto) || 0;
+          costoAcquistoTotale += costoAcq * pezzi;
 
           ordineCartoni += cartoni;
           ordinePezzi += pezzi;
@@ -314,6 +319,8 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       const scontoMedio = fatturatoTotale > 0 ? scontoNumeratore / fatturatoTotale : 0;
       const scontoCascataMedio = subtotaleRigheTotale > 0 ? scontoRigheNumeratore / subtotaleRigheTotale : 0;
       const scontoMerceMedio = ordiniTotali > 0 ? scontoMerceTotale / ordiniTotali : 0;
+      const utileLordo = fatturatoTotale - costoAcquistoTotale;
+      const marginePercentuale = fatturatoTotale > 0 ? (utileLordo / fatturatoTotale) * 100 : 0;
 
       // Sort all KPI arrays by fatturato
       const clientiKPI = Array.from(clientiMap.values()).sort((a, b) => b.fatturato - a.fatturato);
@@ -395,6 +402,9 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         scontoMedio,
         scontoCascataMedio,
         scontoMerceMedio,
+        costoAcquistoTotale,
+        utileLordo,
+        marginePercentuale,
         trendPercentage,
         mom,
         yoy,

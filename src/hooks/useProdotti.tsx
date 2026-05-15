@@ -9,6 +9,7 @@ export type Prodotto = {
   nome: string;
   codice: string | null;
   prezzo_listino: number;
+  costo_acquisto: number;
   quantita_pezzi: number;
   pezzi_per_cartone: number;
   strati: number;
@@ -47,13 +48,14 @@ export function useCreateProdotto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (prodotto: Omit<Prodotto, "id" | "user_id" | "created_at" | "updated_at" | "immagine_url" | "formato" | "sc1_default" | "sc2_default" | "sc3_default" | "brand_id"> & { 
+    mutationFn: async (prodotto: Omit<Prodotto, "id" | "user_id" | "created_at" | "updated_at" | "immagine_url" | "formato" | "sc1_default" | "sc2_default" | "sc3_default" | "brand_id" | "costo_acquisto"> & { 
       immagine_url?: string | null;
       formato?: string | null;
       sc1_default?: number;
       sc2_default?: number;
       sc3_default?: number;
       brand_id?: string | null;
+      costo_acquisto?: number;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase

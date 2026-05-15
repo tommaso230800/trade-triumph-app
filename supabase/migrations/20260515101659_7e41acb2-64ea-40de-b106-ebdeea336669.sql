@@ -1,0 +1,1 @@
+ALTER TABLE public.prodotti ADD COLUMN IF NOT EXISTS costo_acquisto numeric NOT NULL DEFAULT 0;

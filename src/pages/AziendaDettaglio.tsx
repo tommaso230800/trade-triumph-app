@@ -68,6 +68,7 @@ type ProductForm = {
   nome: string;
   codice: string;
   prezzo_listino: string;
+  costo_acquisto: string;
   quantita_pezzi: number;
   pezzi_per_cartone: number;
   strati: number;
@@ -84,6 +85,7 @@ const defaultProductForm: ProductForm = {
   nome: "",
   codice: "",
   prezzo_listino: "0",
+  costo_acquisto: "0",
   quantita_pezzi: 0,
   pezzi_per_cartone: 1,
   strati: 1,
@@ -293,6 +295,7 @@ const AziendaDettaglio = () => {
         nome: prodotto.nome,
         codice: prodotto.codice || "",
         prezzo_listino: String(prodotto.prezzo_listino).replace(".", ","),
+        costo_acquisto: String((prodotto as any).costo_acquisto ?? 0).replace(".", ","),
         quantita_pezzi: prodotto.quantita_pezzi,
         pezzi_per_cartone: prodotto.pezzi_per_cartone,
         strati: prodotto.strati,
@@ -320,6 +323,7 @@ const AziendaDettaglio = () => {
         nome: productForm.nome,
         codice: productForm.codice || null,
         prezzo_listino: parseDecimalInput(productForm.prezzo_listino),
+        costo_acquisto: parseDecimalInput(productForm.costo_acquisto),
         quantita_pezzi: productForm.quantita_pezzi,
         pezzi_per_cartone: productForm.pezzi_per_cartone,
         strati: productForm.strati,
@@ -787,6 +791,18 @@ const AziendaDettaglio = () => {
                   value={productForm.formato}
                   onChange={(e) => setProductForm({ ...productForm, formato: e.target.value })}
                   placeholder="es. 1L, 700ml, 500ml"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label>Costo di Acquisto (€) <span className="text-xs text-muted-foreground">— per calcolo margine</span></Label>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={productForm.costo_acquisto}
+                  onChange={(e) => setProductForm({ ...productForm, costo_acquisto: e.target.value })}
+                  placeholder="es. 0,95"
                 />
               </div>
             </div>
