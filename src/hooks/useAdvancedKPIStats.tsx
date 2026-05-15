@@ -166,6 +166,11 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         const totaleOrdine = Number(ordine.totale);
         fatturatoTotale += totaleOrdine;
 
+        // Sconto globale ponderato + sconto merce
+        const scontoOrdine = Number(ordine.sconto) || 0;
+        scontoNumeratore += scontoOrdine * totaleOrdine;
+        scontoMerceTotale += Number(ordine.sconto_merce) || 0;
+
         // Monthly stats
         const date = new Date(ordine.data_ordine || ordine.created_at);
         const meseIndex = date.getMonth();
