@@ -51,6 +51,7 @@ import { ProformaDialog } from "@/components/ordini/ProformaDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -97,6 +98,7 @@ type RigaOrdine = {
 const Ordini = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Ordine["status"] | "tutti">("tutti");
+  const [monthFilters, setMonthFilters] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     cliente_id: "",
@@ -173,7 +175,7 @@ const Ordini = () => {
     promozioni_applicate?: { nome: string; tipo: string; valore: number }[];
   } | null>(null);
 
-  const { data: ordini, isLoading } = useOrdini(searchTerm, statusFilter);
+  const { data: ordini, isLoading } = useOrdini(searchTerm, statusFilter, monthFilters);
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
   const { data: allProdotti, refetch: refetchProdotti } = useProdotti();
@@ -1115,11 +1117,11 @@ const Ordini = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 animate-fade-in">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Cerca ordine..."
+              placeholder="Cerca per cliente, azienda o prodotto..."
               className="pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -1138,6 +1140,24 @@ const Ordini = () => {
               <SelectItem value="annullato">Annullato</SelectItem>
             </SelectContent>
           </Select>
+          <MultiSelect
+            className="w-full sm:w-64"
+            placeholder="Filtra per mese"
+            values={monthFilters}
+            onValuesChange={setMonthFilters}
+            options={(() => {
+              // Ultimi 24 mesi
+              const opts: { value: string; label: string }[] = [];
+              const now = new Date();
+              for (let i = 0; i < 24; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+                const label = d.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+                opts.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
+              }
+              return opts;
+            })()}
+          />
         </div>
 
         {/* Table */}
