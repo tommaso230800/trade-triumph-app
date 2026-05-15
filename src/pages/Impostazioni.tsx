@@ -1,4 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  sendTestNotification,
+  isNativeApp,
+  type PermissionState,
+} from "@/lib/pushNotifications";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,10 +25,12 @@ import {
   Shield, 
   Loader2,
   Save,
-  Mail,
+  Mail, 
   Phone,
   Building2,
-  Check
+  Check,
+  BellRing,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
