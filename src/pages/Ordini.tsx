@@ -51,6 +51,7 @@ import { ProformaDialog } from "@/components/ordini/ProformaDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { MultiSelect } from "@/components/ui/multi-select";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
