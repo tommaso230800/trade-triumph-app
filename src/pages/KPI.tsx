@@ -316,7 +316,7 @@ const KPI = () => {
         </div>
 
         {/* Main KPIs */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-6">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-6 animate-fade-in">
           <KPICard
             title="Fatturato Totale"
             value={formatCurrency(stats?.fatturatoTotale || 0)}
@@ -356,7 +356,7 @@ const KPI = () => {
               ) : (
                 <TrendingDown className="h-4 w-4 text-destructive" />
               )}
-              <p className="text-xs text-muted-foreground">Trend</p>
+              <p className="text-xs text-muted-foreground">Trend periodo</p>
             </div>
             <p className={cn(
               "text-2xl font-bold mt-1",
@@ -364,6 +364,124 @@ const KPI = () => {
             )}>
               {(stats?.trendPercentage || 0) >= 0 ? "+" : ""}{(stats?.trendPercentage || 0).toFixed(1)}%
             </p>
+          </div>
+        </div>
+
+        {/* Detail KPIs: confronti, sconti, margine */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 animate-fade-in">
+          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center gap-2">
+              {(stats?.mom || 0) >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-success" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-destructive" />
+              )}
+              <p className="text-xs text-muted-foreground">MoM (mese vs precedente)</p>
+            </div>
+            <p className={cn(
+              "text-2xl font-bold mt-1",
+              (stats?.mom || 0) >= 0 ? "text-success" : "text-destructive"
+            )}>
+              {(stats?.mom || 0) >= 0 ? "+" : ""}{(stats?.mom || 0).toFixed(1)}%
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center gap-2">
+              {(stats?.yoy || 0) >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-success" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-destructive" />
+              )}
+              <p className="text-xs text-muted-foreground">YoY (stesso periodo a/p)</p>
+            </div>
+            <p className={cn(
+              "text-2xl font-bold mt-1",
+              (stats?.yoy || 0) >= 0 ? "text-success" : "text-destructive"
+            )}>
+              {(stats?.yoy || 0) >= 0 ? "+" : ""}{(stats?.yoy || 0).toFixed(1)}%
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              vs {formatCurrency(stats?.yoyPrevFatturato || 0)}
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-primary" />
+              <p className="text-xs text-muted-foreground">Sconto medio applicato</p>
+            </div>
+            <p className="text-2xl font-bold mt-1 text-foreground">
+              {(stats?.scontoCascataMedio || 0).toFixed(1)}%
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              + {(stats?.scontoMedio || 0).toFixed(1)}% sconto globale
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center gap-2">
+              <Euro className="h-4 w-4 text-primary" />
+              <p className="text-xs text-muted-foreground">Sconto merce medio / ordine</p>
+            </div>
+            <p className="text-2xl font-bold mt-1 text-foreground">
+              {formatCurrency(stats?.scontoMerceMedio || 0)}
+            </p>
+          </div>
+        </div>
+
+        {/* Top Growers / Decliners */}
+        <div className="grid gap-6 lg:grid-cols-2 animate-fade-in">
+          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-success" />
+              Top 5 Clienti in Crescita
+            </h3>
+            {(stats?.topGrowers || []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nessun dato di confronto disponibile</p>
+            ) : (
+              <div className="space-y-3">
+                {(stats?.topGrowers || []).map((c) => (
+                  <div key={c.id} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{c.nome}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {formatCurrency(c.fatturato)} vs {formatCurrency(c.fatturato_2025 || 0)}
+                      </p>
+                    </div>
+                    <Badge className="bg-success/10 text-success hover:bg-success/20 shrink-0">
+                      +{c.variazione_pct.toFixed(1)}%
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-destructive" />
+              Top 5 Clienti in Calo
+            </h3>
+            {(stats?.topDecliners || []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nessun dato di confronto disponibile</p>
+            ) : (
+              <div className="space-y-3">
+                {(stats?.topDecliners || []).map((c) => (
+                  <div key={c.id} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm truncate">{c.nome}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {formatCurrency(c.fatturato)} vs {formatCurrency(c.fatturato_2025 || 0)}
+                      </p>
+                    </div>
+                    <Badge className="bg-destructive/10 text-destructive hover:bg-destructive/20 shrink-0">
+                      {c.variazione_pct.toFixed(1)}%
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
