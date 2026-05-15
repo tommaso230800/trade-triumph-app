@@ -99,6 +99,9 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
             quantita_pezzi,
             quantita_cartoni,
             prezzo_unitario,
+            sc1,
+            sc2,
+            sc3,
             prodotti (id, nome, pezzi_per_cartone, prezzo_listino, azienda_id, brand_id)
           )
         `)
@@ -144,6 +147,11 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       let ordiniTotali = ordini.length;
       let cartoniTotali = 0;
       let pezziTotali = 0;
+      // Sconto medio (ponderato sul fatturato)
+      let scontoNumeratore = 0;       // somma sconto% * totale
+      let scontoMerceTotale = 0;      // somma sconto_merce €
+      let scontoRigheNumeratore = 0;  // somma sconto cascata sc1/sc2/sc3 ponderato sul subtotale riga
+      let subtotaleRigheTotale = 0;
 
       const clientiMap = new Map<string, ClienteKPI>();
       const aziendeMap = new Map<string, AziendaKPI>();
@@ -160,6 +168,11 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       ordini.forEach((ordine) => {
         const totaleOrdine = Number(ordine.totale);
         fatturatoTotale += totaleOrdine;
+
+        // Sconto globale ponderato + sconto merce
+        const scontoOrdine = Number(ordine.sconto) || 0;
+        scontoNumeratore += scontoOrdine * totaleOrdine;
+        scontoMerceTotale += Number(ordine.sconto_merce) || 0;
 
         // Monthly stats
         const date = new Date(ordine.data_ordine || ordine.created_at);
@@ -183,6 +196,14 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
           const cartoni = riga.quantita_cartoni;
           const pezzi = riga.quantita_pezzi + cartoni * (riga.prodotti.pezzi_per_cartone || 1);
           const rigaFatturato = pezzi * Number(riga.prezzo_unitario);
+
+          // Sconto cascata sc1/sc2/sc3 ponderato sul subtotale lordo
+          const sc1 = Number(riga.sc1) || 0;
+          const sc2 = Number(riga.sc2) || 0;
+          const sc3 = Number(riga.sc3) || 0;
+          const scontoCascata = (1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100)) * 100;
+          subtotaleRigheTotale += rigaFatturato;
+          scontoRigheNumeratore += scontoCascata * rigaFatturato;
 
           ordineCartoni += cartoni;
           ordinePezzi += pezzi;
@@ -290,12 +311,26 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       });
 
       const scontrinoMedio = ordiniTotali > 0 ? fatturatoTotale / ordiniTotali : 0;
+      const scontoMedio = fatturatoTotale > 0 ? scontoNumeratore / fatturatoTotale : 0;
+      const scontoCascataMedio = subtotaleRigheTotale > 0 ? scontoRigheNumeratore / subtotaleRigheTotale : 0;
+      const scontoMerceMedio = ordiniTotali > 0 ? scontoMerceTotale / ordiniTotali : 0;
 
       // Sort all KPI arrays by fatturato
       const clientiKPI = Array.from(clientiMap.values()).sort((a, b) => b.fatturato - a.fatturato);
       const aziendeKPI = Array.from(aziendeMap.values()).sort((a, b) => b.fatturato_totale - a.fatturato_totale);
       const brandsKPI = Array.from(brandsMap.values()).sort((a, b) => b.fatturato_totale - a.fatturato_totale);
       const prodottiKPI = Array.from(prodottiMap.values()).sort((a, b) => b.fatturato_totale - a.fatturato_totale);
+
+      // Top growers / decliners (vs fatturato_2025)
+      const conConfronto = clientiKPI
+        .filter((c) => (c.fatturato_2025 || 0) > 0)
+        .map((c) => ({
+          ...c,
+          variazione_pct: ((c.fatturato - (c.fatturato_2025 || 0)) / (c.fatturato_2025 || 1)) * 100,
+          variazione_eur: c.fatturato - (c.fatturato_2025 || 0),
+        }));
+      const topGrowers = [...conConfronto].sort((a, b) => b.variazione_pct - a.variazione_pct).slice(0, 5);
+      const topDecliners = [...conConfronto].sort((a, b) => a.variazione_pct - b.variazione_pct).slice(0, 5);
 
       const ordiniPerMese = mesiNomi.map((mese) => ({
         mese,
@@ -305,7 +340,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         pezzi: ordiniPerMeseMap[mese].pezzi,
       }));
 
-      // Calculate trend vs previous period (simplified - compare to previous equal-length period)
+      // Trend vs periodo precedente
       let trendPercentage = 0;
       if (filters.startDate && filters.endDate) {
         const periodLength = filters.endDate.getTime() - filters.startDate.getTime();
@@ -325,17 +360,51 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         }
       }
 
+      // MoM (mese in corso vs mese precedente) - dai dati già caricati per mese
+      const now = new Date();
+      const currIdx = now.getMonth();
+      const prevIdx = (currIdx + 11) % 12;
+      const fattCurr = ordiniPerMeseMap[mesiNomi[currIdx]].fatturato;
+      const fattPrev = ordiniPerMeseMap[mesiNomi[prevIdx]].fatturato;
+      const mom = fattPrev > 0 ? ((fattCurr - fattPrev) / fattPrev) * 100 : 0;
+
+      // YoY (stesso periodo anno scorso) - query dedicata
+      let yoy = 0;
+      let yoyPrevFatturato = 0;
+      if (filters.startDate && filters.endDate) {
+        const ys = new Date(filters.startDate); ys.setFullYear(ys.getFullYear() - 1);
+        const ye = new Date(filters.endDate); ye.setFullYear(ye.getFullYear() - 1);
+        const { data: yoyOrdini } = await supabase
+          .from("ordini")
+          .select("totale")
+          .neq("status", "annullato")
+          .gte("data_ordine", ys.toISOString().split("T")[0])
+          .lte("data_ordine", ye.toISOString().split("T")[0]);
+        yoyPrevFatturato = (yoyOrdini || []).reduce((s, o) => s + Number(o.totale), 0);
+        if (yoyPrevFatturato > 0) {
+          yoy = ((fatturatoTotale - yoyPrevFatturato) / yoyPrevFatturato) * 100;
+        }
+      }
+
       return {
         fatturatoTotale,
         ordiniTotali,
         cartoniTotali,
         pezziTotali,
         scontrinoMedio,
+        scontoMedio,
+        scontoCascataMedio,
+        scontoMerceMedio,
         trendPercentage,
+        mom,
+        yoy,
+        yoyPrevFatturato,
         clientiKPI,
         aziendeKPI,
         brandsKPI,
         prodottiKPI,
+        topGrowers,
+        topDecliners,
         ordiniPerMese,
         // Options for filters
         allClienti: clienti || [],
