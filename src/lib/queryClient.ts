@@ -10,8 +10,8 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 min: serve cached, revalidate in background
-      gcTime: 1000 * 60 * 60 * 24, // 24h: keep in cache for offline rehydration
+      staleTime: 1000 * 30, // 30s: ricontrolla spesso, evita cache vuote persistenti
+      gcTime: 1000 * 60 * 60 * 24, // 24h offline
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
       retry: (failureCount, error: any) => {
