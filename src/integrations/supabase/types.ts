@@ -1057,6 +1057,7 @@ export type Database = {
           brand_id: string | null
           cartoni_per_strato: number
           codice: string | null
+          costo_acquisto: number
           created_at: string
           formato: string | null
           id: string
@@ -1077,6 +1078,7 @@ export type Database = {
           brand_id?: string | null
           cartoni_per_strato?: number
           codice?: string | null
+          costo_acquisto?: number
           created_at?: string
           formato?: string | null
           id?: string
@@ -1097,6 +1099,7 @@ export type Database = {
           brand_id?: string | null
           cartoni_per_strato?: number
           codice?: string | null
+          costo_acquisto?: number
           created_at?: string
           formato?: string | null
           id?: string
