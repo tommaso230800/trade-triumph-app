@@ -147,6 +147,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       let ordiniTotali = ordini.length;
       let cartoniTotali = 0;
       let pezziTotali = 0;
+      let costoAcquistoTotale = 0;  // somma costi acquisto pezzi venduti
       // Sconto medio (ponderato sul fatturato)
       let scontoNumeratore = 0;       // somma sconto% * totale
       let scontoMerceTotale = 0;      // somma sconto_merce €
