@@ -256,7 +256,7 @@ export function ImportPDFDialog({
 
     const aziendaProdotti = allProdotti.filter((p) => p.azienda_id === aziendaId);
     
-    const mapped = parsedData.righe.map((riga) => {
+    const mapped = source.righe.map((riga) => {
       // Try to match by codice
       let matchedProdotto = aziendaProdotti.find(
         (p) => p.codice && riga.codice_prodotto && 
