@@ -105,6 +105,18 @@ const KPI = () => {
     setCustomEndDate(undefined);
   };
 
+  const getPeriodoLabel = () => {
+    const fmt = (d?: Date | null) => (d ? format(d, "dd/MM/yyyy", { locale: it }) : "—");
+    const labels: Record<PeriodPreset, string> = {
+      mese: "Questo Mese",
+      trimestre: "Ultimi 3 Mesi",
+      semestre: "Ultimi 6 Mesi",
+      anno: "Anno in Corso",
+      custom: `${fmt(dateRange.start)} → ${fmt(dateRange.end)}`,
+    };
+    return labels[periodPreset] || "Periodo";
+  };
+
   const hasActiveFilters = selectedClienti.length > 0 || selectedAziende.length > 0 || selectedBrands.length > 0;
 
   // Build options for multi-select
