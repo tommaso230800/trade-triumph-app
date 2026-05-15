@@ -65,9 +65,9 @@ export default function NotePage() {
           </div>
           <Tabs value={cat} onValueChange={setCat}>
             <TabsList className="flex-wrap h-auto">
-              <TabsTrigger value="all">Tutte ({notes.length})</TabsTrigger>
+              <TabsTrigger value="all">Tutte ({baseList.length})</TabsTrigger>
               {NOTE_CATEGORIES.map((c) => {
-                const count = notes.filter((n) => n.categoria === c.value).length;
+                const count = baseList.filter((n) => n.categoria === c.value).length;
                 if (count === 0) return null;
                 return (
                   <TabsTrigger key={c.value} value={c.value}>
@@ -78,6 +78,17 @@ export default function NotePage() {
             </TabsList>
           </Tabs>
         </div>
+
+        <Tabs value={view} onValueChange={(v) => { setView(v as any); setCat("all"); }}>
+          <TabsList>
+            <TabsTrigger value="attive">
+              <StickyNote className="h-4 w-4 mr-1" /> Attive ({activeCount})
+            </TabsTrigger>
+            <TabsTrigger value="archivio">
+              <Archive className="h-4 w-4 mr-1" /> Archivio ({archivedCount})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {isLoading ? (
           <p className="text-muted-foreground">Caricamento...</p>
