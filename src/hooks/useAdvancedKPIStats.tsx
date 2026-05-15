@@ -319,6 +319,8 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       const scontoMedio = fatturatoTotale > 0 ? scontoNumeratore / fatturatoTotale : 0;
       const scontoCascataMedio = subtotaleRigheTotale > 0 ? scontoRigheNumeratore / subtotaleRigheTotale : 0;
       const scontoMerceMedio = ordiniTotali > 0 ? scontoMerceTotale / ordiniTotali : 0;
+      const utileLordo = fatturatoTotale - costoAcquistoTotale;
+      const marginePercentuale = fatturatoTotale > 0 ? (utileLordo / fatturatoTotale) * 100 : 0;
 
       // Sort all KPI arrays by fatturato
       const clientiKPI = Array.from(clientiMap.values()).sort((a, b) => b.fatturato - a.fatturato);
