@@ -8,7 +8,8 @@ import { NoteEditor } from "@/components/notes/NoteEditor";
 import { NoteCard } from "@/components/notes/NoteCard";
 
 export function NotesWidget() {
-  const { data: notes = [], isLoading } = useNotes();
+  const { data: allNotes = [], isLoading } = useNotes();
+  const notes = allNotes.filter((n) => !n.completata);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
 
