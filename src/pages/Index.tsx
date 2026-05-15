@@ -3,13 +3,11 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { NotesWidget } from "@/components/dashboard/NotesWidget";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
-import { UpcomingAppointments } from "@/components/dashboard/UpcomingAppointments";
 import { WeeklyActivityWidget } from "@/components/dashboard/WeeklyActivityWidget";
 import { PriorityClientsWidget } from "@/components/dashboard/PriorityClientsWidget";
 import { ReorderAlertsWidget } from "@/components/dashboard/ReorderAlertsWidget";
 import { useStats } from "@/hooks/useStats";
 import { useOrdini } from "@/hooks/useOrdini";
-import { usePromemoria } from "@/hooks/usePromemoria";
 import { useCanvassAttive } from "@/hooks/useCanvass";
 import { ShoppingCart, Users, Building2, Euro, TrendingUp, Target, Bell, Phone, Calendar, Mail, Loader2, Tag, AlertTriangle, ArrowRight, BarChart3, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -26,30 +24,15 @@ const statusConfig = {
   annullato: { label: "Annullato", className: "bg-destructive/10 text-destructive" },
 };
 
-const tipoIcons = {
-  call: Phone,
-  email: Mail,
-  documento: Calendar,
-  scadenza: Calendar,
-};
-
-const prioritaColors = {
-  alta: "border-l-destructive bg-gradient-to-r from-destructive/10 to-transparent",
-  media: "border-l-warning bg-gradient-to-r from-warning/10 to-transparent",
-  bassa: "border-l-info bg-gradient-to-r from-info/10 to-transparent",
-};
-
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
 
 const Index = () => {
   const { data: stats, isLoading: statsLoading } = useStats();
   const { data: ordini, isLoading: ordiniLoading } = useOrdini();
-  const { data: promemoria, isLoading: promemoriaLoading } = usePromemoria();
   const { data: canvassAttive = [] } = useCanvassAttive();
 
   const recentOrdini = ordini?.slice(0, 5) || [];
-  const pendingPromemoria = promemoria?.filter((p) => !p.completato).slice(0, 3) || [];
   
   // Promozioni in scadenza (entro 7 giorni)
   const today = new Date();
@@ -245,9 +228,9 @@ const Index = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6">
           {/* Recent Orders - Clean List */}
-          <div className="lg:col-span-2 rounded-2xl bg-card p-6 shadow-sm border border-border/50 animate-fade-in stagger-5">
+          <div className="rounded-2xl bg-card p-6 shadow-sm border border-border/50 animate-fade-in stagger-5">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
@@ -308,62 +291,6 @@ const Index = () => {
             )}
           </div>
 
-          {/* Reminders - Clean Card */}
-          <div className="rounded-2xl bg-card p-6 shadow-sm border border-border/50 animate-fade-in stagger-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-warning/10 rounded-lg">
-                  <Bell className="h-4 w-4 text-warning" />
-                </div>
-                <h3 className="font-semibold text-card-foreground">Promemoria</h3>
-              </div>
-              <Link to="/promemoria">
-                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-primary">
-                  Tutti
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-            {promemoriaLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : pendingPromemoria.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
-                  <Bell className="h-6 w-6 text-muted-foreground/50" />
-                </div>
-                <p className="text-sm text-muted-foreground">Nessun promemoria</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {pendingPromemoria.map((reminder) => {
-                  const Icon = tipoIcons[reminder.tipo];
-                  return (
-                    <div
-                      key={reminder.id}
-                      className={cn(
-                        "rounded-xl border-l-4 p-4 transition-all duration-200 hover:translate-x-1",
-                        prioritaColors[reminder.priorita]
-                      )}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-lg bg-card p-2 shadow-sm">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-card-foreground text-sm truncate">{reminder.titolo}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {getDateLabel(reminder.data)} {reminder.orario && `· ${reminder.orario?.slice(0, 5)}`}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Bottom Widgets Row */}
@@ -371,11 +298,6 @@ const Index = () => {
           <ReorderAlertsWidget />
           <PriorityClientsWidget />
           <WeeklyActivityWidget />
-        </div>
-
-        {/* Upcoming Appointments */}
-        <div className="animate-fade-in stagger-7">
-          <UpcomingAppointments />
         </div>
       </div>
     </MainLayout>
