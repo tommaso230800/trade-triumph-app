@@ -144,6 +144,11 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       let ordiniTotali = ordini.length;
       let cartoniTotali = 0;
       let pezziTotali = 0;
+      // Sconto medio (ponderato sul fatturato)
+      let scontoNumeratore = 0;       // somma sconto% * totale
+      let scontoMerceTotale = 0;      // somma sconto_merce €
+      let scontoRigheNumeratore = 0;  // somma sconto cascata sc1/sc2/sc3 ponderato sul subtotale riga
+      let subtotaleRigheTotale = 0;
 
       const clientiMap = new Map<string, ClienteKPI>();
       const aziendeMap = new Map<string, AziendaKPI>();
