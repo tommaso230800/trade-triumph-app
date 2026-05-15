@@ -151,14 +151,6 @@
   input, textarea, select { font-size: 16px !important; }
   a, button { -webkit-tap-highlight-color: transparent; }
 
-  /* Global anchor accent (excludes button-styled links and shadcn primitives) */
-  a:not([class*="bg-"]):not([class*="btn"]):not([role="button"]):not([data-radix-collection-item]):not([class*="text-"]) {
-    color: hsl(var(--primary-glow));
-  }
-  a:not([class*="bg-"]):not([class*="btn"]):not([role="button"]):hover {
-    text-shadow: 0 0 12px hsl(var(--primary) / 0.5);
-  }
-
   .overflow-y-auto, .overflow-x-auto, .overflow-auto { -webkit-overflow-scrolling: touch; }
 
   ::-webkit-scrollbar { width: 10px; height: 10px; }
