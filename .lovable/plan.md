@@ -1,83 +1,84 @@
-# Rifacimento contrasto + potenziamento app per agenti
+# Preparazione Visite AI – Piano
 
-## Problema
-Le scritte risultano sbiadite, le card sembrano trasparenti, l'app non sfrutta tutto il potenziale per un agente di commercio sul campo.
+Obiettivo: ciclo completo **Cliente → Prepara visita AI → Salva → Report visita → Storico → Nuova prep AI migliorata**, con concorrenza cliente strutturata e usata dall'AI.
 
-## Obiettivo
-1. Tema scuro **leggibile in qualsiasi condizione di luce** (anche su iPad in pieno sole).
-2. Trasformare l'app in uno strumento operativo professionale per l'agente.
+## 1. Database (nuova migration)
 
----
+Nuove tabelle (tutte con RLS `auth.uid() = user_id`):
 
-## Parte 1 — Leggibilità totale (priorità massima)
+- **competitor_products** – prodotti concorrenti per cliente
+  - cliente_id, categoria, nome, marca, formato
+  - prezzo_acquisto, prezzo_vendita, margine_stimato, sconto, omaggi
+  - condizioni, pagamento, frequenza, quantita_abituale
+  - agente_concorrente, soddisfazione (1-5)
+  - punti_forti, punti_deboli
+  - nostro_prodotto_id (FK prodotti, opzionale), nostro_prezzo, vantaggio
+  - priorita (alta/media/bassa), stato (da_attaccare/da_monitorare/difficile/sostituito/perso)
+  - foto_url, note, last_updated_at
 
-- **Sfondo più scuro e pieno**: nero-blu profondo opaco, niente trasparenze residue dietro le card.
-- **Testi ad alto contrasto**:
-  - `foreground` puro bianco caldo (≥ 96% luminosità)
-  - `muted-foreground` portato a ≥ 88% (oggi 78%)
-  - `card-foreground` solido, mai sotto 95%
-- **Card opache**: rimuovo `surface-glass`/blur dalle card di contenuto principali; resta solo per overlay (modali, sheet).
-- **Bordi visibili**: border al 30% (oggi 22%).
-- **Aurora di sfondo molto attenuata**: opacity max 4–5%, dietro `z-0`, non più davanti al contenuto.
-- **Input e tabelle**: sfondo solido `card`, testo bianco, placeholder al 70%.
-- **Badge e link**: colore pieno (blu/verde/giallo/rosso) su sfondo opaco, niente più testo gradient sottile sui valori KPI.
-- **KPI numerici**: bianco solido grande, l'accento colorato resta solo sull'icona o sul bordo sinistro.
-- Audit rapido pagina per pagina (Dashboard, Clienti, Ordini, Aziende, KPI, Provvigioni, Visite, Trattative, Canvass) per sostituire ogni `text-muted-foreground/50`, `bg-*/10`, `text-gradient-*` su numeri.
+- **visit_preparations** – preparazioni AI
+  - cliente_id, visit_date, status (preparata/visita_fatta/report_compilato/archiviata)
+  - riepilogo_cliente, storico_commerciale, analisi_concorrenza (text)
+  - obiettivo_visita, proposta_consigliata, argomenti_vendita (text)
+  - obiezioni_previste, domande_consigliate, prossima_azione (text)
+  - contenuto_completo (jsonb – output AI strutturato)
 
-## Parte 2 — Potenziamento per agenti di commercio
+- **visit_reports** – report visita
+  - cliente_id, visit_preparation_id (FK), data_visita
+  - esito, ordine_preso (bool), valore_ordine
+  - prodotti_ordinati, prodotti_proposti, prodotti_proposti_non_ordinati (jsonb)
+  - concorrenza_rilevata (jsonb – sync verso competitor_products)
+  - obiezioni, risposte_date (text)
+  - interesse_cliente (basso/medio/alto), umore_cliente (freddo/normale/positivo/molto_interessato)
+  - promozioni_discusse, campioni_lasciati, espositori_richiesti, materiale_promozionale (text)
+  - prossima_azione, data_follow_up, note
 
-Aggiungo / rinforzo i moduli che un agente usa ogni giorno:
+Estensione tabella **clienti**: aggiungo solo `livello_relazione` (1-5) e `potenziale_cliente` (basso/medio/alto/strategico) – il resto già esiste (anagrafica, tipologia, condizioni, fatturato, note, consorzio…).
 
-1. **Dashboard "Giornata dell'agente"**
-   - Riordini in scadenza (già presente, evidenziato in alto)
-   - Clienti prioritari della settimana
-   - Trattative in chiusura (deal aperti con data prevista vicina)
-   - Provvigioni maturate del mese in corso vs target
-   - Ultime visite registrate
+Riuso tabelle esistenti: `ordini` + `ordini_righe` (storico ordini), `client_notes` (note), `promo_clienti` (promo proposte), `reorder_tracking` (frequenza).
 
-2. **Quick actions sempre raggiungibili** (FAB mobile + barra desktop)
-   - Nuovo ordine
-   - Registra visita
-   - Nuova trattativa
-   - Nuovo promemoria
+## 2. Edge Function AI: `prepare-visit`
 
-3. **Scheda cliente potenziata**
-   - Semaforo stato (verde/giallo/rosso) ben visibile
-   - Storico ordini con grafico mensile
-   - Promo attive sul cliente
-   - Trattative collegate
-   - Note rapide e ultime visite
-   - Pulsante "Chiama / WhatsApp / Email" diretto
+Input: `cliente_id`. La function:
+1. Carica anagrafica cliente, ultimi 50 ordini con righe, prodotti più frequenti, prodotti non riordinati, promo attive/storiche, note, competitor_products, ultimi 5 visit_reports, follow-up aperti.
+2. Costruisce un prompt strutturato e chiama Lovable AI Gateway (`google/gemini-2.5-pro` per qualità) con tool calling per output JSON con tutte le sezioni richieste.
+3. Inserisce una riga in `visit_preparations` con status `preparata` e ritorna l'oggetto.
 
-4. **Ordini più solidi**
-   - Filtro rapido per mese/azienda/stato già presente, lo rendo più visibile
-   - Riepilogo a colpo d'occhio (totale imponibile, n° cartoni, sconti applicati)
-   - Bottone "Ricomponi ordine" (riordino) in evidenza
+`supabase/config.toml`: aggiungo `[functions.prepare-visit] verify_jwt = true` (richiede auth utente per RLS).
 
-5. **KPI e provvigioni**
-   - Confronto YoY 2025 vs anno corrente
-   - Top crescita / top calo clienti
-   - Provvigioni per trimestre con stato (maturata, fatturata, incassata)
+## 3. Hook & componenti frontend
 
-6. **Promemoria e visite**
-   - Timeline cronologica unica per cliente
-   - Notifica visiva sui clienti senza visite da > X giorni
+Hook nuovi:
+- `useCompetitorProducts(clientId)` – CRUD competitor
+- `useVisitPreparations(clientId)` – list/get/create/update/delete
+- `useVisitReports(clientId)` – list/get/create/update + sync competitor
+- `usePrepareVisitAI()` – mutation che invoca la edge function
 
-> Nessun calendario / giro visite / assistente pre-visita / clienti da visitare (vincoli del progetto).
+Componenti nuovi (`src/components/visite/`):
+- `CompetitorProductCard.tsx` + `CompetitorProductDialog.tsx` – sezione concorrenza
+- `VisitPreparationView.tsx` – mostra/modifica la preparazione AI (sezioni collassabili)
+- `VisitReportDialog.tsx` – form veloce report (chip selezionabili + textarea), include sotto-form "Aggiorna concorrenza rilevata" che fa upsert in competitor_products
+- `VisitHistoryList.tsx` – timeline preparazione → report
 
----
+Pagine:
+- Modifico `ClienteDettaglio.tsx`: aggiungo tab/sezioni **Concorrenza**, **Storico visite**, **Preparazioni AI**, e bottone primario **"Prepara visita con AI"** in alto.
+- Nuova pagina `src/pages/Visite.tsx` (rotta `/visite`) – dashboard visite: da fare / report da compilare / follow-up aperti / clienti senza visita / clienti con concorrenza attaccabile. Aggiungo voce in Sidebar.
 
-## Dettagli tecnici
+## 4. Priorità clienti
 
-- File chiave da rivedere: `src/index.css` (token HSL, utilities), `tailwind.config.ts`, `src/components/layout/MainLayout.tsx`, tutte le pagine in `src/pages/`, primitive `ui/card.tsx`, `ui/badge.tsx`, `ui/button.tsx`, `ui/table.tsx`, `ui/input.tsx`.
-- Refactor "search & replace" sistematico delle classi a basso contrasto:
-  - `text-muted-foreground/50|60|70` → `text-muted-foreground`
-  - `bg-card/50|60|70` su card principali → `bg-card`
-  - `text-gradient-*` su numeri KPI → `text-foreground`
-- Le animazioni (rise-in, blur-in, hover-glow) restano ma non riducono mai l'opacità finale sotto 1.
-- Mantengo design tokens semantici (no colori hardcoded nei componenti).
+Estendo `useClientStatus` / `usePriorityClients` per includere segnali nuovi: presenza competitor con priorità alta, follow-up aperti, prodotti abituali non riordinati. L'AI restituisce il "motivo priorità" nella prep.
 
-## Cosa NON cambia
+## 5. Mobile-first
 
-- Logica business (import PDF, calcolo cartoni, sconti a cascata, RLS, edge functions) resta identica.
-- Niente reintroduzione di Diario Giornaliero, Giro Visita, Assistente Pre-Visita, Clienti da Visitare.
+Tutti i nuovi dialog/sheet usano `max-h-[90dvh]` con scroll interno; report visita ottimizzato per smartphone (chip + textarea, niente tabelle).
+
+## Note tecniche
+
+- Output AI in JSON strutturato via tool calling → niente parsing fragile.
+- `concorrenza_rilevata` nel report: array di `{competitor_product_id?, nome, prezzo, condizioni}` → upsert automatico in `competitor_products` al salvataggio.
+- Memoria commerciale: la edge function include sempre gli ultimi report nel prompt → ogni visita migliora la successiva.
+
+## Fuori scopo (per non sforare)
+
+- Upload foto scaffale (placeholder URL per ora, storage in step successivo).
+- Notifiche push follow-up.
