@@ -404,7 +404,33 @@ const KPI = () => {
         </div>
 
         {/* Detail KPIs: confronti, sconti, margine */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 animate-fade-in">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 animate-fade-in">
+          <div className="rounded-lg bg-gradient-to-br from-success/15 to-success/5 border border-success/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center gap-2">
+              <Euro className="h-4 w-4 text-success" />
+              <p className="text-xs text-muted-foreground">Utile lordo</p>
+            </div>
+            <p className="text-2xl font-bold mt-1 text-success">
+              {formatCurrency(stats?.utileLordo || 0)}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              costo: {formatCurrency(stats?.costoAcquistoTotale || 0)}
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <p className="text-xs text-muted-foreground">Margine %</p>
+            </div>
+            <p className="text-2xl font-bold mt-1 text-primary">
+              {(stats?.marginePercentuale || 0).toFixed(1)}%
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              su fatturato periodo
+            </p>
+          </div>
+
           <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
             <div className="flex items-center gap-2">
               {(stats?.mom || 0) >= 0 ? (
