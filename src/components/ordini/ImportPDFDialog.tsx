@@ -135,8 +135,16 @@ export function ImportPDFDialog({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== "application/pdf") {
-      toast.error("Seleziona un file PDF");
+    const name = file.name.toLowerCase();
+    const isPdf = file.type === "application/pdf" || name.endsWith(".pdf");
+    const isExcel =
+      name.endsWith(".xlsx") ||
+      name.endsWith(".xls") ||
+      file.type === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      file.type === "application/vnd.ms-excel";
+
+    if (!isPdf && !isExcel) {
+      toast.error("Formato non supportato. Usa PDF, XLSX o XLS");
       return;
     }
 
@@ -150,66 +158,90 @@ export function ImportPDFDialog({
     setLocalProdotti([]);
 
     try {
-      // Convert to base64
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const result = reader.result as string;
-          const base64 = result.split(",")[1];
-          resolve(base64);
-        };
-        reader.onerror = reject;
-      });
-      reader.readAsDataURL(file);
-      const pdfBase64 = await base64Promise;
+      let parsed: ParsedOrderData;
 
-      // Call edge function
-      const { data, error } = await supabase.functions.invoke("parse-order-pdf", {
-        body: { pdfBase64 },
-      });
+      if (isPdf) {
+        // PDF flow: base64 -> AI vision
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.split(",")[1]);
+          };
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(file);
+        const pdfBase64 = await base64Promise;
 
-      if (error) {
-        throw new Error(error.message);
+        const { data, error } = await supabase.functions.invoke("parse-order-pdf", {
+          body: { pdfBase64 },
+        });
+        if (error) throw new Error(error.message);
+        if (!data.success) throw new Error(data.error || "Errore nel parsing del PDF");
+        parsed = data.data as ParsedOrderData;
+      } else {
+        // Excel flow: parse client-side -> testo -> AI
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
+        const parts: string[] = [];
+        for (const sheetName of workbook.SheetNames) {
+          const sheet = workbook.Sheets[sheetName];
+          // CSV con separatore | per leggibilità AI
+          const csv = XLSX.utils.sheet_to_csv(sheet, { FS: " | ", blankrows: false });
+          if (csv.trim()) {
+            parts.push(`### Foglio: ${sheetName}\n${csv}`);
+          }
+        }
+        const sheetText = parts.join("\n\n");
+        if (!sheetText.trim()) throw new Error("Il file Excel è vuoto");
+
+        const { data, error } = await supabase.functions.invoke("parse-order-excel", {
+          body: { sheetText },
+        });
+        if (error) throw new Error(error.message);
+        if (!data.success) throw new Error(data.error || "Errore nel parsing dell'Excel");
+        parsed = data.data as ParsedOrderData;
       }
 
-      if (!data.success) {
-        throw new Error(data.error || "Errore nel parsing del PDF");
-      }
+      // Sanitize numeri (l'AI a volte restituisce stringhe)
+      parsed.righe = (parsed.righe || []).map((r) => ({
+        ...r,
+        quantita_pezzi: Number(r.quantita_pezzi) || 0,
+        quantita_cartoni: Number(r.quantita_cartoni) || 0,
+        prezzo_unitario: Number(r.prezzo_unitario) || 0,
+        importo_riga: Number(r.importo_riga) || 0,
+      }));
 
-      const parsed = data.data as ParsedOrderData;
       setParsedData(parsed);
-      
-      // Set data ordine
-      if (parsed.data_ordine) {
-        setDataOrdine(parsed.data_ordine);
-      }
 
-      // Try to auto-match cliente
+      if (parsed.data_ordine) setDataOrdine(parsed.data_ordine);
+
       if (parsed.cliente_nome) {
         const matchedCliente = clienti.find(
-          (c) => c.nome.toLowerCase().includes(parsed.cliente_nome!.toLowerCase()) ||
-                 parsed.cliente_nome!.toLowerCase().includes(c.nome.toLowerCase())
+          (c) =>
+            c.nome.toLowerCase().includes(parsed.cliente_nome!.toLowerCase()) ||
+            parsed.cliente_nome!.toLowerCase().includes(c.nome.toLowerCase())
         );
-        if (matchedCliente) {
-          setSelectedCliente(matchedCliente.id);
-        }
+        if (matchedCliente) setSelectedCliente(matchedCliente.id);
       }
 
-      // Try to auto-match azienda
       if (parsed.azienda_nome) {
         const matchedAzienda = aziende.find(
-          (a) => a.nome.toLowerCase().includes(parsed.azienda_nome!.toLowerCase()) ||
-                 parsed.azienda_nome!.toLowerCase().includes(a.nome.toLowerCase())
+          (a) =>
+            a.nome.toLowerCase().includes(parsed.azienda_nome!.toLowerCase()) ||
+            parsed.azienda_nome!.toLowerCase().includes(a.nome.toLowerCase())
         );
         if (matchedAzienda) {
           setSelectedAzienda(matchedAzienda.id);
+          // auto-mappa righe ai prodotti dell'azienda
+          handleAziendaChange(matchedAzienda.id, parsed);
         }
       }
 
-      toast.success("PDF analizzato con successo!");
+      toast.success(isPdf ? "PDF analizzato!" : "Excel analizzato!");
     } catch (error) {
-      console.error("Error parsing PDF:", error);
-      toast.error(error instanceof Error ? error.message : "Errore nel parsing del PDF");
+      console.error("Error parsing file:", error);
+      toast.error(error instanceof Error ? error.message : "Errore nel parsing del file");
     } finally {
       setIsLoading(false);
     }
