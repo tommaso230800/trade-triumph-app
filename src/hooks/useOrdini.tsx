@@ -30,17 +30,47 @@ export function useOrdini(
   return useQuery({
     queryKey: ["ordini", searchTerm, statusFilter, monthFilters?.join(",")],
     queryFn: async () => {
-      // Se cerchiamo un prodotto, prima troviamo gli ordini che lo contengono
-      let ordineIdsByProduct: string[] | null = null;
       const term = (searchTerm || "").trim();
-      if (term.length >= 2) {
-        const { data: righeMatch } = await supabase
-          .from("ordini_righe")
-          .select("ordine_id, prodotti!inner(nome, codice)")
-          .or(`nome.ilike.%${term}%,codice.ilike.%${term}%`, { foreignTable: "prodotti" });
-        if (righeMatch) {
-          ordineIdsByProduct = Array.from(new Set(righeMatch.map((r: any) => r.ordine_id)));
+
+      // Quando l'utente cerca: troviamo gli ID degli ordini il cui cliente,
+      // azienda o prodotto corrispondono. Poi filtriamo per ID.
+      let restrictIds: string[] | null = null;
+      if (term.length >= 1) {
+        const like = `%${term}%`;
+        const [clRes, azRes, righeRes, codRes] = await Promise.all([
+          supabase.from("clienti").select("id").or(`nome.ilike.${like},azienda.ilike.${like}`),
+          supabase.from("aziende").select("id").ilike("nome", like),
+          supabase
+            .from("ordini_righe")
+            .select("ordine_id, prodotti!inner(nome, codice)")
+            .or(`nome.ilike.${like},codice.ilike.${like}`, { foreignTable: "prodotti" }),
+          supabase.from("ordini").select("id").ilike("codice", like),
+        ]);
+
+        const clienteIds = (clRes.data || []).map((r: any) => r.id);
+        const aziendaIds = (azRes.data || []).map((r: any) => r.id);
+        const ordineIdsFromProducts = Array.from(
+          new Set((righeRes.data || []).map((r: any) => r.ordine_id))
+        );
+        const ordineIdsFromCode = (codRes.data || []).map((r: any) => r.id);
+
+        const idSet = new Set<string>(ordineIdsFromProducts);
+        ordineIdsFromCode.forEach((id) => idSet.add(id));
+
+        // Aggiungi tutti gli ordini collegati ai clienti/aziende trovati
+        if (clienteIds.length > 0 || aziendaIds.length > 0) {
+          const orParts: string[] = [];
+          if (clienteIds.length > 0) orParts.push(`cliente_id.in.(${clienteIds.join(",")})`);
+          if (aziendaIds.length > 0) orParts.push(`azienda_id.in.(${aziendaIds.join(",")})`);
+          const { data: more } = await supabase
+            .from("ordini")
+            .select("id")
+            .or(orParts.join(","));
+          (more || []).forEach((o: any) => idSet.add(o.id));
         }
+
+        restrictIds = Array.from(idSet);
+        if (restrictIds.length === 0) return [] as Ordine[];
       }
 
       let query = supabase
@@ -52,17 +82,8 @@ export function useOrdini(
         `)
         .order("data_ordine", { ascending: false });
 
-      if (term) {
-        const orParts = [
-          `codice.ilike.%${term}%`,
-          `clienti.nome.ilike.%${term}%`,
-          `clienti.azienda.ilike.%${term}%`,
-          `aziende.nome.ilike.%${term}%`,
-        ];
-        if (ordineIdsByProduct && ordineIdsByProduct.length > 0) {
-          orParts.push(`id.in.(${ordineIdsByProduct.join(",")})`);
-        }
-        query = query.or(orParts.join(","));
+      if (restrictIds) {
+        query = query.in("id", restrictIds);
       }
 
       if (statusFilter && statusFilter !== "tutti") {
@@ -70,7 +91,6 @@ export function useOrdini(
       }
 
       if (monthFilters && monthFilters.length > 0) {
-        // Costruisce range OR: data_ordine compresa in uno dei mesi selezionati
         const ranges = monthFilters.map((m) => {
           const [y, mo] = m.split("-").map(Number);
           const start = new Date(Date.UTC(y, mo - 1, 1)).toISOString().slice(0, 10);
