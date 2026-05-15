@@ -401,23 +401,23 @@ export function ImportPDFDialog({
       <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Importa Ordine da PDF
+            <FileSpreadsheet className="h-5 w-5" />
+            Importa Ordine (PDF o Excel)
           </DialogTitle>
           <DialogDescription>
-            Carica un PDF di un ordine e l'AI estrarrà automaticamente i dati
+            Carica un PDF oppure un file Excel (.xlsx / .xls): l'AI estrarrà cliente, azienda, prodotti e prezzi.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* File Upload */}
           <div className="space-y-2">
-            <Label>Seleziona PDF</Label>
+            <Label>Seleziona file</Label>
             <div className="flex items-center gap-4">
               <Input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept="application/pdf,.pdf,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                 onChange={handleFileChange}
                 disabled={isLoading}
                 className="flex-1"
