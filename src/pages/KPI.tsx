@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAdvancedKPIStats, AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
+import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { ClientGrowthWidget } from "@/components/dashboard/ClientGrowthWidget";
-import { YearComparisonChart } from "@/components/dashboard/YearComparisonChart";
+import { YoYDynamicChart } from "@/components/dashboard/YoYDynamicChart";
+import { KPIHeroYoY } from "@/components/dashboard/KPIHeroYoY";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -95,6 +97,23 @@ const KPI = () => {
   };
 
   const { data: stats, isLoading } = useAdvancedKPIStats(filters);
+  const { data: yoy } = useKPIYoY(filters);
+
+  const aziendeNames = useMemo(() => {
+    const m = new Map<string, string>();
+    (stats?.allAziende || []).forEach((a: any) => m.set(a.id, a.nome));
+    return m;
+  }, [stats?.allAziende]);
+  const clientiNames = useMemo(() => {
+    const m = new Map<string, string>();
+    (stats?.allClienti || []).forEach((c: any) => m.set(c.id, c.nome));
+    return m;
+  }, [stats?.allClienti]);
+  const prodottiNames = useMemo(() => {
+    const m = new Map<string, string>();
+    (stats?.prodottiKPI || []).forEach((p) => m.set(p.id, p.nome));
+    return m;
+  }, [stats?.prodottiKPI]);
 
   const resetFilters = () => {
     setSelectedClienti([]);
@@ -568,13 +587,39 @@ const KPI = () => {
         {/* Client Growth Widget */}
         <ClientGrowthWidget clienti={stats?.clientiKPI || []} />
 
-        {/* Year Comparison Chart - Confronto Mese per Mese 2025 vs 2026 */}
+        {/* YoY Hero strip (dinamico su dati reali) */}
+        {yoy && (
+          <KPIHeroYoY
+            fattCurr={yoy.curr.fatturato}
+            fattPrev={yoy.prev.fatturato}
+            delta={yoy.delta}
+            deltaPct={yoy.deltaPct}
+            yearCurr={yoy.yearCurr}
+            yearPrev={yoy.yearPrev}
+            aziendeYoY={yoy.aziendeYoY}
+            prodottiYoY={yoy.prodottiYoY}
+            clientiYoY={yoy.clientiYoY}
+            aziendeNames={aziendeNames}
+            prodottiNames={prodottiNames}
+            clientiNames={clientiNames}
+          />
+        )}
+
+        {/* Year Comparison Chart dinamico: anno corrente vs anno precedente */}
         <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
-            Confronto Fatturato Mese per Mese: 2025 vs 2026
+            Confronto Fatturato Mese per Mese: {yoy?.yearPrev ?? "anno prec."} vs {yoy?.yearCurr ?? "anno corr."}
           </h3>
-          <YearComparisonChart data2026={stats?.ordiniPerMese || []} />
+          {yoy ? (
+            <YoYDynamicChart
+              data={yoy.monthlyComparison}
+              yearCurr={yoy.yearCurr}
+              yearPrev={yoy.yearPrev}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">Caricamento confronto annuale…</p>
+          )}
         </div>
 
         {/* Detailed Tabs */}
