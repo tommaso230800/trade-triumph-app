@@ -14,7 +14,13 @@ export type Ordine = {
   sconto: number;
   sconto_merce: number;
   tipo_pagamento: string;
-  status: "in_attesa" | "spedito" | "completato" | "annullato";
+  status: "in_attesa" | "spedito" | "completato" | "annullato" | "stand_by";
+  stand_by_motivo?: string | null;
+  stand_by_prodotto_bloccato?: string | null;
+  stand_by_data_prevista?: string | null;
+  stand_by_note?: string | null;
+  stand_by_data_inizio?: string | null;
+  data_conferma?: string | null;
   provvigione_pagata: boolean;
   created_at: string;
   data_ordine: string | null;
