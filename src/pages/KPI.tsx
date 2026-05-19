@@ -639,6 +639,15 @@ const KPI = () => {
 
           {/* Clienti Tab */}
           <TabsContent value="clienti" className="space-y-4">
+            {yoy && (
+              <YoYDimensionPanel
+                title="Clienti — Crescita, Calo e Opportunità"
+                data={yoy.clientiYoY}
+                names={clientiNames}
+                yearCurr={yoy.yearCurr}
+                yearPrev={yoy.yearPrev}
+              />
+            )}
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
