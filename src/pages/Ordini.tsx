@@ -1266,6 +1266,12 @@ const Ordini = () => {
                               Segna come Completato
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              onClick={() => setStandByTarget({ id: ordine.id, codice: ordine.codice })}
+                            >
+                              <PauseCircle className="h-4 w-4 mr-2" />
+                              Metti in Stand-by
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               className="text-destructive"
                               onClick={() => updateStatus.mutate({ id: ordine.id, status: "annullato" })}
                             >
