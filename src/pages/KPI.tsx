@@ -115,6 +115,11 @@ const KPI = () => {
     (stats?.prodottiKPI || []).forEach((p) => m.set(p.id, p.nome));
     return m;
   }, [stats?.prodottiKPI]);
+  const brandsNames = useMemo(() => {
+    const m = new Map<string, string>();
+    (stats?.allBrands || []).forEach((b: any) => m.set(b.id, b.name));
+    return m;
+  }, [stats?.allBrands]);
 
   const resetFilters = () => {
     setSelectedClienti([]);
