@@ -50,6 +50,7 @@ import { toast } from "sonner";
 import { ProformaDialog } from "@/components/ordini/ProformaDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
+import { MultiFileImportDialog } from "@/components/ordini/MultiFileImportDialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelect } from "@/components/ui/multi-select";
 
