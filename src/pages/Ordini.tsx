@@ -737,11 +737,16 @@ const Ordini = () => {
               Crea e gestisci gli ordini dei tuoi clienti
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="default" className="gap-2" onClick={() => setIsMultiImportOpen(true)}>
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Carica file ordini</span>
+              <span className="sm:hidden">Carica</span>
+            </Button>
             <Button variant="outline" className="gap-2" onClick={() => setIsImportPDFOpen(true)}>
               <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">Importa PDF / Excel</span>
-              <span className="sm:hidden">Importa</span>
+              <span className="hidden sm:inline">Importa singolo PDF/Excel</span>
+              <span className="sm:hidden">Singolo</span>
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={(open) => {
               setIsDialogOpen(open);
