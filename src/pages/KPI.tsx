@@ -808,6 +808,15 @@ const KPI = () => {
 
           {/* Brands Tab */}
           <TabsContent value="brands" className="space-y-4">
+            {yoy && (
+              <YoYDimensionPanel
+                title="Marchi — Performance YoY"
+                data={yoy.brandsYoY}
+                names={brandsNames}
+                yearCurr={yoy.yearCurr}
+                yearPrev={yoy.yearPrev}
+              />
+            )}
             <div className="rounded-xl bg-card shadow-card overflow-hidden">
               <div className="overflow-x-auto">
                 <Table>
