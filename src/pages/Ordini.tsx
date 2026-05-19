@@ -708,14 +708,19 @@ const Ordini = () => {
     setIsProformaOpen(true);
   };
 
-  // Separate active orders from cancelled ones
-  const ordiniAttivi = useMemo(() => 
-    ordini?.filter((o) => o.status !== "annullato") || [], 
+  // Separate orders by status group
+  const ordiniAttivi = useMemo(() =>
+    ordini?.filter((o) => o.status !== "annullato" && o.status !== "stand_by") || [],
     [ordini]
   );
-  
-  const ordiniAnnullati = useMemo(() => 
-    ordini?.filter((o) => o.status === "annullato") || [], 
+
+  const ordiniStandBy = useMemo(() =>
+    ordini?.filter((o) => o.status === "stand_by") || [],
+    [ordini]
+  );
+
+  const ordiniAnnullati = useMemo(() =>
+    ordini?.filter((o) => o.status === "annullato") || [],
     [ordini]
   );
 
@@ -726,6 +731,8 @@ const Ordini = () => {
     valoreTotale: ordiniAttivi.reduce((sum, o) => sum + Number(o.totale), 0),
     annullati: ordiniAnnullati.length,
     valoreAnnullato: ordiniAnnullati.reduce((sum, o) => sum + Number(o.totale), 0),
+    standBy: ordiniStandBy.length,
+    valoreStandBy: ordiniStandBy.reduce((sum, o) => sum + Number(o.totale), 0),
   };
 
   return (
