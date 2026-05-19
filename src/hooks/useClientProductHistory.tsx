@@ -47,7 +47,7 @@ export function useClientProductHistory(clienteId?: string, aziendaId?: string) 
         .select("id, sconto, sconto_merce, tipo_pagamento, created_at, data_ordine")
         .eq("cliente_id", clienteId)
         .eq("azienda_id", aziendaId)
-        .neq("status", "annullato")
+        .not("status","in","(annullato,stand_by)")
         .order("data_ordine", { ascending: false });
 
       if (ordiniError) throw ordiniError;

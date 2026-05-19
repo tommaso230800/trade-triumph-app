@@ -60,7 +60,7 @@ export default function CanvassPage() {
   
   const fatturatoData = useMemo(() => {
     const currentYear = today.getFullYear();
-    const validOrdini = ordini.filter(o => o.status !== "annullato");
+    const validOrdini = ordini.filter(o => o.status !== "annullato" && o.status !== "stand_by");
     return validOrdini.reduce((acc, ordine) => {
       const orderDate = new Date(ordine.data_ordine || ordine.created_at || "");
       if (orderDate.getFullYear() !== currentYear) return acc;
@@ -73,7 +73,7 @@ export default function CanvassPage() {
 
   const fatturatoConsorzioData = useMemo(() => {
     const currentYear = today.getFullYear();
-    const validOrdini = ordini.filter(o => o.status !== "annullato");
+    const validOrdini = ordini.filter(o => o.status !== "annullato" && o.status !== "stand_by");
     return validOrdini.reduce((acc, ordine) => {
       const orderDate = new Date(ordine.data_ordine || ordine.created_at || "");
       if (orderDate.getFullYear() !== currentYear) return acc;

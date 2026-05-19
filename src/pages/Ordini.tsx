@@ -36,8 +36,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw, Upload, Tag, Gift, Sparkles, CheckCircle2 } from "lucide-react";
-import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, useUpdateOrdine, Ordine } from "@/hooks/useOrdini";
+import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw, Upload, Tag, Gift, Sparkles, CheckCircle2, PauseCircle, PlayCircle } from "lucide-react";
+import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, useUpdateOrdine, useConfermaOrdineDaStandBy, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
 import { useProdotti, Prodotto } from "@/hooks/useProdotti";
@@ -51,6 +51,7 @@ import { ProformaDialog } from "@/components/ordini/ProformaDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
 import { MultiFileImportDialog } from "@/components/ordini/MultiFileImportDialog";
+import { StandByDialog } from "@/components/ordini/StandByDialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelect } from "@/components/ui/multi-select";
 
@@ -59,6 +60,7 @@ const statusConfig = {
   in_attesa: { label: "In Attesa", className: "bg-warning/10 text-warning hover:bg-warning/20" },
   spedito: { label: "Spedito", className: "bg-info/10 text-info hover:bg-info/20" },
   annullato: { label: "Annullato", className: "bg-destructive/10 text-destructive hover:bg-destructive/20" },
+  stand_by: { label: "Stand-by", className: "bg-warning/15 text-warning border border-warning/40 hover:bg-warning/25" },
 };
 
 const TIPI_PAGAMENTO = [
@@ -189,6 +191,10 @@ const Ordini = () => {
   const updateRigaMutation = useUpdateOrdineRiga();
   const updateOrdineTotale = useUpdateOrdineTotale();
   const updateOrdine = useUpdateOrdine();
+  const confermaStandBy = useConfermaOrdineDaStandBy();
+
+  // Stand-by dialog state
+  const [standByTarget, setStandByTarget] = useState<{ id: string; codice?: string } | null>(null);
 
   // Searchable options for dropdowns
   const clientiOptions = useMemo(() => 
@@ -708,14 +714,19 @@ const Ordini = () => {
     setIsProformaOpen(true);
   };
 
-  // Separate active orders from cancelled ones
-  const ordiniAttivi = useMemo(() => 
-    ordini?.filter((o) => o.status !== "annullato") || [], 
+  // Separate orders by status group
+  const ordiniAttivi = useMemo(() =>
+    ordini?.filter((o) => o.status !== "annullato" && o.status !== "stand_by") || [],
     [ordini]
   );
-  
-  const ordiniAnnullati = useMemo(() => 
-    ordini?.filter((o) => o.status === "annullato") || [], 
+
+  const ordiniStandBy = useMemo(() =>
+    ordini?.filter((o) => o.status === "stand_by") || [],
+    [ordini]
+  );
+
+  const ordiniAnnullati = useMemo(() =>
+    ordini?.filter((o) => o.status === "annullato") || [],
     [ordini]
   );
 
@@ -726,6 +737,8 @@ const Ordini = () => {
     valoreTotale: ordiniAttivi.reduce((sum, o) => sum + Number(o.totale), 0),
     annullati: ordiniAnnullati.length,
     valoreAnnullato: ordiniAnnullati.reduce((sum, o) => sum + Number(o.totale), 0),
+    standBy: ordiniStandBy.length,
+    valoreStandBy: ordiniStandBy.reduce((sum, o) => sum + Number(o.totale), 0),
   };
 
   return (
@@ -1142,6 +1155,7 @@ const Ordini = () => {
             <SelectContent>
               <SelectItem value="tutti">Tutti</SelectItem>
               <SelectItem value="in_attesa">In Attesa</SelectItem>
+              <SelectItem value="stand_by">Stand-by</SelectItem>
               <SelectItem value="spedito">Spedito</SelectItem>
               <SelectItem value="completato">Completato</SelectItem>
               <SelectItem value="annullato">Annullato</SelectItem>
@@ -1252,6 +1266,12 @@ const Ordini = () => {
                               Segna come Completato
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              onClick={() => setStandByTarget({ id: ordine.id, codice: ordine.codice })}
+                            >
+                              <PauseCircle className="h-4 w-4 mr-2" />
+                              Metti in Stand-by
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               className="text-destructive"
                               onClick={() => updateStatus.mutate({ id: ordine.id, status: "annullato" })}
                             >
@@ -1266,6 +1286,113 @@ const Ordini = () => {
               </Table>
             </div>
           </div>
+
+          {/* Stand-by Orders Section */}
+          {ordiniStandBy.length > 0 && (
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-4 flex-wrap">
+                <PauseCircle className="h-5 w-5 text-warning" />
+                <h2 className="text-lg font-semibold text-foreground">
+                  Ordini in Stand-by ({ordiniStandBy.length})
+                </h2>
+                <span className="text-sm text-muted-foreground ml-2">
+                  Valore sospeso (non in KPI): {formatCurrency(stats.valoreStandBy)}
+                </span>
+              </div>
+              <div className="rounded-xl bg-card shadow-card overflow-hidden border border-warning/30">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-warning/5">
+                        <TableHead>ID Ordine</TableHead>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead>Motivo</TableHead>
+                        <TableHead className="hidden md:table-cell">Prodotto bloccato</TableHead>
+                        <TableHead className="hidden md:table-cell">Data prevista</TableHead>
+                        <TableHead>Totale</TableHead>
+                        <TableHead className="w-32">Azioni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {ordiniStandBy.map((ordine) => {
+                        const giorniInStandBy = ordine.stand_by_data_inizio
+                          ? Math.floor((Date.now() - new Date(ordine.stand_by_data_inizio).getTime()) / 86400000)
+                          : 0;
+                        return (
+                          <TableRow key={ordine.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="font-mono text-xs lg:text-sm font-medium">
+                              {ordine.codice}
+                              {giorniInStandBy > 0 && (
+                                <div className="text-[10px] text-muted-foreground mt-0.5">
+                                  {giorniInStandBy}g in stand-by
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {ordine.clienti?.nome || "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={statusConfig.stand_by.className}>
+                                {ordine.stand_by_motivo || "Stand-by"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                              {ordine.stand_by_prodotto_bloccato || "—"}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-sm">
+                              {ordine.stand_by_data_prevista
+                                ? format(new Date(ordine.stand_by_data_prevista), "dd/MM/yyyy")
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="font-semibold">
+                              {formatCurrency(Number(ordine.totale))}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="success"
+                                  onClick={() => confermaStandBy.mutate({ id: ordine.id })}
+                                  disabled={confermaStandBy.isPending}
+                                  title="Rendi disponibile e conteggia ordine"
+                                >
+                                  <PlayCircle className="h-4 w-4 mr-1" />
+                                  Conferma
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleShowProforma(ordine)}>
+                                      <FileText className="h-4 w-4 mr-2" />
+                                      Visualizza Proforma
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleOpenEditDialog(ordine)}>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Modifica
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() => updateStatus.mutate({ id: ordine.id, status: "annullato" })}
+                                    >
+                                      Annulla ordine
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Cancelled Orders Section */}
           {ordiniAnnullati.length > 0 && (
@@ -1684,6 +1811,13 @@ const Ordini = () => {
               }))
             );
           }}
+        />
+
+        <StandByDialog
+          open={!!standByTarget}
+          onOpenChange={(v) => { if (!v) setStandByTarget(null); }}
+          ordineId={standByTarget?.id || null}
+          ordineCodice={standByTarget?.codice}
         />
       </div>
     </MainLayout>

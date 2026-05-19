@@ -14,7 +14,13 @@ export type Ordine = {
   sconto: number;
   sconto_merce: number;
   tipo_pagamento: string;
-  status: "in_attesa" | "spedito" | "completato" | "annullato";
+  status: "in_attesa" | "spedito" | "completato" | "annullato" | "stand_by";
+  stand_by_motivo?: string | null;
+  stand_by_prodotto_bloccato?: string | null;
+  stand_by_data_prevista?: string | null;
+  stand_by_note?: string | null;
+  stand_by_data_inizio?: string | null;
+  data_conferma?: string | null;
   provvigione_pagata: boolean;
   created_at: string;
   data_ordine: string | null;
@@ -161,6 +167,66 @@ export function useUpdateOrdineStatus() {
     onError: (error) => {
       toast.error("Errore: " + error.message);
     },
+  });
+}
+
+export function useSetOrdineStandBy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      motivo: string;
+      prodotto_bloccato?: string | null;
+      data_prevista?: string | null;
+      note?: string | null;
+    }) => {
+      const today = new Date().toISOString().slice(0, 10);
+      const { error } = await supabase
+        .from("ordini")
+        .update({
+          status: "stand_by",
+          stand_by_motivo: input.motivo,
+          stand_by_prodotto_bloccato: input.prodotto_bloccato || null,
+          stand_by_data_prevista: input.data_prevista || null,
+          stand_by_note: input.note || null,
+          stand_by_data_inizio: today,
+        })
+        .eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi_yoy"] });
+      toast.success("Ordine messo in Stand-by");
+    },
+    onError: (error) => toast.error("Errore: " + error.message),
+  });
+}
+
+export function useConfermaOrdineDaStandBy() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, updateDataOrdine = true }: { id: string; updateDataOrdine?: boolean }) => {
+      const today = new Date().toISOString().slice(0, 10);
+      const updates: any = {
+        status: "completato",
+        data_conferma: today,
+      };
+      // Use confirmation date for KPI bucketing
+      if (updateDataOrdine) updates.data_ordine = today;
+      const { error } = await supabase.from("ordini").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi_yoy"] });
+      toast.success("Ordine confermato e conteggiato nei KPI");
+    },
+    onError: (error) => toast.error("Errore: " + error.message),
   });
 }
 

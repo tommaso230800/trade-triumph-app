@@ -115,7 +115,7 @@ const Provvigioni = () => {
     if (!ordini || !aziende) return [];
 
     return ordini.filter((o) => {
-      if (o.status === "annullato") return false;
+      if ((o.status === "annullato" || o.status === "stand_by")) return false;
       
       const orderDate = new Date(o.data_ordine || o.created_at);
       const orderYear = orderDate.getFullYear();
@@ -161,7 +161,7 @@ const Provvigioni = () => {
     if (!aziende || !ordini) return [];
 
     // Filter out cancelled orders first
-    const validOrdini = ordini.filter(o => o.status !== "annullato");
+    const validOrdini = ordini.filter(o => o.status !== "annullato" && o.status !== "stand_by");
 
     return aziende.map((azienda) => {
       const aziendaOrdini = validOrdini.filter((o) => {

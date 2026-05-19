@@ -55,7 +55,7 @@ export function useClientKPI(clientId?: string) {
           )
         `)
         .eq("cliente_id", clientId!)
-        .neq("status", "annullato")
+        .not("status","in","(annullato,stand_by)")
         .gte("data_ordine", twentyFourMonthsAgo.toISOString().split("T")[0])
         .order("data_ordine", { ascending: false });
 

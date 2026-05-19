@@ -93,7 +93,7 @@ export function useClienteAziendaAnalysis(clienteId?: string, aziendaId?: string
         .select("id, data_ordine, totale, prodotti")
         .eq("cliente_id", clienteId)
         .eq("azienda_id", aziendaId)
-        .neq("status", "annullato")
+        .not("status","in","(annullato,stand_by)")
         .gte("data_ordine", format(dueAnniFA, "yyyy-MM-dd"))
         .order("data_ordine", { ascending: true });
 

@@ -63,7 +63,7 @@ export function useClientiCommercialiPrioritari() {
       const { data: ordini } = await supabase
         .from("ordini")
         .select("cliente_id, data_ordine, created_at")
-        .neq("status", "annullato")
+        .not("status","in","(annullato,stand_by)")
         .order("data_ordine", { ascending: false });
 
       // Mappa ultimo ordine per cliente
@@ -175,7 +175,7 @@ export function useClienteAziendaStats(clienteId?: string, aziendaId?: string) {
         .select("id, totale, data_ordine")
         .eq("cliente_id", clienteId)
         .eq("azienda_id", aziendaId)
-        .neq("status", "annullato")
+        .not("status","in","(annullato,stand_by)")
         .gte("data_ordine", inizioAnno);
 
       // Fetch ordini anno precedente
@@ -184,7 +184,7 @@ export function useClienteAziendaStats(clienteId?: string, aziendaId?: string) {
         .select("id, totale, data_ordine")
         .eq("cliente_id", clienteId)
         .eq("azienda_id", aziendaId)
-        .neq("status", "annullato")
+        .not("status","in","(annullato,stand_by)")
         .gte("data_ordine", inizioAnnoPrecedente)
         .lte("data_ordine", fineAnnoPrecedente);
 

@@ -29,7 +29,7 @@ async function fetchAggregates(start: Date, end: Date, filters: KPIYoYFilters) {
       ordini_righe ( prodotto_id, quantita_pezzi, quantita_cartoni, prezzo_unitario,
         prodotti ( id, pezzi_per_cartone, brand_id, azienda_id ) )
     `)
-    .neq("status", "annullato")
+    .not("status","in","(annullato,stand_by)")
     .gte("data_ordine", toISO(start))
     .lte("data_ordine", toISO(end));
 
@@ -105,7 +105,7 @@ export function useKPIYoY(filters: KPIYoYFilters) {
       const { data: yearOrdini } = await supabase
         .from("ordini")
         .select("totale, data_ordine")
-        .neq("status", "annullato")
+        .not("status","in","(annullato,stand_by)")
         .gte("data_ordine", `${yearPrev}-01-01`)
         .lte("data_ordine", `${yearCurr}-12-31`);
 

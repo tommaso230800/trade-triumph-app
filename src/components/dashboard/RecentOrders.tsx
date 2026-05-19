@@ -31,7 +31,7 @@ export function RecentOrders() {
   
   // Get last 5 non-cancelled orders
   const recentOrders = ordini
-    ?.filter((o) => o.status !== "annullato")
+    ?.filter((o) => o.status !== "annullato" && o.status !== "stand_by")
     .slice(0, 5) || [];
 
   if (isLoading) {
