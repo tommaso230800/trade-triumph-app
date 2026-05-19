@@ -7,6 +7,7 @@ import { SalesChart } from "@/components/dashboard/SalesChart";
 import { ClientGrowthWidget } from "@/components/dashboard/ClientGrowthWidget";
 import { YoYDynamicChart } from "@/components/dashboard/YoYDynamicChart";
 import { KPIHeroYoY } from "@/components/dashboard/KPIHeroYoY";
+import { YoYDimensionPanel } from "@/components/dashboard/YoYDimensionPanel";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
