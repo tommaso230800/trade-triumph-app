@@ -1,96 +1,99 @@
-# Trasformazione pagina KPI in Dashboard Commerciale Avanzata
+# Caricamento Multi-File Ordini con AI
 
 ## Obiettivo
-Trasformare `/kpi` da pagina di statistiche generiche in uno strumento operativo che mostri **dove vendo bene, dove perdo, dove posso crescere**, con confronti anno su anno e collegamento diretto a clienti, prodotti, aziende e visite.
+Permettere il caricamento simultaneo di più file (PDF, immagini, Excel) per generare automaticamente più ordini distinti, con revisione obbligatoria prima del salvataggio.
 
-## Approccio per fasi
-Il lavoro è enorme. Lo divido in **3 fasi successive**, così la pagina resta usabile dopo ogni fase e tu puoi dare feedback prima di proseguire.
-
----
-
-## FASE 1 — Fondamenta dati + KPI Hero + Confronto anno (questa iterazione)
-
-### 1.1 Hook dati unificato `useKPIAnalytics`
-Un solo hook che, dato un range di date e i filtri, restituisce:
-- Totali periodo corrente + stesso periodo anno precedente (calcolato da `data_ordine`)
-- Aggregati per **prodotto**, **azienda**, **brand**, **cliente** (sia anno corrente che precedente)
-- Serie mensile fatturato/pezzi/ordini
-
-Calcoli lato client su `ordini` + `ordini_righe` + `prodotti` + `clienti` + `aziende` + `brands`, con `useMemo` per evitare ricalcoli.
-
-### 1.2 Header KPI Hero (card in alto)
-Card sempre visibili, ognuna con valore + delta % vs anno prec:
-- Fatturato totale, Pezzi venduti, Ordini, Valore medio ordine
-- Clienti attivi, Clienti dormienti (>60gg), Nuovi clienti
-- Best: azienda / prodotto / cliente
-- Worst: prodotto in calo / cliente in calo
-
-### 1.3 Filtri (sticky bar)
-- Periodo: mese / trimestre / semestre / anno / custom
-- Multi-select: azienda, brand, cliente, categoria (tipologia_cliente)
-- Toggle rapidi: solo in crescita / solo in calo / solo dormienti
-
-### 1.4 Tab "Andamento": confronto anno su anno
-- Grafico combinato barre 2025 vs 2026 per mese (riuso `YearComparisonChart` esteso)
-- Tabella mensile: Mese | Anno prec | Anno corr | Diff € | Diff %
-- Indicatori visivi crescita (verde) / calo (rosso)
+## Regola d'oro
+**1 file = 1 ordine separato** per default. L'unione richiede conferma manuale esplicita.
 
 ---
 
-## FASE 2 — Analisi dimensionali (iterazione successiva)
+## Fase 1 — Backend: edge function unificata `parse-order-multi`
 
-### 2.1 Tab "Prodotti"
-- Classifica top venduti (barre)
-- Tabella prodotti: pezzi YoY, fatturato YoY, Δ%, # clienti che lo comprano, # clienti persi sul prodotto
-- Sezioni rapide: in crescita / in calo / fermi (no riordini in 90gg)
-- Click su prodotto → drawer con: andamento mensile, lista clienti attivi, clienti potenziali (che comprano stessa azienda ma non quel prodotto)
+Nuova edge function che riceve un singolo file (PDF/immagine/Excel/testo) e restituisce uno o più ordini rilevati:
 
-### 2.2 Tab "Aziende & Brand"
-- Donut peso % per azienda sul totale
-- Tabella aziende: fatturato YoY, pezzi, clienti attivi/persi, Δ%, top/worst prodotto
-- Stessa vista per brand
+```json
+{
+  "orders": [
+    {
+      "cliente_nome": "...",
+      "azienda_nome": "...",
+      "tipo_pagamento": "...",
+      "sconto_pagamento_percentuale": 0,
+      "sconto_merce": 0,
+      "imponibile_totale": 0,
+      "note": "...",
+      "righe": [{ "codice_prodotto", "nome_prodotto", "quantita_cartoni", "prezzo_per_cartone", "sc1/sc2/sc3", "is_omaggio", "confidence": "high|medium|low", "warning": "..." }],
+      "warnings": ["prezzo diverso da listino", "..."],
+      "document_type": "order|price_list|promo|note|attachment"
+    }
+  ]
+}
+```
 
-### 2.3 Tab "Clienti"
-- Tabella: fatturato YoY, Δ€, Δ%, ultimo ordine, freq media (da `reorder_tracking`), status
-- Segmenti rapidi: migliori / in crescita / in calo / dormienti / persi
-- Prodotti comprati lo scorso anno ma non ancora riordinati quest'anno
-- Click cliente → naviga a `/clienti/:id` (già esistente)
+Il prompt AI deve:
+- Rilevare se un file contiene 1 o più ordini distinti (clienti diversi) e separarli.
+- Distinguere tra ordine vero, listino, promo, nota commerciale (campo `document_type`).
+- Assegnare un `confidence` per ogni riga e segnalare i dubbi in `warning`.
+- Usare `google/gemini-2.5-pro` per immagini/PDF (precisione su prezzi/quantità).
+
+Modelli: `google/gemini-2.5-pro` (default) per qualità; il modello legge PDF e immagini direttamente.
+Per Excel: parsing client-side con `xlsx` → testo → AI.
+
+## Fase 2 — Frontend: nuovo dialog `MultiFileImportDialog`
+
+Sostituisce/affianca l'attuale `ImportPDFDialog`. Flusso:
+
+1. **Step 1 — Upload**: dropzone multi-file (PDF, JPG, PNG, HEIC, XLSX, XLS). Mostra elenco file in coda con stato (in attesa, analisi, completato, errore).
+2. **Step 2 — Analisi**: ogni file viene processato in parallelo (max 3 alla volta). Spinner per file. Errori isolati per file.
+3. **Step 3 — Schermata file caricati**: tabella riepilogo
+   ```
+   File | Tipo rilevato | Cliente | Ordini rilevati | Azione
+   ```
+   - Azioni per file: Modifica / Dividi in più ordini / Unisci con altro / Marca come allegato / Elimina.
+   - Per file con più ordini AI-rilevati: mostra "2 ordini rilevati, conferma divisione".
+4. **Step 4 — Revisione ordini**: per ogni ordine, card espandibile con:
+   - Selezione/auto-match cliente + azienda (searchable-select, evidenzia se non trovato).
+   - Tipo pagamento, sconto, sconto merce.
+   - Tabella righe: prodotto (auto-match + crea nuovo), quantità cartoni, prezzo, sc1/sc2/sc3, omaggio, totale calcolato.
+   - **Badge warning** per righe a bassa confidence o prezzo diverso da listino/storico cliente.
+   - Possibilità di eliminare righe, aggiungerne manualmente.
+   - Stato ordine: `bozza` → `da confermare` → `confermato`.
+5. **Step 5 — Salvataggio**: bottone "Salva tutti gli ordini confermati" → crea N ordini distinti via `useCreateOrdine` + `ordini_righe`.
+
+## Fase 3 — Validazione intelligente client-side
+
+Hook `useOrderValidation` che per ogni riga ordine:
+- Confronta `prezzo_per_cartone` con `prodotti.prezzo_listino` → warning se differenza > 5%.
+- Confronta con ultimo prezzo applicato a quel cliente (da `ordini_righe` storiche) → warning se diverso.
+- Cerca prodotti simili per fuzzy match nome se non trovato codice.
+- Segnala unità di misura ambigue (pallet vs cartoni vs pezzi).
+
+## Fase 4 — UX
+
+- Toast non bloccanti per ogni file processato.
+- Bottone "Carica file" prominente in `src/pages/Ordini.tsx` accanto a quello esistente.
+- Mobile-friendly: card stack invece di tabella su viewport < 768px.
+- Nessun salvataggio automatico: solo bottone esplicito "Conferma e salva".
 
 ---
 
-## FASE 3 — Opportunità + AI + Azioni (iterazione successiva)
+## File da creare/modificare
 
-### 3.1 Tab "Opportunità"
-Regole automatiche (no AI, solo SQL/JS) che generano insight:
-- Clienti -X% YoY
-- Prodotti non riordinati da clienti storici
-- Prodotti con bassa distribuzione ma alta rotazione
-- Clienti con concorrenza attiva (da `competitor_products`) → proposta sostituzione
-- Cross-selling: chi compra X ma non Y nella stessa azienda
+**Nuovi:**
+- `supabase/functions/parse-order-multi/index.ts` — edge function unificata
+- `src/components/ordini/MultiFileImportDialog.tsx` — wizard multi-step
+- `src/components/ordini/OrderReviewCard.tsx` — card revisione singolo ordine
+- `src/hooks/useOrderValidation.tsx` — validazioni intelligenti
 
-### 3.2 Sezione "Analisi AI"
-Edge function `analyze-kpi` (Lovable AI, `google/gemini-2.5-flash`) che riceve gli aggregati e produce:
-- Sintesi "dove vai bene / dove vai male"
-- Top 5 clienti da visitare con motivazione
-- Top 5 prodotti da spingere
-- Opportunità cross-selling
-
-### 3.3 Tabella "Azioni consigliate"
-Colonne: Priorità | Cliente | Problema | Opportunità | Azione → bottoni rapidi:
-- "Prepara visita" → `/prepara-visita?cliente=:id`
-- "Apri scheda" → `/clienti/:id`
-- "Crea proposta" → `/assistente-trattativa?cliente=:id`
+**Modificati:**
+- `src/pages/Ordini.tsx` — aggiunge bottone "Importa file"
+- `supabase/config.toml` — registra nuova function con `verify_jwt = false`
 
 ---
 
-## Dettagli tecnici
-
-- Tutti i calcoli YoY usano `data_ordine` (mai `created_at`) — già regola di progetto.
-- Esclusi sempre `status = 'annullato'`.
-- Categoria merceologica = `clienti.tipologia_cliente` (bar/ristorante/etc) per ora; se servirà categoria prodotto la aggiungeremo come campo separato in futuro.
-- "Cliente dormiente" = ultimo ordine > 60 giorni fa. "Perso" = > 180 giorni.
-- Tema invariato (Vibrant Dark Multi-Accent), card con `surface-noir`, animazioni `animate-rise-in`.
-- Mobile: tab orizzontali scrollabili, tabelle in scroll-x.
-
-## Cosa serve da te
-Conferma di partire dalla **Fase 1** così la pagina diventa subito più utile (KPI hero + confronto YoY funzionante con filtri), e poi proseguo con Fase 2 e 3 nei prossimi messaggi. Se preferisci un ordine diverso (es. partire da Opportunità o AI) dimmelo.
+## Note tecniche
+- File grandi: limitare a 10MB per file, max 10 file per sessione.
+- HEIC: convertire client-side o segnalare unsupported.
+- Excel: estrarre testo con `xlsx` e inviarlo come testo all'AI.
+- Stato wizard tenuto in memoria (no persistenza DB fino a salvataggio).
