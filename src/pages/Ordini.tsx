@@ -36,8 +36,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw, Upload, Tag, Gift, Sparkles, CheckCircle2 } from "lucide-react";
-import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, useUpdateOrdine, Ordine } from "@/hooks/useOrdini";
+import { Plus, Search, Filter, MoreHorizontal, Loader2, Trash2, RefreshCw, Edit, FileText, Ban, RotateCcw, Upload, Tag, Gift, Sparkles, CheckCircle2, PauseCircle, PlayCircle } from "lucide-react";
+import { useOrdini, useCreateOrdine, useUpdateOrdineStatus, useUpdateOrdine, useConfermaOrdineDaStandBy, Ordine } from "@/hooks/useOrdini";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
 import { useProdotti, Prodotto } from "@/hooks/useProdotti";
