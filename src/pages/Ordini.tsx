@@ -1651,6 +1651,40 @@ const Ordini = () => {
             }
           }}
         />
+
+        <MultiFileImportDialog
+          open={isMultiImportOpen}
+          onOpenChange={setIsMultiImportOpen}
+          clienti={clienti || []}
+          aziende={aziende || []}
+          prodotti={allProdotti || []}
+          onProductsCreated={() => refetchProdotti()}
+          onCreateOrder={async (data) => {
+            const ordine = await createOrdine.mutateAsync({
+              cliente_id: data.cliente_id,
+              azienda_id: data.azienda_id,
+              prodotti: data.righe.reduce((s, r) => s + r.quantita_cartoni, 0),
+              totale: data.totale,
+              note: data.note || undefined,
+              sconto: data.sconto,
+              sconto_merce: data.sconto_merce,
+              tipo_pagamento: data.tipo_pagamento,
+              data_ordine: data.data_ordine,
+            });
+            await createRigheBatch.mutateAsync(
+              data.righe.map((r) => ({
+                ordine_id: ordine.id,
+                prodotto_id: r.prodotto_id,
+                quantita_pezzi: 0,
+                quantita_cartoni: r.quantita_cartoni,
+                prezzo_unitario: r.prezzo_unitario,
+                sc1: r.sc1 || 0,
+                sc2: r.sc2 || 0,
+                sc3: r.sc3 || 0,
+              }))
+            );
+          }}
+        />
       </div>
     </MainLayout>
   );
