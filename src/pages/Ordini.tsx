@@ -141,6 +141,7 @@ const Ordini = () => {
   
   // Import PDF state
   const [isImportPDFOpen, setIsImportPDFOpen] = useState(false);
+  const [isMultiImportOpen, setIsMultiImportOpen] = useState(false);
   const [proformaData, setProformaData] = useState<{
     codice: string;
     created_at: string;
