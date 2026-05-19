@@ -1812,6 +1812,13 @@ const Ordini = () => {
             );
           }}
         />
+
+        <StandByDialog
+          open={!!standByTarget}
+          onOpenChange={(v) => { if (!v) setStandByTarget(null); }}
+          ordineId={standByTarget?.id || null}
+          ordineCodice={standByTarget?.codice}
+        />
       </div>
     </MainLayout>
   );
