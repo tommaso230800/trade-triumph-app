@@ -1030,6 +1030,7 @@ export type Database = {
           cliente_id: string | null
           codice: string | null
           created_at: string | null
+          data_conferma: string | null
           data_ordine: string | null
           id: string
           note: string | null
@@ -1037,6 +1038,11 @@ export type Database = {
           provvigione_pagata: boolean
           sconto: number | null
           sconto_merce: number | null
+          stand_by_data_inizio: string | null
+          stand_by_data_prevista: string | null
+          stand_by_motivo: string | null
+          stand_by_note: string | null
+          stand_by_prodotto_bloccato: string | null
           status: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento: string | null
           totale: number | null
@@ -1048,6 +1054,7 @@ export type Database = {
           cliente_id?: string | null
           codice?: string | null
           created_at?: string | null
+          data_conferma?: string | null
           data_ordine?: string | null
           id?: string
           note?: string | null
@@ -1055,6 +1062,11 @@ export type Database = {
           provvigione_pagata?: boolean
           sconto?: number | null
           sconto_merce?: number | null
+          stand_by_data_inizio?: string | null
+          stand_by_data_prevista?: string | null
+          stand_by_motivo?: string | null
+          stand_by_note?: string | null
+          stand_by_prodotto_bloccato?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento?: string | null
           totale?: number | null
@@ -1066,6 +1078,7 @@ export type Database = {
           cliente_id?: string | null
           codice?: string | null
           created_at?: string | null
+          data_conferma?: string | null
           data_ordine?: string | null
           id?: string
           note?: string | null
@@ -1073,6 +1086,11 @@ export type Database = {
           provvigione_pagata?: boolean
           sconto?: number | null
           sconto_merce?: number | null
+          stand_by_data_inizio?: string | null
+          stand_by_data_prevista?: string | null
+          stand_by_motivo?: string | null
+          stand_by_note?: string | null
+          stand_by_prodotto_bloccato?: string | null
           status?: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento?: string | null
           totale?: number | null
@@ -2032,7 +2050,12 @@ export type Database = {
       client_status: "premium" | "standard" | "nuovo"
       company_status: "attivo" | "in_pausa"
       event_type: "meeting" | "presentazione" | "visita" | "altro"
-      order_status: "in_attesa" | "spedito" | "completato" | "annullato"
+      order_status:
+        | "in_attesa"
+        | "spedito"
+        | "completato"
+        | "annullato"
+        | "stand_by"
       reminder_priority: "alta" | "media" | "bassa"
       reminder_type: "call" | "email" | "documento" | "scadenza"
     }
@@ -2165,7 +2188,13 @@ export const Constants = {
       client_status: ["premium", "standard", "nuovo"],
       company_status: ["attivo", "in_pausa"],
       event_type: ["meeting", "presentazione", "visita", "altro"],
-      order_status: ["in_attesa", "spedito", "completato", "annullato"],
+      order_status: [
+        "in_attesa",
+        "spedito",
+        "completato",
+        "annullato",
+        "stand_by",
+      ],
       reminder_priority: ["alta", "media", "bassa"],
       reminder_type: ["call", "email", "documento", "scadenza"],
     },
