@@ -1155,6 +1155,7 @@ const Ordini = () => {
             <SelectContent>
               <SelectItem value="tutti">Tutti</SelectItem>
               <SelectItem value="in_attesa">In Attesa</SelectItem>
+              <SelectItem value="stand_by">Stand-by</SelectItem>
               <SelectItem value="spedito">Spedito</SelectItem>
               <SelectItem value="completato">Completato</SelectItem>
               <SelectItem value="annullato">Annullato</SelectItem>
