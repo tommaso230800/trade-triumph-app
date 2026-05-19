@@ -51,6 +51,7 @@ import { ProformaDialog } from "@/components/ordini/ProformaDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
 import { MultiFileImportDialog } from "@/components/ordini/MultiFileImportDialog";
+import { StandByDialog } from "@/components/ordini/StandByDialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelect } from "@/components/ui/multi-select";
 
@@ -59,6 +60,7 @@ const statusConfig = {
   in_attesa: { label: "In Attesa", className: "bg-warning/10 text-warning hover:bg-warning/20" },
   spedito: { label: "Spedito", className: "bg-info/10 text-info hover:bg-info/20" },
   annullato: { label: "Annullato", className: "bg-destructive/10 text-destructive hover:bg-destructive/20" },
+  stand_by: { label: "Stand-by", className: "bg-warning/15 text-warning border border-warning/40 hover:bg-warning/25" },
 };
 
 const TIPI_PAGAMENTO = [
