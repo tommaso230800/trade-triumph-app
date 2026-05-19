@@ -875,6 +875,15 @@ const KPI = () => {
 
           {/* Prodotti Tab */}
           <TabsContent value="prodotti" className="space-y-4">
+            {yoy && (
+              <YoYDimensionPanel
+                title="Prodotti — Da spingere, da recuperare"
+                data={yoy.prodottiYoY}
+                names={prodottiNames}
+                yearCurr={yoy.yearCurr}
+                yearPrev={yoy.yearPrev}
+              />
+            )}
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
