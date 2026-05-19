@@ -1,84 +1,96 @@
-# Preparazione Visite AI – Piano
+# Trasformazione pagina KPI in Dashboard Commerciale Avanzata
 
-Obiettivo: ciclo completo **Cliente → Prepara visita AI → Salva → Report visita → Storico → Nuova prep AI migliorata**, con concorrenza cliente strutturata e usata dall'AI.
+## Obiettivo
+Trasformare `/kpi` da pagina di statistiche generiche in uno strumento operativo che mostri **dove vendo bene, dove perdo, dove posso crescere**, con confronti anno su anno e collegamento diretto a clienti, prodotti, aziende e visite.
 
-## 1. Database (nuova migration)
+## Approccio per fasi
+Il lavoro è enorme. Lo divido in **3 fasi successive**, così la pagina resta usabile dopo ogni fase e tu puoi dare feedback prima di proseguire.
 
-Nuove tabelle (tutte con RLS `auth.uid() = user_id`):
+---
 
-- **competitor_products** – prodotti concorrenti per cliente
-  - cliente_id, categoria, nome, marca, formato
-  - prezzo_acquisto, prezzo_vendita, margine_stimato, sconto, omaggi
-  - condizioni, pagamento, frequenza, quantita_abituale
-  - agente_concorrente, soddisfazione (1-5)
-  - punti_forti, punti_deboli
-  - nostro_prodotto_id (FK prodotti, opzionale), nostro_prezzo, vantaggio
-  - priorita (alta/media/bassa), stato (da_attaccare/da_monitorare/difficile/sostituito/perso)
-  - foto_url, note, last_updated_at
+## FASE 1 — Fondamenta dati + KPI Hero + Confronto anno (questa iterazione)
 
-- **visit_preparations** – preparazioni AI
-  - cliente_id, visit_date, status (preparata/visita_fatta/report_compilato/archiviata)
-  - riepilogo_cliente, storico_commerciale, analisi_concorrenza (text)
-  - obiettivo_visita, proposta_consigliata, argomenti_vendita (text)
-  - obiezioni_previste, domande_consigliate, prossima_azione (text)
-  - contenuto_completo (jsonb – output AI strutturato)
+### 1.1 Hook dati unificato `useKPIAnalytics`
+Un solo hook che, dato un range di date e i filtri, restituisce:
+- Totali periodo corrente + stesso periodo anno precedente (calcolato da `data_ordine`)
+- Aggregati per **prodotto**, **azienda**, **brand**, **cliente** (sia anno corrente che precedente)
+- Serie mensile fatturato/pezzi/ordini
 
-- **visit_reports** – report visita
-  - cliente_id, visit_preparation_id (FK), data_visita
-  - esito, ordine_preso (bool), valore_ordine
-  - prodotti_ordinati, prodotti_proposti, prodotti_proposti_non_ordinati (jsonb)
-  - concorrenza_rilevata (jsonb – sync verso competitor_products)
-  - obiezioni, risposte_date (text)
-  - interesse_cliente (basso/medio/alto), umore_cliente (freddo/normale/positivo/molto_interessato)
-  - promozioni_discusse, campioni_lasciati, espositori_richiesti, materiale_promozionale (text)
-  - prossima_azione, data_follow_up, note
+Calcoli lato client su `ordini` + `ordini_righe` + `prodotti` + `clienti` + `aziende` + `brands`, con `useMemo` per evitare ricalcoli.
 
-Estensione tabella **clienti**: aggiungo solo `livello_relazione` (1-5) e `potenziale_cliente` (basso/medio/alto/strategico) – il resto già esiste (anagrafica, tipologia, condizioni, fatturato, note, consorzio…).
+### 1.2 Header KPI Hero (card in alto)
+Card sempre visibili, ognuna con valore + delta % vs anno prec:
+- Fatturato totale, Pezzi venduti, Ordini, Valore medio ordine
+- Clienti attivi, Clienti dormienti (>60gg), Nuovi clienti
+- Best: azienda / prodotto / cliente
+- Worst: prodotto in calo / cliente in calo
 
-Riuso tabelle esistenti: `ordini` + `ordini_righe` (storico ordini), `client_notes` (note), `promo_clienti` (promo proposte), `reorder_tracking` (frequenza).
+### 1.3 Filtri (sticky bar)
+- Periodo: mese / trimestre / semestre / anno / custom
+- Multi-select: azienda, brand, cliente, categoria (tipologia_cliente)
+- Toggle rapidi: solo in crescita / solo in calo / solo dormienti
 
-## 2. Edge Function AI: `prepare-visit`
+### 1.4 Tab "Andamento": confronto anno su anno
+- Grafico combinato barre 2025 vs 2026 per mese (riuso `YearComparisonChart` esteso)
+- Tabella mensile: Mese | Anno prec | Anno corr | Diff € | Diff %
+- Indicatori visivi crescita (verde) / calo (rosso)
 
-Input: `cliente_id`. La function:
-1. Carica anagrafica cliente, ultimi 50 ordini con righe, prodotti più frequenti, prodotti non riordinati, promo attive/storiche, note, competitor_products, ultimi 5 visit_reports, follow-up aperti.
-2. Costruisce un prompt strutturato e chiama Lovable AI Gateway (`google/gemini-2.5-pro` per qualità) con tool calling per output JSON con tutte le sezioni richieste.
-3. Inserisce una riga in `visit_preparations` con status `preparata` e ritorna l'oggetto.
+---
 
-`supabase/config.toml`: aggiungo `[functions.prepare-visit] verify_jwt = true` (richiede auth utente per RLS).
+## FASE 2 — Analisi dimensionali (iterazione successiva)
 
-## 3. Hook & componenti frontend
+### 2.1 Tab "Prodotti"
+- Classifica top venduti (barre)
+- Tabella prodotti: pezzi YoY, fatturato YoY, Δ%, # clienti che lo comprano, # clienti persi sul prodotto
+- Sezioni rapide: in crescita / in calo / fermi (no riordini in 90gg)
+- Click su prodotto → drawer con: andamento mensile, lista clienti attivi, clienti potenziali (che comprano stessa azienda ma non quel prodotto)
 
-Hook nuovi:
-- `useCompetitorProducts(clientId)` – CRUD competitor
-- `useVisitPreparations(clientId)` – list/get/create/update/delete
-- `useVisitReports(clientId)` – list/get/create/update + sync competitor
-- `usePrepareVisitAI()` – mutation che invoca la edge function
+### 2.2 Tab "Aziende & Brand"
+- Donut peso % per azienda sul totale
+- Tabella aziende: fatturato YoY, pezzi, clienti attivi/persi, Δ%, top/worst prodotto
+- Stessa vista per brand
 
-Componenti nuovi (`src/components/visite/`):
-- `CompetitorProductCard.tsx` + `CompetitorProductDialog.tsx` – sezione concorrenza
-- `VisitPreparationView.tsx` – mostra/modifica la preparazione AI (sezioni collassabili)
-- `VisitReportDialog.tsx` – form veloce report (chip selezionabili + textarea), include sotto-form "Aggiorna concorrenza rilevata" che fa upsert in competitor_products
-- `VisitHistoryList.tsx` – timeline preparazione → report
+### 2.3 Tab "Clienti"
+- Tabella: fatturato YoY, Δ€, Δ%, ultimo ordine, freq media (da `reorder_tracking`), status
+- Segmenti rapidi: migliori / in crescita / in calo / dormienti / persi
+- Prodotti comprati lo scorso anno ma non ancora riordinati quest'anno
+- Click cliente → naviga a `/clienti/:id` (già esistente)
 
-Pagine:
-- Modifico `ClienteDettaglio.tsx`: aggiungo tab/sezioni **Concorrenza**, **Storico visite**, **Preparazioni AI**, e bottone primario **"Prepara visita con AI"** in alto.
-- Nuova pagina `src/pages/Visite.tsx` (rotta `/visite`) – dashboard visite: da fare / report da compilare / follow-up aperti / clienti senza visita / clienti con concorrenza attaccabile. Aggiungo voce in Sidebar.
+---
 
-## 4. Priorità clienti
+## FASE 3 — Opportunità + AI + Azioni (iterazione successiva)
 
-Estendo `useClientStatus` / `usePriorityClients` per includere segnali nuovi: presenza competitor con priorità alta, follow-up aperti, prodotti abituali non riordinati. L'AI restituisce il "motivo priorità" nella prep.
+### 3.1 Tab "Opportunità"
+Regole automatiche (no AI, solo SQL/JS) che generano insight:
+- Clienti -X% YoY
+- Prodotti non riordinati da clienti storici
+- Prodotti con bassa distribuzione ma alta rotazione
+- Clienti con concorrenza attiva (da `competitor_products`) → proposta sostituzione
+- Cross-selling: chi compra X ma non Y nella stessa azienda
 
-## 5. Mobile-first
+### 3.2 Sezione "Analisi AI"
+Edge function `analyze-kpi` (Lovable AI, `google/gemini-2.5-flash`) che riceve gli aggregati e produce:
+- Sintesi "dove vai bene / dove vai male"
+- Top 5 clienti da visitare con motivazione
+- Top 5 prodotti da spingere
+- Opportunità cross-selling
 
-Tutti i nuovi dialog/sheet usano `max-h-[90dvh]` con scroll interno; report visita ottimizzato per smartphone (chip + textarea, niente tabelle).
+### 3.3 Tabella "Azioni consigliate"
+Colonne: Priorità | Cliente | Problema | Opportunità | Azione → bottoni rapidi:
+- "Prepara visita" → `/prepara-visita?cliente=:id`
+- "Apri scheda" → `/clienti/:id`
+- "Crea proposta" → `/assistente-trattativa?cliente=:id`
 
-## Note tecniche
+---
 
-- Output AI in JSON strutturato via tool calling → niente parsing fragile.
-- `concorrenza_rilevata` nel report: array di `{competitor_product_id?, nome, prezzo, condizioni}` → upsert automatico in `competitor_products` al salvataggio.
-- Memoria commerciale: la edge function include sempre gli ultimi report nel prompt → ogni visita migliora la successiva.
+## Dettagli tecnici
 
-## Fuori scopo (per non sforare)
+- Tutti i calcoli YoY usano `data_ordine` (mai `created_at`) — già regola di progetto.
+- Esclusi sempre `status = 'annullato'`.
+- Categoria merceologica = `clienti.tipologia_cliente` (bar/ristorante/etc) per ora; se servirà categoria prodotto la aggiungeremo come campo separato in futuro.
+- "Cliente dormiente" = ultimo ordine > 60 giorni fa. "Perso" = > 180 giorni.
+- Tema invariato (Vibrant Dark Multi-Accent), card con `surface-noir`, animazioni `animate-rise-in`.
+- Mobile: tab orizzontali scrollabili, tabelle in scroll-x.
 
-- Upload foto scaffale (placeholder URL per ora, storage in step successivo).
-- Notifiche push follow-up.
+## Cosa serve da te
+Conferma di partire dalla **Fase 1** così la pagina diventa subito più utile (KPI hero + confronto YoY funzionante con filtri), e poi proseguo con Fase 2 e 3 nei prossimi messaggi. Se preferisci un ordine diverso (es. partire da Opportunità o AI) dimmelo.
