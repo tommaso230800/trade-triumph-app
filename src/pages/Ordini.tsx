@@ -191,6 +191,10 @@ const Ordini = () => {
   const updateRigaMutation = useUpdateOrdineRiga();
   const updateOrdineTotale = useUpdateOrdineTotale();
   const updateOrdine = useUpdateOrdine();
+  const confermaStandBy = useConfermaOrdineDaStandBy();
+
+  // Stand-by dialog state
+  const [standByTarget, setStandByTarget] = useState<{ id: string; codice?: string } | null>(null);
 
   // Searchable options for dropdowns
   const clientiOptions = useMemo(() => 
