@@ -7,6 +7,7 @@ import { SalesChart } from "@/components/dashboard/SalesChart";
 import { ClientGrowthWidget } from "@/components/dashboard/ClientGrowthWidget";
 import { YoYDynamicChart } from "@/components/dashboard/YoYDynamicChart";
 import { KPIHeroYoY } from "@/components/dashboard/KPIHeroYoY";
+import { YoYDimensionPanel } from "@/components/dashboard/YoYDimensionPanel";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -114,6 +115,11 @@ const KPI = () => {
     (stats?.prodottiKPI || []).forEach((p) => m.set(p.id, p.nome));
     return m;
   }, [stats?.prodottiKPI]);
+  const brandsNames = useMemo(() => {
+    const m = new Map<string, string>();
+    (stats?.allBrands || []).forEach((b: any) => m.set(b.id, b.name));
+    return m;
+  }, [stats?.allBrands]);
 
   const resetFilters = () => {
     setSelectedClienti([]);
@@ -633,6 +639,15 @@ const KPI = () => {
 
           {/* Clienti Tab */}
           <TabsContent value="clienti" className="space-y-4">
+            {yoy && (
+              <YoYDimensionPanel
+                title="Clienti — Crescita, Calo e Opportunità"
+                data={yoy.clientiYoY}
+                names={clientiNames}
+                yearCurr={yoy.yearCurr}
+                yearPrev={yoy.yearPrev}
+              />
+            )}
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -729,6 +744,15 @@ const KPI = () => {
 
           {/* Aziende Tab */}
           <TabsContent value="aziende" className="space-y-4">
+            {yoy && (
+              <YoYDimensionPanel
+                title="Aziende — Performance YoY"
+                data={yoy.aziendeYoY}
+                names={aziendeNames}
+                yearCurr={yoy.yearCurr}
+                yearPrev={yoy.yearPrev}
+              />
+            )}
             <div className="rounded-xl bg-card shadow-card overflow-hidden">
               <div className="overflow-x-auto">
                 <Table>
@@ -784,6 +808,15 @@ const KPI = () => {
 
           {/* Brands Tab */}
           <TabsContent value="brands" className="space-y-4">
+            {yoy && (
+              <YoYDimensionPanel
+                title="Marchi — Performance YoY"
+                data={yoy.brandsYoY}
+                names={brandsNames}
+                yearCurr={yoy.yearCurr}
+                yearPrev={yoy.yearPrev}
+              />
+            )}
             <div className="rounded-xl bg-card shadow-card overflow-hidden">
               <div className="overflow-x-auto">
                 <Table>
@@ -842,6 +875,15 @@ const KPI = () => {
 
           {/* Prodotti Tab */}
           <TabsContent value="prodotti" className="space-y-4">
+            {yoy && (
+              <YoYDimensionPanel
+                title="Prodotti — Da spingere, da recuperare"
+                data={yoy.prodottiYoY}
+                names={prodottiNames}
+                yearCurr={yoy.yearCurr}
+                yearPrev={yoy.yearPrev}
+              />
+            )}
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
