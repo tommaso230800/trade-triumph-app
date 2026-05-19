@@ -1287,6 +1287,113 @@ const Ordini = () => {
             </div>
           </div>
 
+          {/* Stand-by Orders Section */}
+          {ordiniStandBy.length > 0 && (
+            <div className="mt-8">
+              <div className="flex items-center gap-2 mb-4 flex-wrap">
+                <PauseCircle className="h-5 w-5 text-warning" />
+                <h2 className="text-lg font-semibold text-foreground">
+                  Ordini in Stand-by ({ordiniStandBy.length})
+                </h2>
+                <span className="text-sm text-muted-foreground ml-2">
+                  Valore sospeso (non in KPI): {formatCurrency(stats.valoreStandBy)}
+                </span>
+              </div>
+              <div className="rounded-xl bg-card shadow-card overflow-hidden border border-warning/30">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-warning/5">
+                        <TableHead>ID Ordine</TableHead>
+                        <TableHead>Cliente</TableHead>
+                        <TableHead>Motivo</TableHead>
+                        <TableHead className="hidden md:table-cell">Prodotto bloccato</TableHead>
+                        <TableHead className="hidden md:table-cell">Data prevista</TableHead>
+                        <TableHead>Totale</TableHead>
+                        <TableHead className="w-32">Azioni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {ordiniStandBy.map((ordine) => {
+                        const giorniInStandBy = ordine.stand_by_data_inizio
+                          ? Math.floor((Date.now() - new Date(ordine.stand_by_data_inizio).getTime()) / 86400000)
+                          : 0;
+                        return (
+                          <TableRow key={ordine.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="font-mono text-xs lg:text-sm font-medium">
+                              {ordine.codice}
+                              {giorniInStandBy > 0 && (
+                                <div className="text-[10px] text-muted-foreground mt-0.5">
+                                  {giorniInStandBy}g in stand-by
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {ordine.clienti?.nome || "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={statusConfig.stand_by.className}>
+                                {ordine.stand_by_motivo || "Stand-by"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                              {ordine.stand_by_prodotto_bloccato || "—"}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-sm">
+                              {ordine.stand_by_data_prevista
+                                ? format(new Date(ordine.stand_by_data_prevista), "dd/MM/yyyy")
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="font-semibold">
+                              {formatCurrency(Number(ordine.totale))}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="success"
+                                  onClick={() => confermaStandBy.mutate({ id: ordine.id })}
+                                  disabled={confermaStandBy.isPending}
+                                  title="Rendi disponibile e conteggia ordine"
+                                >
+                                  <PlayCircle className="h-4 w-4 mr-1" />
+                                  Conferma
+                                </Button>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleShowProforma(ordine)}>
+                                      <FileText className="h-4 w-4 mr-2" />
+                                      Visualizza Proforma
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleOpenEditDialog(ordine)}>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Modifica
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() => updateStatus.mutate({ id: ordine.id, status: "annullato" })}
+                                    >
+                                      Annulla ordine
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Cancelled Orders Section */}
           {ordiniAnnullati.length > 0 && (
             <div className="mt-8">
