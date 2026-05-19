@@ -97,6 +97,23 @@ const KPI = () => {
   };
 
   const { data: stats, isLoading } = useAdvancedKPIStats(filters);
+  const { data: yoy } = useKPIYoY(filters);
+
+  const aziendeNames = useMemo(() => {
+    const m = new Map<string, string>();
+    (stats?.allAziende || []).forEach((a: any) => m.set(a.id, a.nome));
+    return m;
+  }, [stats?.allAziende]);
+  const clientiNames = useMemo(() => {
+    const m = new Map<string, string>();
+    (stats?.allClienti || []).forEach((c: any) => m.set(c.id, c.nome));
+    return m;
+  }, [stats?.allClienti]);
+  const prodottiNames = useMemo(() => {
+    const m = new Map<string, string>();
+    (stats?.prodottiKPI || []).forEach((p) => m.set(p.id, p.nome));
+    return m;
+  }, [stats?.prodottiKPI]);
 
   const resetFilters = () => {
     setSelectedClienti([]);
