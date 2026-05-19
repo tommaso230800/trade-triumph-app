@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAdvancedKPIStats, AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
+import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { ClientGrowthWidget } from "@/components/dashboard/ClientGrowthWidget";
-import { YearComparisonChart } from "@/components/dashboard/YearComparisonChart";
+import { YoYDynamicChart } from "@/components/dashboard/YoYDynamicChart";
+import { KPIHeroYoY } from "@/components/dashboard/KPIHeroYoY";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
