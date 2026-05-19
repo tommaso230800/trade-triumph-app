@@ -629,6 +629,17 @@ const KPI = () => {
           )}
         </div>
 
+        {/* Opportunities + AI */}
+        {yoy && (
+          <KPIOpportunitiesPanel
+            yoy={yoy}
+            clientiNames={clientiNames}
+            prodottiNames={prodottiNames}
+            aziendeNames={aziendeNames}
+            brandsNames={brandsNames}
+          />
+        )}
+
         {/* Detailed Tabs */}
         <Tabs defaultValue="clienti" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4 max-w-lg">
