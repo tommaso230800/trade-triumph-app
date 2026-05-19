@@ -98,7 +98,7 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
       if (ordiniError) throw ordiniError;
       
       // Filter out cancelled orders from all stats
-      const ordini = (ordiniRaw || []).filter(o => o.status !== "annullato");
+      const ordini = (ordiniRaw || []).filter(o => o.status !== "annullato" && o.status !== "stand_by");
 
       // Fetch all products
       const { data: prodotti, error: prodottiError } = await supabase

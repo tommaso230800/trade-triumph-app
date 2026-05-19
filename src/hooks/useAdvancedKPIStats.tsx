@@ -105,7 +105,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
             prodotti (id, nome, pezzi_per_cartone, prezzo_listino, costo_acquisto, azienda_id, brand_id)
           )
         `)
-        .neq("status", "annullato")
+        .not("status","in","(annullato,stand_by)")
         .order("data_ordine", { ascending: false });
 
       // Apply date filters
@@ -357,7 +357,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         const { data: previousOrdini } = await supabase
           .from("ordini")
           .select("totale")
-          .neq("status", "annullato")
+          .not("status","in","(annullato,stand_by)")
           .gte("data_ordine", previousStart.toISOString().split("T")[0])
           .lte("data_ordine", previousEnd.toISOString().split("T")[0]);
 
@@ -384,7 +384,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         const { data: yoyOrdini } = await supabase
           .from("ordini")
           .select("totale")
-          .neq("status", "annullato")
+          .not("status","in","(annullato,stand_by)")
           .gte("data_ordine", ys.toISOString().split("T")[0])
           .lte("data_ordine", ye.toISOString().split("T")[0]);
         yoyPrevFatturato = (yoyOrdini || []).reduce((s, o) => s + Number(o.totale), 0);
