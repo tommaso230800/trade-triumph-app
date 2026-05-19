@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.ai-commercial-assistant]
 verify_jwt = false
+
+[functions.parse-order-multi]
+verify_jwt = false
