@@ -50,6 +50,7 @@ import { toast } from "sonner";
 import { ProformaDialog } from "@/components/ordini/ProformaDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
+import { MultiFileImportDialog } from "@/components/ordini/MultiFileImportDialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelect } from "@/components/ui/multi-select";
 
@@ -141,6 +142,7 @@ const Ordini = () => {
   
   // Import PDF state
   const [isImportPDFOpen, setIsImportPDFOpen] = useState(false);
+  const [isMultiImportOpen, setIsMultiImportOpen] = useState(false);
   const [proformaData, setProformaData] = useState<{
     codice: string;
     created_at: string;
@@ -737,11 +739,16 @@ const Ordini = () => {
               Crea e gestisci gli ordini dei tuoi clienti
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="default" className="gap-2" onClick={() => setIsMultiImportOpen(true)}>
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Carica file ordini</span>
+              <span className="sm:hidden">Carica</span>
+            </Button>
             <Button variant="outline" className="gap-2" onClick={() => setIsImportPDFOpen(true)}>
               <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline">Importa PDF / Excel</span>
-              <span className="sm:hidden">Importa</span>
+              <span className="hidden sm:inline">Importa singolo PDF/Excel</span>
+              <span className="sm:hidden">Singolo</span>
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={(open) => {
               setIsDialogOpen(open);
@@ -1642,6 +1649,40 @@ const Ordini = () => {
               console.error("Error importing order:", error);
               toast.error("Errore nell'importazione dell'ordine");
             }
+          }}
+        />
+
+        <MultiFileImportDialog
+          open={isMultiImportOpen}
+          onOpenChange={setIsMultiImportOpen}
+          clienti={clienti || []}
+          aziende={aziende || []}
+          prodotti={allProdotti || []}
+          onProductsCreated={() => refetchProdotti()}
+          onCreateOrder={async (data) => {
+            const ordine = await createOrdine.mutateAsync({
+              cliente_id: data.cliente_id,
+              azienda_id: data.azienda_id,
+              prodotti: data.righe.reduce((s, r) => s + r.quantita_cartoni, 0),
+              totale: data.totale,
+              note: data.note || undefined,
+              sconto: data.sconto,
+              sconto_merce: data.sconto_merce,
+              tipo_pagamento: data.tipo_pagamento,
+              data_ordine: data.data_ordine,
+            });
+            await createRigheBatch.mutateAsync(
+              data.righe.map((r) => ({
+                ordine_id: ordine.id,
+                prodotto_id: r.prodotto_id,
+                quantita_pezzi: 0,
+                quantita_cartoni: r.quantita_cartoni,
+                prezzo_unitario: r.prezzo_unitario,
+                sc1: r.sc1 || 0,
+                sc2: r.sc2 || 0,
+                sc3: r.sc3 || 0,
+              }))
+            );
           }}
         />
       </div>
