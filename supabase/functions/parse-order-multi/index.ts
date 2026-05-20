@@ -8,13 +8,13 @@ const corsHeaders = {
 const systemPrompt = `Sei un assistente esperto di ordini commerciali italiani (food & beverage).
 Ricevi UN documento (PDF, immagine di ordine scritto a mano, o testo da Excel).
 Devi:
-1) Capire che tipo di documento è (campo document_type):
+1) Capire che tipo di documento e' (campo document_type):
    - "order" = un ordine vero
    - "price_list" = un listino prezzi
    - "promo" = una promozione/canvass
    - "note" = nota commerciale
    - "attachment" = altro/allegato non parsabile
-2) Se è un order, capire se contiene UNO o PIU' ordini distinti (clienti diversi nello stesso file). Restituirne un array.
+2) Se e' un order, capire se contiene UNO o PIU' ordini distinti (clienti diversi nello stesso file). Restituirne un array.
 3) Per OGNI ordine restituire prodotti, quantita in CARTONI, prezzi PER CARTONE, sconti, omaggi, condizioni pagamento, cliente e azienda fornitrice.
 
 RESTITUISCI SOLO QUESTO JSON, niente testo prima/dopo, niente markdown:
@@ -51,19 +51,63 @@ RESTITUISCI SOLO QUESTO JSON, niente testo prima/dopo, niente markdown:
   ]
 }
 
-REGOLE CRITICHE:
-- Quantita SEMPRE in CARTONI. Se nel file e' scritto "pallet" o "pezzi", converti se possibile e segnala con warning + unita_originale.
-- Prezzi SEMPRE per CARTONE.
-- Riconosci omaggi: sigle GF, G.F., parole OMAGGIO/GRATIS/FREE/CAMPIONE, prezzo 0 con quantita >0 -> is_omaggio=true, prezzo_per_cartone=0.
-- Per ogni riga assegna confidence:
-  * "high" se prodotto + quantita + prezzo sono chiari
-  * "medium" se c'e' qualche ambiguita
-  * "low" se sei incerto (scrittura a mano poco leggibile, prezzo mancante, unita ambigua)
-- Se manca un prezzo, mettilo a 0 e confidence=low con warning esplicito.
-- Se rilevi piu' ordini con clienti diversi nello stesso documento, separali in elementi distinti dell'array "orders".
-- Se non e' un ordine, restituisci "orders": [] e document_type appropriato.
+REGOLE CRITICHE GENERALI:
+- Quantita SEMPRE in CARTONI. Prezzi SEMPRE per CARTONE.
+- Riconosci omaggi: GF, G.F., OMAGGIO/GRATIS/FREE/CAMPIONE, oppure prezzo 0 con qta>0 -> is_omaggio=true, prezzo_per_cartone=0.
+- Confidence per riga: "high"=tutto chiaro; "medium"=qualche ambiguita; "low"=incerto.
 - Numeri come number (12.50 non "12,50€"). Virgola decimale italiana -> punto.
-- Date YYYY-MM-DD.`;
+- Date YYYY-MM-DD.
+- SCARTA righe dove quantita ordinata e' 0 (sia cartoni sia pezzi a 0). NON inserirle in "righe".
+- Se non e' un ordine: "orders": [] e document_type appropriato.
+
+REGOLE CRITICHE PER FILE EXCEL DI FORNITORI ITALIANI (es. Casoni, Mazzetti, ecc.):
+Gli ordini Excel hanno solitamente UNA riga di intestazione colonne (es. riga 15 o 16) seguita dalle righe prodotto.
+PRIMA cosa: trova la riga intestazione e mappa SEMANTICAMENTE le colonne. Le intestazioni tipiche:
+
+  COLONNE QUANTITA (puo' essercene UNA o DUE distinte):
+    - "CT" / "Cartoni" / "Cart." / "Colli"  => quantita_cartoni
+    - "Bott" / "Bottiglie" / "Pezzi" / "Pz" / "Q.ta pz"  => quantita_pezzi totali ordinati
+  Se ci sono ENTRAMBE: usa CT per quantita_cartoni, Bott/Pezzi per quantita_pezzi, e calcola pezzi_per_cartone = round(pezzi/cartoni).
+  Se c'e' SOLO la colonna pezzi/bottiglie: cerca "imballo" o "ct x N pz" per pezzi_per_cartone, poi quantita_cartoni = pezzi / pezzi_per_cartone.
+  Se c'e' SOLO la colonna cartoni: cerca "imballo" / "ct x N pz" / "conf." per pezzi_per_cartone.
+
+  COLONNA IMBALLO/CONFEZIONE:
+    - "imballo" / "Conf." / "Formato pack" con valori come "ct x 6 pz", "6x70cl", "20 pz" => estrai pezzi_per_cartone (numero pz per cartone).
+    - Se non trovi nulla, default pezzi_per_cartone = 1 ma metti confidence=low con warning.
+
+  COLONNA PREZZO:
+    - "Listino", "Prezzo", "Prz" => di NORMA e' prezzo PER BOTTIGLIA/PEZZO, NON per cartone.
+    - Eccezione: se vicino c'e' una nota tipo "LISTINO A CARTONE" / "prezzo a collo" => allora e' gia' per cartone.
+    - Per ottenere prezzo_per_cartone: prezzo_per_cartone = prezzo_listino_bottiglia * pezzi_per_cartone (se listino e' per bottiglia).
+    - Se trovi "Net in Fattura" o "Netto" e' il prezzo gia' scontato per bottiglia: in tal caso non sommare di nuovo gli sconti, usa quel netto * pezzi_per_cartone come prezzo_per_cartone e metti sc1/sc2/sc3 a 0.
+
+  COLONNE SCONTO (possono essere 1, 2 o 3):
+    - "Sconto Canale" / "Sc.Canale" / "Sc1" => sc1
+    - "Extra Sconto" / "Sc.Extra" / "Sc2" => sc2
+    - "Sconto Promo" / "Sc3" => sc3
+    - I valori possono essere "30%" (gia' percentuale) oppure 0.3 (frazione) oppure 30. Normalizza SEMPRE in percentuale (30, non 0.3, non "30%").
+    - Se vedi 0.3 in una colonna sconto, e' 30%, non 0.3%.
+
+  COLONNE DA IGNORARE (non sono sconti applicati): "Grado", "Formato cl", "Cartoni x strato", "Strati x plt", "Accisa", "Contr.", "Tasse", "Imponibile", "Totale".
+
+  CLIENTE: cerca celle "CLIENTE", "Rag. Sociale", "Ragione Sociale" nelle prime 15 righe -> cliente_nome.
+  AZIENDA FORNITRICE: di solito in alto (nome stampato del produttore, es "CASONI FABBRICAZIONE LIQUORI S.p.A.") -> azienda_nome.
+  PAGAMENTO: cerca "Pagamento" / "Modalita' pagamento" -> tipo_pagamento.
+
+ESEMPIO DI INTERPRETAZIONE CORRETTA (template Casoni):
+  Header riga: codice | articolo | CT | Bott | grado | formato cl | imballo | ... | Listino | Sconto Canale | Extra Sconto | ... | Net in Fattura | IMPONIBILE
+  Riga: C01170018 | AMARO DEL CICLISTA ORIGINALE | 3 | 18 | 26 | 70 | ct x 6 pz | ... | 17 | 30% | 28% | ... | 10.50 | 188.99
+  => quantita_cartoni=3, quantita_pezzi=18, pezzi_per_cartone=6 (perche' 18/3=6 e "ct x 6 pz" conferma),
+     prezzo_per_cartone = 17 * 6 = 102 €/cartone (listino per bottiglia * pezzi),
+     sc1=30, sc2=28, sc3=0, importo_riga ~ 102*3*0.7*0.72 = 154.22 (oppure usa IMPONIBILE se presente).
+  Se invece ci sono colonne "Cart." e "Tot.Pz" entrambe presenti e prezzo gia' per cartone (es. proforma stampato), usa quei valori direttamente.
+
+CONTROLLO FINALE: prima di restituire, verifica per ogni riga che:
+  - quantita_cartoni > 0
+  - quantita_cartoni * pezzi_per_cartone ~= quantita_pezzi (se hai entrambi)
+  - prezzo_per_cartone coerente con prezzo per bottiglia * pezzi_per_cartone (se applicabile)
+  Se qualcosa non torna, abbassa confidence e aggiungi warning esplicito.`;
+
 
 async function callAI(parts: any[], apiKey: string, model = "google/gemini-2.5-pro"): Promise<Response> {
   for (let attempt = 1; attempt <= 3; attempt++) {

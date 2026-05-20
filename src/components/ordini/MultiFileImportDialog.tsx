@@ -221,11 +221,24 @@ export function MultiFileImportDialog({
       let payload: any;
       if (isExcel) {
         const buf = await f.arrayBuffer();
-        const wb = XLSX.read(buf, { type: "array", cellDates: true });
+        const wb = XLSX.read(buf, { type: "array", cellDates: true, cellNF: true, cellStyles: false });
         const parts: string[] = [];
         for (const s of wb.SheetNames) {
-          const csv = XLSX.utils.sheet_to_csv(wb.Sheets[s], { FS: " | ", blankrows: false });
-          if (csv.trim()) parts.push(`### Foglio: ${s}\n${csv}`);
+          const sheet = wb.Sheets[s];
+          // rawNumbers:false => percentages keep "30%", currency keeps formatted
+          const csv = XLSX.utils.sheet_to_csv(sheet, {
+            FS: "\t",
+            blankrows: false,
+            rawNumbers: false,
+            strip: false,
+          });
+          if (!csv.trim()) continue;
+          // Annotate each row with row number to help the AI map columns
+          const annotated = csv
+            .split("\n")
+            .map((row, i) => `R${i + 1}\t${row}`)
+            .join("\n");
+          parts.push(`### Foglio: ${s}\n${annotated}`);
         }
         payload = { sheetText: parts.join("\n\n"), fileName: f.name };
       } else {
