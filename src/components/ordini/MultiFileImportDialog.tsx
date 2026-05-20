@@ -441,14 +441,23 @@ export function MultiFileImportDialog({
           tipo_pagamento: o.tipo_pagamento || "Bonifico",
           totale: Number(finale.toFixed(2)),
           note: o.note || "",
-          righe: o.righe.filter(r => r.prodotto_id).map(r => ({
-            prodotto_id: r.prodotto_id!,
-            quantita_pezzi: 0,
-            quantita_cartoni: r.quantita_cartoni,
-            prezzo_unitario: r.is_omaggio ? 0 : r.prezzo_per_cartone,
-            sc1: r.sc1 || 0, sc2: r.sc2 || 0, sc3: r.sc3 || 0,
-            is_omaggio: r.is_omaggio,
-          })),
+          righe: o.righe.filter(r => r.prodotto_id).map(r => {
+            const prod = allProdotti.find(p => p.id === r.prodotto_id);
+            const ppc = (r.pezzi_per_cartone && r.pezzi_per_cartone > 0)
+              ? r.pezzi_per_cartone
+              : (prod?.pezzi_per_cartone && prod.pezzi_per_cartone > 0 ? prod.pezzi_per_cartone : 1);
+            // CONVENZIONE APP: prezzo_unitario = prezzo PER PEZZO/bottiglia
+            // (la Proforma calcola: quantita_cartoni * pezzi_per_cartone * prezzo_unitario)
+            const prezzoPezzo = r.is_omaggio ? 0 : Number((r.prezzo_per_cartone / ppc).toFixed(4));
+            return {
+              prodotto_id: r.prodotto_id!,
+              quantita_pezzi: 0,
+              quantita_cartoni: r.quantita_cartoni,
+              prezzo_unitario: prezzoPezzo,
+              sc1: r.sc1 || 0, sc2: r.sc2 || 0, sc3: r.sc3 || 0,
+              is_omaggio: r.is_omaggio,
+            };
+          }),
         });
         ok++;
       } catch (e) {
