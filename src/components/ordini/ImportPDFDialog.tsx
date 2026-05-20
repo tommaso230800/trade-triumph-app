@@ -496,12 +496,20 @@ export function ImportPDFDialog({
       tipo_pagamento: parsedData?.tipo_pagamento || "Contanti",
       totale: parsedData?.imponibile_totale || 0,
       note: parsedData?.note || "",
-      righe: validRighe.map((r) => ({
-        prodotto_id: r.prodotto_id!,
-        quantita_pezzi: 0, // SEMPRE 0: ordine salvato in soli cartoni per coerenza alla riapertura
-        quantita_cartoni: r.quantita_cartoni,
-        prezzo_unitario: r.prezzo_unitario, // prezzo per cartone
-      })),
+      righe: validRighe.map((r) => {
+        const prod = allProdotti.find(p => p.id === r.prodotto_id);
+        const ppc = (r.pezzi_per_cartone && r.pezzi_per_cartone > 0)
+          ? r.pezzi_per_cartone
+          : (prod?.pezzi_per_cartone && prod.pezzi_per_cartone > 0 ? prod.pezzi_per_cartone : 1);
+        // CONVENZIONE APP: prezzo_unitario = prezzo PER PEZZO (la Proforma fa cartoni*pzc*prezzo_unitario)
+        const prezzoPezzo = r.is_omaggio ? 0 : Number(((r.prezzo_unitario || 0) / ppc).toFixed(4));
+        return {
+          prodotto_id: r.prodotto_id!,
+          quantita_pezzi: 0,
+          quantita_cartoni: r.quantita_cartoni,
+          prezzo_unitario: prezzoPezzo,
+        };
+      }),
     });
 
     resetState();
