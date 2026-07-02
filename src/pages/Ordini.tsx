@@ -173,6 +173,7 @@ const Ordini = () => {
       sc1?: number;
       sc2?: number;
       sc3?: number;
+      is_omaggio?: boolean;
       promo_applicata?: string;
       promo_tipo?: string;
       promo_valore?: number;
