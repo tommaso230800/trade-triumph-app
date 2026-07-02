@@ -13,6 +13,7 @@ export type OrdineRiga = {
   sc1: number;
   sc2: number;
   sc3: number;
+  is_omaggio?: boolean;
   created_at: string;
   prodotti?: { nome: string; pezzi_per_cartone: number; prezzo_listino: number } | null;
 };
@@ -49,7 +50,7 @@ export function useCreateOrdineRiga() {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("ordini_righe")
-        .insert({ ...riga, user_id: user?.id })
+        .insert({ ...riga, user_id: user?.id } as any)
         .select()
         .single();
       if (error) throw error;
@@ -73,7 +74,7 @@ export function useCreateOrdineRigheBatch() {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("ordini_righe")
-        .insert(righe.map(r => ({ ...r, user_id: user?.id })))
+        .insert(righe.map(r => ({ ...r, user_id: user?.id })) as any)
         .select();
       if (error) throw error;
       return data;

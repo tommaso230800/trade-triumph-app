@@ -21,6 +21,7 @@ type RigaOrdine = {
   sc1?: number;
   sc2?: number;
   sc3?: number;
+  is_omaggio?: boolean;
   promo_applicata?: string;
   promo_tipo?: string;
   promo_valore?: number;
@@ -111,6 +112,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
 
   // Calculate subtotals with cascading discounts - pieces auto-calculated from cartons
   const subtotale = data.righe.reduce((sum, riga) => {
+    if (riga.is_omaggio) return sum;
     const pezziTotali = riga.quantita_cartoni * riga.pezzi_per_cartone;
     const sc1 = riga.sc1 || 0;
     const sc2 = riga.sc2 || 0;
@@ -217,14 +219,21 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                   const prezzo1 = riga.prezzo_unitario * (1 - sc1 / 100);
                   const prezzo2 = prezzo1 * (1 - sc2 / 100);
                   const prezzoNetto = prezzo2 * (1 - sc3 / 100);
-                  const rigaSubtotale = pezziTotali * prezzoNetto;
+                  const rigaSubtotale = riga.is_omaggio ? 0 : pezziTotali * prezzoNetto;
                   return (
-                    <TableRow key={idx} className="border-b border-gray-100">
+                    <TableRow key={idx} className={`border-b border-gray-100 ${riga.is_omaggio ? "bg-green-50" : ""}`}>
                       <TableCell className="py-2 text-xs text-gray-600">
                         {riga.prodotto_codice || "—"}
                       </TableCell>
                       <TableCell className="py-2">
-                        <p className="font-medium text-gray-900 text-sm">{riga.prodotto_nome}</p>
+                        <p className="font-medium text-gray-900 text-sm">
+                          {riga.prodotto_nome}
+                          {riga.is_omaggio && (
+                            <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-green-100 text-green-700">
+                              <Gift className="h-3 w-3" /> Omaggio
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-gray-500">{riga.pezzi_per_cartone} pz/cart</p>
                         {riga.promo_applicata && (
                           <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
@@ -237,20 +246,24 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                         {riga.prodotto_brand || "—"}
                       </TableCell>
                       <TableCell className="text-right py-2">
-                        <span className="text-gray-700 text-sm">{formatCurrency(riga.prezzo_unitario)}</span>
+                        <span className="text-gray-700 text-sm">
+                          {riga.is_omaggio ? "—" : formatCurrency(riga.prezzo_unitario)}
+                        </span>
                       </TableCell>
                       <TableCell className="text-center text-gray-700 text-sm py-2">
-                        {sc1 > 0 ? `${sc1}%` : "—"}
+                        {riga.is_omaggio ? "—" : sc1 > 0 ? `${sc1}%` : "—"}
                       </TableCell>
                       <TableCell className="text-center text-gray-700 text-sm py-2">
-                        {sc2 > 0 ? `${sc2}%` : "—"}
+                        {riga.is_omaggio ? "—" : sc2 > 0 ? `${sc2}%` : "—"}
                       </TableCell>
                       <TableCell className="text-center text-gray-700 text-sm py-2">
-                        {sc3 > 0 ? `${sc3}%` : "—"}
+                        {riga.is_omaggio ? "—" : sc3 > 0 ? `${sc3}%` : "—"}
                       </TableCell>
                       <TableCell className="text-center text-gray-700 text-sm py-2">{riga.quantita_cartoni}</TableCell>
                       <TableCell className="text-center font-medium text-gray-900 text-sm py-2">{pezziTotali}</TableCell>
-                      <TableCell className="text-right font-semibold text-gray-900 text-sm py-2">{formatCurrency(rigaSubtotale)}</TableCell>
+                      <TableCell className="text-right font-semibold text-gray-900 text-sm py-2">
+                        {riga.is_omaggio ? <span className="text-green-700">Omaggio</span> : formatCurrency(rigaSubtotale)}
+                      </TableCell>
                     </TableRow>
                   );
                 })}

@@ -1,0 +1,1 @@
+ALTER TABLE public.ordini_righe ADD COLUMN IF NOT EXISTS is_omaggio boolean NOT NULL DEFAULT false;
