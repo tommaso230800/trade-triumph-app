@@ -92,6 +92,7 @@ type RigaOrdine = {
   sc1: string;
   sc2: string;
   sc3: string;
+  is_omaggio?: boolean;
   // Pallettizzazione info
   strati: number;
   cartoni_per_strato: number;
