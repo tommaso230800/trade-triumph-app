@@ -396,9 +396,9 @@ const Ordini = () => {
     setSelectedProdotto("");
   };
 
-  const updateRiga = (index: number, field: keyof RigaOrdine, value: number | string) => {
+  const updateRiga = (index: number, field: keyof RigaOrdine, value: number | string | boolean) => {
     const updated = [...righeOrdine];
-    updated[index] = { ...updated[index], [field]: value };
+    updated[index] = { ...updated[index], [field]: value } as RigaOrdine;
     setRigheOrdine(updated);
   };
 
