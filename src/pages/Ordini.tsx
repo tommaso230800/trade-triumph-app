@@ -232,8 +232,8 @@ const Ordini = () => {
           aziende?.find(a => a.id === p.azienda_id)?.nome || ""
         ]
       };
-    }).filter(p => !righeOrdine.some(r => r.prodotto_id === p.value));
-  }, [formData.azienda_id, allProdotti, brands, aziende, righeOrdine]);
+    });
+  }, [formData.azienda_id, allProdotti, brands, aziende]);
   
   // State for applied promotions
   const [appliedPromos, setAppliedPromos] = useState<string[]>([]);
@@ -349,10 +349,7 @@ const Ordini = () => {
     const prodotto = prodottiAzienda.find((p) => p.id === selectedProdotto);
     if (!prodotto) return;
 
-    // Check if already added
-    if (righeOrdine.find((r) => r.prodotto_id === prodotto.id)) {
-      return;
-    }
+    // Nota: consentiamo di aggiungere lo stesso prodotto più volte (es. una riga a pagamento + una riga omaggio)
 
     // Get azienda defaults for fallback
     const azienda = aziende?.find((a) => a.id === formData.azienda_id);
@@ -404,6 +401,28 @@ const Ordini = () => {
 
   const removeRiga = (index: number) => {
     setRigheOrdine(righeOrdine.filter((_, i) => i !== index));
+  };
+
+  const addOmaggioFromRiga = (index: number) => {
+    const src = righeOrdine[index];
+    if (!src) return;
+    const omaggioRiga: RigaOrdine = {
+      ...src,
+      quantita_pezzi: 0,
+      quantita_cartoni: 0,
+      prezzo_unitario: "0",
+      sc1: "0",
+      sc2: "0",
+      sc3: "0",
+      is_omaggio: true,
+    };
+    // Inserisci la riga omaggio subito dopo la riga di origine
+    const updated = [...righeOrdine];
+    updated.splice(index + 1, 0, omaggioRiga);
+    setRigheOrdine(updated);
+    toast.success(`Aggiunta riga omaggio per "${src.prodotto_nome}"`, {
+      icon: <Gift className="h-4 w-4 text-success" />,
+    });
   };
 
   const calcolaTotale = () => {
@@ -974,7 +993,7 @@ const Ordini = () => {
                         const scontoTotale = 1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100);
                         const subtotale = riga.is_omaggio ? 0 : prezzoBase * (1 - scontoTotale);
                         return (
-                          <div key={riga.prodotto_id} className={`rounded-xl p-3 space-y-3 ${riga.is_omaggio ? "bg-success/10 border border-success/40" : "bg-muted/50"}`}>
+                          <div key={index} className={`rounded-xl p-3 space-y-3 ${riga.is_omaggio ? "bg-success/10 border border-success/40" : "bg-muted/50"}`}>
                             {/* Product Header */}
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
@@ -996,17 +1015,23 @@ const Ordini = () => {
                                 </p>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
-                                <Button
-                                  type="button"
-                                  variant={riga.is_omaggio ? "default" : "outline"}
-                                  size="sm"
-                                  className={`h-8 gap-1 ${riga.is_omaggio ? "bg-success hover:bg-success/90 text-success-foreground" : ""}`}
-                                  onClick={() => updateRiga(index, "is_omaggio", !riga.is_omaggio)}
-                                  title={riga.is_omaggio ? "Rimuovi omaggio" : "Segna come omaggio"}
-                                >
-                                  <Gift className="h-3.5 w-3.5" />
-                                  <span className="text-xs">{riga.is_omaggio ? "Omaggio" : "Omaggio"}</span>
-                                </Button>
+                                {riga.is_omaggio ? (
+                                  <span className="inline-flex items-center gap-1 h-8 px-2 rounded-md bg-success/20 text-success text-xs font-semibold">
+                                    <Gift className="h-3.5 w-3.5" /> Omaggio
+                                  </span>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 gap-1"
+                                    onClick={() => addOmaggioFromRiga(index)}
+                                    title="Aggiungi una riga omaggio per questo prodotto"
+                                  >
+                                    <Gift className="h-3.5 w-3.5" />
+                                    <span className="text-xs">+ Omaggio</span>
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="icon"
