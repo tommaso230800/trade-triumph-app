@@ -1015,17 +1015,23 @@ const Ordini = () => {
                                 </p>
                               </div>
                               <div className="flex items-center gap-1 shrink-0">
-                                <Button
-                                  type="button"
-                                  variant={riga.is_omaggio ? "default" : "outline"}
-                                  size="sm"
-                                  className={`h-8 gap-1 ${riga.is_omaggio ? "bg-success hover:bg-success/90 text-success-foreground" : ""}`}
-                                  onClick={() => updateRiga(index, "is_omaggio", !riga.is_omaggio)}
-                                  title={riga.is_omaggio ? "Rimuovi omaggio" : "Segna come omaggio"}
-                                >
-                                  <Gift className="h-3.5 w-3.5" />
-                                  <span className="text-xs">{riga.is_omaggio ? "Omaggio" : "Omaggio"}</span>
-                                </Button>
+                                {riga.is_omaggio ? (
+                                  <span className="inline-flex items-center gap-1 h-8 px-2 rounded-md bg-success/20 text-success text-xs font-semibold">
+                                    <Gift className="h-3.5 w-3.5" /> Omaggio
+                                  </span>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 gap-1"
+                                    onClick={() => addOmaggioFromRiga(index)}
+                                    title="Aggiungi una riga omaggio per questo prodotto"
+                                  >
+                                    <Gift className="h-3.5 w-3.5" />
+                                    <span className="text-xs">+ Omaggio</span>
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="icon"
