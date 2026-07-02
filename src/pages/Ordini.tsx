@@ -407,6 +407,7 @@ const Ordini = () => {
 
   const calcolaTotale = () => {
     const subtotale = righeOrdine.reduce((sum, riga) => {
+      if (riga.is_omaggio) return sum;
       const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone;
       const prezzoBase = pezziTotali * parseDecimalInput(riga.prezzo_unitario);
       const sc1 = parseDecimalInput(riga.sc1);
