@@ -112,6 +112,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
 
   // Calculate subtotals with cascading discounts - pieces auto-calculated from cartons
   const subtotale = data.righe.reduce((sum, riga) => {
+    if (riga.is_omaggio) return sum;
     const pezziTotali = riga.quantita_cartoni * riga.pezzi_per_cartone;
     const sc1 = riga.sc1 || 0;
     const sc2 = riga.sc2 || 0;
