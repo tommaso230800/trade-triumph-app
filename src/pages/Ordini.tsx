@@ -972,7 +972,7 @@ const Ordini = () => {
                         const sc2 = parseDecimalInput(riga.sc2);
                         const sc3 = parseDecimalInput(riga.sc3);
                         const scontoTotale = 1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100);
-                        const subtotale = prezzoBase * (1 - scontoTotale);
+                        const subtotale = riga.is_omaggio ? 0 : prezzoBase * (1 - scontoTotale);
                         return (
                           <div key={riga.prodotto_id} className="bg-muted/50 rounded-xl p-3 space-y-3">
                             {/* Product Header */}
