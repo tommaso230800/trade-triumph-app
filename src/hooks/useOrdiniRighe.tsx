@@ -74,7 +74,7 @@ export function useCreateOrdineRigheBatch() {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("ordini_righe")
-        .insert(righe.map(r => ({ ...r, user_id: user?.id })))
+        .insert(righe.map(r => ({ ...r, user_id: user?.id })) as any)
         .select();
       if (error) throw error;
       return data;
