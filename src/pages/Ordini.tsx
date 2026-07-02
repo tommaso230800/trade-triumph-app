@@ -403,6 +403,28 @@ const Ordini = () => {
     setRigheOrdine(righeOrdine.filter((_, i) => i !== index));
   };
 
+  const addOmaggioFromRiga = (index: number) => {
+    const src = righeOrdine[index];
+    if (!src) return;
+    const omaggioRiga: RigaOrdine = {
+      ...src,
+      quantita_pezzi: 0,
+      quantita_cartoni: 0,
+      prezzo_unitario: "0",
+      sc1: "0",
+      sc2: "0",
+      sc3: "0",
+      is_omaggio: true,
+    };
+    // Inserisci la riga omaggio subito dopo la riga di origine
+    const updated = [...righeOrdine];
+    updated.splice(index + 1, 0, omaggioRiga);
+    setRigheOrdine(updated);
+    toast.success(`Aggiunta riga omaggio per "${src.prodotto_nome}"`, {
+      icon: <Gift className="h-4 w-4 text-success" />,
+    });
+  };
+
   const calcolaTotale = () => {
     const subtotale = righeOrdine.reduce((sum, riga) => {
       if (riga.is_omaggio) return sum;
