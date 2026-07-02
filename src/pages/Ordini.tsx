@@ -232,8 +232,8 @@ const Ordini = () => {
           aziende?.find(a => a.id === p.azienda_id)?.nome || ""
         ]
       };
-    }).filter(p => !righeOrdine.some(r => r.prodotto_id === p.value));
-  }, [formData.azienda_id, allProdotti, brands, aziende, righeOrdine]);
+    });
+  }, [formData.azienda_id, allProdotti, brands, aziende]);
   
   // State for applied promotions
   const [appliedPromos, setAppliedPromos] = useState<string[]>([]);
