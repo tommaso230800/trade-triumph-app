@@ -713,6 +713,7 @@ const Ordini = () => {
           sc1: Number(r.sc1) || 0,
           sc2: Number(r.sc2) || 0,
           sc3: Number(r.sc3) || 0,
+          is_omaggio: !!r.is_omaggio,
         };
       }),
     });
