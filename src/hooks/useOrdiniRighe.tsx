@@ -50,7 +50,7 @@ export function useCreateOrdineRiga() {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("ordini_righe")
-        .insert({ ...riga, user_id: user?.id })
+        .insert({ ...riga, user_id: user?.id } as any)
         .select()
         .single();
       if (error) throw error;
