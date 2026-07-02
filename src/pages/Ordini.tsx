@@ -993,7 +993,7 @@ const Ordini = () => {
                         const scontoTotale = 1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100);
                         const subtotale = riga.is_omaggio ? 0 : prezzoBase * (1 - scontoTotale);
                         return (
-                          <div key={riga.prodotto_id} className={`rounded-xl p-3 space-y-3 ${riga.is_omaggio ? "bg-success/10 border border-success/40" : "bg-muted/50"}`}>
+                          <div key={index} className={`rounded-xl p-3 space-y-3 ${riga.is_omaggio ? "bg-success/10 border border-success/40" : "bg-muted/50"}`}>
                             {/* Product Header */}
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
