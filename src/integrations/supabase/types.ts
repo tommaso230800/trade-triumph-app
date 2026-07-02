@@ -1118,6 +1118,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_omaggio: boolean
           ordine_id: string
           prezzo_unitario: number
           prodotto_id: string
@@ -1131,6 +1132,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_omaggio?: boolean
           ordine_id: string
           prezzo_unitario?: number
           prodotto_id: string
@@ -1144,6 +1146,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_omaggio?: boolean
           ordine_id?: string
           prezzo_unitario?: number
           prodotto_id?: string
