@@ -349,10 +349,7 @@ const Ordini = () => {
     const prodotto = prodottiAzienda.find((p) => p.id === selectedProdotto);
     if (!prodotto) return;
 
-    // Check if already added
-    if (righeOrdine.find((r) => r.prodotto_id === prodotto.id)) {
-      return;
-    }
+    // Nota: consentiamo di aggiungere lo stesso prodotto più volte (es. una riga a pagamento + una riga omaggio)
 
     // Get azienda defaults for fallback
     const azienda = aziende?.find((a) => a.id === formData.azienda_id);
