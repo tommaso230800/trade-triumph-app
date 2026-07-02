@@ -974,11 +974,18 @@ const Ordini = () => {
                         const scontoTotale = 1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100);
                         const subtotale = riga.is_omaggio ? 0 : prezzoBase * (1 - scontoTotale);
                         return (
-                          <div key={riga.prodotto_id} className="bg-muted/50 rounded-xl p-3 space-y-3">
+                          <div key={riga.prodotto_id} className={`rounded-xl p-3 space-y-3 ${riga.is_omaggio ? "bg-success/10 border border-success/40" : "bg-muted/50"}`}>
                             {/* Product Header */}
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{riga.prodotto_nome}</p>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="font-medium text-sm truncate">{riga.prodotto_nome}</p>
+                                  {riga.is_omaggio && (
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-success/20 text-success">
+                                      <Gift className="h-3 w-3" /> Omaggio
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                   {riga.formato && <span className="mr-2">{riga.formato}</span>}
                                   {riga.pezzi_per_cartone} pz/cart
@@ -988,14 +995,27 @@ const Ordini = () => {
                                   🧱 {riga.strati} strati × {riga.cartoni_per_strato} cart/strato = {riga.strati * riga.cartoni_per_strato} cart/pallet
                                 </p>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
-                                onClick={() => removeRiga(index)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <Button
+                                  type="button"
+                                  variant={riga.is_omaggio ? "default" : "outline"}
+                                  size="sm"
+                                  className={`h-8 gap-1 ${riga.is_omaggio ? "bg-success hover:bg-success/90 text-success-foreground" : ""}`}
+                                  onClick={() => updateRiga(index, "is_omaggio", !riga.is_omaggio ? 1 : 0)}
+                                  title={riga.is_omaggio ? "Rimuovi omaggio" : "Segna come omaggio"}
+                                >
+                                  <Gift className="h-3.5 w-3.5" />
+                                  <span className="text-xs">{riga.is_omaggio ? "Omaggio" : "Omaggio"}</span>
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => removeRiga(index)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                             
                             {/* Inputs Grid - Row 1 */}
@@ -1006,7 +1026,8 @@ const Ordini = () => {
                                   type="text"
                                   inputMode="decimal"
                                   className="h-10 px-2 text-sm"
-                                  value={riga.prezzo_unitario}
+                                  value={riga.is_omaggio ? "0" : riga.prezzo_unitario}
+                                  disabled={riga.is_omaggio}
                                   onChange={(e) => updateRiga(index, "prezzo_unitario", e.target.value)}
                                   placeholder="1,85"
                                 />
@@ -1035,46 +1056,50 @@ const Ordini = () => {
                               </div>
                             </div>
                             
-                            {/* Inputs Grid - Row 2: Sconti */}
-                            <div className="grid grid-cols-3 gap-2">
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Sc1 %</Label>
-                                <Input
-                                  type="text"
-                                  inputMode="decimal"
-                                  className="h-10 px-2 text-sm"
-                                  value={riga.sc1}
-                                  onChange={(e) => updateRiga(index, "sc1", e.target.value)}
-                                  placeholder="0"
-                                />
+                            {/* Inputs Grid - Row 2: Sconti (nascosti per omaggio) */}
+                            {!riga.is_omaggio && (
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Sc1 %</Label>
+                                  <Input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="h-10 px-2 text-sm"
+                                    value={riga.sc1}
+                                    onChange={(e) => updateRiga(index, "sc1", e.target.value)}
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Sc2 %</Label>
+                                  <Input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="h-10 px-2 text-sm"
+                                    value={riga.sc2}
+                                    onChange={(e) => updateRiga(index, "sc2", e.target.value)}
+                                    placeholder="0"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">Sc3 %</Label>
+                                  <Input
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="h-10 px-2 text-sm"
+                                    value={riga.sc3}
+                                    onChange={(e) => updateRiga(index, "sc3", e.target.value)}
+                                    placeholder="0"
+                                  />
+                                </div>
                               </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Sc2 %</Label>
-                                <Input
-                                  type="text"
-                                  inputMode="decimal"
-                                  className="h-10 px-2 text-sm"
-                                  value={riga.sc2}
-                                  onChange={(e) => updateRiga(index, "sc2", e.target.value)}
-                                  placeholder="0"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">Sc3 %</Label>
-                                <Input
-                                  type="text"
-                                  inputMode="decimal"
-                                  className="h-10 px-2 text-sm"
-                                  value={riga.sc3}
-                                  onChange={(e) => updateRiga(index, "sc3", e.target.value)}
-                                  placeholder="0"
-                                />
-                              </div>
-                            </div>
+                            )}
                             
                             {/* Subtotal */}
                             <div className="flex justify-end pt-1 border-t border-border/50">
-                              <p className="text-sm font-semibold">{formatCurrency(subtotale)}</p>
+                              <p className="text-sm font-semibold">
+                                {riga.is_omaggio ? <span className="text-success">Omaggio (0,00 €)</span> : formatCurrency(subtotale)}
+                              </p>
                             </div>
                           </div>
                         );
