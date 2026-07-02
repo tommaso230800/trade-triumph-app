@@ -1001,7 +1001,7 @@ const Ordini = () => {
                                   variant={riga.is_omaggio ? "default" : "outline"}
                                   size="sm"
                                   className={`h-8 gap-1 ${riga.is_omaggio ? "bg-success hover:bg-success/90 text-success-foreground" : ""}`}
-                                  onClick={() => updateRiga(index, "is_omaggio", !riga.is_omaggio ? 1 : 0)}
+                                  onClick={() => updateRiga(index, "is_omaggio", !riga.is_omaggio)}
                                   title={riga.is_omaggio ? "Rimuovi omaggio" : "Segna come omaggio"}
                                 >
                                   <Gift className="h-3.5 w-3.5" />
