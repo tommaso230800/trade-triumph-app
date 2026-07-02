@@ -596,10 +596,11 @@ const Ordini = () => {
         prodotto_id: riga.prodotto_id,
         quantita_pezzi: riga.quantita_pezzi,
         quantita_cartoni: riga.quantita_cartoni,
-        prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
-        sc1: parseDecimalInput(riga.sc1),
-        sc2: parseDecimalInput(riga.sc2),
-        sc3: parseDecimalInput(riga.sc3),
+        prezzo_unitario: riga.is_omaggio ? 0 : parseDecimalInput(riga.prezzo_unitario),
+        sc1: riga.is_omaggio ? 0 : parseDecimalInput(riga.sc1),
+        sc2: riga.is_omaggio ? 0 : parseDecimalInput(riga.sc2),
+        sc3: riga.is_omaggio ? 0 : parseDecimalInput(riga.sc3),
+        is_omaggio: !!riga.is_omaggio,
       }))
     );
 
