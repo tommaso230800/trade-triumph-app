@@ -237,16 +237,15 @@ const Provvigioni = () => {
     doc.save(`provvigioni_${format(new Date(), "yyyyMMdd")}.pdf`);
   };
 
-  const openPayDialog = (row: ProvvigioneRow) => {
+  const openPayDialog = (row: ProvvigioneRow, initialStato?: "pagata" | "parziale") => {
     if (!row.scadenziarioId) return;
     const fattura = [...fattureIncassate, ...fattureScadute].find((f) => f.id === row.scadenziarioId);
-    if (fattura) setPayDialog({ open: true, fattura });
+    if (fattura) setPayDialog({ open: true, fattura, initialStato });
   };
 
-  const quickSetStato = async (row: ProvvigioneRow, stato: "pagata" | "da_pagare" | "contestazione") => {
+  const quickSetStato = async (row: ProvvigioneRow, stato: "da_pagare" | "scaduta" | "contestazione") => {
     if (!row.scadenziarioId) return;
-    const fattura = [...fattureIncassate, ...fattureScadute].find((f) => f.id === row.scadenziarioId);
-    if (fattura) setPayDialog({ open: true, fattura });
+    await aggiornaStatoProvvigione.mutateAsync({ id: row.scadenziarioId, stato });
   };
 
   const simTotale = (Number(simFatturato) * Number(simPct)) / 100 + Number(simBonus) + Number(simPremi);
