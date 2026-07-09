@@ -102,11 +102,12 @@ const fmtEur = (v: number) =>
 const fmtEur2 = (v: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 
-const STATO_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  da_pagare: { label: "Da pagare", color: "bg-warning/15 text-warning border-warning/30", icon: Clock },
-  pagata: { label: "Pagata", color: "bg-success/15 text-success border-success/30", icon: CheckCircle2 },
-  parziale: { label: "Parziale", color: "bg-primary/15 text-primary border-primary/30", icon: CircleDot },
-  contestazione: { label: "Contestazione", color: "bg-destructive/15 text-destructive border-destructive/30", icon: Ban },
+const STATO_CONFIG: Record<string, { label: string; color: string; rowBg?: string; icon: any }> = {
+  pagata: { label: "Pagata", color: "bg-success/15 text-success border-success/40", icon: CheckCircle2 },
+  da_pagare: { label: "Non pagata", color: "bg-warning/15 text-warning border-warning/40", icon: Clock },
+  scaduta: { label: "Scaduta", color: "bg-destructive/15 text-destructive border-destructive/50", rowBg: "bg-destructive/5 hover:bg-destructive/10", icon: AlertTriangle },
+  parziale: { label: "Parziale", color: "bg-primary/15 text-primary border-primary/40", icon: CircleDot },
+  contestazione: { label: "Contestazione", color: "bg-[hsl(280_65%_60%/0.15)] text-[hsl(280_65%_70%)] border-[hsl(280_65%_60%/0.4)]", icon: Ban },
 };
 
 const CHART_COLORS = [
@@ -128,10 +129,10 @@ const Provvigioni = () => {
   const [clienteId, setClienteId] = useState<string | "tutti">("tutti");
   const [periodo, setPeriodo] = useState<PeriodoFilter>({ tipo: "anno", year: now.getFullYear() });
   const [search, setSearch] = useState("");
-  const [statoFilter, setStatoFilter] = useState<"tutte" | "pagata" | "da_pagare" | "parziale" | "contestazione">("tutte");
+  const [statoFilter, setStatoFilter] = useState<"tutte" | "pagata" | "da_pagare" | "scaduta" | "parziale" | "contestazione">("tutte");
   const [sortKey, setSortKey] = useState<SortKey>("data");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [payDialog, setPayDialog] = useState<{ open: boolean; fattura: ScadenziarioFattura | null }>({ open: false, fattura: null });
+  const [payDialog, setPayDialog] = useState<{ open: boolean; fattura: ScadenziarioFattura | null; initialStato?: "pagata" | "parziale" }>({ open: false, fattura: null });
 
   // Simulatore
   const [simFatturato, setSimFatturato] = useState("50000");
@@ -141,7 +142,7 @@ const Provvigioni = () => {
 
   const { data: aziende } = useAziende();
   const { data: clienti } = useClienti();
-  const { fattureIncassate, fattureScadute } = useScadenziario();
+  const { fattureIncassate, fattureScadute, aggiornaStatoProvvigione } = useScadenziario();
 
   const filters: ProvvigioniFilters = { aziendaId, clienteId, periodo, search };
   const analytics = useProvvigioniAnalytics(filters);
@@ -153,7 +154,7 @@ const Provvigioni = () => {
   }, [fattureIncassate, fattureScadute, aziendaId]);
 
   const riepiloghi = useMemo(() => {
-    const perStato = { da_pagare: 0, pagata: 0, parziale: 0, contestazione: 0 };
+    const perStato = { da_pagare: 0, pagata: 0, parziale: 0, contestazione: 0, scaduta: 0 };
     let totMaturata = 0;
     fattureVisibili.forEach((f) => {
       const stato = (f.stato_provvigione || (f.provvigione_incassata ? "pagata" : "da_pagare")) as keyof typeof perStato;
@@ -236,16 +237,15 @@ const Provvigioni = () => {
     doc.save(`provvigioni_${format(new Date(), "yyyyMMdd")}.pdf`);
   };
 
-  const openPayDialog = (row: ProvvigioneRow) => {
+  const openPayDialog = (row: ProvvigioneRow, initialStato?: "pagata" | "parziale") => {
     if (!row.scadenziarioId) return;
     const fattura = [...fattureIncassate, ...fattureScadute].find((f) => f.id === row.scadenziarioId);
-    if (fattura) setPayDialog({ open: true, fattura });
+    if (fattura) setPayDialog({ open: true, fattura, initialStato });
   };
 
-  const quickSetStato = async (row: ProvvigioneRow, stato: "pagata" | "da_pagare" | "contestazione") => {
+  const quickSetStato = async (row: ProvvigioneRow, stato: "da_pagare" | "scaduta" | "contestazione") => {
     if (!row.scadenziarioId) return;
-    const fattura = [...fattureIncassate, ...fattureScadute].find((f) => f.id === row.scadenziarioId);
-    if (fattura) setPayDialog({ open: true, fattura });
+    await aggiornaStatoProvvigione.mutateAsync({ id: row.scadenziarioId, stato });
   };
 
   const simTotale = (Number(simFatturato) * Number(simPct)) / 100 + Number(simBonus) + Number(simPremi);
@@ -428,18 +428,19 @@ const Provvigioni = () => {
           {/* PROVVIGIONI TABLE */}
           <TabsContent value="provvigioni" className="space-y-4">
             {/* Riepiloghi per stato */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               <StatoSummaryCard label="Totale maturate" value={riepiloghi.totMaturata} icon={<Euro className="h-4 w-4" />} />
               <StatoSummaryCard label="Pagate" value={riepiloghi.perStato.pagata} icon={<CheckCircle2 className="h-4 w-4" />} accent="success" />
-              <StatoSummaryCard label="Da pagare" value={riepiloghi.perStato.da_pagare} icon={<Clock className="h-4 w-4" />} accent="warning" />
+              <StatoSummaryCard label="Non pagate" value={riepiloghi.perStato.da_pagare} icon={<Clock className="h-4 w-4" />} accent="warning" />
+              <StatoSummaryCard label="Scadute" value={riepiloghi.perStato.scaduta} icon={<AlertTriangle className="h-4 w-4" />} accent="destructive" />
               <StatoSummaryCard label="Parziali" value={riepiloghi.perStato.parziale} icon={<CircleDot className="h-4 w-4" />} accent="primary" />
-              <StatoSummaryCard label="Contestazione" value={riepiloghi.perStato.contestazione} icon={<Ban className="h-4 w-4" />} accent="destructive" />
+              <StatoSummaryCard label="Contestazione" value={riepiloghi.perStato.contestazione} icon={<Ban className="h-4 w-4" />} accent="purple" />
             </div>
 
             <Card>
               <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 space-y-0">
                 <div className="flex flex-wrap gap-2">
-                  {(["tutte", "pagata", "da_pagare", "parziale", "contestazione"] as const).map((s) => (
+                  {(["tutte", "pagata", "da_pagare", "scaduta", "parziale", "contestazione"] as const).map((s) => (
                     <Button
                       key={s}
                       size="sm"
@@ -480,7 +481,7 @@ const Provvigioni = () => {
                         filteredTableRows.map((r) => {
                           const S = STATO_CONFIG[r.statoProvvigione];
                           return (
-                            <TableRow key={r.id} className="hover:bg-muted/30">
+                            <TableRow key={r.id} className={`transition-colors ${S?.rowBg || "hover:bg-muted/30"}`}>
                               <TableCell className="whitespace-nowrap text-sm">{format(new Date(r.data), "dd/MM/yy")}</TableCell>
                               <TableCell className="font-mono text-xs">{r.numero}</TableCell>
                               <TableCell className="text-sm font-medium">{r.aziendaNome}</TableCell>
@@ -502,11 +503,31 @@ const Provvigioni = () => {
                                 {r.source === "fattura" && (
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button size="icon" variant="ghost" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                                      <Button size="sm" variant="outline" className="h-8 gap-1.5 whitespace-nowrap">
+                                        <CircleDot className="h-3.5 w-3.5" />
+                                        Aggiorna stato
+                                      </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => openPayDialog(r)}>
-                                        <CheckCircle2 className="h-4 w-4 mr-2" />Gestisci pagamento
+                                    <DropdownMenuContent align="end" className="w-56">
+                                      <DropdownMenuItem onClick={() => openPayDialog(r, "pagata")} className="gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-success" />
+                                        <span>Pagata</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => quickSetStato(r, "da_pagare")} className="gap-2">
+                                        <Clock className="h-4 w-4 text-warning" />
+                                        <span>Non pagata</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => quickSetStato(r, "scaduta")} className="gap-2">
+                                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                                        <span>Scaduta</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => openPayDialog(r, "parziale")} className="gap-2">
+                                        <CircleDot className="h-4 w-4 text-primary" />
+                                        <span>Parzialmente pagata</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => quickSetStato(r, "contestazione")} className="gap-2">
+                                        <Ban className="h-4 w-4" style={{ color: "hsl(280 65% 70%)" }} />
+                                        <span>In contestazione</span>
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
@@ -687,8 +708,10 @@ const Provvigioni = () => {
       <PagamentoProvvigioneDialog
         fattura={payDialog.fattura}
         open={payDialog.open}
+        initialStato={payDialog.initialStato}
         onOpenChange={(o) => setPayDialog((p) => ({ ...p, open: o }))}
       />
+
     </MainLayout>
   );
 };
@@ -861,12 +884,13 @@ function Heatmap({ data }: { data: { anno: number; mesi: number[] }[] }) {
   );
 }
 
-function StatoSummaryCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent?: "success" | "warning" | "primary" | "destructive" }) {
+function StatoSummaryCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent?: "success" | "warning" | "primary" | "destructive" | "purple" }) {
   const map = {
     success: "text-success",
     warning: "text-warning",
     primary: "text-primary",
     destructive: "text-destructive",
+    purple: "text-[hsl(280_65%_70%)]",
   } as const;
   const c = accent ? map[accent] : "text-foreground";
   return (

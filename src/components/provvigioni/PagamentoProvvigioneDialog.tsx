@@ -26,16 +26,18 @@ interface Props {
   fattura: ScadenziarioFattura | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialStato?: StatoProvvigione;
 }
 
 const statoOptions: { value: StatoProvvigione; label: string; desc: string }[] = [
-  { value: "da_pagare", label: "Da pagare", desc: "In attesa di pagamento" },
   { value: "pagata", label: "Pagata", desc: "Interamente incassata" },
+  { value: "da_pagare", label: "Non pagata", desc: "In attesa di pagamento" },
+  { value: "scaduta", label: "Scaduta", desc: "Scaduta e non pagata" },
   { value: "parziale", label: "Parzialmente pagata", desc: "Solo una parte incassata" },
   { value: "contestazione", label: "In contestazione", desc: "Bloccata in disputa" },
 ];
 
-export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange }: Props) => {
+export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initialStato }: Props) => {
   const { aggiornaStatoProvvigione } = useScadenziario();
   const [stato, setStato] = useState<StatoProvvigione>("pagata");
   const [dataPagamento, setDataPagamento] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -45,12 +47,13 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange }: Prop
 
   useEffect(() => {
     if (!fattura) return;
-    setStato((fattura.stato_provvigione as StatoProvvigione) || "pagata");
+    setStato(initialStato || (fattura.stato_provvigione as StatoProvvigione) || "pagata");
     setDataPagamento(fattura.data_incasso_provvigione || format(new Date(), "yyyy-MM-dd"));
-    setImporto(String(fattura.importo_provvigione_pagata || fattura.provvigione_calcolata || 0));
+    const preset = initialStato === "parziale" ? (fattura.importo_provvigione_pagata || 0) : (fattura.importo_provvigione_pagata || fattura.provvigione_calcolata || 0);
+    setImporto(String(preset));
     setMetodo(fattura.metodo_pagamento_provvigione || "bonifico");
     setNote(fattura.note_provvigione || "");
-  }, [fattura, open]);
+  }, [fattura, open, initialStato]);
 
   if (!fattura) return null;
 
@@ -132,6 +135,15 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange }: Prop
                   />
                 </div>
               </div>
+
+              {stato === "parziale" && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm flex items-center justify-between">
+                  <span className="text-muted-foreground">Importo residuo</span>
+                  <span className="font-semibold text-primary">
+                    €{Math.max(0, Number(fattura.provvigione_calcolata) - (Number(importo) || 0)).toFixed(2)}
+                  </span>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Metodo di pagamento</Label>
