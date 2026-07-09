@@ -857,34 +857,79 @@ function ChartCard({ title, icon, children }: { title: string; icon?: React.Reac
   );
 }
 
-function Heatmap({ data }: { data: { anno: number; mesi: number[] }[] }) {
-  const maxVal = Math.max(1, ...data.flatMap((d) => d.mesi));
-  const mesi = ["G","F","M","A","M","G","L","A","S","O","N","D"];
+function Heatmap({
+  data,
+  obiettivo,
+  onCellClick,
+}: {
+  data: { anno: number; mesi: number[]; fatturato: number[]; media: number }[];
+  obiettivo: number;
+  onCellClick: (anno: number, mese: number) => void;
+}) {
+  const mesiLabel = ["G","F","M","A","M","G","L","A","S","O","N","D"];
+  const mesiFull = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+
+  // Classifica: alto / medio / basso.
+  // Bench = max(media annuale, obiettivo mensile). Se non c'è alcun bench, fallback su max riga.
+  const classify = (v: number, mediaAnno: number): { tone: "basso" | "medio" | "alto"; ratio: number } => {
+    const bench = Math.max(mediaAnno || 0, obiettivo || 0);
+    if (bench <= 0) return { tone: v > 0 ? "medio" : "basso", ratio: 0 };
+    const ratio = v / bench;
+    if (ratio < 0.7) return { tone: "basso", ratio };
+    if (ratio < 1.1) return { tone: "medio", ratio };
+    return { tone: "alto", ratio };
+  };
+
+  const bgFor = (v: number, mediaAnno: number): string => {
+    if (v <= 0) return "hsl(var(--muted) / 0.4)";
+    const { tone, ratio } = classify(v, mediaAnno);
+    // intensity 0.35 → 1
+    const intensity = Math.min(1, 0.35 + Math.min(ratio, 2) * 0.35);
+    if (tone === "basso") return `hsl(0 75% 55% / ${intensity.toFixed(2)})`;
+    if (tone === "medio") return `hsl(45 90% 55% / ${intensity.toFixed(2)})`;
+    return `hsl(140 65% 45% / ${intensity.toFixed(2)})`;
+  };
+
+  const textColor = (v: number) => (v <= 0 ? "text-muted-foreground" : "text-white drop-shadow-sm");
+
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-[60px_repeat(12,1fr)] gap-1 text-xs text-muted-foreground text-center">
         <div />
-        {mesi.map((m, i) => <div key={i}>{m}</div>)}
+        {mesiLabel.map((m, i) => <div key={i}>{m}</div>)}
       </div>
       {data.map((row) => (
         <div key={row.anno} className="grid grid-cols-[60px_repeat(12,1fr)] gap-1">
           <div className="text-xs font-medium flex items-center">{row.anno}</div>
           {row.mesi.map((v, i) => {
-            const intensity = v / maxVal;
+            const { tone } = classify(v, row.media);
+            const stateLabel = v <= 0 ? "vuoto" : tone;
+            const tooltip = `${mesiFull[i]} ${row.anno}\nProvvigioni: ${fmtEur(v)}\nFatturato: ${fmtEur(row.fatturato[i] || 0)}\nStato: ${stateLabel}`;
             return (
-              <div
+              <button
                 key={i}
-                title={fmtEur(v)}
-                className="aspect-square rounded"
-                style={{ background: `hsl(var(--primary) / ${Math.max(0.05, intensity * 0.9).toFixed(2)})` }}
-              />
+                type="button"
+                onClick={() => onCellClick(row.anno, i)}
+                title={tooltip}
+                className={`aspect-square rounded transition-transform hover:scale-110 hover:ring-2 hover:ring-primary/50 focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-[9px] font-semibold ${textColor(v)}`}
+                style={{ background: bgFor(v, row.media) }}
+              >
+                {v > 0 && v >= 1000 ? `${Math.round(v / 1000)}k` : ""}
+              </button>
             );
           })}
         </div>
       ))}
+      {/* Legenda */}
+      <div className="flex items-center justify-end gap-3 pt-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(0 75% 55% / 0.7)" }} />Basso</div>
+        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(45 90% 55% / 0.75)" }} />Medio</div>
+        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(140 65% 45% / 0.85)" }} />Alto</div>
+      </div>
     </div>
   );
 }
+
 
 function StatoSummaryCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent?: "success" | "warning" | "primary" | "destructive" | "purple" }) {
   const map = {
