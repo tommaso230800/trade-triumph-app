@@ -32,7 +32,7 @@ export interface ProvvigioneRow {
   percentualeProvv: number;
   provvigioneMaturata: number;
   provvigionePagata: number;
-  statoProvvigione: "da_pagare" | "pagata" | "parziale" | "contestazione";
+  statoProvvigione: "da_pagare" | "pagata" | "parziale" | "contestazione" | "scaduta";
   dataPrevistaPagamento: string | null;
   dataEffettivaPagamento: string | null;
   giorniRitardo: number;
