@@ -708,8 +708,10 @@ const Provvigioni = () => {
       <PagamentoProvvigioneDialog
         fattura={payDialog.fattura}
         open={payDialog.open}
+        initialStato={payDialog.initialStato}
         onOpenChange={(o) => setPayDialog((p) => ({ ...p, open: o }))}
       />
+
     </MainLayout>
   );
 };
