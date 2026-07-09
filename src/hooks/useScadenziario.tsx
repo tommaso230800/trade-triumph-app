@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-export type StatoProvvigione = 'da_pagare' | 'pagata' | 'parziale' | 'contestazione';
+export type StatoProvvigione = 'da_pagare' | 'pagata' | 'parziale' | 'contestazione' | 'scaduta';
 
 export interface ScadenziarioFattura {
   id: string;
