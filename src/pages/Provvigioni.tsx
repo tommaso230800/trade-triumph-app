@@ -142,7 +142,7 @@ const Provvigioni = () => {
 
   const { data: aziende } = useAziende();
   const { data: clienti } = useClienti();
-  const { fattureIncassate, fattureScadute } = useScadenziario();
+  const { fattureIncassate, fattureScadute, aggiornaStatoProvvigione } = useScadenziario();
 
   const filters: ProvvigioniFilters = { aziendaId, clienteId, periodo, search };
   const analytics = useProvvigioniAnalytics(filters);
