@@ -260,6 +260,7 @@ export const useScadenziario = () => {
     importFatture,
     segnaIncassata,
     segnaProvvigioneIncassata,
+    aggiornaStatoProvvigione,
     eliminaFattura,
     totaleScaduto,
     provvigionePotenziale,
