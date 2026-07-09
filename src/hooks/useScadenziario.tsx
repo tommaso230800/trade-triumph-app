@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
+export type StatoProvvigione = 'da_pagare' | 'pagata' | 'parziale' | 'contestazione';
+
 export interface ScadenziarioFattura {
   id: string;
   user_id: string;
@@ -21,6 +23,10 @@ export interface ScadenziarioFattura {
   trimestre_provvigione: string | null;
   provvigione_incassata: boolean;
   data_incasso_provvigione: string | null;
+  stato_provvigione: StatoProvvigione;
+  importo_provvigione_pagata: number;
+  metodo_pagamento_provvigione: string | null;
+  note_provvigione: string | null;
   created_at: string;
   updated_at: string;
 }
