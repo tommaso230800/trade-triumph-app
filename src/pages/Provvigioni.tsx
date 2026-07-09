@@ -714,6 +714,13 @@ const Provvigioni = () => {
         onOpenChange={(o) => setPayDialog((p) => ({ ...p, open: o }))}
       />
 
+      <MeseDetailSheet
+        open={meseDetail.open}
+        onOpenChange={(o) => setMeseDetail((s) => ({ ...s, open: o }))}
+        detail={meseDetail.detail}
+      />
+
+
     </MainLayout>
   );
 };
