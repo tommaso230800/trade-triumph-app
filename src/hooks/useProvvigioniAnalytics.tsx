@@ -534,6 +534,7 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
     perAzienda,
     perCliente,
     heatmap,
+    getMonthlyDetail,
     seriaGiornaliera,
     insights,
     aziende,
