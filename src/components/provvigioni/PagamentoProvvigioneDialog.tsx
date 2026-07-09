@@ -26,6 +26,7 @@ interface Props {
   fattura: ScadenziarioFattura | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialStato?: StatoProvvigione;
 }
 
 const statoOptions: { value: StatoProvvigione; label: string; desc: string }[] = [
