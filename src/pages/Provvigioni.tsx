@@ -10,6 +10,7 @@ import {
   ProvvigioneRow,
 } from "@/hooks/useProvvigioniAnalytics";
 import { PagamentoProvvigioneDialog } from "@/components/provvigioni/PagamentoProvvigioneDialog";
+import { MeseDetailSheet } from "@/components/provvigioni/MeseDetailSheet";
 import { ScadenziarioTab } from "@/components/provvigioni/ScadenziarioTab";
 import {
   Card,
