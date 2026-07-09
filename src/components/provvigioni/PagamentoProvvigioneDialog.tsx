@@ -136,6 +136,15 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
                 </div>
               </div>
 
+              {stato === "parziale" && (
+                <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm flex items-center justify-between">
+                  <span className="text-muted-foreground">Importo residuo</span>
+                  <span className="font-semibold text-primary">
+                    €{Math.max(0, Number(fattura.provvigione_calcolata) - (Number(importo) || 0)).toFixed(2)}
+                  </span>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label>Metodo di pagamento</Label>
                 <Select value={metodo} onValueChange={setMetodo}>
