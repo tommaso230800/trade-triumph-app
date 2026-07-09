@@ -862,12 +862,13 @@ function Heatmap({ data }: { data: { anno: number; mesi: number[] }[] }) {
   );
 }
 
-function StatoSummaryCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent?: "success" | "warning" | "primary" | "destructive" }) {
+function StatoSummaryCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent?: "success" | "warning" | "primary" | "destructive" | "purple" }) {
   const map = {
     success: "text-success",
     warning: "text-warning",
     primary: "text-primary",
     destructive: "text-destructive",
+    purple: "text-[hsl(280_65%_70%)]",
   } as const;
   const c = accent ? map[accent] : "text-foreground";
   return (
