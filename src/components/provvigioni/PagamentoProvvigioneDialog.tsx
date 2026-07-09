@@ -21,7 +21,6 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScadenziarioFattura, StatoProvvigione, useScadenziario } from "@/hooks/useScadenziario";
 import { format } from "date-fns";
-import { CheckCircle2, Clock, AlertCircle, HalfCircleIcon } from "lucide-react";
 
 interface Props {
   fattura: ScadenziarioFattura | null;
