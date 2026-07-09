@@ -154,7 +154,7 @@ const Provvigioni = () => {
   }, [fattureIncassate, fattureScadute, aziendaId]);
 
   const riepiloghi = useMemo(() => {
-    const perStato = { da_pagare: 0, pagata: 0, parziale: 0, contestazione: 0 };
+    const perStato = { da_pagare: 0, pagata: 0, parziale: 0, contestazione: 0, scaduta: 0 };
     let totMaturata = 0;
     fattureVisibili.forEach((f) => {
       const stato = (f.stato_provvigione || (f.provvigione_incassata ? "pagata" : "da_pagare")) as keyof typeof perStato;
