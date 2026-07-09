@@ -481,7 +481,7 @@ const Provvigioni = () => {
                         filteredTableRows.map((r) => {
                           const S = STATO_CONFIG[r.statoProvvigione];
                           return (
-                            <TableRow key={r.id} className="hover:bg-muted/30">
+                            <TableRow key={r.id} className={`transition-colors ${S?.rowBg || "hover:bg-muted/30"}`}>
                               <TableCell className="whitespace-nowrap text-sm">{format(new Date(r.data), "dd/MM/yy")}</TableCell>
                               <TableCell className="font-mono text-xs">{r.numero}</TableCell>
                               <TableCell className="text-sm font-medium">{r.aziendaNome}</TableCell>
@@ -503,11 +503,31 @@ const Provvigioni = () => {
                                 {r.source === "fattura" && (
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button size="icon" variant="ghost" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                                      <Button size="sm" variant="outline" className="h-8 gap-1.5 whitespace-nowrap">
+                                        <CircleDot className="h-3.5 w-3.5" />
+                                        Aggiorna stato
+                                      </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => openPayDialog(r)}>
-                                        <CheckCircle2 className="h-4 w-4 mr-2" />Gestisci pagamento
+                                    <DropdownMenuContent align="end" className="w-56">
+                                      <DropdownMenuItem onClick={() => openPayDialog(r, "pagata")} className="gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-success" />
+                                        <span>Pagata</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => quickSetStato(r, "da_pagare")} className="gap-2">
+                                        <Clock className="h-4 w-4 text-warning" />
+                                        <span>Non pagata</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => quickSetStato(r, "scaduta")} className="gap-2">
+                                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                                        <span>Scaduta</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => openPayDialog(r, "parziale")} className="gap-2">
+                                        <CircleDot className="h-4 w-4 text-primary" />
+                                        <span>Parzialmente pagata</span>
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => quickSetStato(r, "contestazione")} className="gap-2">
+                                        <Ban className="h-4 w-4" style={{ color: "hsl(280 65% 70%)" }} />
+                                        <span>In contestazione</span>
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
