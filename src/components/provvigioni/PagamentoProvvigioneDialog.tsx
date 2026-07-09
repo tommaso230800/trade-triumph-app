@@ -29,8 +29,9 @@ interface Props {
 }
 
 const statoOptions: { value: StatoProvvigione; label: string; desc: string }[] = [
-  { value: "da_pagare", label: "Da pagare", desc: "In attesa di pagamento" },
   { value: "pagata", label: "Pagata", desc: "Interamente incassata" },
+  { value: "da_pagare", label: "Non pagata", desc: "In attesa di pagamento" },
+  { value: "scaduta", label: "Scaduta", desc: "Scaduta e non pagata" },
   { value: "parziale", label: "Parzialmente pagata", desc: "Solo una parte incassata" },
   { value: "contestazione", label: "In contestazione", desc: "Bloccata in disputa" },
 ];
