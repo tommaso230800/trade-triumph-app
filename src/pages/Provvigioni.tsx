@@ -134,6 +134,7 @@ const Provvigioni = () => {
   const [sortKey, setSortKey] = useState<SortKey>("data");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [payDialog, setPayDialog] = useState<{ open: boolean; fattura: ScadenziarioFattura | null; initialStato?: "pagata" | "parziale" }>({ open: false, fattura: null });
+  const [meseDetail, setMeseDetail] = useState<{ open: boolean; detail: any | null }>({ open: false, detail: null });
 
   // Simulatore
   const [simFatturato, setSimFatturato] = useState("50000");
