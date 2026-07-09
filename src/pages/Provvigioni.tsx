@@ -102,11 +102,12 @@ const fmtEur = (v: number) =>
 const fmtEur2 = (v: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 
-const STATO_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  da_pagare: { label: "Da pagare", color: "bg-warning/15 text-warning border-warning/30", icon: Clock },
-  pagata: { label: "Pagata", color: "bg-success/15 text-success border-success/30", icon: CheckCircle2 },
-  parziale: { label: "Parziale", color: "bg-primary/15 text-primary border-primary/30", icon: CircleDot },
-  contestazione: { label: "Contestazione", color: "bg-destructive/15 text-destructive border-destructive/30", icon: Ban },
+const STATO_CONFIG: Record<string, { label: string; color: string; rowBg?: string; icon: any }> = {
+  pagata: { label: "Pagata", color: "bg-success/15 text-success border-success/40", icon: CheckCircle2 },
+  da_pagare: { label: "Non pagata", color: "bg-warning/15 text-warning border-warning/40", icon: Clock },
+  scaduta: { label: "Scaduta", color: "bg-destructive/15 text-destructive border-destructive/50", rowBg: "bg-destructive/5 hover:bg-destructive/10", icon: AlertTriangle },
+  parziale: { label: "Parziale", color: "bg-primary/15 text-primary border-primary/40", icon: CircleDot },
+  contestazione: { label: "Contestazione", color: "bg-[hsl(280_65%_60%/0.15)] text-[hsl(280_65%_70%)] border-[hsl(280_65%_60%/0.4)]", icon: Ban },
 };
 
 const CHART_COLORS = [
