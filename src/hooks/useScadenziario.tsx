@@ -222,6 +222,7 @@ export const useScadenziario = () => {
         updates.data_incasso_provvigione = input.data_pagamento || null;
         updates.importo_provvigione_pagata = input.importo_pagato ?? 0;
       } else {
+        // da_pagare | scaduta | contestazione
         updates.provvigione_incassata = false;
         updates.data_incasso_provvigione = null;
         updates.importo_provvigione_pagata = 0;
