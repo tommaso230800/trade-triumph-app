@@ -335,7 +335,7 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
     }).sort((a, b) => b.fatturato - a.fatturato);
   }, [filteredRows]);
 
-  // Heatmap mese × anno
+  // Heatmap mese × anno con media annuale e classificazione basso/medio/alto
   const heatmap = useMemo(() => {
     const anni = new Set<number>();
     allRows.forEach((r) => {
@@ -343,20 +343,127 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
       anni.add(new Date(r.data).getFullYear());
     });
     const anniArr = Array.from(anni).sort((a, b) => b - a).slice(0, 4);
-    return anniArr.map((anno) => ({
-      anno,
-      mesi: Array.from({ length: 12 }, (_, m) => {
-        const val = allRows
+    return anniArr.map((anno) => {
+      const mesi = Array.from({ length: 12 }, (_, m) =>
+        allRows
           .filter((r) => {
             if (filters.aziendaId !== "tutte" && r.aziendaId !== filters.aziendaId) return false;
             const d = new Date(r.data);
             return d.getFullYear() === anno && d.getMonth() === m;
           })
-          .reduce((s, r) => s + r.provvigioneMaturata, 0);
-        return val;
-      }),
-    }));
+          .reduce((s, r) => s + r.provvigioneMaturata, 0)
+      );
+      const fatturato = Array.from({ length: 12 }, (_, m) =>
+        allRows
+          .filter((r) => {
+            if (filters.aziendaId !== "tutte" && r.aziendaId !== filters.aziendaId) return false;
+            const d = new Date(r.data);
+            return d.getFullYear() === anno && d.getMonth() === m;
+          })
+          .reduce((s, r) => s + r.netto, 0)
+      );
+      const attivi = mesi.filter((v) => v > 0);
+      const media = attivi.length ? attivi.reduce((a, b) => a + b, 0) / attivi.length : 0;
+      return { anno, mesi, fatturato, media };
+    });
   }, [allRows, filters.aziendaId]);
+
+  // Dettaglio completo mese × anno (per pannello laterale)
+  const getMonthlyDetail = (anno: number, mese: number) => {
+    const inMese = (r: ProvvigioneRow) => {
+      if (filters.aziendaId !== "tutte" && r.aziendaId !== filters.aziendaId) return false;
+      const d = new Date(r.data);
+      return d.getFullYear() === anno && d.getMonth() === mese;
+    };
+    const rows = allRows.filter(inMese);
+    const provvigioniMaturate = rows.reduce((s, r) => s + r.provvigioneMaturata, 0);
+    const provvigioniPagate = rows.filter((r) => r.statoProvvigione === "pagata" || r.statoProvvigione === "parziale").reduce((s, r) => s + r.provvigionePagata, 0);
+    const provvigioniNonPagate = rows.filter((r) => r.statoProvvigione === "da_pagare").reduce((s, r) => s + r.provvigioneMaturata, 0);
+    const provvigioniScadute = rows.filter((r) => r.statoProvvigione === "scaduta").reduce((s, r) => s + r.provvigioneMaturata, 0);
+    const provvigioniContestazione = rows.filter((r) => r.statoProvvigione === "contestazione").reduce((s, r) => s + r.provvigioneMaturata, 0);
+    const provvigioniInRitardo = rows.filter((r) => r.giorniRitardo > 0 && r.statoProvvigione !== "pagata").reduce((s, r) => s + r.provvigioneMaturata, 0);
+    const fatturato = rows.reduce((s, r) => s + r.netto, 0);
+    const fatture = rows.filter((r) => r.source === "fattura").length;
+    const nOrdini = rows.length;
+    const ticketMedio = nOrdini > 0 ? fatturato / nOrdini : 0;
+    const pctMediaProvv = fatturato > 0 ? (provvigioniMaturate / fatturato) * 100 : 0;
+
+    // Ripartizione per azienda
+    const perAziendaMap = new Map<string, { nome: string; provvigioni: number; fatturato: number; ordini: number }>();
+    rows.forEach((r) => {
+      const k = r.aziendaId || `n-${r.aziendaNome}`;
+      if (!perAziendaMap.has(k)) perAziendaMap.set(k, { nome: r.aziendaNome, provvigioni: 0, fatturato: 0, ordini: 0 });
+      const v = perAziendaMap.get(k)!;
+      v.provvigioni += r.provvigioneMaturata;
+      v.fatturato += r.netto;
+      v.ordini += 1;
+    });
+    const aziendeMese = Array.from(perAziendaMap.values());
+    const miglioreAzienda = [...aziendeMese].sort((a, b) => b.fatturato - a.fatturato)[0] || null;
+    const aziendaTopProvv = [...aziendeMese].sort((a, b) => b.provvigioni - a.provvigioni)[0] || null;
+
+    // Ripartizione per cliente
+    const perClienteMap = new Map<string, { nome: string; provvigioni: number; fatturato: number; ordini: number }>();
+    rows.forEach((r) => {
+      const k = r.clienteId || `n-${r.clienteNome}`;
+      if (!perClienteMap.has(k)) perClienteMap.set(k, { nome: r.clienteNome, provvigioni: 0, fatturato: 0, ordini: 0 });
+      const v = perClienteMap.get(k)!;
+      v.provvigioni += r.provvigioneMaturata;
+      v.fatturato += r.netto;
+      v.ordini += 1;
+    });
+    const clientiMese = Array.from(perClienteMap.values());
+    const miglioreCliente = [...clientiMese].sort((a, b) => b.provvigioni - a.provvigioni)[0] || null;
+    const clienteTopFatturato = [...clientiMese].sort((a, b) => b.fatturato - a.fatturato)[0] || null;
+
+    // Ripartizione per stato
+    const perStato = [
+      { stato: "Pagata", key: "pagata", value: rows.filter((r) => r.statoProvvigione === "pagata").reduce((s, r) => s + r.provvigioneMaturata, 0) },
+      { stato: "Non pagata", key: "da_pagare", value: provvigioniNonPagate },
+      { stato: "Scaduta", key: "scaduta", value: provvigioniScadute },
+      { stato: "Parziale", key: "parziale", value: rows.filter((r) => r.statoProvvigione === "parziale").reduce((s, r) => s + r.provvigioneMaturata, 0) },
+      { stato: "Contestazione", key: "contestazione", value: provvigioniContestazione },
+    ].filter((s) => s.value > 0);
+
+    // Andamento giornaliero
+    const giorniInMese = new Date(anno, mese + 1, 0).getDate();
+    const giornaliero = Array.from({ length: giorniInMese }, (_, i) => {
+      const g = i + 1;
+      const key = `${anno}-${String(mese + 1).padStart(2, "0")}-${String(g).padStart(2, "0")}`;
+      const daily = rows.filter((r) => r.data.startsWith(key));
+      return {
+        giorno: String(g),
+        provvigioni: daily.reduce((s, r) => s + r.provvigioneMaturata, 0),
+        fatturato: daily.reduce((s, r) => s + r.netto, 0),
+      };
+    });
+    const giorniTop = [...giornaliero].sort((a, b) => b.fatturato - a.fatturato).slice(0, 3).filter((g) => g.fatturato > 0);
+
+    // MoM e YoY
+    const sumProv = (y: number, m: number) =>
+      allRows
+        .filter((r) => {
+          if (filters.aziendaId !== "tutte" && r.aziendaId !== filters.aziendaId) return false;
+          const d = new Date(r.data);
+          return d.getFullYear() === y && d.getMonth() === m;
+        })
+        .reduce((s, r) => s + r.provvigioneMaturata, 0);
+    const prev = sumProv(mese === 0 ? anno - 1 : anno, mese === 0 ? 11 : mese - 1);
+    const prevY = sumProv(anno - 1, mese);
+    const growthMoM = prev > 0 ? ((provvigioniMaturate - prev) / prev) * 100 : null;
+    const growthYoY = prevY > 0 ? ((provvigioniMaturate - prevY) / prevY) * 100 : null;
+
+    return {
+      anno, mese,
+      provvigioniMaturate, provvigioniPagate, provvigioniNonPagate, provvigioniScadute, provvigioniContestazione, provvigioniInRitardo,
+      fatturato, fatture, nOrdini, ticketMedio, pctMediaProvv,
+      miglioreAzienda, aziendaTopProvv, miglioreCliente, clienteTopFatturato,
+      aziendeMese: aziendeMese.sort((a, b) => b.provvigioni - a.provvigioni).slice(0, 8),
+      perStato, giornaliero, giorniTop,
+      growthMoM, growthYoY,
+    };
+  };
+
 
   // Andamento giornaliero mese corrente + previsione
   const seriaGiornaliera = useMemo(() => {
@@ -427,6 +534,7 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
     perAzienda,
     perCliente,
     heatmap,
+    getMonthlyDetail,
     seriaGiornaliera,
     insights,
     aziende,
