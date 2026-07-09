@@ -129,10 +129,10 @@ const Provvigioni = () => {
   const [clienteId, setClienteId] = useState<string | "tutti">("tutti");
   const [periodo, setPeriodo] = useState<PeriodoFilter>({ tipo: "anno", year: now.getFullYear() });
   const [search, setSearch] = useState("");
-  const [statoFilter, setStatoFilter] = useState<"tutte" | "pagata" | "da_pagare" | "parziale" | "contestazione">("tutte");
+  const [statoFilter, setStatoFilter] = useState<"tutte" | "pagata" | "da_pagare" | "scaduta" | "parziale" | "contestazione">("tutte");
   const [sortKey, setSortKey] = useState<SortKey>("data");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [payDialog, setPayDialog] = useState<{ open: boolean; fattura: ScadenziarioFattura | null }>({ open: false, fattura: null });
+  const [payDialog, setPayDialog] = useState<{ open: boolean; fattura: ScadenziarioFattura | null; initialStato?: "pagata" | "parziale" }>({ open: false, fattura: null });
 
   // Simulatore
   const [simFatturato, setSimFatturato] = useState("50000");
