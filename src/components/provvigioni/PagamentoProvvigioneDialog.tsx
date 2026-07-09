@@ -37,7 +37,7 @@ const statoOptions: { value: StatoProvvigione; label: string; desc: string }[] =
   { value: "contestazione", label: "In contestazione", desc: "Bloccata in disputa" },
 ];
 
-export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange }: Props) => {
+export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initialStato }: Props) => {
   const { aggiornaStatoProvvigione } = useScadenziario();
   const [stato, setStato] = useState<StatoProvvigione>("pagata");
   const [dataPagamento, setDataPagamento] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -47,12 +47,13 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange }: Prop
 
   useEffect(() => {
     if (!fattura) return;
-    setStato((fattura.stato_provvigione as StatoProvvigione) || "pagata");
+    setStato(initialStato || (fattura.stato_provvigione as StatoProvvigione) || "pagata");
     setDataPagamento(fattura.data_incasso_provvigione || format(new Date(), "yyyy-MM-dd"));
-    setImporto(String(fattura.importo_provvigione_pagata || fattura.provvigione_calcolata || 0));
+    const preset = initialStato === "parziale" ? (fattura.importo_provvigione_pagata || 0) : (fattura.importo_provvigione_pagata || fattura.provvigione_calcolata || 0);
+    setImporto(String(preset));
     setMetodo(fattura.metodo_pagamento_provvigione || "bonifico");
     setNote(fattura.note_provvigione || "");
-  }, [fattura, open]);
+  }, [fattura, open, initialStato]);
 
   if (!fattura) return null;
 
