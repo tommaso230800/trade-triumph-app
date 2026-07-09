@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
+export type StatoProvvigione = 'da_pagare' | 'pagata' | 'parziale' | 'contestazione';
+
 export interface ScadenziarioFattura {
   id: string;
   user_id: string;
@@ -21,6 +23,10 @@ export interface ScadenziarioFattura {
   trimestre_provvigione: string | null;
   provvigione_incassata: boolean;
   data_incasso_provvigione: string | null;
+  stato_provvigione: StatoProvvigione;
+  importo_provvigione_pagata: number;
+  metodo_pagamento_provvigione: string | null;
+  note_provvigione: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -192,6 +198,47 @@ export const useScadenziario = () => {
     },
   });
 
+  // Aggiorna stato provvigione (nuovo sistema a 4 stati)
+  const aggiornaStatoProvvigione = useMutation({
+    mutationFn: async (input: {
+      id: string;
+      stato: StatoProvvigione;
+      importo_pagato?: number;
+      data_pagamento?: string | null;
+      metodo?: string | null;
+      note?: string | null;
+    }) => {
+      const updates: any = {
+        stato_provvigione: input.stato,
+        metodo_pagamento_provvigione: input.metodo ?? null,
+        note_provvigione: input.note ?? null,
+      };
+      if (input.stato === 'pagata') {
+        updates.provvigione_incassata = true;
+        updates.data_incasso_provvigione = input.data_pagamento || new Date().toISOString().slice(0, 10);
+        updates.importo_provvigione_pagata = input.importo_pagato ?? 0;
+      } else if (input.stato === 'parziale') {
+        updates.provvigione_incassata = false;
+        updates.data_incasso_provvigione = input.data_pagamento || null;
+        updates.importo_provvigione_pagata = input.importo_pagato ?? 0;
+      } else {
+        updates.provvigione_incassata = false;
+        updates.data_incasso_provvigione = null;
+        updates.importo_provvigione_pagata = 0;
+      }
+      const { error } = await supabase
+        .from('scadenziario_fatture')
+        .update(updates)
+        .eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scadenziario'] });
+      toast.success('Stato provvigione aggiornato');
+    },
+    onError: (e) => toast.error(`Errore: ${e.message}`),
+  });
+
   // Calcolo statistiche
   // Fatture incassate con provvigione ancora da riscuotere
   const provvigioniDaIncassare = fattureIncassate.filter(f => !f.provvigione_incassata);
@@ -213,6 +260,7 @@ export const useScadenziario = () => {
     importFatture,
     segnaIncassata,
     segnaProvvigioneIncassata,
+    aggiornaStatoProvvigione,
     eliminaFattura,
     totaleScaduto,
     provvigionePotenziale,

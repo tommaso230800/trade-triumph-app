@@ -1,7 +1,29 @@
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAziende } from "@/hooks/useAziende";
-import { useOrdini, useUpdateProvvigionePagata } from "@/hooks/useOrdini";
+import { useClienti } from "@/hooks/useClienti";
+import { useScadenziario, ScadenziarioFattura } from "@/hooks/useScadenziario";
+import {
+  useProvvigioniAnalytics,
+  ProvvigioniFilters,
+  PeriodoFilter,
+  ProvvigioneRow,
+} from "@/hooks/useProvvigioniAnalytics";
+import { PagamentoProvvigioneDialog } from "@/components/provvigioni/PagamentoProvvigioneDialog";
+import { ScadenziarioTab } from "@/components/provvigioni/ScadenziarioTab";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -17,694 +39,483 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   Euro,
   TrendingUp,
+  TrendingDown,
   Building2,
-  CalendarDays,
-  Loader2,
+  Users,
   Percent,
+  Target,
+  Sparkles,
+  Search,
+  Download,
+  FileText,
+  Receipt,
+  MoreVertical,
   CheckCircle2,
   Clock,
-  FileText,
-  Check,
-  X,
-  Receipt,
+  AlertTriangle,
+  Ban,
+  CircleDot,
+  Wallet,
+  CalendarClock,
+  LineChart as LineChartIcon,
+  Calculator,
+  Trophy,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
 } from "lucide-react";
-import { ScadenziarioTab } from "@/components/provvigioni/ScadenziarioTab";
-import { useScadenziario } from "@/hooks/useScadenziario";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+const fmtEur = (v: number) =>
+  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
+const fmtEur2 = (v: number) =>
+  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 
-type Trimestre = "Q1" | "Q2" | "Q3" | "Q4" | "tutti";
-
-const trimestreConfig = {
-  Q1: { label: "Gen - Mar", mesi: [0, 1, 2], color: "bg-blue-500" },
-  Q2: { label: "Apr - Giu", mesi: [3, 4, 5], color: "bg-green-500" },
-  Q3: { label: "Lug - Set", mesi: [6, 7, 8], color: "bg-orange-500" },
-  Q4: { label: "Ott - Dic", mesi: [9, 10, 11], color: "bg-purple-500" },
+const STATO_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
+  da_pagare: { label: "Da pagare", color: "bg-warning/15 text-warning border-warning/30", icon: Clock },
+  pagata: { label: "Pagata", color: "bg-success/15 text-success border-success/30", icon: CheckCircle2 },
+  parziale: { label: "Parziale", color: "bg-primary/15 text-primary border-primary/30", icon: CircleDot },
+  contestazione: { label: "Contestazione", color: "bg-destructive/15 text-destructive border-destructive/30", icon: Ban },
 };
 
-const getCurrentQuarter = (): Trimestre => {
-  const month = new Date().getMonth();
-  if (month <= 2) return "Q1";
-  if (month <= 5) return "Q2";
-  if (month <= 8) return "Q3";
-  return "Q4";
-};
+const CHART_COLORS = [
+  "hsl(var(--primary))",
+  "hsl(var(--success))",
+  "hsl(var(--warning))",
+  "hsl(var(--destructive))",
+  "hsl(217 91% 60%)",
+  "hsl(280 65% 60%)",
+  "hsl(35 90% 55%)",
+  "hsl(160 60% 45%)",
+];
+
+type SortKey = keyof ProvvigioneRow;
 
 const Provvigioni = () => {
-  const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedTrimestre, setSelectedTrimestre] = useState<Trimestre>(getCurrentQuarter());
+  const now = new Date();
+  const [aziendaId, setAziendaId] = useState<string | "tutte">("tutte");
+  const [clienteId, setClienteId] = useState<string | "tutti">("tutti");
+  const [periodo, setPeriodo] = useState<PeriodoFilter>({ tipo: "anno", year: now.getFullYear() });
+  const [search, setSearch] = useState("");
+  const [statoFilter, setStatoFilter] = useState<"tutte" | "pagata" | "da_pagare" | "parziale" | "contestazione">("tutte");
+  const [sortKey, setSortKey] = useState<SortKey>("data");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [payDialog, setPayDialog] = useState<{ open: boolean; fattura: ScadenziarioFattura | null }>({ open: false, fattura: null });
 
-  const { data: aziende, isLoading: aziendeLoading } = useAziende();
-  const { data: ordini, isLoading: ordiniLoading } = useOrdini();
-  const updateProvvigionePagata = useUpdateProvvigionePagata();
-  const { fattureIncassate, segnaProvvigioneIncassata } = useScadenziario();
+  // Simulatore
+  const [simFatturato, setSimFatturato] = useState("50000");
+  const [simPct, setSimPct] = useState("4");
+  const [simBonus, setSimBonus] = useState("0");
+  const [simPremi, setSimPremi] = useState("0");
 
-  const years = useMemo(() => {
-    const yearsSet = new Set<number>();
-    ordini?.forEach((o) => {
-      yearsSet.add(new Date(o.data_ordine || o.created_at).getFullYear());
+  const { data: aziende } = useAziende();
+  const { data: clienti } = useClienti();
+  const { fattureIncassate, fattureScadute } = useScadenziario();
+
+  const filters: ProvvigioniFilters = { aziendaId, clienteId, periodo, search };
+  const analytics = useProvvigioniAnalytics(filters);
+
+  // Riepiloghi per stato (basati su tutte le fatture visibili)
+  const fattureVisibili = useMemo(() => {
+    const all = [...fattureIncassate, ...fattureScadute];
+    return all.filter((f) => aziendaId === "tutte" || f.azienda_id === aziendaId);
+  }, [fattureIncassate, fattureScadute, aziendaId]);
+
+  const riepiloghi = useMemo(() => {
+    const perStato = { da_pagare: 0, pagata: 0, parziale: 0, contestazione: 0 };
+    let totMaturata = 0;
+    fattureVisibili.forEach((f) => {
+      const stato = (f.stato_provvigione || (f.provvigione_incassata ? "pagata" : "da_pagare")) as keyof typeof perStato;
+      perStato[stato] = (perStato[stato] || 0) + Number(f.provvigione_calcolata);
+      totMaturata += Number(f.provvigione_calcolata);
     });
-    yearsSet.add(currentYear);
-    return Array.from(yearsSet).sort((a, b) => b - a);
-  }, [ordini, currentYear]);
+    return { perStato, totMaturata };
+  }, [fattureVisibili]);
 
-  // Filter orders based on year and quarter, exclude cancelled orders
-  // Scadenziario invoices mapped to look like orders for the Ordini tab
-  const scadenziarioAsOrdini = useMemo(() => {
-    return fattureIncassate.filter((f) => {
-      const incassoDate = new Date(f.data_incasso!);
-      const incassoYear = incassoDate.getFullYear();
-      const incassoMonth = incassoDate.getMonth();
-
-      if (incassoYear !== selectedYear) return false;
-
-      if (selectedTrimestre !== "tutti") {
-        const trimestreMesi = trimestreConfig[selectedTrimestre].mesi;
-        if (!trimestreMesi.includes(incassoMonth)) return false;
-      }
-
-      return true;
-    }).map((f) => ({
-      id: f.id,
-      codice: f.numero_fattura,
-      data_ordine: f.data_incasso,
-      created_at: f.created_at,
-      aziendaNome: f.azienda_nome,
-      clienteNome: f.cliente_nome,
-      totale: Number(f.importo),
-      provvigionePercentuale: Number(f.percentuale_provvigione),
-      provvigioneCalcolata: Number(f.provvigione_calcolata),
-      provvigione_pagata: f.provvigione_incassata,
-      fromScadenziario: true as const,
-    }));
-  }, [fattureIncassate, selectedYear, selectedTrimestre]);
-
-  const filteredOrdini = useMemo(() => {
-    if (!ordini || !aziende) return [];
-
-    return ordini.filter((o) => {
-      if ((o.status === "annullato" || o.status === "stand_by")) return false;
-      
-      const orderDate = new Date(o.data_ordine || o.created_at);
-      const orderYear = orderDate.getFullYear();
-      const orderMonth = orderDate.getMonth();
-
-      if (orderYear !== selectedYear) return false;
-
-      if (selectedTrimestre !== "tutti") {
-        const trimestreMesi = trimestreConfig[selectedTrimestre].mesi;
-        if (!trimestreMesi.includes(orderMonth)) return false;
-      }
-
-      return true;
-    }).map((o) => {
-      const azienda = aziende.find((a) => a.id === o.azienda_id);
-      const provvigionePercentuale = azienda?.provvigione_percentuale || 0;
-      const provvigioneCalcolata = Number(o.totale) * (provvigionePercentuale / 100);
-      return {
-        id: o.id,
-        codice: o.codice,
-        data_ordine: o.data_ordine,
-        created_at: o.created_at,
-        aziendaNome: azienda?.nome || "—",
-        clienteNome: o.clienti?.nome || "—",
-        totale: Number(o.totale),
-        provvigionePercentuale,
-        provvigioneCalcolata,
-        provvigione_pagata: o.provvigione_pagata,
-        fromScadenziario: false as const,
-      };
+  const filteredTableRows = useMemo(() => {
+    let rows = analytics.filteredRows;
+    if (statoFilter !== "tutte") {
+      rows = rows.filter((r) => r.statoProvvigione === statoFilter);
+    }
+    const sorted = [...rows].sort((a, b) => {
+      const av: any = a[sortKey];
+      const bv: any = b[sortKey];
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      const cmp = typeof av === "number" && typeof bv === "number" ? av - bv : String(av).localeCompare(String(bv));
+      return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [ordini, aziende, selectedYear, selectedTrimestre]);
+    return sorted;
+  }, [analytics.filteredRows, statoFilter, sortKey, sortDir]);
 
-  const allProvvigioniRows = useMemo(() => {
-    return [...filteredOrdini, ...scadenziarioAsOrdini].sort((a, b) => {
-      const dateA = new Date(a.data_ordine || a.created_at);
-      const dateB = new Date(b.data_ordine || b.created_at);
-      return dateB.getTime() - dateA.getTime();
-    });
-  }, [filteredOrdini, scadenziarioAsOrdini]);
-
-  const provvigioniData = useMemo(() => {
-    if (!aziende || !ordini) return [];
-
-    // Filter out cancelled orders first
-    const validOrdini = ordini.filter(o => o.status !== "annullato" && o.status !== "stand_by");
-
-    return aziende.map((azienda) => {
-      const aziendaOrdini = validOrdini.filter((o) => {
-        if (o.azienda_id !== azienda.id) return false;
-        const orderDate = new Date(o.data_ordine || o.created_at);
-        const orderYear = orderDate.getFullYear();
-        const orderMonth = orderDate.getMonth();
-
-        if (orderYear !== selectedYear) return false;
-
-        if (selectedTrimestre !== "tutti") {
-          const trimestreMesi = trimestreConfig[selectedTrimestre].mesi;
-          if (!trimestreMesi.includes(orderMonth)) return false;
-        }
-
-        return true;
-      });
-
-      const fatturatoTrimestre = aziendaOrdini.reduce(
-        (sum, o) => sum + Number(o.totale),
-        0
-      );
-      const provvigionePercentuale = azienda.provvigione_percentuale || 0;
-      const provvigioneCalcolata = fatturatoTrimestre * (provvigionePercentuale / 100);
-      const ordiniCount = aziendaOrdini.length;
-      const ordiniPagati = aziendaOrdini.filter((o) => o.provvigione_pagata).length;
-      const provvigionePagata = aziendaOrdini
-        .filter((o) => o.provvigione_pagata)
-        .reduce((sum, o) => sum + Number(o.totale) * (provvigionePercentuale / 100), 0);
-
-      // Breakdown per quarter
-      const quarterBreakdown = Object.entries(trimestreConfig).map(([key, config]) => {
-        const qOrdini = validOrdini.filter((o) => {
-          if (o.azienda_id !== azienda.id) return false;
-          const orderDate = new Date(o.data_ordine || o.created_at);
-          return orderDate.getFullYear() === selectedYear && config.mesi.includes(orderDate.getMonth());
-        });
-        const qFatturato = qOrdini.reduce((sum, o) => sum + Number(o.totale), 0);
-        const qProvvigione = qFatturato * (provvigionePercentuale / 100);
-        const qPagati = qOrdini.filter((o) => o.provvigione_pagata).length;
-        return {
-          trimestre: key as Trimestre,
-          fatturato: qFatturato,
-          provvigione: qProvvigione,
-          ordini: qOrdini.length,
-          pagati: qPagati,
-        };
-      });
-
-      return {
-        id: azienda.id,
-        nome: azienda.nome,
-        settore: azienda.settore,
-        provvigionePercentuale,
-        fatturatoTrimestre,
-        provvigioneCalcolata,
-        provvigionePagata,
-        ordiniCount,
-        ordiniPagati,
-        quarterBreakdown,
-        fatturatoAnnuale: quarterBreakdown.reduce((sum, q) => sum + q.fatturato, 0),
-        provvigioneAnnuale: quarterBreakdown.reduce((sum, q) => sum + q.provvigione, 0),
-      };
-    }).sort((a, b) => b.provvigioneCalcolata - a.provvigioneCalcolata);
-  }, [aziende, ordini, selectedYear, selectedTrimestre]);
-
-  const totali = useMemo(() => {
-    const provvigioniPagate = filteredOrdini
-      .filter((o) => o.provvigione_pagata)
-      .reduce((sum, o) => sum + o.provvigioneCalcolata, 0);
-    const provvigioniDaPagare = filteredOrdini
-      .filter((o) => !o.provvigione_pagata)
-      .reduce((sum, o) => sum + o.provvigioneCalcolata, 0);
-
-    return {
-      fatturato: provvigioniData.reduce((sum, a) => sum + a.fatturatoTrimestre, 0),
-      provvigioni: provvigioniData.reduce((sum, a) => sum + a.provvigioneCalcolata, 0),
-      fatturatoAnnuale: provvigioniData.reduce((sum, a) => sum + a.fatturatoAnnuale, 0),
-      provvigioniAnnuali: provvigioniData.reduce((sum, a) => sum + a.provvigioneAnnuale, 0),
-      ordini: provvigioniData.reduce((sum, a) => sum + a.ordiniCount, 0),
-      provvigioniPagate,
-      provvigioniDaPagare,
-      ordiniPagati: filteredOrdini.filter((o) => o.provvigione_pagata).length,
-      ordiniDaPagare: filteredOrdini.filter((o) => !o.provvigione_pagata).length,
-    };
-  }, [provvigioniData, filteredOrdini]);
-
-  const maxProvvigione = Math.max(...provvigioniData.map((a) => a.provvigioneCalcolata), 1);
-
-  const handleToggleProvvigione = (ordineId: string, currentValue: boolean) => {
-    updateProvvigionePagata.mutate({ id: ordineId, provvigione_pagata: !currentValue });
+  const toggleSort = (k: SortKey) => {
+    if (k === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(k);
+      setSortDir("desc");
+    }
   };
 
-  const isLoading = aziendeLoading || ordiniLoading;
+  const exportExcel = () => {
+    const data = filteredTableRows.map((r) => ({
+      Data: format(new Date(r.data), "dd/MM/yyyy"),
+      Numero: r.numero,
+      Azienda: r.aziendaNome,
+      Cliente: r.clienteNome,
+      Imponibile: r.imponibile,
+      "% Provv": r.percentualeProvv,
+      Maturata: r.provvigioneMaturata,
+      Pagata: r.provvigionePagata,
+      Stato: STATO_CONFIG[r.statoProvvigione]?.label || r.statoProvvigione,
+      "Data prevista": r.dataPrevistaPagamento ? format(new Date(r.dataPrevistaPagamento), "dd/MM/yyyy") : "",
+      "Data effettiva": r.dataEffettivaPagamento ? format(new Date(r.dataEffettivaPagamento), "dd/MM/yyyy") : "",
+      "Giorni ritardo": r.giorniRitardo,
+      Note: r.note || "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Provvigioni");
+    XLSX.writeFile(wb, `provvigioni_${format(new Date(), "yyyyMMdd")}.xlsx`);
+  };
 
-  if (isLoading) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </MainLayout>
-    );
-  }
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(14);
+    doc.text("Report Provvigioni", 14, 15);
+    doc.setFontSize(9);
+    doc.text(`Generato: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 22);
+    autoTable(doc, {
+      startY: 28,
+      head: [["Data", "N°", "Azienda", "Cliente", "Imponibile", "%", "Maturata", "Pagata", "Stato"]],
+      body: filteredTableRows.map((r) => [
+        format(new Date(r.data), "dd/MM/yy"),
+        r.numero,
+        r.aziendaNome,
+        r.clienteNome,
+        fmtEur(r.imponibile),
+        `${r.percentualeProvv}%`,
+        fmtEur(r.provvigioneMaturata),
+        fmtEur(r.provvigionePagata),
+        STATO_CONFIG[r.statoProvvigione]?.label || r.statoProvvigione,
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [30, 30, 60] },
+    });
+    doc.save(`provvigioni_${format(new Date(), "yyyyMMdd")}.pdf`);
+  };
+
+  const openPayDialog = (row: ProvvigioneRow) => {
+    if (!row.scadenziarioId) return;
+    const fattura = [...fattureIncassate, ...fattureScadute].find((f) => f.id === row.scadenziarioId);
+    if (fattura) setPayDialog({ open: true, fattura });
+  };
+
+  const quickSetStato = async (row: ProvvigioneRow, stato: "pagata" | "da_pagare" | "contestazione") => {
+    if (!row.scadenziarioId) return;
+    const fattura = [...fattureIncassate, ...fattureScadute].find((f) => f.id === row.scadenziarioId);
+    if (fattura) setPayDialog({ open: true, fattura });
+  };
+
+  const simTotale = (Number(simFatturato) * Number(simPct)) / 100 + Number(simBonus) + Number(simPremi);
 
   return (
     <MainLayout>
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-6 animate-rise-in pb-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="page-title">Gestione Provvigioni</h1>
+            <h1 className="page-title">Provvigioni</h1>
             <p className="text-body-md text-muted-foreground">
-              Calcolo e verifica delle provvigioni trimestrali per azienda
+              Centro di controllo economico — filtra, analizza, gestisci pagamenti
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-muted-foreground" />
-              <Select
-                value={String(selectedYear)}
-                onValueChange={(v) => setSelectedYear(Number(v))}
-              >
-                <SelectTrigger className="w-28">
-                  <SelectValue />
+        </div>
+
+        {/* STICKY FILTER BAR */}
+        <div className="sticky top-0 z-20 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 bg-background/80 backdrop-blur-xl border-b border-border/60">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 flex-1 min-w-[220px]">
+              <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Select value={aziendaId} onValueChange={(v) => setAziendaId(v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Seleziona azienda" />
                 </SelectTrigger>
                 <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={String(year)}>
-                      {year}
-                    </SelectItem>
+                  <SelectItem value="tutte">Tutte le aziende</SelectItem>
+                  {aziende?.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <Select
-              value={selectedTrimestre}
-              onValueChange={(v) => setSelectedTrimestre(v as Trimestre)}
-            >
-              <SelectTrigger className="w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tutti">Tutti i Trimestri</SelectItem>
-                <SelectItem value="Q1">Q1 (Gen - Mar)</SelectItem>
-                <SelectItem value="Q2">Q2 (Apr - Giu)</SelectItem>
-                <SelectItem value="Q3">Q3 (Lug - Set)</SelectItem>
-                <SelectItem value="Q4">Q4 (Ott - Dic)</SelectItem>
-              </SelectContent>
-            </Select>
+
+            <PeriodoSelector value={periodo} onChange={setPeriodo} />
+
+            <div className="flex items-center gap-2 min-w-[180px]">
+              <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Select value={clienteId} onValueChange={(v) => setClienteId(v)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="tutti">Tutti i clienti</SelectItem>
+                  {clienti?.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cerca ordine, cliente, azienda..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Fatturato {selectedTrimestre === "tutti" ? "Annuale" : "Trimestre"}
-              </CardTitle>
-              <Euro className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(totali.fatturato)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {totali.ordini} ordini totali
-              </p>
-            </CardContent>
-          </Card>
+        {/* CONTO ECONOMICO PERSONALE */}
+        <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Wallet className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">Il tuo Conto Economico</h2>
+              {aziendaId !== "tutte" && (
+                <Badge variant="outline">{aziende?.find((a) => a.id === aziendaId)?.nome}</Badge>
+              )}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <EconomicoCell label="Oggi" value={analytics.contoEconomico.guadagnoOggi} accent="text-success" />
+              <EconomicoCell label="Questo mese" value={analytics.contoEconomico.guadagnoMese} accent="text-primary" big />
+              <EconomicoCell label="Quest'anno" value={analytics.contoEconomico.guadagnoAnno} />
+              <EconomicoCell label="Media/giorno" value={analytics.contoEconomico.mediaGiornaliera} accent="text-muted-foreground" />
+              <EconomicoCell label={`Previsione ${format(now, "MMM", { locale: it })}`} value={analytics.contoEconomico.previsioneFineMese} accent="text-warning" />
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="bg-primary/5 border-primary/20">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Provvigioni Totali
-              </CardTitle>
-              <Percent className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {formatCurrency(totali.provvigioni)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Da {provvigioniData.filter((a) => a.provvigioneCalcolata > 0).length} aziende
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-green-700 dark:text-green-400">
-                Pagate
-              </CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-700 dark:text-green-400">
-                {formatCurrency(totali.provvigioniPagate)}
-              </div>
-              <p className="text-xs text-green-600 dark:text-green-500">
-                {totali.ordiniPagati} ordini
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                Da Incassare
-              </CardTitle>
-              <Clock className="h-4 w-4 text-amber-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">
-                {formatCurrency(totali.provvigioniDaPagare)}
-              </div>
-              <p className="text-xs text-amber-600 dark:text-amber-500">
-                {totali.ordiniDaPagare} ordini
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Annuali</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(totali.provvigioniAnnuali)}
-              </div>
-              <p className="text-xs text-muted-foreground">Anno {selectedYear}</p>
-            </CardContent>
-          </Card>
+        {/* KPI CARDS */}
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          <KPICard icon={<Euro />} label="Provvigioni maturate" value={fmtEur(analytics.kpi.provvigioniMaturate)} />
+          <KPICard icon={<CheckCircle2 />} label="Liquidate" value={fmtEur(analytics.kpi.provvigioniLiquidate)} accent="success" />
+          <KPICard icon={<Clock />} label="Da incassare" value={fmtEur(analytics.kpi.provvigioniDaIncassare)} accent="warning" />
+          <KPICard icon={<TrendingUp />} label="Fatturato generato" value={fmtEur(analytics.kpi.fatturato)} />
+          <KPICard icon={<FileText />} label="Numero ordini" value={String(analytics.kpi.nOrdini)} />
+          <KPICard icon={<Receipt />} label="Ticket medio" value={fmtEur(analytics.kpi.ticketMedio)} />
+          <KPICard icon={<Percent />} label="% media provv." value={`${analytics.kpi.pctMediaProvv.toFixed(2)}%`} />
+          <GrowthCard label="Vs mese scorso" value={analytics.kpi.growthMoM} />
+          <GrowthCard label="Vs stesso mese A-1" value={analytics.kpi.growthYoY} />
+          <ObjectiveCard target={analytics.kpi.obiettivoMensile} current={analytics.kpi.provvMese} pct={analytics.kpi.completamentoObiettivo} />
         </div>
 
-        {/* Quarter Status Pills */}
-        <div className="flex flex-wrap gap-3">
-          {Object.entries(trimestreConfig).map(([key, config]) => {
-            const isCurrent = key === getCurrentQuarter() && selectedYear === currentYear;
-            const isPast = 
-              selectedYear < currentYear || 
-              (selectedYear === currentYear && config.mesi[2] < new Date().getMonth());
-            
-            return (
-              <button
-                key={key}
-                onClick={() => setSelectedTrimestre(key as Trimestre)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all ${
-                  selectedTrimestre === key
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card border-border hover:bg-muted"
-                }`}
-              >
-                <div className={`w-2 h-2 rounded-full ${config.color}`} />
-                <span className="text-sm font-medium">{key}</span>
-                <span className="text-xs opacity-70">{config.label}</span>
-                {isPast && (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-                )}
-                {isCurrent && !isPast && (
-                  <Clock className="h-3.5 w-3.5 text-amber-500" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Tabs for different views */}
-        <Tabs defaultValue="ordini" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="ordini" className="gap-2">
-              <FileText className="h-4 w-4" />
-              Ordini ({allProvvigioniRows.length})
-            </TabsTrigger>
-            <TabsTrigger value="aziende" className="gap-2">
-              <Building2 className="h-4 w-4" />
-              Per Azienda
-            </TabsTrigger>
-            <TabsTrigger value="riepilogo" className="gap-2">
-              <CalendarDays className="h-4 w-4" />
-              Riepilogo Annuale
-            </TabsTrigger>
-            <TabsTrigger value="scadenziario" className="gap-2">
-              <Receipt className="h-4 w-4" />
-              Scadenziario
-            </TabsTrigger>
+        {/* MAIN TABS */}
+        <Tabs defaultValue="overview" className="space-y-5">
+          <TabsList className="w-full flex-wrap h-auto justify-start">
+            <TabsTrigger value="overview" className="gap-2"><LineChartIcon className="h-4 w-4" />Overview</TabsTrigger>
+            <TabsTrigger value="provvigioni" className="gap-2"><Euro className="h-4 w-4" />Provvigioni</TabsTrigger>
+            <TabsTrigger value="aziende" className="gap-2"><Building2 className="h-4 w-4" />Aziende</TabsTrigger>
+            <TabsTrigger value="clienti" className="gap-2"><Users className="h-4 w-4" />Clienti</TabsTrigger>
+            <TabsTrigger value="ai" className="gap-2"><Sparkles className="h-4 w-4" />AI Insights</TabsTrigger>
+            <TabsTrigger value="calendario" className="gap-2"><CalendarClock className="h-4 w-4" />Calendario</TabsTrigger>
+            <TabsTrigger value="simulatore" className="gap-2"><Calculator className="h-4 w-4" />Simulatore</TabsTrigger>
+            <TabsTrigger value="bonus" className="gap-2"><Trophy className="h-4 w-4" />Bonus</TabsTrigger>
+            <TabsTrigger value="scadenziario" className="gap-2"><Receipt className="h-4 w-4" />Scadenziario</TabsTrigger>
           </TabsList>
 
-          {/* Orders Tab - Main view for tracking payments */}
-          <TabsContent value="ordini">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Dettaglio Ordini - Stato Provvigioni
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead>Codice</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Azienda</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Origine</TableHead>
-                        <TableHead className="text-right">Totale</TableHead>
-                        <TableHead className="text-center">%</TableHead>
-                        <TableHead className="text-right">Provvigione</TableHead>
-                        <TableHead className="text-center">Pagata</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {allProvvigioniRows.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                            Nessun ordine per il periodo selezionato
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        allProvvigioniRows.map((row) => (
-                          <TableRow 
-                            key={`${row.fromScadenziario ? 'sc' : 'ord'}-${row.id}`} 
-                            className={`hover:bg-muted/30 ${row.provvigione_pagata ? 'bg-green-50/50 dark:bg-green-950/10' : ''}`}
-                          >
-                            <TableCell className="font-mono font-medium">
-                              {row.codice}
-                            </TableCell>
-                            <TableCell>
-                              {format(new Date(row.data_ordine || row.created_at), "dd MMM yyyy", { locale: it })}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {row.aziendaNome}
-                            </TableCell>
-                            <TableCell>
-                              {row.clienteNome}
-                            </TableCell>
-                            <TableCell>
-                              {row.fromScadenziario ? (
-                                <Badge variant="secondary" className="text-xs">
-                                  <Receipt className="h-3 w-3 mr-1" />
-                                  Scadenziario
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-xs">
-                                  <FileText className="h-3 w-3 mr-1" />
-                                  Ordine
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(row.totale)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge variant="outline" className="font-mono">
-                                {row.provvigionePercentuale}%
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-bold text-primary">
-                              {formatCurrency(row.provvigioneCalcolata)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <Switch
-                                  checked={row.provvigione_pagata}
-                                  onCheckedChange={() => {
-                                    if (row.fromScadenziario) {
-                                      segnaProvvigioneIncassata.mutate({
-                                        id: row.id,
-                                        data_incasso_provvigione: new Date().toISOString().split('T')[0],
-                                      });
-                                    } else {
-                                      handleToggleProvvigione(row.id, row.provvigione_pagata);
-                                    }
-                                  }}
-                                  disabled={updateProvvigionePagata.isPending || segnaProvvigioneIncassata.isPending}
-                                />
-                                {row.provvigione_pagata ? (
-                                  <Check className="h-4 w-4 text-green-600" />
-                                ) : (
-                                  <X className="h-4 w-4 text-muted-foreground" />
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+          {/* OVERVIEW */}
+          <TabsContent value="overview" className="space-y-5">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <ChartCard title="Andamento provvigioni · 24 mesi" icon={<LineChartIcon className="h-4 w-4" />}>
+                <ResponsiveContainer width="100%" height={260}>
+                  <AreaChart data={analytics.serieMensile}>
+                    <defs>
+                      <linearGradient id="colorP" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="mese" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
+                    <Area type="monotone" dataKey="provvigioni" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#colorP)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard title="Fatturato vs Provvigioni" icon={<TrendingUp className="h-4 w-4" />}>
+                <ResponsiveContainer width="100%" height={260}>
+                  <ComposedChart data={analytics.serieMensile}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="mese" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                    <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                    <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
+                    <Legend />
+                    <Bar yAxisId="left" dataKey="fatturato" fill="hsl(var(--muted-foreground) / 0.3)" name="Fatturato" />
+                    <Line yAxisId="right" type="monotone" dataKey="provvigioni" stroke="hsl(var(--primary))" strokeWidth={2.5} name="Provvigioni" />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard title="Ripartizione per azienda" icon={<Building2 className="h-4 w-4" />}>
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <Pie data={analytics.perAzienda.slice(0, 8)} dataKey="provvigioni" nameKey="nome" cx="50%" cy="50%" outerRadius={90} innerRadius={45} paddingAngle={2}>
+                      {analytics.perAzienda.slice(0, 8).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </ChartCard>
+
+              <ChartCard title={`Mese corrente · Andamento giornaliero`} icon={<CalendarClock className="h-4 w-4" />}>
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={analytics.seriaGiornaliera}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="giorno" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
+                    <Line type="monotone" dataKey="cumulato" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="Cumulato" />
+                    <Line type="monotone" dataKey="valore" stroke="hsl(var(--success))" strokeWidth={1.5} dot={{ r: 2 }} name="Giornaliero" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            </div>
+
+            <ChartCard title="Heatmap mesi migliori" icon={<Sparkles className="h-4 w-4" />}>
+              <Heatmap data={analytics.heatmap} />
+            </ChartCard>
           </TabsContent>
 
-          {/* Companies Tab */}
-          <TabsContent value="aziende">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Dettaglio Provvigioni per Azienda
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead>Azienda</TableHead>
-                        <TableHead className="text-center">% Provv.</TableHead>
-                        <TableHead className="text-right">Fatturato</TableHead>
-                        <TableHead className="text-center">Ordini</TableHead>
-                        <TableHead className="text-right">Provvigione</TableHead>
-                        <TableHead className="text-right">Pagata</TableHead>
-                        <TableHead className="w-40">Performance</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {provvigioniData.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                            Nessun dato disponibile per il periodo selezionato
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        provvigioniData.map((azienda) => (
-                          <TableRow key={azienda.id} className="hover:bg-muted/30">
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">{azienda.nome}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {azienda.settore || "—"}
-                                </p>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Badge
-                                variant={azienda.provvigionePercentuale > 0 ? "default" : "secondary"}
-                                className="font-mono"
-                              >
-                                {azienda.provvigionePercentuale}%
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {formatCurrency(azienda.fatturatoTrimestre)}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="text-sm">
-                                {azienda.ordiniPagati}/{azienda.ordiniCount}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right font-bold text-primary">
-                              {formatCurrency(azienda.provvigioneCalcolata)}
-                            </TableCell>
-                            <TableCell className="text-right font-medium text-green-600">
-                              {formatCurrency(azienda.provvigionePagata)}
-                            </TableCell>
-                            <TableCell>
-                              <Progress
-                                value={(azienda.provvigioneCalcolata / maxProvvigione) * 100}
-                                className="h-2"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {/* PROVVIGIONI TABLE */}
+          <TabsContent value="provvigioni" className="space-y-4">
+            {/* Riepiloghi per stato */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <StatoSummaryCard label="Totale maturate" value={riepiloghi.totMaturata} icon={<Euro className="h-4 w-4" />} />
+              <StatoSummaryCard label="Pagate" value={riepiloghi.perStato.pagata} icon={<CheckCircle2 className="h-4 w-4" />} accent="success" />
+              <StatoSummaryCard label="Da pagare" value={riepiloghi.perStato.da_pagare} icon={<Clock className="h-4 w-4" />} accent="warning" />
+              <StatoSummaryCard label="Parziali" value={riepiloghi.perStato.parziale} icon={<CircleDot className="h-4 w-4" />} accent="primary" />
+              <StatoSummaryCard label="Contestazione" value={riepiloghi.perStato.contestazione} icon={<Ban className="h-4 w-4" />} accent="destructive" />
+            </div>
 
-          {/* Yearly Summary Tab */}
-          <TabsContent value="riepilogo">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5" />
-                  Riepilogo Trimestrale {selectedYear}
-                </CardTitle>
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 space-y-0">
+                <div className="flex flex-wrap gap-2">
+                  {(["tutte", "pagata", "da_pagare", "parziale", "contestazione"] as const).map((s) => (
+                    <Button
+                      key={s}
+                      size="sm"
+                      variant={statoFilter === s ? "default" : "outline"}
+                      onClick={() => setStatoFilter(s)}
+                    >
+                      {s === "tutte" ? "Tutte" : STATO_CONFIG[s].label}
+                    </Button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={exportExcel}><Download className="h-4 w-4 mr-1" />Excel</Button>
+                  <Button size="sm" variant="outline" onClick={exportPDF}><Download className="h-4 w-4 mr-1" />PDF</Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/50">
-                        <TableHead>Azienda</TableHead>
-                        <TableHead className="text-center">Q1</TableHead>
-                        <TableHead className="text-center">Q2</TableHead>
-                        <TableHead className="text-center">Q3</TableHead>
-                        <TableHead className="text-center">Q4</TableHead>
-                        <TableHead className="text-right">Totale Annuo</TableHead>
+                      <TableRow>
+                        <SortableHead k="data" label="Data" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                        <SortableHead k="numero" label="N° doc" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                        <SortableHead k="aziendaNome" label="Azienda" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                        <SortableHead k="clienteNome" label="Cliente" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                        <SortableHead k="imponibile" label="Imponibile" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="right" />
+                        <SortableHead k="percentualeProvv" label="%" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
+                        <SortableHead k="provvigioneMaturata" label="Maturata" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="right" />
+                        <SortableHead k="provvigionePagata" label="Pagata" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="right" />
+                        <SortableHead k="statoProvvigione" label="Stato" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                        <SortableHead k="giorniRitardo" label="Rit." sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
+                        <TableHead className="w-10" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {provvigioniData.map((azienda) => (
-                        <TableRow key={azienda.id} className="hover:bg-muted/30">
-                          <TableCell className="font-medium">{azienda.nome}</TableCell>
-                          {azienda.quarterBreakdown.map((q) => (
-                            <TableCell key={q.trimestre} className="text-center">
-                              <div className="text-xs text-muted-foreground">
-                                {formatCurrency(q.fatturato)}
-                              </div>
-                              <div className="font-medium text-primary text-sm">
-                                {formatCurrency(q.provvigione)}
-                              </div>
-                              <div className="text-xs text-green-600">
-                                {q.pagati}/{q.ordini} pagati
-                              </div>
-                            </TableCell>
-                          ))}
-                          <TableCell className="text-right">
-                            <div className="text-xs text-muted-foreground">
-                              {formatCurrency(azienda.fatturatoAnnuale)}
-                            </div>
-                            <div className="font-bold text-primary">
-                              {formatCurrency(azienda.provvigioneAnnuale)}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {/* Totals Row */}
-                      <TableRow className="bg-muted/70 font-bold">
-                        <TableCell>TOTALE</TableCell>
-                        {["Q1", "Q2", "Q3", "Q4"].map((q) => {
-                          const qTotale = provvigioniData.reduce(
-                            (sum, a) => sum + (a.quarterBreakdown.find((qb) => qb.trimestre === q)?.provvigione || 0),
-                            0
-                          );
+                      {filteredTableRows.length === 0 ? (
+                        <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Nessuna riga per i filtri selezionati</TableCell></TableRow>
+                      ) : (
+                        filteredTableRows.map((r) => {
+                          const S = STATO_CONFIG[r.statoProvvigione];
                           return (
-                            <TableCell key={q} className="text-center text-primary">
-                              {formatCurrency(qTotale)}
-                            </TableCell>
+                            <TableRow key={r.id} className="hover:bg-muted/30">
+                              <TableCell className="whitespace-nowrap text-sm">{format(new Date(r.data), "dd/MM/yy")}</TableCell>
+                              <TableCell className="font-mono text-xs">{r.numero}</TableCell>
+                              <TableCell className="text-sm font-medium">{r.aziendaNome}</TableCell>
+                              <TableCell className="text-sm">{r.clienteNome}</TableCell>
+                              <TableCell className="text-right text-sm">{fmtEur(r.imponibile)}</TableCell>
+                              <TableCell className="text-center text-xs text-muted-foreground">{r.percentualeProvv}%</TableCell>
+                              <TableCell className="text-right text-sm font-semibold text-primary">{fmtEur(r.provvigioneMaturata)}</TableCell>
+                              <TableCell className="text-right text-sm text-success">{fmtEur(r.provvigionePagata)}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`gap-1 border ${S?.color}`}>
+                                  {S && <S.icon className="h-3 w-3" />}
+                                  {S?.label}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {r.giorniRitardo > 0 ? <Badge variant="destructive" className="text-xs">+{r.giorniRitardo}gg</Badge> : <span className="text-xs text-muted-foreground">—</span>}
+                              </TableCell>
+                              <TableCell>
+                                {r.source === "fattura" && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button size="icon" variant="ghost" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => openPayDialog(r)}>
+                                        <CheckCircle2 className="h-4 w-4 mr-2" />Gestisci pagamento
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </TableCell>
+                            </TableRow>
                           );
-                        })}
-                        <TableCell className="text-right text-primary text-lg">
-                          {formatCurrency(totali.provvigioniAnnuali)}
-                        </TableCell>
-                      </TableRow>
+                        })
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -712,14 +523,436 @@ const Provvigioni = () => {
             </Card>
           </TabsContent>
 
-          {/* Scadenziario Tab */}
+          {/* AZIENDE */}
+          <TabsContent value="aziende" className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {analytics.perAzienda.length === 0 ? (
+                <p className="text-muted-foreground col-span-full text-center py-8">Nessun dato</p>
+              ) : (
+                analytics.perAzienda.map((a) => (
+                  <Card key={a.id} className="hover-lift">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <CardTitle className="text-base truncate">{a.nome}</CardTitle>
+                          <CardDescription>{a.ordini} ordini · {a.clienti} clienti</CardDescription>
+                        </div>
+                        <Badge variant="outline" className="shrink-0">{a.incidenza.toFixed(0)}%</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Fatturato</p>
+                          <p className="font-semibold">{fmtEur(a.fatturato)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Provvigioni</p>
+                          <p className="font-semibold text-primary">{fmtEur(a.provvigioni)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Media ordine</p>
+                          <p className="font-medium">{fmtEur(a.mediaOrdine)}</p>
+                        </div>
+                      </div>
+                      <Progress value={a.incidenza} className="h-1.5" />
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          {/* CLIENTI */}
+          <TabsContent value="clienti" className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-3">
+              <ClientiList title="Top clienti" icon={<Trophy className="h-4 w-4 text-primary" />} clienti={analytics.perCliente.slice(0, 10)} badge="top" />
+              <ClientiList title="In calo / Inattivi" icon={<TrendingDown className="h-4 w-4 text-destructive" />} clienti={analytics.perCliente.filter((c) => c.giorniInattivo > 60).slice(0, 10)} badge="inattivi" />
+              <ClientiList title="In crescita" icon={<TrendingUp className="h-4 w-4 text-success" />} clienti={analytics.perCliente.filter((c) => c.giorniInattivo < 30).slice(0, 10)} badge="crescita" />
+            </div>
+          </TabsContent>
+
+          {/* AI INSIGHTS */}
+          <TabsContent value="ai" className="space-y-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" />Insights automatici</CardTitle>
+                <CardDescription>Analisi generate in tempo reale sui tuoi dati</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {analytics.insights.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-6">Nessun insight rilevante al momento.</p>
+                ) : (
+                  analytics.insights.map((ins, i) => {
+                    const colorMap = {
+                      positivo: "border-success/30 bg-success/5 text-success",
+                      attenzione: "border-destructive/30 bg-destructive/5 text-destructive",
+                      info: "border-primary/30 bg-primary/5 text-primary",
+                    };
+                    const IconMap = { positivo: TrendingUp, attenzione: AlertTriangle, info: Sparkles };
+                    const Icon = IconMap[ins.tipo];
+                    return (
+                      <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${colorMap[ins.tipo]}`}>
+                        <Icon className="h-4 w-4 mt-0.5 shrink-0" />
+                        <p className="text-sm text-foreground">{ins.testo}</p>
+                      </div>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* CALENDARIO */}
+          <TabsContent value="calendario">
+            <div className="grid gap-4 md:grid-cols-3">
+              <TimelineColumn title="In arrivo" icon={<Clock className="h-4 w-4 text-warning" />} items={analytics.filteredRows.filter((r) => r.statoProvvigione === "da_pagare" && r.dataPrevistaPagamento).slice(0, 20)} tone="warning" />
+              <TimelineColumn title="Scaduti" icon={<AlertTriangle className="h-4 w-4 text-destructive" />} items={analytics.filteredRows.filter((r) => r.statoProvvigione === "da_pagare" && r.giorniRitardo > 0).slice(0, 20)} tone="destructive" />
+              <TimelineColumn title="Ricevuti" icon={<CheckCircle2 className="h-4 w-4 text-success" />} items={analytics.filteredRows.filter((r) => r.statoProvvigione === "pagata").slice(0, 20)} tone="success" />
+            </div>
+          </TabsContent>
+
+          {/* SIMULATORE */}
+          <TabsContent value="simulatore">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Calculator className="h-5 w-5" />Simulatore guadagno</CardTitle>
+                  <CardDescription>Inserisci previsioni per stimare la provvigione totale</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Fatturato previsto (€)</Label>
+                    <Input type="number" value={simFatturato} onChange={(e) => setSimFatturato(e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Percentuale provvigione (%)</Label>
+                    <Input type="number" step="0.1" value={simPct} onChange={(e) => setSimPct(e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Bonus (€)</Label>
+                      <Input type="number" value={simBonus} onChange={(e) => setSimBonus(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Premi (€)</Label>
+                      <Input type="number" value={simPremi} onChange={(e) => setSimPremi(e.target.value)} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-primary/40 bg-gradient-to-br from-primary/10 to-card">
+                <CardHeader>
+                  <CardTitle>Risultato</CardTitle>
+                  <CardDescription>Stima totale del guadagno</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-center py-6">
+                    <p className="text-sm text-muted-foreground mb-2">Guadagno stimato</p>
+                    <p className="text-5xl font-bold text-primary">{fmtEur2(simTotale)}</p>
+                  </div>
+                  <div className="space-y-1 text-sm border-t pt-4">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Provvigione base:</span><span>{fmtEur2((Number(simFatturato) * Number(simPct)) / 100)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Bonus:</span><span>{fmtEur2(Number(simBonus))}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Premi:</span><span>{fmtEur2(Number(simPremi))}</span></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* BONUS */}
+          <TabsContent value="bonus">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5 text-warning" />Premi &amp; Bonus</CardTitle>
+                <CardDescription>Traccia i tuoi obiettivi e bonus (sezione in evoluzione)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12 text-muted-foreground">
+                  <Trophy className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Nessun bonus configurato.</p>
+                  <p className="text-xs mt-1">Presto potrai definire premi trimestrali, annuali e contest commerciali.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="scadenziario">
             <ScadenziarioTab />
           </TabsContent>
         </Tabs>
       </div>
+
+      <PagamentoProvvigioneDialog
+        fattura={payDialog.fattura}
+        open={payDialog.open}
+        onOpenChange={(o) => setPayDialog((p) => ({ ...p, open: o }))}
+      />
     </MainLayout>
   );
 };
+
+// ============= SUB-COMPONENTS =============
+
+function PeriodoSelector({ value, onChange }: { value: PeriodoFilter; onChange: (p: PeriodoFilter) => void }) {
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
+  const [open, setOpen] = useState(false);
+  const label =
+    value.tipo === "tutti" ? "Sempre" :
+    value.tipo === "anno" ? `Anno ${value.year}` :
+    value.tipo === "trimestre" ? `Q${value.quarter} ${value.year}` :
+    `${["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"][value.month]} ${value.year}`;
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="gap-2">
+          <CalendarClock className="h-4 w-4" />{label}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-72 p-3" align="start">
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Tipo</Label>
+            <div className="grid grid-cols-4 gap-1 mt-1">
+              {(["mese","trimestre","anno","tutti"] as const).map((t) => (
+                <Button key={t} size="sm" variant={value.tipo === t ? "default" : "outline"} className="h-7 text-xs capitalize" onClick={() => {
+                  if (t === "tutti") onChange({ tipo: "tutti" });
+                  else if (t === "anno") onChange({ tipo: "anno", year: currentYear });
+                  else if (t === "mese") onChange({ tipo: "mese", year: currentYear, month: new Date().getMonth() });
+                  else onChange({ tipo: "trimestre", year: currentYear, quarter: (Math.floor(new Date().getMonth() / 3) + 1) as any });
+                }}>{t}</Button>
+              ))}
+            </div>
+          </div>
+          {value.tipo !== "tutti" && (
+            <div>
+              <Label className="text-xs">Anno</Label>
+              <div className="flex gap-1 mt-1 flex-wrap">
+                {years.map((y) => (
+                  <Button key={y} size="sm" variant={value.year === y ? "default" : "outline"} className="h-7 text-xs" onClick={() => onChange({ ...value, year: y })}>{y}</Button>
+                ))}
+              </div>
+            </div>
+          )}
+          {value.tipo === "trimestre" && (
+            <div>
+              <Label className="text-xs">Trimestre</Label>
+              <div className="grid grid-cols-4 gap-1 mt-1">
+                {([1,2,3,4] as const).map((q) => (
+                  <Button key={q} size="sm" variant={value.quarter === q ? "default" : "outline"} className="h-7 text-xs" onClick={() => onChange({ ...value, quarter: q })}>Q{q}</Button>
+                ))}
+              </div>
+            </div>
+          )}
+          {value.tipo === "mese" && (
+            <div>
+              <Label className="text-xs">Mese</Label>
+              <div className="grid grid-cols-4 gap-1 mt-1">
+                {["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"].map((m, i) => (
+                  <Button key={i} size="sm" variant={value.month === i ? "default" : "outline"} className="h-7 text-xs" onClick={() => onChange({ ...value, month: i })}>{m}</Button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function EconomicoCell({ label, value, accent, big }: { label: string; value: number; accent?: string; big?: boolean }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className={`font-bold ${big ? "text-3xl" : "text-xl"} ${accent || "text-foreground"}`}>{fmtEur(value)}</p>
+    </div>
+  );
+}
+
+function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: "success" | "warning" }) {
+  const accentClass = accent === "success" ? "text-success" : accent === "warning" ? "text-warning" : "text-primary";
+  return (
+    <Card className="hover-lift">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <span className={`${accentClass}`}>{icon}</span>
+        </div>
+        <p className="text-lg font-bold truncate">{value}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function GrowthCard({ label, value }: { label: string; value: number }) {
+  const isPos = value > 0;
+  const isNeg = value < 0;
+  const Icon = isPos ? ArrowUpRight : isNeg ? ArrowDownRight : Minus;
+  const color = isPos ? "text-success" : isNeg ? "text-destructive" : "text-muted-foreground";
+  return (
+    <Card className="hover-lift">
+      <CardContent className="p-4">
+        <p className="text-xs text-muted-foreground mb-2">{label}</p>
+        <div className={`flex items-center gap-1 ${color}`}>
+          <Icon className="h-5 w-5" />
+          <p className="text-lg font-bold">{value > 0 ? "+" : ""}{value.toFixed(1)}%</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ObjectiveCard({ target, current, pct }: { target: number; current: number; pct: number }) {
+  return (
+    <Card className="hover-lift col-span-2 md:col-span-1">
+      <CardContent className="p-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">Obiettivo mensile</p>
+          <Target className="h-4 w-4 text-primary" />
+        </div>
+        <p className="text-lg font-bold">{pct.toFixed(0)}%</p>
+        <Progress value={Math.min(100, pct)} className="h-1.5" />
+        <p className="text-xs text-muted-foreground">{fmtEur(current)} / {fmtEur(target)}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ChartCard({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">{icon}{title}</CardTitle>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
+  );
+}
+
+function Heatmap({ data }: { data: { anno: number; mesi: number[] }[] }) {
+  const maxVal = Math.max(1, ...data.flatMap((d) => d.mesi));
+  const mesi = ["G","F","M","A","M","G","L","A","S","O","N","D"];
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-[60px_repeat(12,1fr)] gap-1 text-xs text-muted-foreground text-center">
+        <div />
+        {mesi.map((m, i) => <div key={i}>{m}</div>)}
+      </div>
+      {data.map((row) => (
+        <div key={row.anno} className="grid grid-cols-[60px_repeat(12,1fr)] gap-1">
+          <div className="text-xs font-medium flex items-center">{row.anno}</div>
+          {row.mesi.map((v, i) => {
+            const intensity = v / maxVal;
+            return (
+              <div
+                key={i}
+                title={fmtEur(v)}
+                className="aspect-square rounded"
+                style={{ background: `hsl(var(--primary) / ${Math.max(0.05, intensity * 0.9).toFixed(2)})` }}
+              />
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function StatoSummaryCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent?: "success" | "warning" | "primary" | "destructive" }) {
+  const map = {
+    success: "text-success",
+    warning: "text-warning",
+    primary: "text-primary",
+    destructive: "text-destructive",
+  } as const;
+  const c = accent ? map[accent] : "text-foreground";
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className={`flex items-center justify-between mb-1 ${c}`}>
+          {icon}
+          <span className="text-xs text-muted-foreground">{label}</span>
+        </div>
+        <p className={`text-lg font-bold ${c}`}>{fmtEur(value)}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SortableHead({ k, label, sortKey, sortDir, onSort, align }: { k: SortKey; label: string; sortKey: SortKey; sortDir: "asc" | "desc"; onSort: (k: SortKey) => void; align?: "right" | "center" }) {
+  return (
+    <TableHead className={align === "right" ? "text-right" : align === "center" ? "text-center" : ""}>
+      <button onClick={() => onSort(k)} className="hover:text-foreground transition-colors flex items-center gap-1">
+        {label}
+        {sortKey === k && (sortDir === "asc" ? "↑" : "↓")}
+      </button>
+    </TableHead>
+  );
+}
+
+function ClientiList({ title, icon, clienti, badge }: { title: string; icon: React.ReactNode; clienti: any[]; badge: "top" | "inattivi" | "crescita" }) {
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">{icon}{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {clienti.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-4">Nessun cliente</p>
+        ) : (
+          clienti.map((c) => (
+            <div key={c.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/40 transition">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{c.nome}</p>
+                <p className="text-xs text-muted-foreground">{c.ordini} ordini · {c.giorniInattivo}gg fa</p>
+              </div>
+              <div className="text-right shrink-0 ml-2">
+                <p className="text-sm font-semibold">{fmtEur(c.fatturato)}</p>
+                <p className="text-xs text-primary">{fmtEur(c.provvigioni)}</p>
+              </div>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function TimelineColumn({ title, icon, items, tone }: { title: string; icon: React.ReactNode; items: ProvvigioneRow[]; tone: "warning" | "destructive" | "success" }) {
+  const borderMap = { warning: "border-l-warning", destructive: "border-l-destructive", success: "border-l-success" };
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">{icon}{title} <Badge variant="outline">{items.length}</Badge></CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
+        {items.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-4">Nessun elemento</p>
+        ) : (
+          items.map((r) => (
+            <div key={r.id} className={`p-3 rounded border-l-2 ${borderMap[tone]} bg-muted/20`}>
+              <div className="flex justify-between items-start gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{r.aziendaNome}</p>
+                  <p className="text-xs text-muted-foreground truncate">{r.clienteNome} · {r.numero}</p>
+                </div>
+                <p className="text-sm font-semibold text-primary shrink-0">{fmtEur(r.provvigioneMaturata)}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {r.dataEffettivaPagamento ? `Pagato ${format(new Date(r.dataEffettivaPagamento), "dd/MM/yy")}` :
+                 r.dataPrevistaPagamento ? `Scadenza ${format(new Date(r.dataPrevistaPagamento), "dd/MM/yy")}` :
+                 format(new Date(r.data), "dd/MM/yy")}
+                {r.giorniRitardo > 0 && <span className="text-destructive ml-2">+{r.giorniRitardo}gg</span>}
+              </p>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default Provvigioni;

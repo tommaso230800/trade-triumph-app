@@ -1,99 +1,107 @@
-# Caricamento Multi-File Ordini con AI
 
-## Obiettivo
-Permettere il caricamento simultaneo di più file (PDF, immagini, Excel) per generare automaticamente più ordini distinti, con revisione obbligatoria prima del salvataggio.
+# Redesign Pagina Provvigioni — Centro di Controllo Economico
 
-## Regola d'oro
-**1 file = 1 ordine separato** per default. L'unione richiede conferma manuale esplicita.
+Trasformo `Provvigioni` da elenco fatture in una dashboard professionale in stile Notion + Stripe + Linear, coerente col tema dark del CRM (Space Grotesk + DM Sans, semantic tokens).
 
----
+## 1. Database — estensione `scadenziario_fatture`
 
-## Fase 1 — Backend: edge function unificata `parse-order-multi`
+Nuova migration che aggiunge (senza rompere campi esistenti):
 
-Nuova edge function che riceve un singolo file (PDF/immagine/Excel/testo) e restituisce uno o più ordini rilevati:
+- `stato_provvigione` TEXT — enum: `da_pagare` | `pagata` | `parziale` | `contestazione` (default `da_pagare`)
+- `importo_provvigione_pagata` NUMERIC default 0
+- `metodo_pagamento_provvigione` TEXT
+- `note_provvigione` TEXT
+- `data_pagamento_provvigione` DATE (rinomina logica di `data_incasso_provvigione`, mantenuto per compat)
 
-```json
-{
-  "orders": [
-    {
-      "cliente_nome": "...",
-      "azienda_nome": "...",
-      "tipo_pagamento": "...",
-      "sconto_pagamento_percentuale": 0,
-      "sconto_merce": 0,
-      "imponibile_totale": 0,
-      "note": "...",
-      "righe": [{ "codice_prodotto", "nome_prodotto", "quantita_cartoni", "prezzo_per_cartone", "sc1/sc2/sc3", "is_omaggio", "confidence": "high|medium|low", "warning": "..." }],
-      "warnings": ["prezzo diverso da listino", "..."],
-      "document_type": "order|price_list|promo|note|attachment"
-    }
-  ]
-}
+Backfill: righe con `provvigione_incassata = true` → `stato_provvigione = 'pagata'` e `importo_provvigione_pagata = provvigione_calcolata`.
+
+## 2. Struttura pagina (`src/pages/Provvigioni.tsx`)
+
+Layout a sezioni verticali con sticky filter bar in alto:
+
+```text
+┌────────────────────────────────────────────────────────┐
+│ FILTRI STICKY: Azienda ▾ | Periodo ▾ | Cliente ▾ | 🔍  │
+├────────────────────────────────────────────────────────┤
+│ CONTO ECONOMICO PERSONALE (hero band)                  │
+│  Oggi | Mese | Anno | Media/gg | Previsione fine mese  │
+├────────────────────────────────────────────────────────┤
+│ 10 KPI CARDS (grid 5×2 desktop, 2×5 mobile)            │
+├────────────────────────────────────────────────────────┤
+│ Tabs: Overview | Provvigioni | Aziende | Clienti |     │
+│       AI Insights | Calendario | Simulatore | Bonus    │
+└────────────────────────────────────────────────────────┘
 ```
 
-Il prompt AI deve:
-- Rilevare se un file contiene 1 o più ordini distinti (clienti diversi) e separarli.
-- Distinguere tra ordine vero, listino, promo, nota commerciale (campo `document_type`).
-- Assegnare un `confidence` per ogni riga e segnalare i dubbi in `warning`.
-- Usare `google/gemini-2.5-pro` per immagini/PDF (precisione su prezzi/quantità).
+### Tab Overview — Grafici (Recharts)
+- Andamento provvigioni 24 mesi (area chart)
+- Fatturato vs Provvigioni (combo bar+line)
+- Ripartizione provvigioni per azienda (pie/donut)
+- Ripartizione per categoria prodotto (bar orizzontale)
+- Heatmap mesi migliori (griglia colorata custom)
+- Andamento giornaliero mese corrente + linea previsione fine mese
 
-Modelli: `google/gemini-2.5-pro` (default) per qualità; il modello legge PDF e immagini direttamente.
-Per Excel: parsing client-side con `xlsx` → testo → AI.
+### Tab Provvigioni — Tabella principale
+Filtri rapidi a pill: `Tutte` `Pagate` `Da pagare` `Parziali` `Contestazione`.
+Colonne ordinabili + ricerca istantanea:
+data · n° doc · azienda · cliente · categoria cliente · categoria prodotto · imponibile · sconti · netto · % provv · provv maturata · provv pagata · badge stato · data prevista · data effettiva · gg ritardo · note.
+Azioni riga: menu con `Segna pagata`, `Segna parziale`, `Contestazione`, `Modifica note`.
+Export Excel + PDF (xlsx già in progetto, jsPDF via CDN).
 
-## Fase 2 — Frontend: nuovo dialog `MultiFileImportDialog`
+### Tab Aziende
+Card per mandante: fatturato, provvigioni, media ordine, n° clienti, n° ordini, crescita %, sparkline, % incidenza sul totale.
 
-Sostituisce/affianca l'attuale `ImportPDFDialog`. Flusso:
+### Tab Clienti
+Classifica top clienti + sezioni auto: **In crescita** / **In calo** / **Inattivi** con badge Top Client.
 
-1. **Step 1 — Upload**: dropzone multi-file (PDF, JPG, PNG, HEIC, XLSX, XLS). Mostra elenco file in coda con stato (in attesa, analisi, completato, errore).
-2. **Step 2 — Analisi**: ogni file viene processato in parallelo (max 3 alla volta). Spinner per file. Errori isolati per file.
-3. **Step 3 — Schermata file caricati**: tabella riepilogo
-   ```
-   File | Tipo rilevato | Cliente | Ordini rilevati | Azione
-   ```
-   - Azioni per file: Modifica / Dividi in più ordini / Unisci con altro / Marca come allegato / Elimina.
-   - Per file con più ordini AI-rilevati: mostra "2 ordini rilevati, conferma divisione".
-4. **Step 4 — Revisione ordini**: per ogni ordine, card espandibile con:
-   - Selezione/auto-match cliente + azienda (searchable-select, evidenzia se non trovato).
-   - Tipo pagamento, sconto, sconto merce.
-   - Tabella righe: prodotto (auto-match + crea nuovo), quantità cartoni, prezzo, sc1/sc2/sc3, omaggio, totale calcolato.
-   - **Badge warning** per righe a bassa confidence o prezzo diverso da listino/storico cliente.
-   - Possibilità di eliminare righe, aggiungerne manualmente.
-   - Stato ordine: `bozza` → `da confermare` → `confermato`.
-5. **Step 5 — Salvataggio**: bottone "Salva tutti gli ordini confermati" → crea N ordini distinti via `useCreateOrdine` + `ordini_righe`.
+### Tab AI Insights
+Chiamata a `analyze-kpi` edge function (Lovable AI, `openai/gpt-5.5`) con payload aggregato: genera bullet insight tipo "Cliente X -32%", "Mandante Y +18%", "Previsione mese €XXXX", "Attenzione provvigioni Z in calo".
 
-## Fase 3 — Validazione intelligente client-side
+### Tab Calendario pagamenti
+Timeline verticale con 3 colonne colorate: in arrivo (giallo), scaduti (rosso), ricevuti (verde).
 
-Hook `useOrderValidation` che per ogni riga ordine:
-- Confronta `prezzo_per_cartone` con `prodotti.prezzo_listino` → warning se differenza > 5%.
-- Confronta con ultimo prezzo applicato a quel cliente (da `ordini_righe` storiche) → warning se diverso.
-- Cerca prodotti simili per fuzzy match nome se non trovato codice.
-- Segnala unità di misura ambigue (pallet vs cartoni vs pezzi).
+### Tab Simulatore
+Form: fatturato previsto, % provvigione, bonus, premi → risultato live in card grande.
 
-## Fase 4 — UX
+### Tab Bonus
+Elenco premi/bonus trimestrali/annuali/contest con progress bar (statico per ora, alimentabile in futuro).
 
-- Toast non bloccanti per ogni file processato.
-- Bottone "Carica file" prominente in `src/pages/Ordini.tsx` accanto a quello esistente.
-- Mobile-friendly: card stack invece di tabella su viewport < 768px.
-- Nessun salvataggio automatico: solo bottone esplicito "Conferma e salva".
+## 3. Nuovo dialog `PagamentoProvvigioneDialog`
 
----
+Apre da azione riga → campi: stato (radio 4 opzioni), data pagamento, importo pagato, metodo (contanti/bonifico/assegno/compensazione), note. Salva via mutation su `scadenziario_fatture`.
 
-## File da creare/modificare
+## 4. Componenti nuovi
 
-**Nuovi:**
-- `supabase/functions/parse-order-multi/index.ts` — edge function unificata
-- `src/components/ordini/MultiFileImportDialog.tsx` — wizard multi-step
-- `src/components/ordini/OrderReviewCard.tsx` — card revisione singolo ordine
-- `src/hooks/useOrderValidation.tsx` — validazioni intelligenti
+- `src/components/provvigioni/ProvvigioniFilterBar.tsx` — filtri sticky con contesto condiviso
+- `src/components/provvigioni/ContoEconomicoHero.tsx`
+- `src/components/provvigioni/ProvvigioniKPIGrid.tsx`
+- `src/components/provvigioni/ProvvigioniCharts.tsx` (contiene i 6 grafici)
+- `src/components/provvigioni/ProvvigioniTable.tsx` con sort/search/export
+- `src/components/provvigioni/PagamentoProvvigioneDialog.tsx`
+- `src/components/provvigioni/StatoProvvigioneBadge.tsx`
+- `src/components/provvigioni/AnalisiAziendeTab.tsx`
+- `src/components/provvigioni/AnalisiClientiTab.tsx`
+- `src/components/provvigioni/AIInsightsTab.tsx`
+- `src/components/provvigioni/CalendarioPagamentiTab.tsx`
+- `src/components/provvigioni/SimulatoreTab.tsx`
+- `src/components/provvigioni/BonusTab.tsx`
 
-**Modificati:**
-- `src/pages/Ordini.tsx` — aggiunge bottone "Importa file"
-- `supabase/config.toml` — registra nuova function con `verify_jwt = false`
+## 5. Hook
 
----
+- Estendo `useScadenziario` con mutation `aggiornaStatoProvvigione({id, stato, importo_pagato, data_pagamento, metodo, note})`.
+- Nuovo `useProvvigioniAnalytics(filters)` che aggrega ordini/fatture per KPI, grafici, ripartizioni, previsioni.
 
-## Note tecniche
-- File grandi: limitare a 10MB per file, max 10 file per sessione.
-- HEIC: convertire client-side o segnalare unsupported.
-- Excel: estrarre testo con `xlsx` e inviarlo come testo all'AI.
-- Stato wizard tenuto in memoria (no persistenza DB fino a salvataggio).
+## 6. Dettagli tecnici
+
+- Tutto reattivo ai filtri via context `ProvvigioniFiltersContext`.
+- Previsione fine mese: media giornaliera provvigioni MTD × giorni residui.
+- Crescita MoM/YoY calcolate da `data_incasso` (fallback `data_fattura`).
+- Export Excel: usa `xlsx` già installato. Export PDF: `jspdf` + `jspdf-autotable` (nuova dep).
+- Design tokens esistenti, no colori hardcoded. Badge stato: `success`/`warning`/`destructive`/`muted`.
+- Animazioni `animate-rise-in` sulle card, hover-lift sulle righe tabella.
+- Zero modifiche a Ordini/Clienti/altre pagine.
+
+## Fuori scope (esplicitamente esclusi)
+- Sezione Obiettivi (rimandata)
+- Multi-agente / colonne agente e zona (mono-agente)
+- Modifiche allo schema oltre `scadenziario_fatture`

@@ -1649,11 +1649,15 @@ export type Database = {
           data_scadenza: string
           id: string
           importo: number
+          importo_provvigione_pagata: number
+          metodo_pagamento_provvigione: string | null
+          note_provvigione: string | null
           numero_fattura: string
           percentuale_provvigione: number
           provvigione_calcolata: number
           provvigione_incassata: boolean
           stato: string
+          stato_provvigione: string
           trimestre_provvigione: string | null
           updated_at: string
           user_id: string
@@ -1670,11 +1674,15 @@ export type Database = {
           data_scadenza: string
           id?: string
           importo?: number
+          importo_provvigione_pagata?: number
+          metodo_pagamento_provvigione?: string | null
+          note_provvigione?: string | null
           numero_fattura: string
           percentuale_provvigione?: number
           provvigione_calcolata?: number
           provvigione_incassata?: boolean
           stato?: string
+          stato_provvigione?: string
           trimestre_provvigione?: string | null
           updated_at?: string
           user_id: string
@@ -1691,11 +1699,15 @@ export type Database = {
           data_scadenza?: string
           id?: string
           importo?: number
+          importo_provvigione_pagata?: number
+          metodo_pagamento_provvigione?: string | null
+          note_provvigione?: string | null
           numero_fattura?: string
           percentuale_provvigione?: number
           provvigione_calcolata?: number
           provvigione_incassata?: boolean
           stato?: string
+          stato_provvigione?: string
           trimestre_provvigione?: string | null
           updated_at?: string
           user_id?: string
