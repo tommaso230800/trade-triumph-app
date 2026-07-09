@@ -428,18 +428,19 @@ const Provvigioni = () => {
           {/* PROVVIGIONI TABLE */}
           <TabsContent value="provvigioni" className="space-y-4">
             {/* Riepiloghi per stato */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               <StatoSummaryCard label="Totale maturate" value={riepiloghi.totMaturata} icon={<Euro className="h-4 w-4" />} />
               <StatoSummaryCard label="Pagate" value={riepiloghi.perStato.pagata} icon={<CheckCircle2 className="h-4 w-4" />} accent="success" />
-              <StatoSummaryCard label="Da pagare" value={riepiloghi.perStato.da_pagare} icon={<Clock className="h-4 w-4" />} accent="warning" />
+              <StatoSummaryCard label="Non pagate" value={riepiloghi.perStato.da_pagare} icon={<Clock className="h-4 w-4" />} accent="warning" />
+              <StatoSummaryCard label="Scadute" value={riepiloghi.perStato.scaduta} icon={<AlertTriangle className="h-4 w-4" />} accent="destructive" />
               <StatoSummaryCard label="Parziali" value={riepiloghi.perStato.parziale} icon={<CircleDot className="h-4 w-4" />} accent="primary" />
-              <StatoSummaryCard label="Contestazione" value={riepiloghi.perStato.contestazione} icon={<Ban className="h-4 w-4" />} accent="destructive" />
+              <StatoSummaryCard label="Contestazione" value={riepiloghi.perStato.contestazione} icon={<Ban className="h-4 w-4" />} accent="purple" />
             </div>
 
             <Card>
               <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 space-y-0">
                 <div className="flex flex-wrap gap-2">
-                  {(["tutte", "pagata", "da_pagare", "parziale", "contestazione"] as const).map((s) => (
+                  {(["tutte", "pagata", "da_pagare", "scaduta", "parziale", "contestazione"] as const).map((s) => (
                     <Button
                       key={s}
                       size="sm"
