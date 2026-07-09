@@ -421,7 +421,7 @@ const Provvigioni = () => {
             </div>
 
             <ChartCard title="Heatmap mesi migliori" icon={<Sparkles className="h-4 w-4" />}>
-              <Heatmap data={analytics.heatmap} />
+              <Heatmap data={analytics.heatmap} obiettivo={analytics.kpi.obiettivoMensile} onCellClick={(y, m) => setMeseDetail({ open: true, detail: analytics.getMonthlyDetail(y, m) })} />
             </ChartCard>
           </TabsContent>
 
