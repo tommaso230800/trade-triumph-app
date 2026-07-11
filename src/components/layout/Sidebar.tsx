@@ -14,8 +14,6 @@ import {
   Wallet,
   Tag,
   ChevronDown,
-  Target,
-  Zap,
   ClipboardList,
   Bot,
   StickyNote,
