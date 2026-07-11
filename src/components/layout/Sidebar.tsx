@@ -14,12 +14,11 @@ import {
   Wallet,
   Tag,
   ChevronDown,
-  Target,
-  Zap,
   ClipboardList,
   Bot,
   StickyNote,
   Brain,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -67,9 +66,7 @@ const navigation: NavItem[] = [
       { name: "INDIPENDENTE", href: "/clienti/consorzio/indipendente" },
     ]
   },
-  { name: "Trattative", href: "/trattative", icon: Target },
-  
-  { name: "Assistente Trattativa", href: "/assistente-trattativa", icon: Zap },
+  { name: "Assistente AI", href: "/assistente-ai", icon: Sparkles },
   { name: "Prepara Visita", href: "/prepara-visita", icon: Brain },
   { name: "AI Commerciale", href: "/ai-commerciale", icon: Bot },
 ];

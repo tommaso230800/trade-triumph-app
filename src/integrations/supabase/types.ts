@@ -14,6 +14,169 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_activity_log: {
+        Row: {
+          azioni_confermate: Json | null
+          azioni_proposte: Json | null
+          created_at: string
+          id: string
+          input_originale: string
+          messaggio_errore: string | null
+          risultato_analisi: Json | null
+          stato: string
+          user_id: string
+        }
+        Insert: {
+          azioni_confermate?: Json | null
+          azioni_proposte?: Json | null
+          created_at?: string
+          id?: string
+          input_originale: string
+          messaggio_errore?: string | null
+          risultato_analisi?: Json | null
+          stato?: string
+          user_id: string
+        }
+        Update: {
+          azioni_confermate?: Json | null
+          azioni_proposte?: Json | null
+          created_at?: string
+          id?: string
+          input_originale?: string
+          messaggio_errore?: string | null
+          risultato_analisi?: Json | null
+          stato?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_attivita: {
+        Row: {
+          azienda_id: string | null
+          cliente_id: string | null
+          created_at: string
+          data_attivita: string
+          id: string
+          priorita: string
+          prossima_azione: string | null
+          riepilogo: string
+          stato: string
+          tipo_attivita: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          data_attivita?: string
+          id?: string
+          priorita?: string
+          prossima_azione?: string | null
+          riepilogo: string
+          stato?: string
+          tipo_attivita?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          data_attivita?: string
+          id?: string
+          priorita?: string
+          prossima_azione?: string | null
+          riepilogo?: string
+          stato?: string
+          tipo_attivita?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_attivita_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_attivita_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_promemoria: {
+        Row: {
+          attivita_id: string | null
+          azienda_id: string | null
+          cliente_id: string | null
+          created_at: string
+          data_promemoria: string
+          descrizione: string | null
+          id: string
+          priorita: string
+          stato: string
+          titolo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attivita_id?: string | null
+          azienda_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          data_promemoria: string
+          descrizione?: string | null
+          id?: string
+          priorita?: string
+          stato?: string
+          titolo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attivita_id?: string | null
+          azienda_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          data_promemoria?: string
+          descrizione?: string | null
+          id?: string
+          priorita?: string
+          stato?: string
+          titolo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_promemoria_attivita_id_fkey"
+            columns: ["attivita_id"]
+            isOneToOne: false
+            referencedRelation: "ai_attivita"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_promemoria_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_promemoria_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aziende: {
         Row: {
           citta: string | null

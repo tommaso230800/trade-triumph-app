@@ -41,8 +41,6 @@ import {
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
-import { ClienteScoringCard } from "@/components/trattativa/ClienteScoringCard";
-import { BudgetPromoCalculator } from "@/components/trattativa/BudgetPromoCalculator";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -297,22 +295,8 @@ const ClienteDettaglio = () => {
           </div>
         </div>
 
-        {/* Scoring e Budget Promo */}
-        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-          <ClienteScoringCard
-            fatturato={cliente.fatturato || 0}
-            fatturatoTarget={cliente.fatturato_target || 10000}
-            nPromo={cliente.n_promo_concesse || 0}
-            crescitaPercentuale={0}
-            nomeCliente={cliente.nome}
-          />
-          <BudgetPromoCalculator
-            clienteFatturato={cliente.fatturato || 0}
-            clienteBudgetPercentuale={cliente.budget_promo_percentuale || 5}
-            clienteCostoPromoGiaConcesse={cliente.costo_promo_totale || 0}
-            clienteScontoMaxPolicy={cliente.sconto_max_policy || 15}
-          />
-        </div>
+
+
 
         {/* Frequenza Riordino per Azienda */}
         {reorderData.length > 0 && (
