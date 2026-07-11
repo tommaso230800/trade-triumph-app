@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.parse-order-multi]
 verify_jwt = false
+
+[functions.analyze-note]
+verify_jwt = false
