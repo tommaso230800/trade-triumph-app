@@ -41,8 +41,6 @@ import {
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
-import { ClienteScoringCard } from "@/components/trattativa/ClienteScoringCard";
-import { BudgetPromoCalculator } from "@/components/trattativa/BudgetPromoCalculator";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
