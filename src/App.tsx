@@ -18,11 +18,8 @@ import Ordini from "./pages/Ordini";
 import KPI from "./pages/KPI";
 import Provvigioni from "./pages/Provvigioni";
 import Canvass from "./pages/Canvass";
-import AssistenteTrattativa from "./pages/AssistenteTrattativa";
-
+import AssistenteAI from "./pages/AssistenteAI";
 import AssistenteAICommerciale from "./pages/AssistenteAICommerciale";
-import Trattative from "./pages/Trattative";
-import TrattativaDettaglio from "./pages/TrattativaDettaglio";
 import Impostazioni from "./pages/Impostazioni";
 import NotePage from "./pages/Note";
 import PreparaVisita from "./pages/PreparaVisita";
@@ -33,7 +30,7 @@ const App = () => (
     client={queryClient}
     persistOptions={{
       persister: persister!,
-      maxAge: 1000 * 60 * 60 * 24, // 24h
+      maxAge: 1000 * 60 * 60 * 24,
       buster: "v2",
     }}
   >
@@ -56,11 +53,8 @@ const App = () => (
               <Route path="/kpi" element={<KPI />} />
               <Route path="/provvigioni" element={<Provvigioni />} />
               <Route path="/canvass" element={<Canvass />} />
-              <Route path="/assistente-trattativa" element={<AssistenteTrattativa />} />
-              
+              <Route path="/assistente-ai" element={<AssistenteAI />} />
               <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
-              <Route path="/trattative" element={<Trattative />} />
-              <Route path="/trattative/:id" element={<TrattativaDettaglio />} />
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="/note" element={<NotePage />} />
               <Route path="/prepara-visita" element={<PreparaVisita />} />
