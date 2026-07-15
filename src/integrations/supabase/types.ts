@@ -1113,79 +1113,109 @@ export type Database = {
           aliquota: number | null
           anomalia_note: string | null
           anomalia_stato: string | null
+          azione_consigliata: string | null
           cliente_codice: string | null
           cliente_id: string | null
           cliente_nome: string | null
           correzioni: Json | null
           created_at: string
+          crm_only: boolean
           data_riga: string | null
           descrizione: string | null
+          esito_economico: string | null
           estratto_id: string
           id: string
           imponibile: number | null
           match_candidates: Json | null
           match_score: number | null
           match_status: string
+          motivo: string | null
           note: string | null
           numero_fattura: string | null
           numero_ordine: string | null
           ordine_id: string | null
+          ordine_snapshot: Json | null
           provvigione: number | null
+          score_breakdown: Json | null
           tipo_movimento: string | null
           updated_at: string
           user_id: string
+          verificata: boolean
+          verificata_at: string | null
+          verificata_by: string | null
+          verificata_note: string | null
         }
         Insert: {
           aliquota?: number | null
           anomalia_note?: string | null
           anomalia_stato?: string | null
+          azione_consigliata?: string | null
           cliente_codice?: string | null
           cliente_id?: string | null
           cliente_nome?: string | null
           correzioni?: Json | null
           created_at?: string
+          crm_only?: boolean
           data_riga?: string | null
           descrizione?: string | null
+          esito_economico?: string | null
           estratto_id: string
           id?: string
           imponibile?: number | null
           match_candidates?: Json | null
           match_score?: number | null
           match_status?: string
+          motivo?: string | null
           note?: string | null
           numero_fattura?: string | null
           numero_ordine?: string | null
           ordine_id?: string | null
+          ordine_snapshot?: Json | null
           provvigione?: number | null
+          score_breakdown?: Json | null
           tipo_movimento?: string | null
           updated_at?: string
           user_id: string
+          verificata?: boolean
+          verificata_at?: string | null
+          verificata_by?: string | null
+          verificata_note?: string | null
         }
         Update: {
           aliquota?: number | null
           anomalia_note?: string | null
           anomalia_stato?: string | null
+          azione_consigliata?: string | null
           cliente_codice?: string | null
           cliente_id?: string | null
           cliente_nome?: string | null
           correzioni?: Json | null
           created_at?: string
+          crm_only?: boolean
           data_riga?: string | null
           descrizione?: string | null
+          esito_economico?: string | null
           estratto_id?: string
           id?: string
           imponibile?: number | null
           match_candidates?: Json | null
           match_score?: number | null
           match_status?: string
+          motivo?: string | null
           note?: string | null
           numero_fattura?: string | null
           numero_ordine?: string | null
           ordine_id?: string | null
+          ordine_snapshot?: Json | null
           provvigione?: number | null
+          score_breakdown?: Json | null
           tipo_movimento?: string | null
           updated_at?: string
           user_id?: string
+          verificata?: boolean
+          verificata_at?: string | null
+          verificata_by?: string | null
+          verificata_note?: string | null
         }
         Relationships: [
           {
