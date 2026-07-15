@@ -521,6 +521,13 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-8">
+                <input
+                  type="checkbox"
+                  checked={visible.filter((r) => !r.crm_only && !r.pagata).every((r) => selected.has(r.id)) && visible.filter((r) => !r.crm_only && !r.pagata).length > 0}
+                  onChange={(e) => e.target.checked ? selectAllVisible() : clearSel()}
+                />
+              </TableHead>
               <TableHead className="w-6"></TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Fattura PDF</TableHead>
