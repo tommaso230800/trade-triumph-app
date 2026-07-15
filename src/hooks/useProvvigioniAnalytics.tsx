@@ -3,6 +3,7 @@ import { useOrdini } from "@/hooks/useOrdini";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
 import { useScadenziario, ScadenziarioFattura } from "@/hooks/useScadenziario";
+import { useMovimentiProvvigione } from "@/hooks/useRiconciliazione";
 
 export type PeriodoFilter =
   | { tipo: "mese"; year: number; month: number }
