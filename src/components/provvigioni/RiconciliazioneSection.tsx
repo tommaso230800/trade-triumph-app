@@ -455,6 +455,21 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
     });
   };
 
+  // ---- Selezione per conferma pagamento ----
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const selectableRows = rows.filter((r) => !r.crm_only && !r.pagata);
+  const selectedRighe = rows.filter((r) => selected.has(r.id));
+  const selectedTotal = selectedRighe.reduce((s, r) => s + (Number(r.provvigione) || 0), 0);
+
+  const toggleSel = (id: string) => setSelected((p) => {
+    const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+  const selectAllVisible = () => setSelected(new Set(visible.filter((r) => !r.crm_only && !r.pagata).map((r) => r.id)));
+  const selectByPredicate = (fn: (r: EstrattoRiga) => boolean) => setSelected(new Set(selectableRows.filter(fn).map((r) => r.id)));
+  const clearSel = () => setSelected(new Set());
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -466,7 +481,15 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
         <Button size="sm" variant="outline" onClick={toggleView}>
           {simpleView ? "Vista dettagliata" : "Vista semplice"}
         </Button>
+        <div className="mx-2 h-6 w-px bg-border" />
+        <span className="text-xs text-muted-foreground">Selezione rapida:</span>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={selectAllVisible}>Tutte visibili</Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => selectByPredicate((r) => r.match_status === "esatta" || r.match_status === "esatta_confermata" || r.match_status === "verificata")}>Corrispondenze esatte</Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => selectByPredicate((r) => r.verificata && r.match_status === "probabile")}>Probabili verificate</Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => selectByPredicate((r) => r.match_status === "bonus" || r.match_status === "straordinaria")}>Bonus/conguagli</Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={clearSel}>Deseleziona tutte</Button>
       </div>
+
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
