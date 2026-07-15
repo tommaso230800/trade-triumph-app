@@ -33,6 +33,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Upload, FileText, Trash2, RefreshCw, MoreVertical, ExternalLink, Sparkles, AlertTriangle, ChevronDown, CheckCircle2, Link2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmPagamentoDialog } from "./ConfirmPagamentoDialog";
 
 const TIPI_DOC = [
   { v: "principale", l: "Estratto principale" },
@@ -455,6 +456,21 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
     });
   };
 
+  // ---- Selezione per conferma pagamento ----
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const selectableRows = rows.filter((r) => !r.crm_only && !r.pagata);
+  const selectedRighe = rows.filter((r) => selected.has(r.id));
+  const selectedTotal = selectedRighe.reduce((s, r) => s + (Number(r.provvigione) || 0), 0);
+
+  const toggleSel = (id: string) => setSelected((p) => {
+    const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+  const selectAllVisible = () => setSelected(new Set(visible.filter((r) => !r.crm_only && !r.pagata).map((r) => r.id)));
+  const selectByPredicate = (fn: (r: EstrattoRiga) => boolean) => setSelected(new Set(selectableRows.filter(fn).map((r) => r.id)));
+  const clearSel = () => setSelected(new Set());
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -466,7 +482,15 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
         <Button size="sm" variant="outline" onClick={toggleView}>
           {simpleView ? "Vista dettagliata" : "Vista semplice"}
         </Button>
+        <div className="mx-2 h-6 w-px bg-border" />
+        <span className="text-xs text-muted-foreground">Selezione rapida:</span>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={selectAllVisible}>Tutte visibili</Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => selectByPredicate((r) => r.match_status === "esatta" || r.match_status === "esatta_confermata" || r.match_status === "verificata")}>Corrispondenze esatte</Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => selectByPredicate((r) => r.verificata && r.match_status === "probabile")}>Probabili verificate</Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => selectByPredicate((r) => r.match_status === "bonus" || r.match_status === "straordinaria")}>Bonus/conguagli</Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={clearSel}>Deseleziona tutte</Button>
       </div>
+
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -498,6 +522,13 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-8">
+                <input
+                  type="checkbox"
+                  checked={visible.filter((r) => !r.crm_only && !r.pagata).every((r) => selected.has(r.id)) && visible.filter((r) => !r.crm_only && !r.pagata).length > 0}
+                  onChange={(e) => e.target.checked ? selectAllVisible() : clearSel()}
+                />
+              </TableHead>
               <TableHead className="w-6"></TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Fattura PDF</TableHead>
@@ -529,6 +560,12 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
               return (
                 <Fragment key={r.id}>
                   <TableRow className={rowCls}>
+                    <TableCell className="p-1">
+                      {!r.crm_only && !r.pagata && (
+                        <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleSel(r.id)} />
+                      )}
+                      {r.pagata && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                    </TableCell>
                     <TableCell className="p-1">
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleExpand(r.id)}>
                         <ChevronDown className={`h-4 w-4 transition ${isOpen ? "rotate-180" : ""}`} />
@@ -585,7 +622,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                   </TableRow>
                   {isOpen && (
                     <TableRow>
-                      <TableCell colSpan={simpleView ? 8 : 15} className="p-2">
+                      <TableCell colSpan={simpleView ? 9 : 16} className="p-2">
                         <RowDetailPanel r={r} />
                       </TableCell>
                     </TableRow>
@@ -594,14 +631,36 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
               );
             })}
             {visible.length === 0 && (
-              <TableRow><TableCell colSpan={16} className="text-center text-muted-foreground py-6 text-sm">Nessuna riga per il filtro selezionato.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={17} className="text-center text-muted-foreground py-6 text-sm">Nessuna riga per il filtro selezionato.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
       </div>
 
+      {/* Sticky action bar */}
+      <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card/95 backdrop-blur p-3 shadow-sm">
+        <div className="text-sm">
+          <b>{selected.size}</b> righe selezionate · <b>{new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(selectedTotal)}</b>
+          {selected.size === 0 && <span className="text-muted-foreground ml-2">Seleziona le provvigioni da segnare come pagate</span>}
+        </div>
+        <Button disabled={selected.size === 0} onClick={() => setConfirmOpen(true)}>
+          <CheckCircle2 className="h-4 w-4 mr-2" />
+          Conferma, salva e segna come pagate
+        </Button>
+      </div>
+
       <LinkOrdineDialog riga={linkTarget} open={!!linkTarget} onOpenChange={(b) => !b && setLinkTarget(null)} />
       <VerifyDialog riga={verifyTarget} open={!!verifyTarget} onOpenChange={(b) => !b && setVerifyTarget(null)} />
+      {confirmOpen && (
+        <ConfirmPagamentoDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          estratto={estratto}
+          righe={selectedRighe}
+          allRighe={rows}
+          onSaved={() => { setSelected(new Set()); }}
+        />
+      )}
     </div>
   );
 }

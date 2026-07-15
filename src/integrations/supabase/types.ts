@@ -1135,7 +1135,13 @@ export type Database = {
           numero_ordine: string | null
           ordine_id: string | null
           ordine_snapshot: Json | null
+          pagamento_target_id: string | null
+          pagamento_target_type: string | null
+          pagata: boolean
+          pagata_at: string | null
+          pagata_importo: number | null
           provvigione: number | null
+          riconciliazione_pagamento_id: string | null
           score_breakdown: Json | null
           tipo_movimento: string | null
           updated_at: string
@@ -1171,7 +1177,13 @@ export type Database = {
           numero_ordine?: string | null
           ordine_id?: string | null
           ordine_snapshot?: Json | null
+          pagamento_target_id?: string | null
+          pagamento_target_type?: string | null
+          pagata?: boolean
+          pagata_at?: string | null
+          pagata_importo?: number | null
           provvigione?: number | null
+          riconciliazione_pagamento_id?: string | null
           score_breakdown?: Json | null
           tipo_movimento?: string | null
           updated_at?: string
@@ -1207,7 +1219,13 @@ export type Database = {
           numero_ordine?: string | null
           ordine_id?: string | null
           ordine_snapshot?: Json | null
+          pagamento_target_id?: string | null
+          pagamento_target_type?: string | null
+          pagata?: boolean
+          pagata_at?: string | null
+          pagata_importo?: number | null
           provvigione?: number | null
+          riconciliazione_pagamento_id?: string | null
           score_breakdown?: Json | null
           tipo_movimento?: string | null
           updated_at?: string
@@ -1237,6 +1255,13 @@ export type Database = {
             columns: ["ordine_id"]
             isOneToOne: false
             referencedRelation: "ordini"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estratti_provvigioni_righe_riconciliazione_pagamento_id_fkey"
+            columns: ["riconciliazione_pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "riconciliazioni_pagamenti"
             referencedColumns: ["id"]
           },
         ]
@@ -1385,6 +1410,84 @@ export type Database = {
           },
         ]
       }
+      movimenti_provvigione: {
+        Row: {
+          anno: number | null
+          azienda_id: string | null
+          created_at: string
+          data_pagamento: string | null
+          descrizione: string | null
+          estratto_id: string | null
+          estratto_riga_id: string | null
+          id: string
+          importo: number
+          metodo_pagamento: string | null
+          note: string | null
+          riconciliazione_id: string | null
+          riferimento_pagamento: string | null
+          stato: string
+          tipo: string
+          trimestre: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anno?: number | null
+          azienda_id?: string | null
+          created_at?: string
+          data_pagamento?: string | null
+          descrizione?: string | null
+          estratto_id?: string | null
+          estratto_riga_id?: string | null
+          id?: string
+          importo?: number
+          metodo_pagamento?: string | null
+          note?: string | null
+          riconciliazione_id?: string | null
+          riferimento_pagamento?: string | null
+          stato?: string
+          tipo?: string
+          trimestre?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anno?: number | null
+          azienda_id?: string | null
+          created_at?: string
+          data_pagamento?: string | null
+          descrizione?: string | null
+          estratto_id?: string | null
+          estratto_riga_id?: string | null
+          id?: string
+          importo?: number
+          metodo_pagamento?: string | null
+          note?: string | null
+          riconciliazione_id?: string | null
+          riferimento_pagamento?: string | null
+          stato?: string
+          tipo?: string
+          trimestre?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimenti_provvigione_estratto_id_fkey"
+            columns: ["estratto_id"]
+            isOneToOne: false
+            referencedRelation: "estratti_provvigioni"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimenti_provvigione_estratto_riga_id_fkey"
+            columns: ["estratto_riga_id"]
+            isOneToOne: false
+            referencedRelation: "estratti_provvigioni_righe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           azienda_id: string | null
@@ -1448,6 +1551,7 @@ export type Database = {
           data_conferma: string | null
           data_incasso_provvigione: string | null
           data_ordine: string | null
+          estratto_riga_id: string | null
           id: string
           importo_provvigione_pagata: number
           metodo_pagamento_provvigione: string | null
@@ -1455,6 +1559,8 @@ export type Database = {
           note_provvigione: string | null
           prodotti: number | null
           provvigione_pagata: boolean
+          riconciliazione_pagamento_id: string | null
+          riferimento_pagamento_provvigione: string | null
           sconto: number | null
           sconto_merce: number | null
           stand_by_data_inizio: string | null
@@ -1477,6 +1583,7 @@ export type Database = {
           data_conferma?: string | null
           data_incasso_provvigione?: string | null
           data_ordine?: string | null
+          estratto_riga_id?: string | null
           id?: string
           importo_provvigione_pagata?: number
           metodo_pagamento_provvigione?: string | null
@@ -1484,6 +1591,8 @@ export type Database = {
           note_provvigione?: string | null
           prodotti?: number | null
           provvigione_pagata?: boolean
+          riconciliazione_pagamento_id?: string | null
+          riferimento_pagamento_provvigione?: string | null
           sconto?: number | null
           sconto_merce?: number | null
           stand_by_data_inizio?: string | null
@@ -1506,6 +1615,7 @@ export type Database = {
           data_conferma?: string | null
           data_incasso_provvigione?: string | null
           data_ordine?: string | null
+          estratto_riga_id?: string | null
           id?: string
           importo_provvigione_pagata?: number
           metodo_pagamento_provvigione?: string | null
@@ -1513,6 +1623,8 @@ export type Database = {
           note_provvigione?: string | null
           prodotti?: number | null
           provvigione_pagata?: boolean
+          riconciliazione_pagamento_id?: string | null
+          riferimento_pagamento_provvigione?: string | null
           sconto?: number | null
           sconto_merce?: number | null
           stand_by_data_inizio?: string | null
@@ -1540,6 +1652,20 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordini_estratto_riga_id_fkey"
+            columns: ["estratto_riga_id"]
+            isOneToOne: false
+            referencedRelation: "estratti_provvigioni_righe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordini_riconciliazione_pagamento_id_fkey"
+            columns: ["riconciliazione_pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "riconciliazioni_pagamenti"
             referencedColumns: ["id"]
           },
         ]
@@ -2066,6 +2192,65 @@ export type Database = {
           },
         ]
       }
+      riconciliazioni_pagamenti: {
+        Row: {
+          created_at: string
+          data_pagamento: string
+          estratto_id: string
+          id: string
+          importo_totale: number
+          metodo_pagamento: string | null
+          note: string | null
+          num_righe: number
+          riferimento_pagamento: string | null
+          righe_ids: Json | null
+          snapshot: Json | null
+          tipo_pagamento: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_pagamento: string
+          estratto_id: string
+          id?: string
+          importo_totale?: number
+          metodo_pagamento?: string | null
+          note?: string | null
+          num_righe?: number
+          riferimento_pagamento?: string | null
+          righe_ids?: Json | null
+          snapshot?: Json | null
+          tipo_pagamento?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_pagamento?: string
+          estratto_id?: string
+          id?: string
+          importo_totale?: number
+          metodo_pagamento?: string | null
+          note?: string | null
+          num_righe?: number
+          riferimento_pagamento?: string | null
+          righe_ids?: Json | null
+          snapshot?: Json | null
+          tipo_pagamento?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "riconciliazioni_pagamenti_estratto_id_fkey"
+            columns: ["estratto_id"]
+            isOneToOne: false
+            referencedRelation: "estratti_provvigioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scadenziario_fatture: {
         Row: {
           azienda_id: string | null
@@ -2077,6 +2262,7 @@ export type Database = {
           data_incasso: string | null
           data_incasso_provvigione: string | null
           data_scadenza: string
+          estratto_riga_id: string | null
           id: string
           importo: number
           importo_provvigione_pagata: number
@@ -2086,6 +2272,8 @@ export type Database = {
           percentuale_provvigione: number
           provvigione_calcolata: number
           provvigione_incassata: boolean
+          riconciliazione_pagamento_id: string | null
+          riferimento_pagamento_provvigione: string | null
           stato: string
           stato_provvigione: string
           trimestre_provvigione: string | null
@@ -2102,6 +2290,7 @@ export type Database = {
           data_incasso?: string | null
           data_incasso_provvigione?: string | null
           data_scadenza: string
+          estratto_riga_id?: string | null
           id?: string
           importo?: number
           importo_provvigione_pagata?: number
@@ -2111,6 +2300,8 @@ export type Database = {
           percentuale_provvigione?: number
           provvigione_calcolata?: number
           provvigione_incassata?: boolean
+          riconciliazione_pagamento_id?: string | null
+          riferimento_pagamento_provvigione?: string | null
           stato?: string
           stato_provvigione?: string
           trimestre_provvigione?: string | null
@@ -2127,6 +2318,7 @@ export type Database = {
           data_incasso?: string | null
           data_incasso_provvigione?: string | null
           data_scadenza?: string
+          estratto_riga_id?: string | null
           id?: string
           importo?: number
           importo_provvigione_pagata?: number
@@ -2136,6 +2328,8 @@ export type Database = {
           percentuale_provvigione?: number
           provvigione_calcolata?: number
           provvigione_incassata?: boolean
+          riconciliazione_pagamento_id?: string | null
+          riferimento_pagamento_provvigione?: string | null
           stato?: string
           stato_provvigione?: string
           trimestre_provvigione?: string | null
@@ -2155,6 +2349,20 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scadenziario_fatture_estratto_riga_id_fkey"
+            columns: ["estratto_riga_id"]
+            isOneToOne: false
+            referencedRelation: "estratti_provvigioni_righe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scadenziario_fatture_riconciliazione_pagamento_id_fkey"
+            columns: ["riconciliazione_pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "riconciliazioni_pagamenti"
             referencedColumns: ["id"]
           },
         ]

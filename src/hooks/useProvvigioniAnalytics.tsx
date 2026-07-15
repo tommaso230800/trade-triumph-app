@@ -3,6 +3,7 @@ import { useOrdini } from "@/hooks/useOrdini";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
 import { useScadenziario, ScadenziarioFattura } from "@/hooks/useScadenziario";
+import { useMovimentiProvvigione } from "@/hooks/useRiconciliazione";
 
 export type PeriodoFilter =
   | { tipo: "mese"; year: number; month: number }
@@ -19,7 +20,7 @@ export interface ProvvigioniFilters {
 
 export interface ProvvigioneRow {
   id: string;
-  source: "ordine" | "fattura";
+  source: "ordine" | "fattura" | "movimento";
   data: string; // ISO
   numero: string;
   aziendaId: string | null;
@@ -64,6 +65,7 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
   const { data: aziende } = useAziende();
   const { data: clienti } = useClienti();
   const { fattureIncassate, fattureScadute } = useScadenziario();
+  const { data: movimenti } = useMovimentiProvvigione();
 
   // Row unificate: ogni riga = una potenziale provvigione (da ordine o da fattura scadenziario)
   const allRows = useMemo<ProvvigioneRow[]>(() => {
@@ -157,10 +159,38 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
       };
     });
 
-    return [...fromOrdini, ...fromFatture].sort(
+    const fromMovimenti: ProvvigioneRow[] = (movimenti || []).map((m: any) => {
+      const azienda = m.azienda_id ? aziendaById.get(m.azienda_id) : null;
+      const importo = Number(m.importo) || 0;
+      const stato = (m.stato || "pagata") as any;
+      return {
+        id: `mv-${m.id}`,
+        source: "movimento" as const,
+        data: m.data_pagamento || m.created_at,
+        numero: (m.tipo || "movimento").toUpperCase(),
+        aziendaId: m.azienda_id,
+        aziendaNome: azienda?.nome || m.aziende?.nome || "—",
+        clienteId: null,
+        clienteNome: m.descrizione || "Movimento provvigionale",
+        imponibile: 0,
+        sconto: 0,
+        netto: 0,
+        percentualeProvv: 0,
+        provvigioneMaturata: importo,
+        provvigionePagata: stato === "pagata" ? importo : stato === "parziale" ? importo : 0,
+        statoProvvigione: stato,
+        dataPrevistaPagamento: null,
+        dataEffettivaPagamento: m.data_pagamento,
+        giorniRitardo: 0,
+        metodoPagamento: m.metodo_pagamento,
+        note: m.note,
+      };
+    });
+
+    return [...fromOrdini, ...fromFatture, ...fromMovimenti].sort(
       (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
     );
-  }, [ordini, aziende, fattureIncassate, fattureScadute]);
+  }, [ordini, aziende, fattureIncassate, fattureScadute, movimenti]);
 
   const filteredRows = useMemo(() => {
     const term = (filters.search || "").trim().toLowerCase();
