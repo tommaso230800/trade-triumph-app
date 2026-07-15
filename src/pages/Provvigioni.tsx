@@ -268,7 +268,7 @@ const Provvigioni = () => {
 
   const quickSetStato = async (row: ProvvigioneRow, stato: "da_pagare" | "scaduta" | "contestazione") => {
     const id = row.scadenziarioId || row.ordineId;
-    if (!id) return;
+    if (!id || row.source === "movimento") return;
     await aggiornaStatoProvvigione.mutateAsync({ id, source: row.source, stato });
   };
 
