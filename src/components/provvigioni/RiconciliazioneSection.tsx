@@ -630,14 +630,36 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
               );
             })}
             {visible.length === 0 && (
-              <TableRow><TableCell colSpan={16} className="text-center text-muted-foreground py-6 text-sm">Nessuna riga per il filtro selezionato.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={17} className="text-center text-muted-foreground py-6 text-sm">Nessuna riga per il filtro selezionato.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
       </div>
 
+      {/* Sticky action bar */}
+      <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card/95 backdrop-blur p-3 shadow-sm">
+        <div className="text-sm">
+          <b>{selected.size}</b> righe selezionate · <b>{new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(selectedTotal)}</b>
+          {selected.size === 0 && <span className="text-muted-foreground ml-2">Seleziona le provvigioni da segnare come pagate</span>}
+        </div>
+        <Button disabled={selected.size === 0} onClick={() => setConfirmOpen(true)}>
+          <CheckCircle2 className="h-4 w-4 mr-2" />
+          Conferma, salva e segna come pagate
+        </Button>
+      </div>
+
       <LinkOrdineDialog riga={linkTarget} open={!!linkTarget} onOpenChange={(b) => !b && setLinkTarget(null)} />
       <VerifyDialog riga={verifyTarget} open={!!verifyTarget} onOpenChange={(b) => !b && setVerifyTarget(null)} />
+      {confirmOpen && (
+        <ConfirmPagamentoDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          estratto={estratto}
+          righe={selectedRighe}
+          allRighe={rows}
+          onSaved={() => { setSelected(new Set()); }}
+        />
+      )}
     </div>
   );
 }
