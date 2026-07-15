@@ -590,7 +590,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </Fragment>
               );
             })}
             {visible.length === 0 && (
