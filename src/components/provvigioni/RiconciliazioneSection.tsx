@@ -560,6 +560,12 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                 <Fragment key={r.id}>
                   <TableRow className={rowCls}>
                     <TableCell className="p-1">
+                      {!r.crm_only && !r.pagata && (
+                        <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleSel(r.id)} />
+                      )}
+                      {r.pagata && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                    </TableCell>
+                    <TableCell className="p-1">
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleExpand(r.id)}>
                         <ChevronDown className={`h-4 w-4 transition ${isOpen ? "rotate-180" : ""}`} />
                       </Button>
