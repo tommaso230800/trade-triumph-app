@@ -33,6 +33,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Upload, FileText, Trash2, RefreshCw, MoreVertical, ExternalLink, Sparkles, AlertTriangle, ChevronDown, CheckCircle2, Link2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmPagamentoDialog } from "./ConfirmPagamentoDialog";
 
 const TIPI_DOC = [
   { v: "principale", l: "Estratto principale" },
