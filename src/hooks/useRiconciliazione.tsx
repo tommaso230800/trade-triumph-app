@@ -57,6 +57,12 @@ export type EstrattoRiga = {
   verificata_by: string | null;
   verificata_note: string | null;
   ordine_snapshot: any;
+  pagata?: boolean;
+  pagata_at?: string | null;
+  pagata_importo?: number | null;
+  pagamento_target_type?: string | null;
+  pagamento_target_id?: string | null;
+  riconciliazione_pagamento_id?: string | null;
   created_at: string;
   updated_at: string;
 };
