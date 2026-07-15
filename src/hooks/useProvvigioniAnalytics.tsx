@@ -65,6 +65,7 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
   const { data: aziende } = useAziende();
   const { data: clienti } = useClienti();
   const { fattureIncassate, fattureScadute } = useScadenziario();
+  const { data: movimenti } = useMovimentiProvvigione();
 
   // Row unificate: ogni riga = una potenziale provvigione (da ordine o da fattura scadenziario)
   const allRows = useMemo<ProvvigioneRow[]>(() => {
