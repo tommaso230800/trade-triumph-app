@@ -627,3 +627,270 @@ export function useLinkOrdine() {
     onError: (e: any) => toast.error("Errore: " + (e?.message || "")),
   });
 }
+
+// ---------- Confirm payment (idempotent) ----------
+
+export type ConfirmPagamentoInput = {
+  estratto: EstrattoDoc;
+  righeIds: string[];
+  data_pagamento: string; // YYYY-MM-DD
+  importo_totale: number;
+  metodo_pagamento: string;
+  riferimento_pagamento?: string;
+  note?: string;
+  tipo_pagamento: "completo" | "parziale";
+  ripartizione?: Record<string, number>; // riga_id -> importo pagato
+  forceRepay?: boolean; // permette di ri-registrare provvigioni già pagate
+};
+
+export type ConfirmPagamentoResult = {
+  pagamentoId: string;
+  righeAggiornate: number;
+  ordiniPagate: number;
+  scadenzePagate: number;
+  movimentiCreati: number;
+  righeGiaPagate: number;
+  righeParziali: number;
+  aziendaId: string | null;
+  anno: number;
+  trimestre: number;
+};
+
+export function useConfirmPagamento() {
+  const qc = useQueryClient();
+  return useMutation<ConfirmPagamentoResult, Error, ConfirmPagamentoInput>({
+    mutationFn: async (input) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Non autenticato");
+
+      const { data: righe, error: rErr } = await supabase
+        .from("estratti_provvigioni_righe")
+        .select("*")
+        .in("id", input.righeIds);
+      if (rErr) throw rErr;
+      if (!righe || righe.length === 0) throw new Error("Nessuna riga selezionata");
+
+      // Crea header pagamento
+      const { data: pagamento, error: pErr } = await supabase
+        .from("riconciliazioni_pagamenti")
+        .insert({
+          user_id: user.id,
+          estratto_id: input.estratto.id,
+          data_pagamento: input.data_pagamento,
+          importo_totale: input.importo_totale,
+          metodo_pagamento: input.metodo_pagamento,
+          riferimento_pagamento: input.riferimento_pagamento || null,
+          note: input.note || null,
+          tipo_pagamento: input.tipo_pagamento,
+          num_righe: righe.length,
+          righe_ids: input.righeIds,
+        })
+        .select()
+        .single();
+      if (pErr) throw pErr;
+
+      let ordiniPagate = 0, scadenzePagate = 0, movimentiCreati = 0, righeGiaPagate = 0, righeParziali = 0;
+
+      const shareFor = (r: any) => {
+        if (input.tipo_pagamento === "parziale" && input.ripartizione && input.ripartizione[r.id] != null) {
+          return Number(input.ripartizione[r.id]) || 0;
+        }
+        return Number(r.provvigione) || 0;
+      };
+
+      for (const r of righe as any[]) {
+        const importoRiga = shareFor(r);
+        const isParziale = input.tipo_pagamento === "parziale" && importoRiga > 0 && importoRiga + 0.01 < (Number(r.provvigione) || 0);
+        const nuovoStato = importoRiga <= 0 ? "da_pagare" : isParziale ? "parziale" : "pagata";
+        if (isParziale) righeParziali++;
+
+        let targetType: string | null = null;
+        let targetId: string | null = null;
+
+        // ORDINE COLLEGATO
+        if (r.ordine_id) {
+          const { data: ord } = await supabase.from("ordini")
+            .select("id, stato_provvigione, riconciliazione_pagamento_id")
+            .eq("id", r.ordine_id).single();
+          if (ord?.stato_provvigione === "pagata" && ord.riconciliazione_pagamento_id && !input.forceRepay) {
+            righeGiaPagate++;
+          } else {
+            await supabase.from("ordini").update({
+              stato_provvigione: nuovoStato,
+              provvigione_pagata: nuovoStato === "pagata",
+              importo_provvigione_pagata: importoRiga,
+              data_incasso_provvigione: input.data_pagamento,
+              metodo_pagamento_provvigione: input.metodo_pagamento,
+              riferimento_pagamento_provvigione: input.riferimento_pagamento || null,
+              note_provvigione: input.note || r.note || null,
+              estratto_riga_id: r.id,
+              riconciliazione_pagamento_id: pagamento.id,
+            }).eq("id", r.ordine_id);
+            ordiniPagate++;
+            targetType = "ordine";
+            targetId = r.ordine_id;
+          }
+        } else if (r.match_status === "bonus" || r.match_status === "straordinaria" || (r.tipo_movimento && r.tipo_movimento !== "ordinaria")) {
+          // MOVIMENTO AUTONOMO (bonus/conguaglio/rettifica/storno)
+          const importoMov = (r.tipo_movimento === "storno" || r.tipo_movimento === "nota_credito")
+            ? -Math.abs(importoRiga)
+            : importoRiga;
+          const { data: existing } = await supabase.from("movimenti_provvigione")
+            .select("id").eq("estratto_riga_id", r.id).maybeSingle();
+          let movId: string;
+          if (existing?.id) {
+            await supabase.from("movimenti_provvigione").update({
+              importo: importoMov,
+              stato: nuovoStato,
+              data_pagamento: input.data_pagamento,
+              metodo_pagamento: input.metodo_pagamento,
+              riferimento_pagamento: input.riferimento_pagamento || null,
+              note: input.note || r.note || null,
+              riconciliazione_id: pagamento.id,
+            }).eq("id", existing.id);
+            movId = existing.id;
+            righeGiaPagate++;
+          } else {
+            const { data: mv, error: mErr } = await supabase.from("movimenti_provvigione").insert({
+              user_id: user.id,
+              azienda_id: input.estratto.azienda_id,
+              anno: input.estratto.anno,
+              trimestre: input.estratto.trimestre,
+              tipo: r.tipo_movimento || "bonus",
+              descrizione: r.descrizione || r.cliente_nome || "Movimento provvigionale",
+              importo: importoMov,
+              stato: nuovoStato,
+              data_pagamento: input.data_pagamento,
+              metodo_pagamento: input.metodo_pagamento,
+              riferimento_pagamento: input.riferimento_pagamento || null,
+              note: input.note || r.note || null,
+              estratto_id: input.estratto.id,
+              estratto_riga_id: r.id,
+              riconciliazione_id: pagamento.id,
+            }).select().single();
+            if (mErr) throw mErr;
+            movId = mv.id;
+            movimentiCreati++;
+          }
+          targetType = "movimento";
+          targetId = movId;
+        } else {
+          // Nessun ordine e non è un movimento speciale → salva come bonus provvigionale generico
+          const { data: existing } = await supabase.from("movimenti_provvigione")
+            .select("id").eq("estratto_riga_id", r.id).maybeSingle();
+          if (existing?.id) {
+            await supabase.from("movimenti_provvigione").update({
+              importo: importoRiga,
+              stato: nuovoStato,
+              data_pagamento: input.data_pagamento,
+              metodo_pagamento: input.metodo_pagamento,
+              riferimento_pagamento: input.riferimento_pagamento || null,
+              riconciliazione_id: pagamento.id,
+            }).eq("id", existing.id);
+            targetId = existing.id;
+            righeGiaPagate++;
+          } else {
+            const { data: mv, error: mErr } = await supabase.from("movimenti_provvigione").insert({
+              user_id: user.id,
+              azienda_id: input.estratto.azienda_id,
+              anno: input.estratto.anno,
+              trimestre: input.estratto.trimestre,
+              tipo: "extra_pdf",
+              descrizione: `${r.cliente_nome || "—"} · ${r.numero_fattura || r.numero_ordine || "s/riferimento"}`,
+              importo: importoRiga,
+              stato: nuovoStato,
+              data_pagamento: input.data_pagamento,
+              metodo_pagamento: input.metodo_pagamento,
+              riferimento_pagamento: input.riferimento_pagamento || null,
+              note: input.note || r.note || null,
+              estratto_id: input.estratto.id,
+              estratto_riga_id: r.id,
+              riconciliazione_id: pagamento.id,
+            }).select().single();
+            if (mErr) throw mErr;
+            targetId = mv.id;
+            movimentiCreati++;
+          }
+          targetType = "movimento";
+        }
+
+        // Aggiorna riga estratto
+        await supabase.from("estratti_provvigioni_righe").update({
+          pagata: !isParziale && importoRiga > 0,
+          pagata_at: new Date().toISOString(),
+          pagata_importo: importoRiga,
+          pagamento_target_type: targetType,
+          pagamento_target_id: targetId,
+          riconciliazione_pagamento_id: pagamento.id,
+          match_status: "verificata",
+          verificata: true,
+          verificata_at: new Date().toISOString(),
+          verificata_by: user.id,
+        }).eq("id", r.id);
+      }
+
+      // Aggiorna stato estratto
+      const { data: tutteRighe } = await supabase.from("estratti_provvigioni_righe")
+        .select("pagata, crm_only, match_status")
+        .eq("estratto_id", input.estratto.id);
+      const nonPagate = (tutteRighe || []).filter((x: any) => !x.pagata && !x.crm_only);
+      const anomalie = (tutteRighe || []).filter((x: any) => x.crm_only || x.match_status === "mancante_crm" || x.match_status === "multipli");
+      let statoEstratto = "pagamento_registrato";
+      if (nonPagate.length === 0 && anomalie.length === 0) statoEstratto = "riconciliato_pagato";
+      else if (nonPagate.length === 0 && anomalie.length > 0) statoEstratto = "pagato_con_anomalie";
+      else if (input.tipo_pagamento === "parziale") statoEstratto = "pagamento_parziale";
+      await supabase.from("estratti_provvigioni").update({ stato: statoEstratto }).eq("id", input.estratto.id);
+
+      return {
+        pagamentoId: pagamento.id,
+        righeAggiornate: righe.length,
+        ordiniPagate,
+        scadenzePagate,
+        movimentiCreati,
+        righeGiaPagate,
+        righeParziali,
+        aziendaId: input.estratto.azienda_id,
+        anno: input.estratto.anno,
+        trimestre: input.estratto.trimestre,
+      };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["estratto_righe"] });
+      qc.invalidateQueries({ queryKey: ["estratti_provvigioni"] });
+      qc.invalidateQueries({ queryKey: ["ordini"] });
+      qc.invalidateQueries({ queryKey: ["scadenziario"] });
+      qc.invalidateQueries({ queryKey: ["movimenti_provvigione"] });
+      qc.invalidateQueries({ queryKey: ["riconciliazioni_pagamenti"] });
+      toast.success("Pagamento registrato");
+    },
+    onError: (e: any) => toast.error("Errore salvataggio pagamento: " + (e?.message || "")),
+  });
+}
+
+export function useMovimentiProvvigione() {
+  return useQuery({
+    queryKey: ["movimenti_provvigione"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("movimenti_provvigione")
+        .select("*, aziende(nome), estratti_provvigioni(file_name, anno, trimestre)")
+        .order("data_pagamento", { ascending: false, nullsFirst: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+}
+
+export function useRiconciliazioniPagamenti(estrattoId?: string) {
+  return useQuery({
+    queryKey: ["riconciliazioni_pagamenti", estrattoId ?? "all"],
+    queryFn: async () => {
+      let q = supabase.from("riconciliazioni_pagamenti").select("*").order("created_at", { ascending: false });
+      if (estrattoId) q = q.eq("estratto_id", estrattoId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+}
+
