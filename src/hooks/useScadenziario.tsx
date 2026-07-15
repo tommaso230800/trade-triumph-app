@@ -198,43 +198,48 @@ export const useScadenziario = () => {
     },
   });
 
-  // Aggiorna stato provvigione (nuovo sistema a 4 stati)
+  // Aggiorna stato provvigione (sistema a 5 stati)
   const aggiornaStatoProvvigione = useMutation({
     mutationFn: async (input: {
       id: string;
+      source?: 'fattura' | 'ordine';
       stato: StatoProvvigione;
       importo_pagato?: number;
       data_pagamento?: string | null;
       metodo?: string | null;
       note?: string | null;
     }) => {
+      const source = input.source || 'fattura';
       const updates: any = {
         stato_provvigione: input.stato,
         metodo_pagamento_provvigione: input.metodo ?? null,
         note_provvigione: input.note ?? null,
       };
       if (input.stato === 'pagata') {
-        updates.provvigione_incassata = true;
+        if (source === 'fattura') updates.provvigione_incassata = true;
+        if (source === 'ordine') updates.provvigione_pagata = true;
         updates.data_incasso_provvigione = input.data_pagamento || new Date().toISOString().slice(0, 10);
         updates.importo_provvigione_pagata = input.importo_pagato ?? 0;
       } else if (input.stato === 'parziale') {
-        updates.provvigione_incassata = false;
+        if (source === 'fattura') updates.provvigione_incassata = false;
+        if (source === 'ordine') updates.provvigione_pagata = false;
         updates.data_incasso_provvigione = input.data_pagamento || null;
         updates.importo_provvigione_pagata = input.importo_pagato ?? 0;
       } else {
         // da_pagare | scaduta | contestazione
-        updates.provvigione_incassata = false;
+        if (source === 'fattura') updates.provvigione_incassata = false;
+        if (source === 'ordine') updates.provvigione_pagata = false;
         updates.data_incasso_provvigione = null;
         updates.importo_provvigione_pagata = 0;
       }
-      const { error } = await supabase
-        .from('scadenziario_fatture')
-        .update(updates)
-        .eq('id', input.id);
+      const { error } = source === 'ordine'
+        ? await supabase.from('ordini').update(updates).eq('id', input.id)
+        : await supabase.from('scadenziario_fatture').update(updates).eq('id', input.id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scadenziario'] });
+      queryClient.invalidateQueries({ queryKey: ['ordini'] });
       toast.success('Stato provvigione aggiornato');
     },
     onError: (e) => toast.error(`Errore: ${e.message}`),

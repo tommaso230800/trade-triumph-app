@@ -2,14 +2,14 @@ import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
-import { useScadenziario, ScadenziarioFattura } from "@/hooks/useScadenziario";
+import { useScadenziario, StatoProvvigione } from "@/hooks/useScadenziario";
 import {
   useProvvigioniAnalytics,
   ProvvigioniFilters,
   PeriodoFilter,
   ProvvigioneRow,
 } from "@/hooks/useProvvigioniAnalytics";
-import { PagamentoProvvigioneDialog } from "@/components/provvigioni/PagamentoProvvigioneDialog";
+import { PagamentoProvvigioneDialog, ProvvigioneDialogItem } from "@/components/provvigioni/PagamentoProvvigioneDialog";
 import { MeseDetailSheet } from "@/components/provvigioni/MeseDetailSheet";
 import { ScadenziarioTab } from "@/components/provvigioni/ScadenziarioTab";
 import {
@@ -103,12 +103,12 @@ const fmtEur = (v: number) =>
 const fmtEur2 = (v: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 
-const STATO_CONFIG: Record<string, { label: string; color: string; rowBg?: string; icon: any }> = {
-  pagata: { label: "Pagata", color: "bg-success/15 text-success border-success/40", icon: CheckCircle2 },
-  da_pagare: { label: "Non pagata", color: "bg-warning/15 text-warning border-warning/40", icon: Clock },
-  scaduta: { label: "Scaduta", color: "bg-destructive/15 text-destructive border-destructive/50", rowBg: "bg-destructive/5 hover:bg-destructive/10", icon: AlertTriangle },
-  parziale: { label: "Parziale", color: "bg-primary/15 text-primary border-primary/40", icon: CircleDot },
-  contestazione: { label: "Contestazione", color: "bg-[hsl(280_65%_60%/0.15)] text-[hsl(280_65%_70%)] border-[hsl(280_65%_60%/0.4)]", icon: Ban },
+const STATO_CONFIG: Record<StatoProvvigione, { label: string; color: string; rowBg?: string; icon: any; iconColor: string }> = {
+  pagata: { label: "Pagata", color: "status-prov-paid", icon: CheckCircle2, iconColor: "text-success" },
+  da_pagare: { label: "Non pagata", color: "status-prov-unpaid", icon: Clock, iconColor: "text-commission-unpaid" },
+  scaduta: { label: "Scaduta", color: "status-prov-overdue", rowBg: "bg-destructive/10 hover:bg-destructive/15 border-l-4 border-l-destructive", icon: AlertTriangle, iconColor: "text-destructive" },
+  parziale: { label: "Parzialmente pagata", color: "status-prov-partial", icon: CircleDot, iconColor: "text-primary" },
+  contestazione: { label: "In contestazione", color: "status-prov-contested", icon: Ban, iconColor: "text-commission-contested" },
 };
 
 const CHART_COLORS = [
@@ -133,7 +133,7 @@ const Provvigioni = () => {
   const [statoFilter, setStatoFilter] = useState<"tutte" | "pagata" | "da_pagare" | "scaduta" | "parziale" | "contestazione">("tutte");
   const [sortKey, setSortKey] = useState<SortKey>("data");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const [payDialog, setPayDialog] = useState<{ open: boolean; fattura: ScadenziarioFattura | null; initialStato?: "pagata" | "parziale" }>({ open: false, fattura: null });
+  const [payDialog, setPayDialog] = useState<{ open: boolean; fattura: ProvvigioneDialogItem | null; initialStato?: StatoProvvigione }>({ open: false, fattura: null });
   const [meseDetail, setMeseDetail] = useState<{ open: boolean; detail: any | null }>({ open: false, detail: null });
 
   // Simulatore
@@ -149,22 +149,21 @@ const Provvigioni = () => {
   const filters: ProvvigioniFilters = { aziendaId, clienteId, periodo, search };
   const analytics = useProvvigioniAnalytics(filters);
 
-  // Riepiloghi per stato (basati su tutte le fatture visibili)
-  const fattureVisibili = useMemo(() => {
-    const all = [...fattureIncassate, ...fattureScadute];
-    return all.filter((f) => aziendaId === "tutte" || f.azienda_id === aziendaId);
-  }, [fattureIncassate, fattureScadute, aziendaId]);
-
+  // Riepiloghi per stato: coerenti con filtri, badge, grafici e KPI della pagina.
   const riepiloghi = useMemo(() => {
     const perStato = { da_pagare: 0, pagata: 0, parziale: 0, contestazione: 0, scaduta: 0 };
     let totMaturata = 0;
-    fattureVisibili.forEach((f) => {
-      const stato = (f.stato_provvigione || (f.provvigione_incassata ? "pagata" : "da_pagare")) as keyof typeof perStato;
-      perStato[stato] = (perStato[stato] || 0) + Number(f.provvigione_calcolata);
-      totMaturata += Number(f.provvigione_calcolata);
+    let totalePagato = 0;
+    analytics.filteredRows.forEach((r) => {
+      const stato = r.statoProvvigione as keyof typeof perStato;
+      const maturata = Number(r.provvigioneMaturata) || 0;
+      const pagata = Number(r.provvigionePagata) || 0;
+      totMaturata += maturata;
+      totalePagato += pagata;
+      perStato[stato] = (perStato[stato] || 0) + (stato === "pagata" || stato === "parziale" ? pagata : maturata);
     });
-    return { perStato, totMaturata };
-  }, [fattureVisibili]);
+    return { perStato, totMaturata, totalePagato, residuo: Math.max(0, totMaturata - totalePagato) };
+  }, [analytics.filteredRows]);
 
   const filteredTableRows = useMemo(() => {
     let rows = analytics.filteredRows;
@@ -239,15 +238,37 @@ const Provvigioni = () => {
     doc.save(`provvigioni_${format(new Date(), "yyyyMMdd")}.pdf`);
   };
 
-  const openPayDialog = (row: ProvvigioneRow, initialStato?: "pagata" | "parziale") => {
-    if (!row.scadenziarioId) return;
-    const fattura = [...fattureIncassate, ...fattureScadute].find((f) => f.id === row.scadenziarioId);
-    if (fattura) setPayDialog({ open: true, fattura, initialStato });
+  const openPayDialog = (row: ProvvigioneRow, initialStato?: StatoProvvigione) => {
+    if (row.scadenziarioId) {
+      const fattura = [...fattureIncassate, ...fattureScadute].find((f) => f.id === row.scadenziarioId);
+      if (fattura) setPayDialog({ open: true, fattura: { ...fattura, source: "fattura" }, initialStato });
+      return;
+    }
+    if (row.ordineId) {
+      setPayDialog({
+        open: true,
+        initialStato,
+        fattura: {
+          id: row.ordineId,
+          source: "ordine",
+          numero_fattura: row.numero,
+          azienda_nome: row.aziendaNome,
+          cliente_nome: row.clienteNome,
+          provvigione_calcolata: row.provvigioneMaturata,
+          stato_provvigione: row.statoProvvigione,
+          data_incasso_provvigione: row.dataEffettivaPagamento,
+          importo_provvigione_pagata: row.provvigionePagata,
+          metodo_pagamento_provvigione: row.metodoPagamento,
+          note_provvigione: row.note,
+        },
+      });
+    }
   };
 
   const quickSetStato = async (row: ProvvigioneRow, stato: "da_pagare" | "scaduta" | "contestazione") => {
-    if (!row.scadenziarioId) return;
-    await aggiornaStatoProvvigione.mutateAsync({ id: row.scadenziarioId, stato });
+    const id = row.scadenziarioId || row.ordineId;
+    if (!id) return;
+    await aggiornaStatoProvvigione.mutateAsync({ id, source: row.source, stato });
   };
 
   const simTotale = (Number(simFatturato) * Number(simPct)) / 100 + Number(simBonus) + Number(simPremi);
@@ -432,9 +453,10 @@ const Provvigioni = () => {
             {/* Riepiloghi per stato */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               <StatoSummaryCard label="Totale maturate" value={riepiloghi.totMaturata} icon={<Euro className="h-4 w-4" />} />
-              <StatoSummaryCard label="Pagate" value={riepiloghi.perStato.pagata} icon={<CheckCircle2 className="h-4 w-4" />} accent="success" />
-              <StatoSummaryCard label="Non pagate" value={riepiloghi.perStato.da_pagare} icon={<Clock className="h-4 w-4" />} accent="warning" />
+              <StatoSummaryCard label="Pagate" value={riepiloghi.totalePagato} icon={<CheckCircle2 className="h-4 w-4" />} accent="success" />
+              <StatoSummaryCard label="Non pagate" value={riepiloghi.perStato.da_pagare} icon={<Clock className="h-4 w-4" />} accent="unpaid" />
               <StatoSummaryCard label="Scadute" value={riepiloghi.perStato.scaduta} icon={<AlertTriangle className="h-4 w-4" />} accent="destructive" />
+              <StatoSummaryCard label="Residue" value={riepiloghi.residuo} icon={<Wallet className="h-4 w-4" />} accent="primary" />
               <StatoSummaryCard label="Parziali" value={riepiloghi.perStato.parziale} icon={<CircleDot className="h-4 w-4" />} accent="primary" />
               <StatoSummaryCard label="Contestazione" value={riepiloghi.perStato.contestazione} icon={<Ban className="h-4 w-4" />} accent="purple" />
             </div>
@@ -502,38 +524,36 @@ const Provvigioni = () => {
                                 {r.giorniRitardo > 0 ? <Badge variant="destructive" className="text-xs">+{r.giorniRitardo}gg</Badge> : <span className="text-xs text-muted-foreground">—</span>}
                               </TableCell>
                               <TableCell>
-                                {r.source === "fattura" && (
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button size="sm" variant="outline" className="h-8 gap-1.5 whitespace-nowrap">
-                                        <CircleDot className="h-3.5 w-3.5" />
-                                        Aggiorna stato
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-56">
-                                      <DropdownMenuItem onClick={() => openPayDialog(r, "pagata")} className="gap-2">
-                                        <CheckCircle2 className="h-4 w-4 text-success" />
-                                        <span>Pagata</span>
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => quickSetStato(r, "da_pagare")} className="gap-2">
-                                        <Clock className="h-4 w-4 text-warning" />
-                                        <span>Non pagata</span>
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => quickSetStato(r, "scaduta")} className="gap-2">
-                                        <AlertTriangle className="h-4 w-4 text-destructive" />
-                                        <span>Scaduta</span>
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => openPayDialog(r, "parziale")} className="gap-2">
-                                        <CircleDot className="h-4 w-4 text-primary" />
-                                        <span>Parzialmente pagata</span>
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => quickSetStato(r, "contestazione")} className="gap-2">
-                                        <Ban className="h-4 w-4" style={{ color: "hsl(280 65% 70%)" }} />
-                                        <span>In contestazione</span>
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                )}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button size="sm" className="h-8 gap-1.5 whitespace-nowrap shadow-sm">
+                                      <CircleDot className="h-3.5 w-3.5" />
+                                      Aggiorna stato
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuItem onClick={() => openPayDialog(r, "pagata")} className="gap-2">
+                                      <CheckCircle2 className="h-4 w-4 text-success" />
+                                      <span>Pagata</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => quickSetStato(r, "da_pagare")} className="gap-2">
+                                      <Clock className="h-4 w-4 text-commission-unpaid" />
+                                      <span>Non pagata</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => quickSetStato(r, "scaduta")} className="gap-2">
+                                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                                      <span>Scaduta</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => openPayDialog(r, "parziale")} className="gap-2">
+                                      <CircleDot className="h-4 w-4 text-primary" />
+                                      <span>Parzialmente pagata</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => quickSetStato(r, "contestazione")} className="gap-2">
+                                      <Ban className="h-4 w-4 text-commission-contested" />
+                                      <span>In contestazione</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
                           );
@@ -938,13 +958,14 @@ function Heatmap({
 }
 
 
-function StatoSummaryCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent?: "success" | "warning" | "primary" | "destructive" | "purple" }) {
+function StatoSummaryCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent?: "success" | "warning" | "unpaid" | "primary" | "destructive" | "purple" }) {
   const map = {
     success: "text-success",
     warning: "text-warning",
+    unpaid: "text-commission-unpaid",
     primary: "text-primary",
     destructive: "text-destructive",
-    purple: "text-[hsl(280_65%_70%)]",
+    purple: "text-commission-contested",
   } as const;
   const c = accent ? map[accent] : "text-foreground";
   return (
