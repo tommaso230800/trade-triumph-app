@@ -621,7 +621,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                   </TableRow>
                   {isOpen && (
                     <TableRow>
-                      <TableCell colSpan={simpleView ? 8 : 15} className="p-2">
+                      <TableCell colSpan={simpleView ? 9 : 16} className="p-2">
                         <RowDetailPanel r={r} />
                       </TableCell>
                     </TableRow>
