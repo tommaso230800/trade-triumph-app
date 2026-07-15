@@ -989,6 +989,228 @@ export type Database = {
           },
         ]
       }
+      estratti_provvigioni: {
+        Row: {
+          anno: number
+          azienda_id: string | null
+          created_at: string
+          data_documento: string | null
+          data_pagamento: string | null
+          file_hash: string | null
+          file_name: string | null
+          file_path: string | null
+          id: string
+          note: string | null
+          num_righe: number | null
+          raw_extraction: Json | null
+          stato: string
+          tipo_documento: string
+          totale_dichiarato: number | null
+          trimestre: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          anno: number
+          azienda_id?: string | null
+          created_at?: string
+          data_documento?: string | null
+          data_pagamento?: string | null
+          file_hash?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          note?: string | null
+          num_righe?: number | null
+          raw_extraction?: Json | null
+          stato?: string
+          tipo_documento?: string
+          totale_dichiarato?: number | null
+          trimestre: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          anno?: number
+          azienda_id?: string | null
+          created_at?: string
+          data_documento?: string | null
+          data_pagamento?: string | null
+          file_hash?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          note?: string | null
+          num_righe?: number | null
+          raw_extraction?: Json | null
+          stato?: string
+          tipo_documento?: string
+          totale_dichiarato?: number | null
+          trimestre?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estratti_provvigioni_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estratti_provvigioni_regole_cliente: {
+        Row: {
+          azienda_id: string | null
+          cliente_id: string | null
+          codice_pdf: string | null
+          created_at: string
+          id: string
+          nome_pdf: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          cliente_id?: string | null
+          codice_pdf?: string | null
+          created_at?: string
+          id?: string
+          nome_pdf: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string | null
+          cliente_id?: string | null
+          codice_pdf?: string | null
+          created_at?: string
+          id?: string
+          nome_pdf?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estratti_provvigioni_regole_cliente_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estratti_provvigioni_regole_cliente_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estratti_provvigioni_righe: {
+        Row: {
+          aliquota: number | null
+          anomalia_note: string | null
+          anomalia_stato: string | null
+          cliente_codice: string | null
+          cliente_id: string | null
+          cliente_nome: string | null
+          correzioni: Json | null
+          created_at: string
+          data_riga: string | null
+          descrizione: string | null
+          estratto_id: string
+          id: string
+          imponibile: number | null
+          match_candidates: Json | null
+          match_score: number | null
+          match_status: string
+          note: string | null
+          numero_fattura: string | null
+          numero_ordine: string | null
+          ordine_id: string | null
+          provvigione: number | null
+          tipo_movimento: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aliquota?: number | null
+          anomalia_note?: string | null
+          anomalia_stato?: string | null
+          cliente_codice?: string | null
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          correzioni?: Json | null
+          created_at?: string
+          data_riga?: string | null
+          descrizione?: string | null
+          estratto_id: string
+          id?: string
+          imponibile?: number | null
+          match_candidates?: Json | null
+          match_score?: number | null
+          match_status?: string
+          note?: string | null
+          numero_fattura?: string | null
+          numero_ordine?: string | null
+          ordine_id?: string | null
+          provvigione?: number | null
+          tipo_movimento?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aliquota?: number | null
+          anomalia_note?: string | null
+          anomalia_stato?: string | null
+          cliente_codice?: string | null
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          correzioni?: Json | null
+          created_at?: string
+          data_riga?: string | null
+          descrizione?: string | null
+          estratto_id?: string
+          id?: string
+          imponibile?: number | null
+          match_candidates?: Json | null
+          match_score?: number | null
+          match_status?: string
+          note?: string | null
+          numero_fattura?: string | null
+          numero_ordine?: string | null
+          ordine_id?: string | null
+          provvigione?: number | null
+          tipo_movimento?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estratti_provvigioni_righe_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estratti_provvigioni_righe_estratto_id_fkey"
+            columns: ["estratto_id"]
+            isOneToOne: false
+            referencedRelation: "estratti_provvigioni"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estratti_provvigioni_righe_ordine_id_fkey"
+            columns: ["ordine_id"]
+            isOneToOne: false
+            referencedRelation: "ordini"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eventi: {
         Row: {
           cliente_id: string | null
