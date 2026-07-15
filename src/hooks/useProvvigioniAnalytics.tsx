@@ -78,6 +78,17 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
         const pct = azienda?.provvigione_percentuale || 0;
         const totale = Number(o.totale) || 0;
         const provv = totale * (pct / 100);
+        const stato = o.stato_provvigione || (o.provvigione_pagata ? "pagata" : "da_pagare");
+        const importoRegistrato = Number(o.importo_provvigione_pagata) || 0;
+        const provvPagata = stato === "pagata" || o.provvigione_pagata
+          ? (importoRegistrato || provv)
+          : stato === "parziale"
+          ? importoRegistrato
+          : 0;
+        const baseDate = new Date(o.data_ordine || o.created_at);
+        const ritardo = stato === "scaduta" && !isNaN(baseDate.getTime())
+          ? Math.max(0, diffDays(new Date(), baseDate))
+          : 0;
         return {
           id: `ord-${o.id}`,
           ordineId: o.id,
@@ -93,13 +104,13 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
           netto: totale,
           percentualeProvv: pct,
           provvigioneMaturata: provv,
-          provvigionePagata: o.provvigione_pagata ? provv : 0,
-          statoProvvigione: o.provvigione_pagata ? ("pagata" as const) : ("da_pagare" as const),
-          dataPrevistaPagamento: null,
-          dataEffettivaPagamento: null,
-          giorniRitardo: 0,
-          metodoPagamento: null,
-          note: o.note,
+          provvigionePagata: provvPagata,
+          statoProvvigione: stato as any,
+          dataPrevistaPagamento: stato === "scaduta" ? (o.data_ordine || o.created_at) : null,
+          dataEffettivaPagamento: o.data_incasso_provvigione,
+          giorniRitardo: ritardo,
+          metodoPagamento: o.metodo_pagamento_provvigione,
+          note: o.note_provvigione || o.note,
         };
       });
 
@@ -107,7 +118,12 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
     const fromFatture: ProvvigioneRow[] = allFatture.map((f: ScadenziarioFattura) => {
       const stato = f.stato_provvigione || (f.provvigione_incassata ? "pagata" : "da_pagare");
       const provvMaturata = Number(f.provvigione_calcolata) || 0;
-      const provvPagata = Number(f.importo_provvigione_pagata) || 0;
+      const importoRegistrato = Number(f.importo_provvigione_pagata) || 0;
+      const provvPagata = stato === "pagata" || f.provvigione_incassata
+        ? (importoRegistrato || provvMaturata)
+        : stato === "parziale"
+        ? importoRegistrato
+        : 0;
       const scadenza = f.data_scadenza ? new Date(f.data_scadenza) : null;
       const pagamento = f.data_incasso_provvigione ? new Date(f.data_incasso_provvigione) : null;
       const ritardo =

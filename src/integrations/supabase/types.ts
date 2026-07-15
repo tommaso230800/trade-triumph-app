@@ -1194,9 +1194,13 @@ export type Database = {
           codice: string | null
           created_at: string | null
           data_conferma: string | null
+          data_incasso_provvigione: string | null
           data_ordine: string | null
           id: string
+          importo_provvigione_pagata: number
+          metodo_pagamento_provvigione: string | null
           note: string | null
+          note_provvigione: string | null
           prodotti: number | null
           provvigione_pagata: boolean
           sconto: number | null
@@ -1206,6 +1210,7 @@ export type Database = {
           stand_by_motivo: string | null
           stand_by_note: string | null
           stand_by_prodotto_bloccato: string | null
+          stato_provvigione: string
           status: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento: string | null
           totale: number | null
@@ -1218,9 +1223,13 @@ export type Database = {
           codice?: string | null
           created_at?: string | null
           data_conferma?: string | null
+          data_incasso_provvigione?: string | null
           data_ordine?: string | null
           id?: string
+          importo_provvigione_pagata?: number
+          metodo_pagamento_provvigione?: string | null
           note?: string | null
+          note_provvigione?: string | null
           prodotti?: number | null
           provvigione_pagata?: boolean
           sconto?: number | null
@@ -1230,6 +1239,7 @@ export type Database = {
           stand_by_motivo?: string | null
           stand_by_note?: string | null
           stand_by_prodotto_bloccato?: string | null
+          stato_provvigione?: string
           status?: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento?: string | null
           totale?: number | null
@@ -1242,9 +1252,13 @@ export type Database = {
           codice?: string | null
           created_at?: string | null
           data_conferma?: string | null
+          data_incasso_provvigione?: string | null
           data_ordine?: string | null
           id?: string
+          importo_provvigione_pagata?: number
+          metodo_pagamento_provvigione?: string | null
           note?: string | null
+          note_provvigione?: string | null
           prodotti?: number | null
           provvigione_pagata?: boolean
           sconto?: number | null
@@ -1254,6 +1268,7 @@ export type Database = {
           stand_by_motivo?: string | null
           stand_by_note?: string | null
           stand_by_prodotto_bloccato?: string | null
+          stato_provvigione?: string
           status?: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento?: string | null
           totale?: number | null

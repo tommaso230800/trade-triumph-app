@@ -22,6 +22,11 @@ export type Ordine = {
   stand_by_data_inizio?: string | null;
   data_conferma?: string | null;
   provvigione_pagata: boolean;
+  stato_provvigione: "da_pagare" | "pagata" | "parziale" | "contestazione" | "scaduta";
+  importo_provvigione_pagata: number;
+  data_incasso_provvigione: string | null;
+  metodo_pagamento_provvigione: string | null;
+  note_provvigione: string | null;
   created_at: string;
   data_ordine: string | null;
   clienti?: { nome: string; azienda: string | null } | null;

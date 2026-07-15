@@ -21,20 +21,41 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScadenziarioFattura, StatoProvvigione, useScadenziario } from "@/hooks/useScadenziario";
 import { format } from "date-fns";
+import { AlertTriangle, Ban, CheckCircle2, CircleDot, Clock, type LucideIcon } from "lucide-react";
 
 interface Props {
-  fattura: ScadenziarioFattura | null;
+  fattura: ProvvigioneDialogItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialStato?: StatoProvvigione;
 }
 
-const statoOptions: { value: StatoProvvigione; label: string; desc: string }[] = [
-  { value: "pagata", label: "Pagata", desc: "Interamente incassata" },
-  { value: "da_pagare", label: "Non pagata", desc: "In attesa di pagamento" },
-  { value: "scaduta", label: "Scaduta", desc: "Scaduta e non pagata" },
-  { value: "parziale", label: "Parzialmente pagata", desc: "Solo una parte incassata" },
-  { value: "contestazione", label: "In contestazione", desc: "Bloccata in disputa" },
+export type ProvvigioneDialogItem = Pick<
+  ScadenziarioFattura,
+  | "id"
+  | "numero_fattura"
+  | "azienda_nome"
+  | "cliente_nome"
+  | "provvigione_calcolata"
+  | "stato_provvigione"
+  | "data_incasso_provvigione"
+  | "importo_provvigione_pagata"
+  | "metodo_pagamento_provvigione"
+  | "note_provvigione"
+> & { source?: "fattura" | "ordine" };
+
+const statoOptions: {
+  value: StatoProvvigione;
+  label: string;
+  desc: string;
+  className: string;
+  icon: LucideIcon;
+}[] = [
+  { value: "pagata", label: "Pagata", desc: "Interamente incassata", className: "status-prov-paid", icon: CheckCircle2 },
+  { value: "da_pagare", label: "Non pagata", desc: "In attesa di pagamento", className: "status-prov-unpaid", icon: Clock },
+  { value: "scaduta", label: "Scaduta", desc: "Scaduta e non pagata", className: "status-prov-overdue", icon: AlertTriangle },
+  { value: "parziale", label: "Parzialmente pagata", desc: "Solo una parte incassata", className: "status-prov-partial", icon: CircleDot },
+  { value: "contestazione", label: "In contestazione", desc: "Bloccata in disputa", className: "status-prov-contested", icon: Ban },
 ];
 
 export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initialStato }: Props) => {
@@ -47,9 +68,14 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
 
   useEffect(() => {
     if (!fattura) return;
-    setStato(initialStato || (fattura.stato_provvigione as StatoProvvigione) || "pagata");
+    const currentStato = initialStato || (fattura.stato_provvigione as StatoProvvigione) || "pagata";
+    setStato(currentStato);
     setDataPagamento(fattura.data_incasso_provvigione || format(new Date(), "yyyy-MM-dd"));
-    const preset = initialStato === "parziale" ? (fattura.importo_provvigione_pagata || 0) : (fattura.importo_provvigione_pagata || fattura.provvigione_calcolata || 0);
+    const preset = currentStato === "pagata"
+      ? (fattura.provvigione_calcolata || 0)
+      : currentStato === "parziale"
+      ? (fattura.importo_provvigione_pagata || 0)
+      : (fattura.importo_provvigione_pagata || 0);
     setImporto(String(preset));
     setMetodo(fattura.metodo_pagamento_provvigione || "bonifico");
     setNote(fattura.note_provvigione || "");
@@ -57,11 +83,18 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
 
   if (!fattura) return null;
 
+  const provvigioneMaturata = Number(fattura.provvigione_calcolata) || 0;
+  const importoPagato = Number(importo) || 0;
+  const importoResiduo = Math.max(0, provvigioneMaturata - importoPagato);
+  const selectedOption = statoOptions.find((o) => o.value === stato) || statoOptions[0];
+  const SelectedIcon = selectedOption.icon;
+
   const handleConfirm = async () => {
     await aggiornaStatoProvvigione.mutateAsync({
       id: fattura.id,
+      source: fattura.source || "fattura",
       stato,
-      importo_pagato: Number(importo) || 0,
+      importo_pagato: stato === "pagata" ? (importoPagato || provvigioneMaturata) : importoPagato,
       data_pagamento: stato === "pagata" || stato === "parziale" ? dataPagamento : null,
       metodo: stato === "pagata" || stato === "parziale" ? metodo : null,
       note: note.trim() || null,
@@ -70,12 +103,13 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
   };
 
   const showPayFields = stato === "pagata" || stato === "parziale";
+  const showResidual = stato === "parziale";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Gestisci pagamento provvigione</DialogTitle>
+          <DialogTitle>Aggiorna stato provvigione</DialogTitle>
           <DialogDescription>
             Fattura {fattura.numero_fattura} — {fattura.azienda_nome}
           </DialogDescription>
@@ -89,7 +123,7 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Provvigione maturata</p>
-              <p className="font-semibold text-primary">€{Number(fattura.provvigione_calcolata).toFixed(2)}</p>
+              <p className="font-semibold text-primary">€{provvigioneMaturata.toFixed(2)}</p>
             </div>
           </div>
 
@@ -100,10 +134,11 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
                 <label
                   key={o.value}
                   htmlFor={`stato-${o.value}`}
-                  className="flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/50 transition"
+                  className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/50 transition ${stato === o.value ? o.className : ""}`}
                 >
-                  <RadioGroupItem value={o.value} id={`stato-${o.value}`} className="mt-0.5" />
-                  <div className="flex-1">
+                  <RadioGroupItem value={o.value} id={`stato-${o.value}`} className="mt-1" />
+                  <o.icon className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium">{o.label}</p>
                     <p className="text-xs text-muted-foreground">{o.desc}</p>
                   </div>
@@ -112,11 +147,23 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
             </RadioGroup>
           </div>
 
+          <div className={`rounded-md border p-3 text-sm ${selectedOption.className}`}>
+            <div className="flex items-center gap-2 font-medium">
+              <SelectedIcon className="h-4 w-4" />
+              {selectedOption.label}
+            </div>
+            {stato === "scaduta" && (
+              <p className="mt-1 text-xs">
+                La riga verrà evidenziata in rosso e mostrerà automaticamente i giorni di ritardo dalla scadenza.
+              </p>
+            )}
+          </div>
+
           {showPayFields && (
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="data_pag">Data pagamento</Label>
+                  <Label htmlFor="data_pag">{stato === "parziale" ? "Data pagamento parziale" : "Data pagamento"}</Label>
                   <Input
                     id="data_pag"
                     type="date"
@@ -136,11 +183,11 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
                 </div>
               </div>
 
-              {stato === "parziale" && (
+              {showResidual && (
                 <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm flex items-center justify-between">
                   <span className="text-muted-foreground">Importo residuo</span>
                   <span className="font-semibold text-primary">
-                    €{Math.max(0, Number(fattura.provvigione_calcolata) - (Number(importo) || 0)).toFixed(2)}
+                    €{importoResiduo.toFixed(2)}
                   </span>
                 </div>
               )}

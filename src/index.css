@@ -48,6 +48,8 @@
     --danger-foreground: 0 0% 100%;
     --info: 220 95% 62%;
     --info-foreground: 0 0% 100%;
+    --commission-unpaid: 28 92% 48%;
+    --commission-contested: 280 65% 52%;
 
     /* Brand multi accent */
     --accent-blue: 220 95% 62%;
@@ -108,6 +110,8 @@
     --border: 220 22% 78%;
     --input: 0 0% 100%;
     --ring: 220 95% 62%;
+    --commission-unpaid: 28 92% 48%;
+    --commission-contested: 280 65% 52%;
   }
 }
 
@@ -213,6 +217,34 @@
     box-shadow: var(--shadow-card);
     color: hsl(var(--card-foreground));
   }
+
+  .status-prov-paid {
+    background: hsl(var(--success) / 0.14);
+    color: hsl(var(--success));
+    border-color: hsl(var(--success) / 0.42);
+  }
+  .status-prov-unpaid {
+    background: linear-gradient(135deg, hsl(var(--muted) / 0.8), hsl(var(--commission-unpaid) / 0.14));
+    color: hsl(var(--commission-unpaid));
+    border-color: hsl(var(--commission-unpaid) / 0.42);
+  }
+  .status-prov-overdue {
+    background: hsl(var(--destructive) / 0.14);
+    color: hsl(var(--destructive));
+    border-color: hsl(var(--destructive) / 0.5);
+  }
+  .status-prov-partial {
+    background: hsl(var(--primary) / 0.14);
+    color: hsl(var(--primary));
+    border-color: hsl(var(--primary) / 0.42);
+  }
+  .status-prov-contested {
+    background: hsl(var(--commission-contested) / 0.14);
+    color: hsl(var(--commission-contested));
+    border-color: hsl(var(--commission-contested) / 0.42);
+  }
+  .text-commission-unpaid { color: hsl(var(--commission-unpaid)); }
+  .text-commission-contested { color: hsl(var(--commission-contested)); }
 
   .safe-top { padding-top: env(safe-area-inset-top); }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
