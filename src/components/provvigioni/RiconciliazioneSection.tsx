@@ -527,8 +527,8 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
               const isCrmOnly = r.crm_only;
               const rowCls = isCrmOnly ? "bg-red-500/5" : r.esito_economico && !["corretto", "dati_insufficienti"].includes(r.esito_economico) ? "bg-yellow-500/5" : "";
               return (
-                <>
-                  <TableRow key={r.id} className={rowCls}>
+                <Fragment key={r.id}>
+                  <TableRow className={rowCls}>
                     <TableCell className="p-1">
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleExpand(r.id)}>
                         <ChevronDown className={`h-4 w-4 transition ${isOpen ? "rotate-180" : ""}`} />
