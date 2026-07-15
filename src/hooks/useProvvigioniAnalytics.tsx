@@ -20,7 +20,7 @@ export interface ProvvigioniFilters {
 
 export interface ProvvigioneRow {
   id: string;
-  source: "ordine" | "fattura";
+  source: "ordine" | "fattura" | "movimento";
   data: string; // ISO
   numero: string;
   aziendaId: string | null;
