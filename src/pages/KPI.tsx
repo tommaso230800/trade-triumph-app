@@ -969,8 +969,14 @@ const KPI = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Fase 2 — Motore di riconciliazione M:N (globale) */}
+        <div className="mt-6">
+          <AllocationsEnginePanel all title="Riconciliazione M:N — vista globale" />
+        </div>
       </div>
     </MainLayout>
+
   );
 };
 
