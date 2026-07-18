@@ -16,6 +16,7 @@ import {
   MATCH_STATUS_LABEL,
   ESITO_LABEL,
   AZIONE_LABEL,
+  STATO_VERIFICA_LABEL,
 } from "@/hooks/useRiconciliazione";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
