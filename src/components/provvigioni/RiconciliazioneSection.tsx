@@ -559,11 +559,13 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
               const snap: any = r.ordine_snapshot;
               const crmImp = snap?.totale ?? null;
               const crmProv = crmImp != null && r.aliquota != null ? crmImp * (r.aliquota / 100) : null;
+              const provAttesa = r.crm_only ? (Number(r.provvigione_attesa) || crmProv) : null;
               const diffProv = crmProv != null && r.provvigione != null ? r.provvigione - crmProv : null;
               const diffCls = diffProv == null ? "" : Math.abs(diffProv) < 0.01 ? "text-emerald-600" : diffProv < 0 ? "text-red-600 font-medium" : "text-blue-600 font-medium";
               const isOpen = expanded.has(r.id);
               const isCrmOnly = r.crm_only;
               const rowCls = isCrmOnly ? "bg-red-500/5" : r.esito_economico && !["corretto", "dati_insufficienti"].includes(r.esito_economico) ? "bg-yellow-500/5" : "";
+              const crossCands: any[] = Array.isArray(r.cross_estratto_candidates) ? r.cross_estratto_candidates : [];
               return (
                 <Fragment key={r.id}>
                   <TableRow className={rowCls}>
@@ -583,12 +585,27 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                     <TableCell className="text-xs">{r.data_riga || "—"}</TableCell>
                     {!simpleView && <TableCell className="text-right">{formatEuro(r.imponibile)}</TableCell>}
                     {!simpleView && <TableCell className="text-right">{r.aliquota != null ? `${r.aliquota}%` : "—"}</TableCell>}
-                    <TableCell className="text-right font-medium">{formatEuro(r.provvigione)}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      {isCrmOnly && r.provvigione == null ? (
+                        <span className="text-red-600" title="Provvigione attesa (non riscontrata nel PDF)">
+                          {provAttesa != null ? `att. ${formatEuro(provAttesa)}` : "—"}
+                        </span>
+                      ) : formatEuro(r.provvigione)}
+                    </TableCell>
                     {!simpleView && <TableCell className="text-xs">{snap?.codice || (isCrmOnly ? r.numero_ordine : "—")}</TableCell>}
                     {!simpleView && <TableCell className="text-right">{formatEuro(crmImp)}</TableCell>}
                     {!simpleView && <TableCell className="text-right">{formatEuro(crmProv)}</TableCell>}
                     <TableCell className={`text-right ${diffCls}`}>{diffProv != null ? signedEuro(diffProv) : "—"}</TableCell>
-                    <TableCell><StatusBadge status={r.match_status} verified={r.verificata} /></TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <StatusBadge status={r.match_status} verified={r.verificata} />
+                        {isCrmOnly && r.stato_verifica && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded border border-border bg-muted text-muted-foreground w-fit">
+                            {STATO_VERIFICA_LABEL[r.stato_verifica] ?? r.stato_verifica}
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
                     {!simpleView && <TableCell><EsitoBadge esito={r.esito_economico} /></TableCell>}
                     <TableCell className="max-w-[220px]">
                       {r.motivo ? (
@@ -613,16 +630,36 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                         <DropdownMenuTrigger asChild>
                           <Button size="icon" variant="ghost" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setLinkTarget(r)}><Link2 className="h-4 w-4 mr-2" />Collega / cerca ordine</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setVerifyTarget(r)}><CheckCircle2 className="h-4 w-4 mr-2" />Segna come verificata</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { match_status: "bonus", tipo_movimento: "bonus", ordine_id: null, match_score: 100, azione_consigliata: "nessuna", esito_economico: "corretto" } })}>Registra come bonus/premio</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { match_status: "straordinaria", tipo_movimento: "conguaglio", ordine_id: null, match_score: 100, azione_consigliata: "nessuna" } })}>Registra come conguaglio</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { match_status: "straordinaria", tipo_movimento: "rettifica", ordine_id: null, match_score: 100, azione_consigliata: "nessuna" } })}>Registra come rettifica</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { match_status: "da_verificare", match_score: 0, azione_consigliata: "verifica" } })}>Segna da verificare</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { match_status: "ignorata", note: "Ignorata dall'utente", azione_consigliata: "nessuna" } })}><XCircle className="h-4 w-4 mr-2" />Ignora riga</DropdownMenuItem>
+                        <DropdownMenuContent align="end" className="max-h-[400px] overflow-y-auto">
+                          {isCrmOnly ? (
+                            <>
+                              <DropdownMenuItem onClick={() => setLinkTarget(r)}><Link2 className="h-4 w-4 mr-2" />Cerca riscontro nel PDF</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setVerifyTarget(r)}><CheckCircle2 className="h-4 w-4 mr-2" />Segna come verificata</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <div className="px-2 py-1 text-[10px] uppercase text-muted-foreground">Stato verifica</div>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "non_fatturato", motivo: "Ordine non ancora fatturato: la provvigione arriverà nei prossimi estratti.", azione_consigliata: "nessuna" } })}>Non ancora fatturato</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "liquidato_altrove", motivo: "Provvigione già liquidata in un altro trimestre.", azione_consigliata: "nessuna", esito_economico: "corretto" } })}>Liquidato in altro trimestre</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "non_provvigionale", motivo: "Ordine non provvigionale (fuori mandato o escluso).", azione_consigliata: "nessuna", esito_economico: "corretto" } })}>Non provvigionale</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "annullato", motivo: "Ordine annullato o storno cliente.", azione_consigliata: "nessuna", esito_economico: "corretto" } })}>Ordine annullato</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "contestazione_aperta", azione_consigliata: "contesta", motivo: `Contestazione da aprire con l'azienda: provvigione attesa ${provAttesa != null ? formatEuro(provAttesa) : "—"} non riconosciuta.` } })}><AlertTriangle className="h-4 w-4 mr-2" />Apri contestazione</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "contestato", motivo: "Contestazione inoltrata all'azienda mandante." } })}>Segna contestato</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "recuperato", esito_economico: "corretto", azione_consigliata: "nessuna", motivo: "Provvigione recuperata dopo contestazione." } })}><CheckCircle2 className="h-4 w-4 mr-2 text-emerald-600" />Segna recuperato</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "chiuso", azione_consigliata: "nessuna", esito_economico: "corretto", motivo: "Chiuso con motivazione dall'agente." } })}>Chiudi con motivazione</DropdownMenuItem>
+                            </>
+                          ) : (
+                            <>
+                              <DropdownMenuItem onClick={() => setLinkTarget(r)}><Link2 className="h-4 w-4 mr-2" />Collega / cerca ordine</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setVerifyTarget(r)}><CheckCircle2 className="h-4 w-4 mr-2" />Segna come verificata</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { match_status: "bonus", tipo_movimento: "bonus", ordine_id: null, match_score: 100, azione_consigliata: "nessuna", esito_economico: "corretto" } })}>Registra come bonus/premio</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { match_status: "straordinaria", tipo_movimento: "conguaglio", ordine_id: null, match_score: 100, azione_consigliata: "nessuna" } })}>Registra come conguaglio</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { match_status: "straordinaria", tipo_movimento: "rettifica", ordine_id: null, match_score: 100, azione_consigliata: "nessuna" } })}>Registra come rettifica</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { match_status: "da_verificare", match_score: 0, azione_consigliata: "verifica" } })}>Segna da verificare</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { match_status: "ignorata", note: "Ignorata dall'utente", azione_consigliata: "nessuna" } })}><XCircle className="h-4 w-4 mr-2" />Ignora riga</DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -631,6 +668,23 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                     <TableRow>
                       <TableCell colSpan={simpleView ? 9 : 16} className="p-2">
                         <RowDetailPanel r={r} />
+                        {isCrmOnly && crossCands.length > 0 && (
+                          <div className="mt-3 border rounded p-3 bg-amber-500/5">
+                            <div className="text-xs font-semibold uppercase text-amber-700 mb-2">Possibili riscontri in altri estratti</div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {crossCands.map((c: any, i: number) => (
+                                <div key={i} className="border rounded p-2 text-sm bg-background">
+                                  <div className="flex justify-between items-center">
+                                    <div><b>T{c.trimestre}/{c.anno}</b> · {c.cliente || "—"}</div>
+                                    <Badge variant="outline">{c.score}%</Badge>
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">{c.data || "—"} · imp. {formatEuro(c.imponibile)} · prov. {formatEuro(c.provvigione)}</div>
+                                  {c.motivi?.length > 0 && <div className="text-[11px] text-muted-foreground mt-1">{c.motivi.join(" · ")}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   )}
