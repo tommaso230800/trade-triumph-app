@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { AllocationsEnginePanel } from "@/components/provvigioni/AllocationsEnginePanel";
 import { useAdvancedKPIStats, AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { KPICard } from "@/components/dashboard/KPICard";
