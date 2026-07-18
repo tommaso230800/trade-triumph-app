@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { allocateRevenueByRiga, type OrdineLike } from "@/lib/metricsEngine";
 
 export type ClienteKPI = {
   id: string;
@@ -84,6 +85,10 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
             quantita_pezzi,
             quantita_cartoni,
             prezzo_unitario,
+            sc1,
+            sc2,
+            sc3,
+            is_omaggio,
             prodotti (id, nome, pezzi_per_cartone, prezzo_listino, azienda_id)
           )
         `)
@@ -140,15 +145,17 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
         };
       });
 
-      // Calculate product KPIs
+      // Calculate product KPIs — fatturato allocato proporzionalmente da `ordini.totale`
+      // (motore metriche) così la somma per prodotto riconcilia col fatturato ordine.
       const prodottiMap = new Map<string, ProdottoKPI>();
       ordini.forEach((ordine) => {
-        ordine.ordini_righe?.forEach((riga: any) => {
+        const alloc = allocateRevenueByRiga(ordine as OrdineLike);
+        ordine.ordini_righe?.forEach((riga: any, rigaIdx: number) => {
           if (!riga.prodotti) return;
           const prodottoId = riga.prodotto_id;
           const existing = prodottiMap.get(prodottoId);
           const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * (riga.prodotti.pezzi_per_cartone || 1);
-          const rigaFatturato = pezziTotali * Number(riga.prezzo_unitario);
+          const rigaFatturato = alloc[rigaIdx] ?? 0;
 
           if (existing) {
             existing.quantita_venduta += pezziTotali;
