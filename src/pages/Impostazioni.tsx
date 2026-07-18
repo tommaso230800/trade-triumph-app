@@ -394,6 +394,9 @@ const Impostazioni = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Integrity Check — Fase 1.5 */}
+        <IntegrityCheckPanel />
       </div>
     </MainLayout>
   );
