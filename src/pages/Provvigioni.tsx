@@ -733,6 +733,10 @@ const Provvigioni = () => {
 
             <ScadenziarioTab />
           </TabsContent>
+
+          <TabsContent value="matrice">
+            <MatriceProvvigioniSection />
+          </TabsContent>
         </Tabs>
       </div>
 
