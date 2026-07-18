@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { allocateRevenueByRiga, orderDate, isCounted, type OrdineLike } from "@/lib/metricsEngine";
 
 export type AdvancedKPIFilters = {
   clienteIds: string[];
