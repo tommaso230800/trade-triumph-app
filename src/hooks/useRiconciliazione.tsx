@@ -63,9 +63,25 @@ export type EstrattoRiga = {
   pagamento_target_type?: string | null;
   pagamento_target_id?: string | null;
   riconciliazione_pagamento_id?: string | null;
+  stato_verifica?: string | null;
+  provvigione_attesa?: number | null;
+  cross_estratto_candidates?: any;
   created_at: string;
   updated_at: string;
 };
+
+export const STATO_VERIFICA_LABEL: Record<string, string> = {
+  da_verificare: "Da verificare",
+  non_fatturato: "Non ancora fatturato",
+  liquidato_altrove: "Liquidato in altro trimestre",
+  non_provvigionale: "Non provvigionale",
+  annullato: "Ordine annullato",
+  contestazione_aperta: "Contestazione aperta",
+  contestato: "Contestato all'azienda",
+  recuperato: "Recuperato",
+  chiuso: "Chiuso con motivazione",
+};
+
 
 // ---------- Labels ----------
 
