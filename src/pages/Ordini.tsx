@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { TransparencyBanner } from "@/components/metrics/TransparencyBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -769,6 +770,7 @@ const Ordini = () => {
   return (
     <MainLayout>
       <div className="space-y-8 animate-fade-in">
+        <TransparencyBanner scope="ordini" />
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">

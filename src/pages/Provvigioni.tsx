@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { TransparencyBanner } from "@/components/metrics/TransparencyBanner";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
 import { useScadenziario, StatoProvvigione } from "@/hooks/useScadenziario";
@@ -278,6 +279,7 @@ const Provvigioni = () => {
   return (
     <MainLayout>
       <div className="space-y-6 animate-rise-in pb-8">
+        <TransparencyBanner scope="provvigioni" />
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="space-y-1">

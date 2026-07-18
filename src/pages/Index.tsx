@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 import { format, isToday, isTomorrow, parseISO, differenceInDays } from "date-fns";
 import { it } from "date-fns/locale";
+import { TransparencyBanner } from "@/components/metrics/TransparencyBanner";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success" },
@@ -65,6 +66,7 @@ const Index = () => {
   return (
     <MainLayout>
       <div className="space-y-8">
+        <TransparencyBanner scope="dashboard" />
         {/* Header - Modern & Clean */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div className="space-y-2 animate-fade-in">
