@@ -13,6 +13,7 @@ import { PagamentoProvvigioneDialog, ProvvigioneDialogItem } from "@/components/
 import { MeseDetailSheet } from "@/components/provvigioni/MeseDetailSheet";
 import { ScadenziarioTab } from "@/components/provvigioni/ScadenziarioTab";
 import { RiconciliazioneSection } from "@/components/provvigioni/RiconciliazioneSection";
+import { MatriceProvvigioniSection } from "@/components/provvigioni/MatriceProvvigioniSection";
 import {
   Card,
   CardContent,
