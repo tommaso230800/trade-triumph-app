@@ -32,7 +32,7 @@ export function IntegrityCheckPanel() {
       const { data, error } = await supabase
         .from("ordini")
         .select(
-          "id, codice, status, totale, data_ordine, data_conferma, created_at, cliente:clienti(ragione_sociale), ordini_righe(quantita_pezzi, prezzo_unitario, sc1, sc2, sc3, is_omaggio)"
+          "id, codice, status, totale, data_ordine, data_conferma, created_at, clienti(nome), ordini_righe(quantita_pezzi, prezzo_unitario, sc1, sc2, sc3, is_omaggio)"
         )
         .order("data_ordine", { ascending: false });
       if (error) throw error;
