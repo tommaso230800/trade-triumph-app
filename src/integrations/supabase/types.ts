@@ -1120,6 +1120,7 @@ export type Database = {
           correzioni: Json | null
           created_at: string
           crm_only: boolean
+          cross_estratto_candidates: Json | null
           data_riga: string | null
           descrizione: string | null
           esito_economico: string | null
@@ -1141,8 +1142,10 @@ export type Database = {
           pagata_at: string | null
           pagata_importo: number | null
           provvigione: number | null
+          provvigione_attesa: number | null
           riconciliazione_pagamento_id: string | null
           score_breakdown: Json | null
+          stato_verifica: string | null
           tipo_movimento: string | null
           updated_at: string
           user_id: string
@@ -1162,6 +1165,7 @@ export type Database = {
           correzioni?: Json | null
           created_at?: string
           crm_only?: boolean
+          cross_estratto_candidates?: Json | null
           data_riga?: string | null
           descrizione?: string | null
           esito_economico?: string | null
@@ -1183,8 +1187,10 @@ export type Database = {
           pagata_at?: string | null
           pagata_importo?: number | null
           provvigione?: number | null
+          provvigione_attesa?: number | null
           riconciliazione_pagamento_id?: string | null
           score_breakdown?: Json | null
+          stato_verifica?: string | null
           tipo_movimento?: string | null
           updated_at?: string
           user_id: string
@@ -1204,6 +1210,7 @@ export type Database = {
           correzioni?: Json | null
           created_at?: string
           crm_only?: boolean
+          cross_estratto_candidates?: Json | null
           data_riga?: string | null
           descrizione?: string | null
           esito_economico?: string | null
@@ -1225,8 +1232,10 @@ export type Database = {
           pagata_at?: string | null
           pagata_importo?: number | null
           provvigione?: number | null
+          provvigione_attesa?: number | null
           riconciliazione_pagamento_id?: string | null
           score_breakdown?: Json | null
+          stato_verifica?: string | null
           tipo_movimento?: string | null
           updated_at?: string
           user_id?: string
