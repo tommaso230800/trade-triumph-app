@@ -103,6 +103,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
             sc1,
             sc2,
             sc3,
+            is_omaggio,
             prodotti (id, nome, pezzi_per_cartone, prezzo_listino, costo_acquisto, azienda_id, brand_id)
           )
         `)
