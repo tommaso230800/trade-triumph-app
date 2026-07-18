@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { TransparencyBanner } from "@/components/metrics/TransparencyBanner";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
 import { useScadenziario, StatoProvvigione } from "@/hooks/useScadenziario";
