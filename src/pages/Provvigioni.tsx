@@ -13,6 +13,7 @@ import { PagamentoProvvigioneDialog, ProvvigioneDialogItem } from "@/components/
 import { MeseDetailSheet } from "@/components/provvigioni/MeseDetailSheet";
 import { ScadenziarioTab } from "@/components/provvigioni/ScadenziarioTab";
 import { RiconciliazioneSection } from "@/components/provvigioni/RiconciliazioneSection";
+import { MatriceProvvigioniSection } from "@/components/provvigioni/MatriceProvvigioniSection";
 import {
   Card,
   CardContent,
@@ -381,6 +382,7 @@ const Provvigioni = () => {
             <TabsTrigger value="bonus" className="gap-2"><Trophy className="h-4 w-4" />Bonus</TabsTrigger>
             <TabsTrigger value="scadenziario" className="gap-2"><Receipt className="h-4 w-4" />Scadenziario</TabsTrigger>
             <TabsTrigger value="riconciliazione" className="gap-2"><Sparkles className="h-4 w-4" />Riconciliazione</TabsTrigger>
+            <TabsTrigger value="matrice" className="gap-2"><Percent className="h-4 w-4" />Matrice</TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW */}
@@ -730,6 +732,10 @@ const Provvigioni = () => {
           <TabsContent value="scadenziario">
 
             <ScadenziarioTab />
+          </TabsContent>
+
+          <TabsContent value="matrice">
+            <MatriceProvvigioniSection />
           </TabsContent>
         </Tabs>
       </div>

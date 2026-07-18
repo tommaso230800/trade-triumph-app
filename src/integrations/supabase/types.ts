@@ -640,6 +640,72 @@ export type Database = {
         }
         Relationships: []
       }
+      clienti_alias: {
+        Row: {
+          azienda_id: string | null
+          cliente_id: string
+          codice_cliente_aziendale: string | null
+          codice_fiscale: string | null
+          created_at: string
+          denominazione_alternativa: string | null
+          id: string
+          match_count: number
+          note: string | null
+          partita_iva: string | null
+          source: string
+          ultimo_match: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          cliente_id: string
+          codice_cliente_aziendale?: string | null
+          codice_fiscale?: string | null
+          created_at?: string
+          denominazione_alternativa?: string | null
+          id?: string
+          match_count?: number
+          note?: string | null
+          partita_iva?: string | null
+          source?: string
+          ultimo_match?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string | null
+          cliente_id?: string
+          codice_cliente_aziendale?: string | null
+          codice_fiscale?: string | null
+          created_at?: string
+          denominazione_alternativa?: string | null
+          id?: string
+          match_count?: number
+          note?: string | null
+          partita_iva?: string | null
+          source?: string
+          ultimo_match?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clienti_alias_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clienti_alias_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_products: {
         Row: {
           agente_concorrente: string | null
@@ -1553,9 +1619,11 @@ export type Database = {
       }
       ordini: {
         Row: {
+          aliquota_prevista: number | null
           azienda_id: string | null
           cliente_id: string | null
           codice: string | null
+          condizione_applicata_id: string | null
           created_at: string | null
           data_conferma: string | null
           data_incasso_provvigione: string | null
@@ -1568,6 +1636,9 @@ export type Database = {
           note_provvigione: string | null
           prodotti: number | null
           provvigione_pagata: boolean
+          provvigione_prevista: number | null
+          provvigione_riconosciuta: number | null
+          provvigione_stato: string
           riconciliazione_pagamento_id: string | null
           riferimento_pagamento_provvigione: string | null
           sconto: number | null
@@ -1585,9 +1656,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          aliquota_prevista?: number | null
           azienda_id?: string | null
           cliente_id?: string | null
           codice?: string | null
+          condizione_applicata_id?: string | null
           created_at?: string | null
           data_conferma?: string | null
           data_incasso_provvigione?: string | null
@@ -1600,6 +1673,9 @@ export type Database = {
           note_provvigione?: string | null
           prodotti?: number | null
           provvigione_pagata?: boolean
+          provvigione_prevista?: number | null
+          provvigione_riconosciuta?: number | null
+          provvigione_stato?: string
           riconciliazione_pagamento_id?: string | null
           riferimento_pagamento_provvigione?: string | null
           sconto?: number | null
@@ -1617,9 +1693,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          aliquota_prevista?: number | null
           azienda_id?: string | null
           cliente_id?: string | null
           codice?: string | null
+          condizione_applicata_id?: string | null
           created_at?: string | null
           data_conferma?: string | null
           data_incasso_provvigione?: string | null
@@ -1632,6 +1710,9 @@ export type Database = {
           note_provvigione?: string | null
           prodotti?: number | null
           provvigione_pagata?: boolean
+          provvigione_prevista?: number | null
+          provvigione_riconosciuta?: number | null
+          provvigione_stato?: string
           riconciliazione_pagamento_id?: string | null
           riferimento_pagamento_provvigione?: string | null
           sconto?: number | null
@@ -1661,6 +1742,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordini_condizione_applicata_id_fkey"
+            columns: ["condizione_applicata_id"]
+            isOneToOne: false
+            referencedRelation: "provvigioni_condizioni"
             referencedColumns: ["id"]
           },
           {
@@ -2001,6 +2089,150 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provvigioni_condizioni: {
+        Row: {
+          applica_su_resi: boolean
+          arrotondamento: string
+          azienda_id: string
+          calcolo_su: string
+          categoria: string | null
+          cliente_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          percentuale: number
+          priorita: number
+          prodotto_id: string | null
+          updated_at: string
+          user_id: string
+          valido_a: string | null
+          valido_da: string
+        }
+        Insert: {
+          applica_su_resi?: boolean
+          arrotondamento?: string
+          azienda_id: string
+          calcolo_su?: string
+          categoria?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          percentuale?: number
+          priorita?: number
+          prodotto_id?: string | null
+          updated_at?: string
+          user_id: string
+          valido_a?: string | null
+          valido_da: string
+        }
+        Update: {
+          applica_su_resi?: boolean
+          arrotondamento?: string
+          azienda_id?: string
+          calcolo_su?: string
+          categoria?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          percentuale?: number
+          priorita?: number
+          prodotto_id?: string | null
+          updated_at?: string
+          user_id?: string
+          valido_a?: string | null
+          valido_da?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provvigioni_condizioni_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provvigioni_condizioni_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provvigioni_condizioni_prodotto_id_fkey"
+            columns: ["prodotto_id"]
+            isOneToOne: false
+            referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provvigioni_premi: {
+        Row: {
+          attivo: boolean
+          azienda_id: string
+          condizioni: Json | null
+          created_at: string
+          id: string
+          modalita: string
+          nome: string
+          note: string | null
+          percentuale: number | null
+          periodo_a: string | null
+          periodo_da: string | null
+          scaglioni: Json | null
+          tipo: string
+          updated_at: string
+          user_id: string
+          valore: number | null
+        }
+        Insert: {
+          attivo?: boolean
+          azienda_id: string
+          condizioni?: Json | null
+          created_at?: string
+          id?: string
+          modalita?: string
+          nome: string
+          note?: string | null
+          percentuale?: number | null
+          periodo_a?: string | null
+          periodo_da?: string | null
+          scaglioni?: Json | null
+          tipo: string
+          updated_at?: string
+          user_id: string
+          valore?: number | null
+        }
+        Update: {
+          attivo?: boolean
+          azienda_id?: string
+          condizioni?: Json | null
+          created_at?: string
+          id?: string
+          modalita?: string
+          nome?: string
+          note?: string | null
+          percentuale?: number | null
+          periodo_a?: string | null
+          periodo_da?: string | null
+          scaglioni?: Json | null
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+          valore?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provvigioni_premi_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
             referencedColumns: ["id"]
           },
         ]
@@ -2706,7 +2938,44 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calcola_provvigione_prevista: {
+        Args: { p_ordine_id: string }
+        Returns: number
+      }
+      trova_condizione_provvigione: {
+        Args: {
+          p_azienda_id: string
+          p_categoria: string
+          p_cliente_id: string
+          p_data: string
+          p_prodotto_id: string
+          p_user_id: string
+        }
+        Returns: {
+          applica_su_resi: boolean
+          arrotondamento: string
+          azienda_id: string
+          calcolo_su: string
+          categoria: string | null
+          cliente_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          percentuale: number
+          priorita: number
+          prodotto_id: string | null
+          updated_at: string
+          user_id: string
+          valido_a: string | null
+          valido_da: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "provvigioni_condizioni"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       client_status: "premium" | "standard" | "nuovo"
