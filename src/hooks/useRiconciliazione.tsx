@@ -584,25 +584,76 @@ export function useRunMatching() {
 
         // Also skip ordini already linked in verified rows (already added to linkedOrderIds)
         if (missing.length > 0) {
-          const rows = missing.map((o) => ({
-            user_id: est.user_id,
-            estratto_id: estrattoId,
-            ordine_id: o.id,
-            cliente_nome: o.cliente_nome,
-            numero_ordine: o.codice,
-            data_riga: o.data_ordine,
-            imponibile: o.totale,
-            aliquota: null,
-            provvigione: null,
-            tipo_movimento: "ordinaria",
-            crm_only: true,
-            match_status: "mancante_pdf",
-            match_score: 100,
-            esito_economico: "non_riconosciuta",
-            azione_consigliata: "contesta",
-            motivo: "Ordine presente nel CRM ma assente nell'estratto provvigionale.",
-            ordine_snapshot: { id: o.id, codice: o.codice, data: o.data_ordine, totale: o.totale, cliente: o.cliente_nome },
-          }));
+          // Fetch default commission rate for the company
+          let defaultAliquota: number | null = null;
+          if (est.azienda_id) {
+            const { data: az } = await supabase.from("aziende")
+              .select("provvigione_percentuale").eq("id", est.azienda_id).single();
+            defaultAliquota = az?.provvigione_percentuale != null ? Number(az.provvigione_percentuale) : null;
+          }
+
+          // Preload PDF rows from OTHER estratti (same user + azienda) to find cross-quarter matches
+          let otherPdfRows: any[] = [];
+          {
+            let qOther = supabase.from("estratti_provvigioni_righe")
+              .select("id, estratto_id, cliente_nome, numero_ordine, numero_fattura, data_riga, imponibile, provvigione, estratti_provvigioni!inner(anno, trimestre, azienda_id, user_id)")
+              .neq("estratto_id", estrattoId)
+              .eq("crm_only", false)
+              .eq("estratti_provvigioni.user_id", est.user_id);
+            if (est.azienda_id) qOther = qOther.eq("estratti_provvigioni.azienda_id", est.azienda_id);
+            const { data: op } = await qOther;
+            otherPdfRows = op || [];
+          }
+
+          const rows = missing.map((o) => {
+            const aliq = defaultAliquota;
+            const provAttesa = aliq != null ? Number((o.totale * aliq / 100).toFixed(2)) : null;
+
+            // Find possible cross-quarter matches in other PDFs
+            const oCliente = normalizeName(o.cliente_nome || "");
+            const candidates = otherPdfRows
+              .map((p: any) => {
+                let score = 0;
+                const parts: string[] = [];
+                if (oCliente && p.cliente_nome && normalizeName(p.cliente_nome) === oCliente) { score += 40; parts.push("Cliente coincide"); }
+                if (o.codice && p.numero_ordine && normalizeName(o.codice) === normalizeName(p.numero_ordine)) { score += 40; parts.push("N. ordine coincide"); }
+                if (p.imponibile != null && Math.abs(Number(p.imponibile) - o.totale) / Math.max(1, o.totale) < 0.02) { score += 30; parts.push("Importo simile"); }
+                if (p.data_riga && o.data_ordine) {
+                  const dd = Math.abs(new Date(p.data_riga).getTime() - new Date(o.data_ordine).getTime()) / 86400000;
+                  if (dd < 120) { score += 10; parts.push(`Data entro ${Math.round(dd)}g`); }
+                }
+                return { estratto_id: p.estratto_id, riga_id: p.id, trimestre: p.estratti_provvigioni?.trimestre, anno: p.estratti_provvigioni?.anno, cliente: p.cliente_nome, imponibile: p.imponibile, provvigione: p.provvigione, data: p.data_riga, score, motivi: parts };
+              })
+              .filter((c) => c.score >= 60)
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 3);
+
+            const hasCross = candidates.length > 0;
+            return {
+              user_id: est.user_id,
+              estratto_id: estrattoId,
+              ordine_id: o.id,
+              cliente_nome: o.cliente_nome,
+              numero_ordine: o.codice,
+              data_riga: o.data_ordine,
+              imponibile: o.totale,
+              aliquota: aliq,
+              provvigione: null,
+              provvigione_attesa: provAttesa,
+              tipo_movimento: "ordinaria",
+              crm_only: true,
+              match_status: "mancante_pdf",
+              match_score: 100,
+              esito_economico: "non_riconosciuta",
+              azione_consigliata: hasCross ? "verifica" : "contesta",
+              stato_verifica: hasCross ? "liquidato_altrove" : "da_verificare",
+              cross_estratto_candidates: candidates,
+              motivo: hasCross
+                ? `Ordine assente dall'estratto ma trovato un possibile riscontro in un altro trimestre (T${candidates[0].trimestre}/${candidates[0].anno}).`
+                : `Ordine presente nel CRM ma assente nell'estratto provvigionale.${provAttesa != null ? ` Provvigione attesa ~ ${provAttesa.toFixed(2)} €.` : ""}`,
+              ordine_snapshot: { id: o.id, codice: o.codice, data: o.data_ordine, totale: o.totale, cliente: o.cliente_nome },
+            };
+          });
           const { error } = await supabase.from("estratti_provvigioni_righe").insert(rows);
           if (!error) phantomAdded = rows.length;
         }
@@ -612,6 +663,7 @@ export function useRunMatching() {
 
       return { updated, phantomAdded, kept };
     },
+
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["estratto_righe"] });
       qc.invalidateQueries({ queryKey: ["estratti_provvigioni"] });
