@@ -44,7 +44,7 @@ export function IntegrityCheckPanel() {
         return {
           ...r,
           codice: o?.codice ?? null,
-          cliente: o?.cliente?.ragione_sociale ?? null,
+          cliente: o?.clienti?.nome ?? null,
           data: orderDate(o),
           status: o?.status ?? null,
         };
