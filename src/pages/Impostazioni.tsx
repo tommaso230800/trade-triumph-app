@@ -33,6 +33,7 @@ import {
   Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IntegrityCheckPanel } from "@/components/metrics/IntegrityCheckPanel";
 
 const Impostazioni = () => {
   const { user } = useAuth();
@@ -393,6 +394,9 @@ const Impostazioni = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Integrity Check — Fase 1.5 */}
+        <IntegrityCheckPanel />
       </div>
     </MainLayout>
   );
