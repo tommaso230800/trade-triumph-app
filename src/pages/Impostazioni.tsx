@@ -33,6 +33,7 @@ import {
   Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { IntegrityCheckPanel } from "@/components/metrics/IntegrityCheckPanel";
 
 const Impostazioni = () => {
   const { user } = useAuth();
