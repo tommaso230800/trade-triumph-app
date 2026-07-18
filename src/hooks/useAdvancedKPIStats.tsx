@@ -177,18 +177,23 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         scontoNumeratore += scontoOrdine * totaleOrdine;
         scontoMerceTotale += Number(ordine.sconto_merce) || 0;
 
-        // Monthly stats
-        const date = new Date(ordine.data_ordine || ordine.created_at);
+        // Data di riferimento coerente col motore metriche
+        const refDate = orderDate(ordine as OrdineLike) || ordine.data_ordine || ordine.created_at;
+        const date = new Date(refDate);
         const meseIndex = date.getMonth();
         const mese = mesiNomi[meseIndex];
         ordiniPerMeseMap[mese].fatturato += totaleOrdine;
         ordiniPerMeseMap[mese].ordini += 1;
 
+        // Allocazione proporzionale del fatturato ordine sulle righe non-omaggio.
+        // Così la somma per prodotto/brand riconcilia con `ordini.totale`.
+        const alloc = allocateRevenueByRiga(ordine as OrdineLike);
+
         // Process each order line
         let ordineCartoni = 0;
         let ordinePezzi = 0;
 
-        ordine.ordini_righe?.forEach((riga: any) => {
+        ordine.ordini_righe?.forEach((riga: any, rigaIdx: number) => {
           if (!riga.prodotti) return;
 
           // Skip if brand filter is active and product doesn't match
@@ -198,15 +203,20 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
 
           const cartoni = riga.quantita_cartoni;
           const pezzi = riga.quantita_pezzi + cartoni * (riga.prodotti.pezzi_per_cartone || 1);
-          const rigaFatturato = pezzi * Number(riga.prezzo_unitario);
+          const rigaFatturatoLordo = pezzi * Number(riga.prezzo_unitario);
+          // Fatturato attribuito al prodotto/brand: allocazione proporzionale
+          // dal motore metriche (== 0 per omaggi, riconcilia con ordini.totale).
+          const rigaFatturato = alloc[rigaIdx] ?? 0;
 
-          // Sconto cascata sc1/sc2/sc3 ponderato sul subtotale lordo
-          const sc1 = Number(riga.sc1) || 0;
-          const sc2 = Number(riga.sc2) || 0;
-          const sc3 = Number(riga.sc3) || 0;
-          const scontoCascata = (1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100)) * 100;
-          subtotaleRigheTotale += rigaFatturato;
-          scontoRigheNumeratore += scontoCascata * rigaFatturato;
+          // Sconto cascata sc1/sc2/sc3 ponderato sul subtotale lordo (solo non-omaggio)
+          if (!riga.is_omaggio) {
+            const sc1 = Number(riga.sc1) || 0;
+            const sc2 = Number(riga.sc2) || 0;
+            const sc3 = Number(riga.sc3) || 0;
+            const scontoCascata = (1 - (1 - sc1 / 100) * (1 - sc2 / 100) * (1 - sc3 / 100)) * 100;
+            subtotaleRigheTotale += rigaFatturatoLordo;
+            scontoRigheNumeratore += scontoCascata * rigaFatturatoLordo;
+          }
 
           // Costo acquisto per calcolare margine reale
           const costoAcq = Number(riga.prodotti.costo_acquisto) || 0;
