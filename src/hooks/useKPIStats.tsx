@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { allocateRevenueByRiga, type OrdineLike } from "@/lib/metricsEngine";
 
 export type ClienteKPI = {
   id: string;
@@ -84,6 +85,10 @@ export function useKPIStats(periodFilter: PeriodFilter = "tutti") {
             quantita_pezzi,
             quantita_cartoni,
             prezzo_unitario,
+            sc1,
+            sc2,
+            sc3,
+            is_omaggio,
             prodotti (id, nome, pezzi_per_cartone, prezzo_listino, azienda_id)
           )
         `)
