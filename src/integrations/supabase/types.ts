@@ -2433,6 +2433,69 @@ export type Database = {
           },
         ]
       }
+      riconciliazioni_allocazioni: {
+        Row: {
+          confidence: number
+          created_at: string
+          estratto_riga_id: string
+          id: string
+          manuale: boolean
+          note: string | null
+          ordine_id: string
+          percentuale: number
+          quota_imponibile: number
+          quota_provvigione: number
+          tipo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          estratto_riga_id: string
+          id?: string
+          manuale?: boolean
+          note?: string | null
+          ordine_id: string
+          percentuale?: number
+          quota_imponibile?: number
+          quota_provvigione?: number
+          tipo?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          estratto_riga_id?: string
+          id?: string
+          manuale?: boolean
+          note?: string | null
+          ordine_id?: string
+          percentuale?: number
+          quota_imponibile?: number
+          quota_provvigione?: number
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "riconciliazioni_allocazioni_estratto_riga_id_fkey"
+            columns: ["estratto_riga_id"]
+            isOneToOne: false
+            referencedRelation: "estratti_provvigioni_righe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "riconciliazioni_allocazioni_ordine_id_fkey"
+            columns: ["ordine_id"]
+            isOneToOne: false
+            referencedRelation: "ordini"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       riconciliazioni_pagamenti: {
         Row: {
           created_at: string

@@ -1,106 +1,97 @@
+# Fase 2 — Motore di riconciliazione many-to-many
 
-# Fase 1 — Audit coerenza dati (SOLO ANALISI, nessuna modifica)
+Obiettivo: passare dal confronto "1 riga PDF ↔ 1 ordine" a un motore che ragiona in **gruppi**. Un pagamento estratto può coprire più ordini; un ordine può essere spezzato su più righe di estratto (acconto + saldo, note credito, bonus). Tutto rimane ancorato a `ordini.totale` (fonte di verità Fase 1).
 
-Come richiesto: non tocco ancora nulla. Ecco cosa ho trovato analizzando gli hook che alimentano Dashboard, KPI, Ordini e Provvigioni, e il piano di correzione da approvare prima di scrivere codice.
+## Cosa cambia rispetto a oggi
 
-## Perché i numeri differiscono oggi
+Oggi (`useRiconciliazione.tsx`):
+- ogni riga PDF cerca **il** miglior ordine → match esatto, probabile, mancante
+- gli sconti/note credito diventano "phantom rows"
+- pagamenti frazionati generano falsi delta
 
-Ogni pagina ha una **formula indipendente**, con filtri e sorgenti diverse sugli stessi ordini. Ho verificato riga per riga:
+Domani:
+- ogni riga PDF → **gruppo di ordini candidati** con quota di allocazione
+- ogni ordine → **gruppo di righe PDF** che lo coprono (totale, parziale, con abbuono)
+- il motore risolve il grafo bipartito e produce **allocazioni %** che quadrano ai centesimi
 
-### 1. Dashboard (`useStats.tsx`)
-- Esclude: `annullato`, `stand_by`
-- Data usata: `data_ordine || created_at` (fallback su created_at)
-- Fatturato mensile = tutti gli ordini con data ≥ inizio mese corrente
-- "Ordini totali" = TUTTI gli ordini del filtro (nessun range temporale)
+## Architettura
 
-### 2. KPI (`useKPIStats.tsx` + `useAdvancedKPIStats.tsx`)
-- Esclude: `annullato`, `stand_by`
-- Data usata: `data_ordine` (senza fallback su created_at nel filtro server) ma con fallback per il raggruppamento mensile
-- Range: filtrato via `.gte/.lte("data_ordine", …)` → **esclude ordini con `data_ordine` NULL** che invece la Dashboard include
-- Fatturato = somma `ordini.totale` (campo denormalizzato, potenzialmente non allineato alle righe)
-- Fatturato per prodotto/brand = ricalcolato dalle righe (sc1/sc2/sc3, omaggi esclusi) → **base diversa dal fatturato totale**
+```text
+┌──────────────┐   ┌───────────────────────┐   ┌──────────────┐
+│ PDF righe    │──▶│ reconciliationEngine  │◀──│ CRM ordini   │
+│ (estratti_…) │   │  (grafo + solver)     │   │ + righe      │
+└──────────────┘   └──────────┬────────────┘   └──────────────┘
+                              ▼
+                    ┌──────────────────────┐
+                    │ riconciliazioni_     │  ← nuova tabella
+                    │ allocazioni (M:N)    │
+                    └──────────┬───────────┘
+                               ▼
+                    KPI e stati coerenti
+                    (ordini.provvigione_stato,
+                     estratti_righe.stato_verifica)
+```
 
-### 3. Ordini (`useOrdini.tsx`)
-- **Nessuna esclusione**: mostra anche `annullato` e `stand_by`
-- Ordinamento per `data_ordine` desc (i NULL finiscono in fondo ma vengono contati)
-- Il conteggio in pagina include stati che Dashboard/KPI escludono → discrepanza numerica garantita
+## Step di implementazione
 
-### 4. Provvigioni (`useProvvigioniAnalytics.tsx`)
-- Esclude: `annullato`, `stand_by`
-- Data usata per bucket: `data_ordine || created_at`
-- Provvigione = `totale * (aliquota_azienda/100)` **calcolata client-side**, ma il DB ha già `provvigione_prevista` calcolata dal trigger con la matrice → **due fonti di verità per la stessa provvigione**
-- Non usa `data_conferma` per ordini stand-by riattivati (Dashboard/KPI sì, in parte)
+### Step 2.1 — Schema many-to-many
+Nuova tabella `riconciliazioni_allocazioni` (migration):
+- `estratto_riga_id` (FK)
+- `ordine_id` (FK)
+- `quota_imponibile`, `quota_provvigione` (importi allocati)
+- `percentuale` (0-100)
+- `tipo`: `intero | parziale | acconto | saldo | abbuono | bonus`
+- `confidence` (0-100)
+- `manuale` (bool: rettifica utente)
+- RLS + GRANT standard
 
-### 5. Causa comune (bug strutturale)
-- `ordini.totale` è un valore denormalizzato che non viene sempre ricalcolato quando le righe cambiano (omaggi, sconti). KPI/Dashboard leggono `totale`, i dettagli leggono le righe → totali diversi anche a parità di filtro.
-- Nessun campo `data_riferimento` unificato: alcune pagine usano `data_ordine`, altre `data_conferma`, altre `created_at`. Per gli ordini importati da PDF senza data → finiscono in bucket diversi in ogni pagina.
+### Step 2.2 — `src/lib/reconciliationEngine.ts`
+Motore puro TS (testabile, no side-effect):
+1. **Candidate graph**: per ogni riga PDF, top-N ordini candidati (score = cliente/alias + importo ± tolleranza + finestra data + codice ordine)
+2. **Bucket by client+company**: risolve un cluster per volta (evita esplosione combinatoria)
+3. **Solver**:
+   - 1↔1 perfetto → allocazione 100%
+   - 1↔N (una riga PDF copre più ordini): partiziona per importi che sommano al totale PDF (subset-sum tollerante)
+   - N↔1 (più righe PDF su un ordine): somma quote fino a raggiungere `ordini.totale`
+   - N↔N: greedy con priorità a match esatti, residuo → abbuono/bonus
+4. **Output**: array di allocazioni + residui inspiegabili (per l'anomaly center Fase 3)
 
-## Piano di correzione (additivo, non distruttivo)
+### Step 2.3 — Hook `useReconciliationEngine.tsx`
+- Sostituisce la logica match dentro `useRiconciliazione`
+- Input: estratto selezionato + finestra temporale ordini
+- Output: allocazioni + KPI aggregati (coperto, scoperto, sovrapagato, bonus)
+- Persistenza in `riconciliazioni_allocazioni` on-demand
 
-Prima di scrivere codice, propongo questi passi da fare **in questo ordine**, uno per volta, con conferma tra uno e l'altro:
+### Step 2.4 — UI: vista "Gruppi di allocazione"
+Nuovo tab dentro `RiconciliazioneSection`:
+- Card per **cluster** (cliente × azienda × trimestre)
+- Ogni card mostra: totale PDF | totale CRM | Δ | grafo visivo delle allocazioni
+- Azioni per gruppo: **Accetta tutto**, **Rialloca manualmente**, **Segna abbuono**
+- Riallocazione drag: sposta quota da un ordine all'altro con slider %
 
-### Passo 1.1 — Diagnosi quantitativa (SQL read-only)
-Eseguo query di sola lettura sul DB per misurare esattamente lo scostamento:
-- Numero ordini per stato
-- Numero ordini con `data_ordine` NULL
-- Numero ordini con `data_ordine ≠ created_at` (mesi diversi)
-- Differenza tra `sum(ordini.totale)` e `sum(righe ricalcolate)` per ordine
-- Ordini senza `azienda_id`, senza `cliente_id`, senza righe
-- Duplicati potenziali (stesso cliente+azienda+data+totale)
+### Step 2.5 — Ricalcolo KPI con allocazioni
+Aggiornare `metricsEngine.ts`:
+- `aggregateProvvigioniPagate(ordini, allocazioni)`: la provvigione pagata di un ordine è la **somma delle quote** dalle allocazioni confermate, non più il flag `provvigione_stato`
+- Nuove funzioni: `revenueByAzienda`, `revenueByCliente` che rispettano le allocazioni per pagamenti parziali
+- Backward compat: se un ordine non ha allocazioni, si comporta come oggi
 
-Output: un report con i numeri esatti che spiegano le discrepanze attuali.
+### Step 2.6 — Integrazione Provvigioni
+- Nuovo pannello nel tab **Riconciliazione**: "Gruppi non risolti" con residui
+- KPI "Coperto/Scoperto/Sovrapagato" nella hero card di Provvigioni
+- Colonna "Allocato %" nella tabella provvigioni (accanto allo stato)
 
-### Passo 1.2 — Motore unico delle metriche (`src/lib/metricsEngine.ts`)
-Nuovo file **additivo** che espone funzioni pure:
-- `getPeriodOrders(filters)` → una sola query, un solo set di esclusioni configurabile
-- `computeRevenue(orders, mode: 'header' | 'lines')` → sceglie esplicitamente la base
-- `computeCommissionStates(orders)` → 4 stati (prevista / riconosciuta / pagata / da_ricevere) letti dai campi già esistenti
-- `getMetricsSnapshot(filters)` → oggetto unico con periodo, filtri, record inclusi/esclusi e motivazione
+## Cosa NON tocca questa fase
 
-Nessun hook esistente viene modificato in questo passo. Il motore è pronto ma non collegato.
+- Anomaly center completo → Fase 3
+- Riconciliazione bancaria → Fase 3
+- Chiusura trimestrale + audit log → Fase 4
+- L'UI attuale della riconciliazione resta accessibile in parallelo (toggle "Vista classica / Gruppi") finché non validi il nuovo motore
 
-### Passo 1.3 — Adozione graduale in parallelo
-Dashboard, KPI, Ordini e Provvigioni continuano a funzionare come oggi. Aggiungo in ognuna un **banner di trasparenza** (nascondibile) che mostra:
-- Periodo analizzato
-- Filtri attivi
-- N record inclusi / esclusi + motivo
-- Timestamp ultimo aggiornamento
+## Ordine di consegna proposto
 
-Il banner legge dal motore unico → se i numeri della pagina divergono da quelli del motore, l'utente lo vede subito. Questo permette di validare il motore su dati reali PRIMA di sostituire le formule vecchie.
+1. Step 2.1 + 2.2 (schema + engine puro) — nessun impatto UI
+2. Step 2.3 (hook) — nessun impatto UI  
+3. Step 2.4 (UI gruppi) — attivabile via toggle
+4. Step 2.5 + 2.6 (KPI + integrazione Provvigioni)
 
-### Passo 1.4 — Switch controllato (solo dopo tua OK)
-Una pagina alla volta, sostituisco la formula locale con la chiamata al motore. Ogni switch è un commit isolato, facilmente reversibile dalla History.
-
-### Passo 1.5 — Pagina "Verifica integrità dati" (Impostazioni)
-Nuovo componente read-only che elenca le anomalie rilevate dalle query del Passo 1.1, con link per aprire il record. Nessuna correzione automatica.
-
-## Cosa NON tocco in questa fase
-
-- Nessuna migrazione schema
-- Nessuna modifica a UI di Dashboard/KPI/Ordini/Provvigioni oltre al banner di trasparenza
-- Nessun campo rinominato
-- Nessuna funzione rimossa
-- Nessuna riscrittura di `useProvvigioniAnalytics`, `useKPIStats`, `useStats` finché il motore non è validato
-
-## File che verranno creati/modificati (solo dopo la tua approvazione)
-
-**Creati (nuovi):**
-- `src/lib/metricsEngine.ts` (Passo 1.2)
-- `src/components/common/DataTransparencyBanner.tsx` (Passo 1.3)
-- `src/components/impostazioni/IntegrityCheckPanel.tsx` (Passo 1.5)
-- `src/hooks/useIntegrityCheck.tsx` (Passo 1.5)
-
-**Modificati (solo aggiunta banner, formule intatte):**
-- `src/pages/Index.tsx` (Dashboard)
-- `src/pages/KPI.tsx`
-- `src/pages/Ordini.tsx`
-- `src/pages/Provvigioni.tsx`
-- `src/pages/Impostazioni.tsx`
-
-**Zero migrazioni database in Fase 1.**
-
-## Prossimo passo che chiedo di autorizzarmi
-
-Eseguire il **Passo 1.1** — le query read-only di diagnosi — e mostrarti i numeri esatti. Da lì decidiamo se procedere col motore unico o se emergono anomalie che vanno affrontate prima.
-
-Confermi di partire dal Passo 1.1?
+Ogni step è indipendente e testabile in isolamento. Confermi che parto da 2.1 + 2.2?
