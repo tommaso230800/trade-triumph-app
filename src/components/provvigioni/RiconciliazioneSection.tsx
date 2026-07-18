@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from "react";
+import { AllocationsEnginePanel } from "@/components/provvigioni/AllocationsEnginePanel";
 import { useAziende } from "@/hooks/useAziende";
 import { useOrdini } from "@/hooks/useOrdini";
 import {
@@ -498,8 +499,11 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
         <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={clearSel}>Deseleziona tutte</Button>
       </div>
 
+      {/* Motore M:N Fase 2 */}
+      <AllocationsEnginePanel estrattoId={estratto.id} />
 
       {/* KPI cards */}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <KpiCard active={filter === "tutte"} onClick={() => setFilter("tutte")} label="Totale estratto PDF" value={formatEuro(stats.totalePdf)} sub={`${rows.filter((r) => !r.crm_only).length} righe`} />
         <KpiCard active={filter === "esatte"} onClick={() => setFilter("esatte")} label="Riconciliato" value={formatEuro(stats.riconciliatoImp)} sub={`${stats.riconciliato} righe`} tone="green" />
