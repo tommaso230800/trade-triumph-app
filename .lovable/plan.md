@@ -1,111 +1,106 @@
-## Obiettivo
-Rimuovere le vecchie sezioni "Assistente Trattativa" e "Trattative" e sostituirle con una nuova sezione unica **"Assistente AI"** che analizza note libere (testo o voce) dell'agente e propone azioni da confermare prima di scriverle nel database.
 
----
+# Fase 1 — Audit coerenza dati (SOLO ANALISI, nessuna modifica)
 
-## 1. Rimozioni
+Come richiesto: non tocco ancora nulla. Ecco cosa ho trovato analizzando gli hook che alimentano Dashboard, KPI, Ordini e Provvigioni, e il piano di correzione da approvare prima di scrivere codice.
 
-**Sidebar / Routing (`src/components/layout/Sidebar.tsx`, `src/App.tsx`)**
-- Rimuovere le voci di menu "Trattative" e "Assistente Trattativa".
-- Rimuovere le route `/trattative`, `/trattative/:id`, `/assistente-trattativa`.
-- Mantenere invariata la voce esistente "AI Commerciale" (funzionalità distinta).
+## Perché i numeri differiscono oggi
 
-**File rimossi**
-- `src/pages/Trattative.tsx`
-- `src/pages/TrattativaDettaglio.tsx`
-- `src/pages/AssistenteTrattativa.tsx`
-- Componenti in `src/components/trattativa/*` (non più referenziati).
-- Hook `src/hooks/useTrattativa.tsx`, `src/hooks/useDeals.tsx` (se non usati altrove — verificare prima).
+Ogni pagina ha una **formula indipendente**, con filtri e sorgenti diverse sugli stessi ordini. Ho verificato riga per riga:
 
-Le tabelle DB `deals`, `deal_messages`, `storico_trattative`, `template_trattativa` restano (nessuna DROP: si evita perdita dati). Verranno semplicemente non più utilizzate dal frontend.
+### 1. Dashboard (`useStats.tsx`)
+- Esclude: `annullato`, `stand_by`
+- Data usata: `data_ordine || created_at` (fallback su created_at)
+- Fatturato mensile = tutti gli ordini con data ≥ inizio mese corrente
+- "Ordini totali" = TUTTI gli ordini del filtro (nessun range temporale)
 
----
+### 2. KPI (`useKPIStats.tsx` + `useAdvancedKPIStats.tsx`)
+- Esclude: `annullato`, `stand_by`
+- Data usata: `data_ordine` (senza fallback su created_at nel filtro server) ma con fallback per il raggruppamento mensile
+- Range: filtrato via `.gte/.lte("data_ordine", …)` → **esclude ordini con `data_ordine` NULL** che invece la Dashboard include
+- Fatturato = somma `ordini.totale` (campo denormalizzato, potenzialmente non allineato alle righe)
+- Fatturato per prodotto/brand = ricalcolato dalle righe (sc1/sc2/sc3, omaggi esclusi) → **base diversa dal fatturato totale**
 
-## 2. Nuova sezione "Assistente AI"
+### 3. Ordini (`useOrdini.tsx`)
+- **Nessuna esclusione**: mostra anche `annullato` e `stand_by`
+- Ordinamento per `data_ordine` desc (i NULL finiscono in fondo ma vengono contati)
+- Il conteggio in pagina include stati che Dashboard/KPI escludono → discrepanza numerica garantita
 
-### Menu & Route
-- Nuova voce sidebar "Assistente AI" (icona `Sparkles` o `Wand2`) → route `/assistente-ai`.
-- Posizionata sotto "Note" per accessibilità.
+### 4. Provvigioni (`useProvvigioniAnalytics.tsx`)
+- Esclude: `annullato`, `stand_by`
+- Data usata per bucket: `data_ordine || created_at`
+- Provvigione = `totale * (aliquota_azienda/100)` **calcolata client-side**, ma il DB ha già `provvigione_prevista` calcolata dal trigger con la matrice → **due fonti di verità per la stessa provvigione**
+- Non usa `data_conferma` per ordini stand-by riattivati (Dashboard/KPI sì, in parte)
 
-### Pagina `src/pages/AssistenteAI.tsx`
-Layout mobile-first, verticale, con:
-- Header: titolo "Assistente AI" + sottotitolo "Registra visite, crea promemoria e prepara comunicazioni".
-- **Textarea grande** con placeholder richiesto.
-- **Pulsante microfono** (Web Speech API `webkitSpeechRecognition`, fallback nascosto se non supportato) accanto/dentro la textarea.
-- **Pulsante "Analizza nota"** primario.
-- **Sezione "Risultato dell'analisi"**: scheda editabile con tutti i campi (cliente combobox, azienda combobox, tipo attività select, data attività, riepilogo textarea, priorità select colorata, prossima azione, data/ora promemoria, stato select, bozza comunicazione textarea + pulsanti Copia/Modifica/Salva).
-- **Sezione "Azioni da confermare"**: lista di card, ognuna con descrizione, tipo, pulsanti Conferma / Modifica / Ignora. In fondo pulsante primario "Conferma tutte le azioni".
-- **Sezione "Attività recenti"**: ultime 10 righe da `ai_activity_log` con stato e riepilogo.
+### 5. Causa comune (bug strutturale)
+- `ordini.totale` è un valore denormalizzato che non viene sempre ricalcolato quando le righe cambiano (omaggi, sconti). KPI/Dashboard leggono `totale`, i dettagli leggono le righe → totali diversi anche a parità di filtro.
+- Nessun campo `data_riferimento` unificato: alcune pagine usano `data_ordine`, altre `data_conferma`, altre `created_at`. Per gli ordini importati da PDF senza data → finiscono in bucket diversi in ogni pagina.
 
-### Componenti nuovi
-- `src/components/assistente-ai/RisultatoAnalisiCard.tsx`
-- `src/components/assistente-ai/AzioniProposteList.tsx`
-- `src/components/assistente-ai/AttivitaRecentiList.tsx`
-- `src/components/assistente-ai/ClienteAziendaCombobox.tsx`
+## Piano di correzione (additivo, non distruttivo)
 
-### Hook
-- `src/hooks/useAssistenteAI.tsx` — mutazione `analizza(note)` che chiama la edge function e salva `ai_activity_log` (stato `analizzato`), query `useAttivitaRecenti`, mutazione `confermaAzioni(azioni)` che esegue gli INSERT su `visite`/`promemoria` in transazione client-side e aggiorna il log.
+Prima di scrivere codice, propongo questi passi da fare **in questo ordine**, uno per volta, con conferma tra uno e l'altro:
 
----
+### Passo 1.1 — Diagnosi quantitativa (SQL read-only)
+Eseguo query di sola lettura sul DB per misurare esattamente lo scostamento:
+- Numero ordini per stato
+- Numero ordini con `data_ordine` NULL
+- Numero ordini con `data_ordine ≠ created_at` (mesi diversi)
+- Differenza tra `sum(ordini.totale)` e `sum(righe ricalcolate)` per ordine
+- Ordini senza `azienda_id`, senza `cliente_id`, senza righe
+- Duplicati potenziali (stesso cliente+azienda+data+totale)
 
-## 3. Database
+Output: un report con i numeri esatti che spiegano le discrepanze attuali.
 
-Verifica esistenti:
-- `visite` (11 col): riusare, ma verificare la struttura. Potrebbe mancare `prossima_azione` / `priorita` / `stato` → **estendere via ALTER TABLE** solo se mancanti.
-- `promemoria` (11 col): riusare così com'è, verificare compatibilità con i campi richiesti.
-- `clienti`, `aziende`: riusare.
+### Passo 1.2 — Motore unico delle metriche (`src/lib/metricsEngine.ts`)
+Nuovo file **additivo** che espone funzioni pure:
+- `getPeriodOrders(filters)` → una sola query, un solo set di esclusioni configurabile
+- `computeRevenue(orders, mode: 'header' | 'lines')` → sceglie esplicitamente la base
+- `computeCommissionStates(orders)` → 4 stati (prevista / riconosciuta / pagata / da_ricevere) letti dai campi già esistenti
+- `getMetricsSnapshot(filters)` → oggetto unico con periodo, filtri, record inclusi/esclusi e motivazione
 
-**Nuova tabella `ai_activity_log`** (unica CREATE):
-- Campi: `id`, `user_id`, `input_originale`, `risultato_analisi` (jsonb), `azioni_proposte` (jsonb), `azioni_confermate` (jsonb), `stato` (`analizzato` / `confermato` / `parziale` / `errore` / `ignorato`), `messaggio_errore`, `created_at`.
-- RLS: solo owner (`auth.uid() = user_id`).
-- GRANT su `authenticated` + `service_role`.
+Nessun hook esistente viene modificato in questo passo. Il motore è pronto ma non collegato.
 
-Migration unica che:
-1. Verifica ed estende `visite` con eventuali colonne mancanti (`priorita text`, `stato text`, `prossima_azione text`) — solo `ADD COLUMN IF NOT EXISTS`.
-2. Crea `ai_activity_log` con GRANT + RLS + policy.
+### Passo 1.3 — Adozione graduale in parallelo
+Dashboard, KPI, Ordini e Provvigioni continuano a funzionare come oggi. Aggiungo in ognuna un **banner di trasparenza** (nascondibile) che mostra:
+- Periodo analizzato
+- Filtri attivi
+- N record inclusi / esclusi + motivo
+- Timestamp ultimo aggiornamento
 
----
+Il banner legge dal motore unico → se i numeri della pagina divergono da quelli del motore, l'utente lo vede subito. Questo permette di validare il motore su dati reali PRIMA di sostituire le formule vecchie.
 
-## 4. Edge Function `analyze-note`
+### Passo 1.4 — Switch controllato (solo dopo tua OK)
+Una pagina alla volta, sostituisco la formula locale con la chiamata al motore. Ogni switch è un commit isolato, facilmente reversibile dalla History.
 
-`supabase/functions/analyze-note/index.ts`
-- Riceve `{ note, clienti: [{id,nome}], aziende: [{id,nome}] }` (elenchi passati dal client per matching).
-- Chiama Lovable AI Gateway (`google/gemini-3-flash-preview`) con structured output (tool calling) per estrarre:
-  - `cliente_id` (match fuzzy sui nomi passati) o `cliente_nome_suggerito`
-  - `azienda_id` o `azienda_nome_suggerita`
-  - `tipo_attivita` (enum)
-  - `data_attivita` (ISO)
-  - `riepilogo`
-  - `priorita` (bassa/media/alta/urgente)
-  - `prossima_azione`
-  - `data_promemoria` (ISO datetime)
-  - `stato` (default "da_fare")
-  - `bozza_comunicazione`
-  - `informazioni_mancanti[]`
-  - `azioni_proposte[]` con `{tipo: "crea_visita"|"crea_promemoria"|"salva_bozza", descrizione, payload}`
-- CORS + gestione 429/402.
-- Nessuna scrittura DB dall'edge function: la conferma la fa il client dopo approvazione utente.
+### Passo 1.5 — Pagina "Verifica integrità dati" (Impostazioni)
+Nuovo componente read-only che elenca le anomalie rilevate dalle query del Passo 1.1, con link per aprire il record. Nessuna correzione automatica.
 
----
+## Cosa NON tocco in questa fase
 
-## 5. Sicurezza / Regole
-- Nessuna azione DB prima del click "Conferma".
-- L'assistente non invia email, non elimina, non tocca ordini/fatture/provvigioni.
-- Bozza comunicazione solo copiabile/salvabile in `ai_activity_log.risultato_analisi`.
+- Nessuna migrazione schema
+- Nessuna modifica a UI di Dashboard/KPI/Ordini/Provvigioni oltre al banner di trasparenza
+- Nessun campo rinominato
+- Nessuna funzione rimossa
+- Nessuna riscrittura di `useProvvigioniAnalytics`, `useKPIStats`, `useStats` finché il motore non è validato
 
----
+## File che verranno creati/modificati (solo dopo la tua approvazione)
 
-## 6. Note tecniche
-- Web Speech API: `SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition`; lingua `it-IT`; pulsante mostrato solo se disponibile.
-- Combobox cliente/azienda: usare shadcn `Command` con ricerca.
-- Mobile: textarea `min-h-[180px]`, pulsanti `touch-target`, layout verticale singola colonna.
+**Creati (nuovi):**
+- `src/lib/metricsEngine.ts` (Passo 1.2)
+- `src/components/common/DataTransparencyBanner.tsx` (Passo 1.3)
+- `src/components/impostazioni/IntegrityCheckPanel.tsx` (Passo 1.5)
+- `src/hooks/useIntegrityCheck.tsx` (Passo 1.5)
 
----
+**Modificati (solo aggiunta banner, formule intatte):**
+- `src/pages/Index.tsx` (Dashboard)
+- `src/pages/KPI.tsx`
+- `src/pages/Ordini.tsx`
+- `src/pages/Provvigioni.tsx`
+- `src/pages/Impostazioni.tsx`
 
-## Ordine di esecuzione
-1. Migration DB (estensione `visite` + nuova tabella `ai_activity_log`).
-2. Edge function `analyze-note` + deploy.
-3. Hook `useAssistenteAI`.
-4. Pagina + componenti.
-5. Sidebar/App.tsx: aggiungere "Assistente AI", rimuovere Trattative/Assistente Trattativa.
-6. Eliminare i file delle pagine/componenti rimossi.
+**Zero migrazioni database in Fase 1.**
+
+## Prossimo passo che chiedo di autorizzarmi
+
+Eseguire il **Passo 1.1** — le query read-only di diagnosi — e mostrarti i numeri esatti. Da lì decidiamo se procedere col motore unico o se emergono anomalie che vanno affrontate prima.
+
+Confermi di partire dal Passo 1.1?
