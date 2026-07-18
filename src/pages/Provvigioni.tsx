@@ -278,6 +278,7 @@ const Provvigioni = () => {
   return (
     <MainLayout>
       <div className="space-y-6 animate-rise-in pb-8">
+        <TransparencyBanner scope="provvigioni" />
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="space-y-1">

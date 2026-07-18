@@ -55,6 +55,7 @@ import {
   FileText,
 } from "lucide-react";
 import { exportKPIToPDF, exportKPIToCSV } from "@/lib/exportKPI";
+import { TransparencyBanner } from "@/components/metrics/TransparencyBanner";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
@@ -195,6 +196,7 @@ const KPI = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
+        <TransparencyBanner scope="kpi" />
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
