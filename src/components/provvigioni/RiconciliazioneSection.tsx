@@ -428,9 +428,15 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
     for (const r of rows) {
       const p = Number(r.provvigione) || 0;
       if (r.crm_only) {
-        s.crmNonPdf++; s.crmNonPdfImp += p || (Number(r.imponibile) * (Number(r.aliquota) || 0) / 100) || 0;
-        s.totaleCrm += Number(r.imponibile) * ((Number(r.aliquota) || 0) / 100);
-        s.recuperabile += Number(r.imponibile) * ((Number(r.aliquota) || 0) / 100);
+        // Use provvigione_attesa (calculated from company default) when PDF provvigione is null
+        const attesa = Number(r.provvigione_attesa) || (r.imponibile != null && r.aliquota != null ? Number(r.imponibile) * (Number(r.aliquota) / 100) : 0);
+        s.crmNonPdf++;
+        s.crmNonPdfImp += attesa;
+        s.totaleCrm += attesa;
+        // Solo le righe ancora "da verificare" o "contestate" sono realmente recuperabili
+        if (!r.stato_verifica || ["da_verificare", "contestazione_aperta", "contestato"].includes(r.stato_verifica)) {
+          s.recuperabile += attesa;
+        }
       } else {
         s.totalePdf += p;
         if (r.ordine_id) s.totaleCrm += p;
