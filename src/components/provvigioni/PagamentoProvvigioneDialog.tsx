@@ -235,8 +235,57 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-3">
+                <div className="text-xs font-medium uppercase tracking-wide text-primary">
+                  Trimestre di pagamento (obbligatorio)
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Anno</Label>
+                    <Select value={String(annoPag)} onValueChange={(v) => setAnnoPag(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[0, 1, 2, 3, 4].map((offset) => {
+                          const y = new Date().getFullYear() - offset;
+                          return <SelectItem key={y} value={String(y)}>{y}</SelectItem>;
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Trimestre</Label>
+                    <Select value={String(trimPag)} onValueChange={(v) => setTrimPag(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Q1 (Gen-Mar)</SelectItem>
+                        <SelectItem value="2">Q2 (Apr-Giu)</SelectItem>
+                        <SelectItem value="3">Q3 (Lug-Set)</SelectItem>
+                        <SelectItem value="4">Q4 (Ott-Dic)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Estratto conto collegato (opzionale)</Label>
+                  <Select value={estrattoId} onValueChange={setEstrattoId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={estratti.length ? "Seleziona estratto" : "Nessun estratto per Q trimestre"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nessuno</SelectItem>
+                      {estratti.map((e: any) => (
+                        <SelectItem key={e.id} value={e.id}>
+                          {e.azienda_nome} — {e.data_documento?.slice(0, 10)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </>
           )}
+
 
           <div className="space-y-2">
             <Label htmlFor="note_prov">Note</Label>
