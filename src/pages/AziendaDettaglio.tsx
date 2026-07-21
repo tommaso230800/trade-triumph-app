@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { DocumentiSection } from "@/components/documenti/DocumentiSection";
+
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -949,7 +951,12 @@ const AziendaDettaglio = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <div className="px-4 pb-6 lg:px-0">
+        <DocumentiSection entita="azienda" entita_id={id} title="Documenti azienda" />
+      </div>
     </MainLayout>
+
   );
 };
 

@@ -1,4 +1,6 @@
 import { useParams, Link } from "react-router-dom";
+import { DocumentiSection } from "@/components/documenti/DocumentiSection";
+
 import { MainLayout } from "@/components/layout/MainLayout";
 import { VisitsSection } from "@/components/visite/VisitsSection";
 import { CompetitorSection } from "@/components/visite/CompetitorSection";
@@ -685,8 +687,13 @@ const ClienteDettaglio = () => {
             </div>
           )}
         </div>
+
+        <div className="mt-6">
+          <DocumentiSection entita="cliente" entita_id={id} title="Documenti cliente" />
+        </div>
       </div>
     </MainLayout>
+
   );
 };
 
