@@ -22,6 +22,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScadenziarioFattura, StatoProvvigione, useScadenziario } from "@/hooks/useScadenziario";
 import { format } from "date-fns";
 import { AlertTriangle, Ban, CheckCircle2, CircleDot, Clock, type LucideIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
 
 interface Props {
   fattura: ProvvigioneDialogItem | null;
@@ -65,20 +68,41 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
   const [importo, setImporto] = useState<string>("");
   const [metodo, setMetodo] = useState<string>("bonifico");
   const [note, setNote] = useState<string>("");
+  const [annoPag, setAnnoPag] = useState<number>(new Date().getFullYear());
+  const [trimPag, setTrimPag] = useState<number>(Math.floor(new Date().getMonth() / 3) + 1);
+  const [estrattoId, setEstrattoId] = useState<string>("none");
+
+  const { data: estratti = [] } = useQuery({
+    queryKey: ["estratti-picker", annoPag, trimPag],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("estratti_provvigioni")
+        .select("id, azienda_nome, anno, trimestre, data_documento")
+        .eq("anno", annoPag)
+        .eq("trimestre", trimPag)
+        .order("data_documento", { ascending: false })
+        .limit(50);
+      return data || [];
+    },
+    enabled: open && (stato === "pagata" || stato === "parziale"),
+  });
 
   useEffect(() => {
     if (!fattura) return;
     const currentStato = initialStato || (fattura.stato_provvigione as StatoProvvigione) || "pagata";
     setStato(currentStato);
-    setDataPagamento(fattura.data_incasso_provvigione || format(new Date(), "yyyy-MM-dd"));
+    const dPag = fattura.data_incasso_provvigione || format(new Date(), "yyyy-MM-dd");
+    setDataPagamento(dPag);
+    const d = new Date(dPag);
+    setAnnoPag(d.getFullYear());
+    setTrimPag(Math.floor(d.getMonth() / 3) + 1);
     const preset = currentStato === "pagata"
       ? (fattura.provvigione_calcolata || 0)
-      : currentStato === "parziale"
-      ? (fattura.importo_provvigione_pagata || 0)
       : (fattura.importo_provvigione_pagata || 0);
     setImporto(String(preset));
     setMetodo(fattura.metodo_pagamento_provvigione || "bonifico");
     setNote(fattura.note_provvigione || "");
+    setEstrattoId("none");
   }, [fattura, open, initialStato]);
 
   if (!fattura) return null;
@@ -98,12 +122,16 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
       data_pagamento: stato === "pagata" || stato === "parziale" ? dataPagamento : null,
       metodo: stato === "pagata" || stato === "parziale" ? metodo : null,
       note: note.trim() || null,
+      anno_pagamento: stato === "pagata" || stato === "parziale" ? annoPag : null,
+      trimestre_pagamento: stato === "pagata" || stato === "parziale" ? trimPag : null,
+      estratto_id: (stato === "pagata" || stato === "parziale") && estrattoId !== "none" ? estrattoId : null,
     });
     onOpenChange(false);
   };
 
   const showPayFields = stato === "pagata" || stato === "parziale";
   const showResidual = stato === "parziale";
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -207,8 +235,57 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3 space-y-3">
+                <div className="text-xs font-medium uppercase tracking-wide text-primary">
+                  Trimestre di pagamento (obbligatorio)
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Anno</Label>
+                    <Select value={String(annoPag)} onValueChange={(v) => setAnnoPag(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {[0, 1, 2, 3, 4].map((offset) => {
+                          const y = new Date().getFullYear() - offset;
+                          return <SelectItem key={y} value={String(y)}>{y}</SelectItem>;
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Trimestre</Label>
+                    <Select value={String(trimPag)} onValueChange={(v) => setTrimPag(Number(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Q1 (Gen-Mar)</SelectItem>
+                        <SelectItem value="2">Q2 (Apr-Giu)</SelectItem>
+                        <SelectItem value="3">Q3 (Lug-Set)</SelectItem>
+                        <SelectItem value="4">Q4 (Ott-Dic)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Estratto conto collegato (opzionale)</Label>
+                  <Select value={estrattoId} onValueChange={setEstrattoId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={estratti.length ? "Seleziona estratto" : "Nessun estratto per Q trimestre"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nessuno</SelectItem>
+                      {estratti.map((e: any) => (
+                        <SelectItem key={e.id} value={e.id}>
+                          {e.azienda_nome} — {e.data_documento?.slice(0, 10)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </>
           )}
+
 
           <div className="space-y-2">
             <Label htmlFor="note_prov">Note</Label>

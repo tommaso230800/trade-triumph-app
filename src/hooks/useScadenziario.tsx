@@ -208,6 +208,9 @@ export const useScadenziario = () => {
       data_pagamento?: string | null;
       metodo?: string | null;
       note?: string | null;
+      anno_pagamento?: number | null;
+      trimestre_pagamento?: number | null;
+      estratto_id?: string | null;
     }) => {
       const source = input.source || 'fattura';
       const updates: any = {
@@ -226,11 +229,23 @@ export const useScadenziario = () => {
         updates.data_incasso_provvigione = input.data_pagamento || null;
         updates.importo_provvigione_pagata = input.importo_pagato ?? 0;
       } else {
-        // da_pagare | scaduta | contestazione
         if (source === 'fattura') updates.provvigione_incassata = false;
         if (source === 'ordine') updates.provvigione_pagata = false;
         updates.data_incasso_provvigione = null;
         updates.importo_provvigione_pagata = 0;
+      }
+      // Only scadenziario has the new quarterly tracking columns
+      if (source === 'fattura') {
+        if (input.stato === 'pagata' || input.stato === 'parziale') {
+          const d = input.data_pagamento ? new Date(input.data_pagamento) : new Date();
+          updates.anno_pagamento = input.anno_pagamento ?? d.getFullYear();
+          updates.trimestre_pagamento = input.trimestre_pagamento ?? Math.floor(d.getMonth() / 3) + 1;
+          updates.estratto_id = input.estratto_id ?? null;
+        } else {
+          updates.anno_pagamento = null;
+          updates.trimestre_pagamento = null;
+          updates.estratto_id = null;
+        }
       }
       const { error } = source === 'ordine'
         ? await supabase.from('ordini').update(updates).eq('id', input.id)
@@ -244,6 +259,7 @@ export const useScadenziario = () => {
     },
     onError: (e) => toast.error(`Errore: ${e.message}`),
   });
+
 
   // Calcolo statistiche
   // Fatture incassate con provvigione ancora da riscuotere

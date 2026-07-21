@@ -2254,6 +2254,48 @@ export type Database = {
           },
         ]
       }
+      price_anomalies_resolved: {
+        Row: {
+          anomaly_key: string
+          azienda_id: string | null
+          azione: string
+          cliente_id: string | null
+          created_at: string
+          id: string
+          motivo: string | null
+          ordine_id: string | null
+          prodotto_id: string | null
+          tipo: string
+          user_id: string
+        }
+        Insert: {
+          anomaly_key: string
+          azienda_id?: string | null
+          azione: string
+          cliente_id?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          ordine_id?: string | null
+          prodotto_id?: string | null
+          tipo: string
+          user_id: string
+        }
+        Update: {
+          anomaly_key?: string
+          azienda_id?: string | null
+          azione?: string
+          cliente_id?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          ordine_id?: string | null
+          prodotto_id?: string | null
+          tipo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       price_increases: {
         Row: {
           category: string | null
@@ -3002,6 +3044,8 @@ export type Database = {
       }
       scadenziario_fatture: {
         Row: {
+          anno_competenza: number | null
+          anno_pagamento: number | null
           azienda_id: string | null
           azienda_nome: string
           cliente_id: string | null
@@ -3011,11 +3055,13 @@ export type Database = {
           data_incasso: string | null
           data_incasso_provvigione: string | null
           data_scadenza: string
+          estratto_id: string | null
           estratto_riga_id: string | null
           id: string
           importo: number
           importo_provvigione_pagata: number
           metodo_pagamento_provvigione: string | null
+          note_pagamento: string | null
           note_provvigione: string | null
           numero_fattura: string
           percentuale_provvigione: number
@@ -3025,11 +3071,15 @@ export type Database = {
           riferimento_pagamento_provvigione: string | null
           stato: string
           stato_provvigione: string
+          trimestre_competenza: number | null
+          trimestre_pagamento: number | null
           trimestre_provvigione: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          anno_competenza?: number | null
+          anno_pagamento?: number | null
           azienda_id?: string | null
           azienda_nome: string
           cliente_id?: string | null
@@ -3039,11 +3089,13 @@ export type Database = {
           data_incasso?: string | null
           data_incasso_provvigione?: string | null
           data_scadenza: string
+          estratto_id?: string | null
           estratto_riga_id?: string | null
           id?: string
           importo?: number
           importo_provvigione_pagata?: number
           metodo_pagamento_provvigione?: string | null
+          note_pagamento?: string | null
           note_provvigione?: string | null
           numero_fattura: string
           percentuale_provvigione?: number
@@ -3053,11 +3105,15 @@ export type Database = {
           riferimento_pagamento_provvigione?: string | null
           stato?: string
           stato_provvigione?: string
+          trimestre_competenza?: number | null
+          trimestre_pagamento?: number | null
           trimestre_provvigione?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          anno_competenza?: number | null
+          anno_pagamento?: number | null
           azienda_id?: string | null
           azienda_nome?: string
           cliente_id?: string | null
@@ -3067,11 +3123,13 @@ export type Database = {
           data_incasso?: string | null
           data_incasso_provvigione?: string | null
           data_scadenza?: string
+          estratto_id?: string | null
           estratto_riga_id?: string | null
           id?: string
           importo?: number
           importo_provvigione_pagata?: number
           metodo_pagamento_provvigione?: string | null
+          note_pagamento?: string | null
           note_provvigione?: string | null
           numero_fattura?: string
           percentuale_provvigione?: number
@@ -3081,6 +3139,8 @@ export type Database = {
           riferimento_pagamento_provvigione?: string | null
           stato?: string
           stato_provvigione?: string
+          trimestre_competenza?: number | null
+          trimestre_pagamento?: number | null
           trimestre_provvigione?: string | null
           updated_at?: string
           user_id?: string
@@ -3098,6 +3158,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scadenziario_fatture_estratto_id_fkey"
+            columns: ["estratto_id"]
+            isOneToOne: false
+            referencedRelation: "estratti_provvigioni"
             referencedColumns: ["id"]
           },
           {
