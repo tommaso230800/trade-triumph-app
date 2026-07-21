@@ -22,6 +22,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScadenziarioFattura, StatoProvvigione, useScadenziario } from "@/hooks/useScadenziario";
 import { format } from "date-fns";
 import { AlertTriangle, Ban, CheckCircle2, CircleDot, Clock, type LucideIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
 
 interface Props {
   fattura: ProvvigioneDialogItem | null;
