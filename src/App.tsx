@@ -18,7 +18,6 @@ import Ordini from "./pages/Ordini";
 import KPI from "./pages/KPI";
 import Provvigioni from "./pages/Provvigioni";
 import Canvass from "./pages/Canvass";
-import AssistenteAI from "./pages/AssistenteAI";
 import AssistenteAICommerciale from "./pages/AssistenteAICommerciale";
 import RiordinoForecast from "./pages/RiordinoForecast";
 import IntelligenzaCommerciale from "./pages/IntelligenzaCommerciale";
