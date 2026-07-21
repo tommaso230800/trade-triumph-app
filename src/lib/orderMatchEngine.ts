@@ -133,7 +133,7 @@ function confrontoRiga(crm: CRMRiga, pdf: PDFRiga): RigaEsito {
     gravita = "error";
   }
 
-  const score = diffs.length === 0 ? 1 : gravita === "warning" ? 0.6 : 0.3;
+  const score = diffs.length === 0 ? 1 : (gravita as string) === "warning" ? 0.6 : 0.3;
   return { stato, gravita, crm, pdf, differenze: diffs, score };
 }
 
