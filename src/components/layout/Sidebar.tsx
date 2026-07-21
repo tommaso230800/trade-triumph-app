@@ -4,8 +4,6 @@ import {
   Building2,
   Users,
   ShoppingCart,
-  Calendar,
-  Bell,
   Settings,
   LogOut,
   Menu,
@@ -14,22 +12,12 @@ import {
   Wallet,
   Tag,
   ChevronDown,
-  ClipboardList,
   Bot,
-  StickyNote,
   Brain,
   Sparkles,
-  AlertTriangle,
   Repeat,
   Gauge,
-  Truck,
-  Gift,
-  Map,
-  CalendarDays,
-  MessageCircle,
-  Trash2,
   Activity,
-  ShieldCheck,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -57,27 +45,16 @@ type NavItem = {
 
 const navigation: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Note", href: "/note", icon: StickyNote },
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
   { name: "KPI", href: "/kpi", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
-  { name: "Reclami/NC", href: "/segnalazioni", icon: AlertTriangle },
   { name: "Riordino", href: "/riordino", icon: Repeat },
-  { name: "Consegne", href: "/consegne", icon: Truck },
-  { name: "Omaggi", href: "/omaggi", icon: Gift },
   { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge },
-  { name: "Mappa", href: "/mappa", icon: Map },
-  { name: "Pianificazione", href: "/pianificazione", icon: CalendarDays },
-  { name: "Comunicazioni", href: "/comunicazioni", icon: MessageCircle },
-  { name: "Cestino", href: "/cestino", icon: Trash2 },
-  { name: "Diagnostica", href: "/diagnostica", icon: Activity },
-  { name: "Utenti & Ruoli", href: "/utenti-ruoli", icon: ShieldCheck },
-
   { name: "Aziende", href: "/aziende", icon: Building2 },
-  { 
-    name: "Clienti", 
-    href: "/clienti", 
+  {
+    name: "Clienti",
+    href: "/clienti",
     icon: Users,
     children: [
       { name: "ADAT", href: "/clienti/consorzio/adat" },
@@ -249,6 +226,19 @@ export function Sidebar() {
         >
           <Settings className="h-5 w-5 flex-shrink-0" />
           <span className="truncate text-sm sm:text-base">Impostazioni</span>
+        </Link>
+        <Link
+          to="/diagnostica"
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-all duration-250 ease-smooth touch-target active:scale-[0.98]",
+            location.pathname === "/diagnostica"
+              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-md"
+              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-1"
+          )}
+        >
+          <Activity className="h-5 w-5 flex-shrink-0" />
+          <span className="truncate text-sm sm:text-base">Diagnostica</span>
         </Link>
         <button
           onClick={handleSignOut}
