@@ -25,7 +25,7 @@ export function useOmaggiSpettanti(clienteId?: string, aziendaId?: string) {
     queryKey: ["omaggi-spettanti", clienteId, aziendaId],
     queryFn: async () => {
       // 1) regole da promo_clienti (con qta_base > 0)
-      const { data: promoRows, error: e1 } = await supabase
+      const { data: promoRows, error: e1 } = await (supabase as any)
         .from("promo_clienti")
         .select("id, cliente_id, azienda_id, prodotto_id, qta_base, qta_omaggio, unita_omaggio, cumulabile_arretrati, data_inizio, data_fine, nome, attiva")
         .not("qta_base", "is", null)
