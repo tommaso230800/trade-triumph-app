@@ -20,6 +20,7 @@ import {
   Brain,
   Sparkles,
   AlertTriangle,
+  Repeat,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ const navigation: NavItem[] = [
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
   { name: "Reclami/NC", href: "/segnalazioni", icon: AlertTriangle },
+  { name: "Riordino", href: "/riordino", icon: Repeat },
 
   { name: "Aziende", href: "/aziende", icon: Building2 },
   { 
