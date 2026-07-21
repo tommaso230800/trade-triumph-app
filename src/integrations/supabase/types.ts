@@ -1055,6 +1055,66 @@ export type Database = {
           },
         ]
       }
+      documenti: {
+        Row: {
+          classificazione_ai: Json | null
+          created_at: string
+          dimensione: number | null
+          entita: Database["public"]["Enums"]["documento_entita"]
+          entita_id: string | null
+          hash_sha256: string | null
+          id: string
+          mime_type: string | null
+          nome_file: string
+          note: string | null
+          storage_path: string
+          suggerimenti_ai: Json | null
+          tags: string[] | null
+          tipo: Database["public"]["Enums"]["documento_tipo"]
+          updated_at: string
+          user_id: string
+          verificato: boolean
+        }
+        Insert: {
+          classificazione_ai?: Json | null
+          created_at?: string
+          dimensione?: number | null
+          entita?: Database["public"]["Enums"]["documento_entita"]
+          entita_id?: string | null
+          hash_sha256?: string | null
+          id?: string
+          mime_type?: string | null
+          nome_file: string
+          note?: string | null
+          storage_path: string
+          suggerimenti_ai?: Json | null
+          tags?: string[] | null
+          tipo?: Database["public"]["Enums"]["documento_tipo"]
+          updated_at?: string
+          user_id: string
+          verificato?: boolean
+        }
+        Update: {
+          classificazione_ai?: Json | null
+          created_at?: string
+          dimensione?: number | null
+          entita?: Database["public"]["Enums"]["documento_entita"]
+          entita_id?: string | null
+          hash_sha256?: string | null
+          id?: string
+          mime_type?: string | null
+          nome_file?: string
+          note?: string | null
+          storage_path?: string
+          suggerimenti_ai?: Json | null
+          tags?: string[] | null
+          tipo?: Database["public"]["Enums"]["documento_tipo"]
+          updated_at?: string
+          user_id?: string
+          verificato?: boolean
+        }
+        Relationships: []
+      }
       estratti_provvigioni: {
         Row: {
           anno: number
@@ -3043,6 +3103,25 @@ export type Database = {
     Enums: {
       client_status: "premium" | "standard" | "nuovo"
       company_status: "attivo" | "in_pausa"
+      documento_entita:
+        | "ordine"
+        | "cliente"
+        | "azienda"
+        | "provvigione"
+        | "segnalazione"
+        | "generico"
+      documento_tipo:
+        | "ordine_originale"
+        | "conferma_ordine"
+        | "fattura"
+        | "nota_credito"
+        | "contratto"
+        | "listino"
+        | "accordo_provv"
+        | "promo"
+        | "email"
+        | "estratto_provv"
+        | "altro"
       event_type: "meeting" | "presentazione" | "visita" | "altro"
       order_status:
         | "in_attesa"
@@ -3181,6 +3260,27 @@ export const Constants = {
     Enums: {
       client_status: ["premium", "standard", "nuovo"],
       company_status: ["attivo", "in_pausa"],
+      documento_entita: [
+        "ordine",
+        "cliente",
+        "azienda",
+        "provvigione",
+        "segnalazione",
+        "generico",
+      ],
+      documento_tipo: [
+        "ordine_originale",
+        "conferma_ordine",
+        "fattura",
+        "nota_credito",
+        "contratto",
+        "listino",
+        "accordo_provv",
+        "promo",
+        "email",
+        "estratto_provv",
+        "altro",
+      ],
       event_type: ["meeting", "presentazione", "visita", "altro"],
       order_status: [
         "in_attesa",
