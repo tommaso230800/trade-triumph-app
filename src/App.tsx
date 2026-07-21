@@ -57,6 +57,8 @@ const App = () => (
               <Route path="/canvass" element={<Canvass />} />
               <Route path="/assistente-ai" element={<AssistenteAI />} />
               <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
+              <Route path="/segnalazioni" element={<Segnalazioni />} />
+
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="/note" element={<NotePage />} />
               <Route path="/prepara-visita" element={<PreparaVisita />} />
