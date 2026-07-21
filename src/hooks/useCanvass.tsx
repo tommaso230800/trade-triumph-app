@@ -348,7 +348,7 @@ export function useContrattiClienti() {
         .order("anno", { ascending: false });
 
       if (error) throw error;
-      return data as ContrattoCliente[];
+      return data as unknown as ContrattoCliente[];
     },
   });
 }
