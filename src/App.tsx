@@ -22,6 +22,7 @@ import AssistenteAI from "./pages/AssistenteAI";
 import AssistenteAICommerciale from "./pages/AssistenteAICommerciale";
 import Segnalazioni from "./pages/Segnalazioni";
 import RiordinoForecast from "./pages/RiordinoForecast";
+import IntelligenzaCommerciale from "./pages/IntelligenzaCommerciale";
 
 import Impostazioni from "./pages/Impostazioni";
 import NotePage from "./pages/Note";
