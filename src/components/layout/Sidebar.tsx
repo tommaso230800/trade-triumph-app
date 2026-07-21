@@ -52,6 +52,8 @@ const navigation: NavItem[] = [
   { name: "KPI", href: "/kpi", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
+  { name: "Reclami/NC", href: "/segnalazioni", icon: AlertTriangle },
+
   { name: "Aziende", href: "/aziende", icon: Building2 },
   { 
     name: "Clienti", 
