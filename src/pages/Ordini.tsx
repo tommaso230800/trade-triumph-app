@@ -53,6 +53,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
 import { MultiFileImportDialog } from "@/components/ordini/MultiFileImportDialog";
 import { StandByDialog } from "@/components/ordini/StandByDialog";
+import { VerificaConfermaDialog } from "@/components/ordini/VerificaConfermaDialog";
+
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { MultiSelect } from "@/components/ui/multi-select";
 
@@ -198,6 +200,8 @@ const Ordini = () => {
 
   // Stand-by dialog state
   const [standByTarget, setStandByTarget] = useState<{ id: string; codice?: string } | null>(null);
+  const [verificaTarget, setVerificaTarget] = useState<{ id: string; codice?: string } | null>(null);
+
 
   // Searchable options for dropdowns
   const clientiOptions = useMemo(() => 
@@ -1324,11 +1328,18 @@ const Ordini = () => {
                               Segna come Completato
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              onClick={() => setVerificaTarget({ id: ordine.id, codice: ordine.codice })}
+                            >
+                              <FileSearch className="h-4 w-4 mr-2" />
+                              Verifica conferma azienda
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onClick={() => setStandByTarget({ id: ordine.id, codice: ordine.codice })}
                             >
                               <PauseCircle className="h-4 w-4 mr-2" />
                               Metti in Stand-by
                             </DropdownMenuItem>
+
                             <DropdownMenuItem
                               className="text-destructive"
                               onClick={() => updateStatus.mutate({ id: ordine.id, status: "annullato" })}
@@ -1877,6 +1888,14 @@ const Ordini = () => {
           ordineId={standByTarget?.id || null}
           ordineCodice={standByTarget?.codice}
         />
+
+        <VerificaConfermaDialog
+          open={!!verificaTarget}
+          onOpenChange={(v) => { if (!v) setVerificaTarget(null); }}
+          ordineId={verificaTarget?.id || null}
+          ordineCodice={verificaTarget?.codice}
+        />
+
       </div>
     </MainLayout>
   );
