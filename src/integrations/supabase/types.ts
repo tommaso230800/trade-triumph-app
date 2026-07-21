@@ -184,6 +184,7 @@ export type Database = {
           default_sc1: number
           default_sc2: number
           default_sc3: number
+          deleted_at: string | null
           email: string | null
           id: string
           indirizzo: string | null
@@ -204,6 +205,7 @@ export type Database = {
           default_sc1?: number
           default_sc2?: number
           default_sc3?: number
+          deleted_at?: string | null
           email?: string | null
           id?: string
           indirizzo?: string | null
@@ -224,6 +226,7 @@ export type Database = {
           default_sc1?: number
           default_sc2?: number
           default_sc3?: number
+          deleted_at?: string | null
           email?: string | null
           id?: string
           indirizzo?: string | null
@@ -540,7 +543,10 @@ export type Database = {
       }
       clienti: {
         Row: {
+          affidabilita_score: number | null
+          affidabilita_updated_at: string | null
           azienda: string | null
+          blocco_provvigione: boolean
           budget_promo_percentuale: number | null
           cap: string | null
           citta: string | null
@@ -549,6 +555,7 @@ export type Database = {
           consorzio: string | null
           costo_promo_totale: number | null
           created_at: string | null
+          deleted_at: string | null
           email: string | null
           email_aggiuntive: string[] | null
           fatturato: number | null
@@ -557,6 +564,7 @@ export type Database = {
           id: string
           indirizzo: string | null
           livello_relazione: number | null
+          motivo_blocco: string | null
           n_promo_concesse: number | null
           nome: string
           obiezione_principale: string | null
@@ -573,7 +581,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          affidabilita_score?: number | null
+          affidabilita_updated_at?: string | null
           azienda?: string | null
+          blocco_provvigione?: boolean
           budget_promo_percentuale?: number | null
           cap?: string | null
           citta?: string | null
@@ -582,6 +593,7 @@ export type Database = {
           consorzio?: string | null
           costo_promo_totale?: number | null
           created_at?: string | null
+          deleted_at?: string | null
           email?: string | null
           email_aggiuntive?: string[] | null
           fatturato?: number | null
@@ -590,6 +602,7 @@ export type Database = {
           id?: string
           indirizzo?: string | null
           livello_relazione?: number | null
+          motivo_blocco?: string | null
           n_promo_concesse?: number | null
           nome: string
           obiezione_principale?: string | null
@@ -606,7 +619,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          affidabilita_score?: number | null
+          affidabilita_updated_at?: string | null
           azienda?: string | null
+          blocco_provvigione?: boolean
           budget_promo_percentuale?: number | null
           cap?: string | null
           citta?: string | null
@@ -615,6 +631,7 @@ export type Database = {
           consorzio?: string | null
           costo_promo_totale?: number | null
           created_at?: string | null
+          deleted_at?: string | null
           email?: string | null
           email_aggiuntive?: string[] | null
           fatturato?: number | null
@@ -623,6 +640,7 @@ export type Database = {
           id?: string
           indirizzo?: string | null
           livello_relazione?: number | null
+          motivo_blocco?: string | null
           n_promo_concesse?: number | null
           nome?: string
           obiezione_principale?: string | null
@@ -813,6 +831,7 @@ export type Database = {
           consorzio: string | null
           created_at: string
           cumulabile_arretrati: boolean
+          deleted_at: string | null
           id: string
           is_consorzio: boolean
           note: string | null
@@ -831,6 +850,7 @@ export type Database = {
           consorzio?: string | null
           created_at?: string
           cumulabile_arretrati?: boolean
+          deleted_at?: string | null
           id?: string
           is_consorzio?: boolean
           note?: string | null
@@ -849,6 +869,7 @@ export type Database = {
           consorzio?: string | null
           created_at?: string
           cumulabile_arretrati?: boolean
+          deleted_at?: string | null
           id?: string
           is_consorzio?: boolean
           note?: string | null
@@ -1071,6 +1092,7 @@ export type Database = {
         Row: {
           classificazione_ai: Json | null
           created_at: string
+          deleted_at: string | null
           dimensione: number | null
           entita: Database["public"]["Enums"]["documento_entita"]
           entita_id: string | null
@@ -1090,6 +1112,7 @@ export type Database = {
         Insert: {
           classificazione_ai?: Json | null
           created_at?: string
+          deleted_at?: string | null
           dimensione?: number | null
           entita?: Database["public"]["Enums"]["documento_entita"]
           entita_id?: string | null
@@ -1109,6 +1132,7 @@ export type Database = {
         Update: {
           classificazione_ai?: Json | null
           created_at?: string
+          deleted_at?: string | null
           dimensione?: number | null
           entita?: Database["public"]["Enums"]["documento_entita"]
           entita_id?: string | null
@@ -1646,6 +1670,7 @@ export type Database = {
           contenuto: string | null
           created_at: string
           data_promemoria: string | null
+          deleted_at: string | null
           id: string
           pinned: boolean
           priorita: string
@@ -1663,6 +1688,7 @@ export type Database = {
           contenuto?: string | null
           created_at?: string
           data_promemoria?: string | null
+          deleted_at?: string | null
           id?: string
           pinned?: boolean
           priorita?: string
@@ -1680,6 +1706,7 @@ export type Database = {
           contenuto?: string | null
           created_at?: string
           data_promemoria?: string | null
+          deleted_at?: string | null
           id?: string
           pinned?: boolean
           priorita?: string
@@ -1753,6 +1780,7 @@ export type Database = {
           data_consegna_prevista: string | null
           data_incasso_provvigione: string | null
           data_ordine: string | null
+          deleted_at: string | null
           destinazione_consegna: string | null
           estratto_riga_id: string | null
           id: string
@@ -1798,6 +1826,7 @@ export type Database = {
           data_consegna_prevista?: string | null
           data_incasso_provvigione?: string | null
           data_ordine?: string | null
+          deleted_at?: string | null
           destinazione_consegna?: string | null
           estratto_riga_id?: string | null
           id?: string
@@ -1843,6 +1872,7 @@ export type Database = {
           data_consegna_prevista?: string | null
           data_incasso_provvigione?: string | null
           data_ordine?: string | null
+          deleted_at?: string | null
           destinazione_consegna?: string | null
           estratto_riga_id?: string | null
           id?: string
@@ -2108,6 +2138,7 @@ export type Database = {
           codice: string | null
           costo_acquisto: number
           created_at: string
+          deleted_at: string | null
           formato: string | null
           id: string
           immagine_url: string | null
@@ -2129,6 +2160,7 @@ export type Database = {
           codice?: string | null
           costo_acquisto?: number
           created_at?: string
+          deleted_at?: string | null
           formato?: string | null
           id?: string
           immagine_url?: string | null
@@ -2150,6 +2182,7 @@ export type Database = {
           codice?: string | null
           costo_acquisto?: number
           created_at?: string
+          deleted_at?: string | null
           formato?: string | null
           id?: string
           immagine_url?: string | null
@@ -2258,6 +2291,7 @@ export type Database = {
           created_at: string
           cumulabile_arretrati: boolean
           data_concessione: string
+          deleted_at: string | null
           descrizione: string | null
           id: string
           note: string | null
@@ -2278,6 +2312,7 @@ export type Database = {
           created_at?: string
           cumulabile_arretrati?: boolean
           data_concessione?: string
+          deleted_at?: string | null
           descrizione?: string | null
           id?: string
           note?: string | null
@@ -2298,6 +2333,7 @@ export type Database = {
           created_at?: string
           cumulabile_arretrati?: boolean
           data_concessione?: string
+          deleted_at?: string | null
           descrizione?: string | null
           id?: string
           note?: string | null
@@ -2908,6 +2944,7 @@ export type Database = {
           data_apertura: string
           data_emissione_nc: string | null
           data_risoluzione: string | null
+          deleted_at: string | null
           descrizione: string | null
           documento_id: string | null
           id: string
@@ -2934,6 +2971,7 @@ export type Database = {
           data_apertura?: string
           data_emissione_nc?: string | null
           data_risoluzione?: string | null
+          deleted_at?: string | null
           descrizione?: string | null
           documento_id?: string | null
           id?: string
@@ -2960,6 +2998,7 @@ export type Database = {
           data_apertura?: string
           data_emissione_nc?: string | null
           data_risoluzione?: string | null
+          deleted_at?: string | null
           descrizione?: string | null
           documento_id?: string | null
           id?: string
@@ -3356,6 +3395,7 @@ export type Database = {
         Row: {
           cliente_id: string
           created_at: string
+          deleted_at: string | null
           esito: string | null
           giro_id: string
           id: string
@@ -3369,6 +3409,7 @@ export type Database = {
         Insert: {
           cliente_id: string
           created_at?: string
+          deleted_at?: string | null
           esito?: string | null
           giro_id: string
           id?: string
@@ -3382,6 +3423,7 @@ export type Database = {
         Update: {
           cliente_id?: string
           created_at?: string
+          deleted_at?: string | null
           esito?: string | null
           giro_id?: string
           id?: string
@@ -3411,12 +3453,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      cestino_items: {
+        Row: {
+          deleted_at: string | null
+          id: string | null
+          nome: string | null
+          tipo: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calcola_provvigione_prevista: {
         Args: { p_ordine_id: string }
         Returns: number
+      }
+      cestino_elimina_definitivo: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: undefined
+      }
+      cestino_ripristina: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: undefined
       }
       has_role: {
         Args: {
@@ -3426,6 +3485,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      purge_cestino_expired: { Args: never; Returns: undefined }
       trova_condizione_provvigione: {
         Args: {
           p_azienda_id: string
