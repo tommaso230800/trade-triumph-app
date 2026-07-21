@@ -55,7 +55,6 @@ const App = () => (
               <Route path="/kpi" element={<KPI />} />
               <Route path="/provvigioni" element={<Provvigioni />} />
               <Route path="/canvass" element={<Canvass />} />
-              <Route path="/assistente-ai" element={<AssistenteAI />} />
               <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
               <Route path="/riordino" element={<RiordinoForecast />} />
               <Route path="/intelligenza-commerciale" element={<IntelligenzaCommerciale />} />
