@@ -561,9 +561,12 @@ export type Database = {
           fatturato: number | null
           fatturato_2025: number | null
           fatturato_target: number | null
+          geocoded_at: string | null
           id: string
           indirizzo: string | null
+          latitudine: number | null
           livello_relazione: number | null
+          longitudine: number | null
           motivo_blocco: string | null
           n_promo_concesse: number | null
           nome: string
@@ -599,9 +602,12 @@ export type Database = {
           fatturato?: number | null
           fatturato_2025?: number | null
           fatturato_target?: number | null
+          geocoded_at?: string | null
           id?: string
           indirizzo?: string | null
+          latitudine?: number | null
           livello_relazione?: number | null
+          longitudine?: number | null
           motivo_blocco?: string | null
           n_promo_concesse?: number | null
           nome: string
@@ -637,9 +643,12 @@ export type Database = {
           fatturato?: number | null
           fatturato_2025?: number | null
           fatturato_target?: number | null
+          geocoded_at?: string | null
           id?: string
           indirizzo?: string | null
+          latitudine?: number | null
           livello_relazione?: number | null
+          longitudine?: number | null
           motivo_blocco?: string | null
           n_promo_concesse?: number | null
           nome?: string
@@ -822,6 +831,56 @@ export type Database = {
           vantaggio?: string | null
         }
         Relationships: []
+      }
+      comunicazioni_log: {
+        Row: {
+          canale: string
+          cliente_id: string | null
+          contenuto: string | null
+          created_at: string
+          destinatario: string | null
+          id: string
+          inviata_at: string
+          oggetto: string | null
+          stato: string
+          template: string | null
+          user_id: string
+        }
+        Insert: {
+          canale: string
+          cliente_id?: string | null
+          contenuto?: string | null
+          created_at?: string
+          destinatario?: string | null
+          id?: string
+          inviata_at?: string
+          oggetto?: string | null
+          stato?: string
+          template?: string | null
+          user_id: string
+        }
+        Update: {
+          canale?: string
+          cliente_id?: string | null
+          contenuto?: string | null
+          created_at?: string
+          destinatario?: string | null
+          id?: string
+          inviata_at?: string
+          oggetto?: string | null
+          stato?: string
+          template?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comunicazioni_log_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contratti_clienti: {
         Row: {
@@ -1148,6 +1207,42 @@ export type Database = {
           updated_at?: string
           user_id?: string
           verificato?: boolean
+        }
+        Relationships: []
+      }
+      error_log: {
+        Row: {
+          created_at: string
+          details: Json | null
+          id: string
+          level: string
+          message: string
+          route: string | null
+          source: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          level?: string
+          message: string
+          route?: string | null
+          source?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          level?: string
+          message?: string
+          route?: string | null
+          source?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1489,6 +1584,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      follow_up_regole: {
+        Row: {
+          attivo: boolean
+          created_at: string
+          giorni: number
+          id: string
+          nome: string
+          template: string | null
+          trigger_tipo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attivo?: boolean
+          created_at?: string
+          giorni?: number
+          id?: string
+          nome: string
+          template?: string | null
+          trigger_tipo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attivo?: boolean
+          created_at?: string
+          giorni?: number
+          id?: string
+          nome?: string
+          template?: string | null
+          trigger_tipo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       giri_visita: {
         Row: {
@@ -2069,6 +2200,56 @@ export type Database = {
             columns: ["prodotto_id"]
             isOneToOne: false
             referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pianificazione_settimanale: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          giorno: number
+          id: string
+          note: string | null
+          ora_prevista: string | null
+          ordinamento: number
+          settimana: string
+          stato: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          giorno: number
+          id?: string
+          note?: string | null
+          ora_prevista?: string | null
+          ordinamento?: number
+          settimana: string
+          stato?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          giorno?: number
+          id?: string
+          note?: string | null
+          ora_prevista?: string | null
+          ordinamento?: number
+          settimana?: string
+          stato?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pianificazione_settimanale_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
             referencedColumns: ["id"]
           },
         ]
