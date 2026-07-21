@@ -14,7 +14,7 @@ import {
   ChevronDown,
   Bot,
   Brain,
-  Sparkles,
+  
   Repeat,
   Gauge,
   Activity,
