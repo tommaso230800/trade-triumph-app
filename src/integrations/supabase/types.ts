@@ -1714,6 +1714,8 @@ export type Database = {
           totale: number | null
           updated_at: string | null
           user_id: string
+          verificato_conferma: boolean
+          verificato_conferma_at: string | null
         }
         Insert: {
           aliquota_prevista?: number | null
@@ -1751,6 +1753,8 @@ export type Database = {
           totale?: number | null
           updated_at?: string | null
           user_id: string
+          verificato_conferma?: boolean
+          verificato_conferma_at?: string | null
         }
         Update: {
           aliquota_prevista?: number | null
@@ -1788,6 +1792,8 @@ export type Database = {
           totale?: number | null
           updated_at?: string | null
           user_id?: string
+          verificato_conferma?: boolean
+          verificato_conferma_at?: string | null
         }
         Relationships: [
           {
@@ -1823,6 +1829,75 @@ export type Database = {
             columns: ["riconciliazione_pagamento_id"]
             isOneToOne: false
             referencedRelation: "riconciliazioni_pagamenti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ordini_conferme: {
+        Row: {
+          created_at: string
+          documento_id: string | null
+          esito: Json
+          id: string
+          nome_sorgente: string | null
+          note: string | null
+          ordine_id: string
+          righe_diff: number
+          righe_extra: number
+          righe_mancanti: number
+          righe_ok: number
+          score: number
+          updated_at: string
+          user_id: string
+          verificato_manualmente: boolean
+        }
+        Insert: {
+          created_at?: string
+          documento_id?: string | null
+          esito: Json
+          id?: string
+          nome_sorgente?: string | null
+          note?: string | null
+          ordine_id: string
+          righe_diff?: number
+          righe_extra?: number
+          righe_mancanti?: number
+          righe_ok?: number
+          score?: number
+          updated_at?: string
+          user_id: string
+          verificato_manualmente?: boolean
+        }
+        Update: {
+          created_at?: string
+          documento_id?: string | null
+          esito?: Json
+          id?: string
+          nome_sorgente?: string | null
+          note?: string | null
+          ordine_id?: string
+          righe_diff?: number
+          righe_extra?: number
+          righe_mancanti?: number
+          righe_ok?: number
+          score?: number
+          updated_at?: string
+          user_id?: string
+          verificato_manualmente?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordini_conferme_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordini_conferme_ordine_id_fkey"
+            columns: ["ordine_id"]
+            isOneToOne: false
+            referencedRelation: "ordini"
             referencedColumns: ["id"]
           },
         ]
