@@ -25,6 +25,12 @@ import RiordinoForecast from "./pages/RiordinoForecast";
 import IntelligenzaCommerciale from "./pages/IntelligenzaCommerciale";
 import Consegne from "./pages/Consegne";
 import OmaggiAutomatici from "./pages/OmaggiAutomatici";
+import Mappa from "./pages/Mappa";
+import Pianificazione from "./pages/Pianificazione";
+import CentroComunicazioni from "./pages/CentroComunicazioni";
+import Cestino from "./pages/Cestino";
+import Diagnostica from "./pages/Diagnostica";
+import UtentiRuoli from "./pages/UtentiRuoli";
 
 import Impostazioni from "./pages/Impostazioni";
 import NotePage from "./pages/Note";
@@ -66,6 +72,12 @@ const App = () => (
               <Route path="/intelligenza-commerciale" element={<IntelligenzaCommerciale />} />
               <Route path="/consegne" element={<Consegne />} />
               <Route path="/omaggi" element={<OmaggiAutomatici />} />
+              <Route path="/mappa" element={<Mappa />} />
+              <Route path="/pianificazione" element={<Pianificazione />} />
+              <Route path="/comunicazioni" element={<CentroComunicazioni />} />
+              <Route path="/cestino" element={<Cestino />} />
+              <Route path="/diagnostica" element={<Diagnostica />} />
+              <Route path="/utenti-ruoli" element={<UtentiRuoli />} />
 
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="/note" element={<NotePage />} />

@@ -24,6 +24,12 @@ import {
   Gauge,
   Truck,
   Gift,
+  Map,
+  CalendarDays,
+  MessageCircle,
+  Trash2,
+  Activity,
+  ShieldCheck,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -61,6 +67,12 @@ const navigation: NavItem[] = [
   { name: "Consegne", href: "/consegne", icon: Truck },
   { name: "Omaggi", href: "/omaggi", icon: Gift },
   { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge },
+  { name: "Mappa", href: "/mappa", icon: Map },
+  { name: "Pianificazione", href: "/pianificazione", icon: CalendarDays },
+  { name: "Comunicazioni", href: "/comunicazioni", icon: MessageCircle },
+  { name: "Cestino", href: "/cestino", icon: Trash2 },
+  { name: "Diagnostica", href: "/diagnostica", icon: Activity },
+  { name: "Utenti & Ruoli", href: "/utenti-ruoli", icon: ShieldCheck },
 
   { name: "Aziende", href: "/aziende", icon: Building2 },
   { 
