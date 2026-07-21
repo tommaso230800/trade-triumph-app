@@ -1292,11 +1292,20 @@ const Ordini = () => {
                         {format(new Date(ordine.data_ordine || ordine.created_at), "dd/MM/yyyy")}
                       </TableCell>
                       <TableCell>
-                        <Badge className={statusConfig[ordine.status].className}>
-                          <span className="hidden sm:inline">{statusConfig[ordine.status].label}</span>
-                          <span className="sm:hidden">{statusConfig[ordine.status].label.slice(0, 4)}</span>
-                        </Badge>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <Badge className={statusConfig[ordine.status].className}>
+                            <span className="hidden sm:inline">{statusConfig[ordine.status].label}</span>
+                            <span className="sm:hidden">{statusConfig[ordine.status].label.slice(0, 4)}</span>
+                          </Badge>
+                          {(ordine as any).verificato_conferma && (
+                            <Badge variant="outline" className="bg-success/15 text-success border-success/30 gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span className="hidden sm:inline">Verif.</span>
+                            </Badge>
+                          )}
+                        </div>
                       </TableCell>
+
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
