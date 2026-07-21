@@ -22,6 +22,8 @@ import {
   AlertTriangle,
   Repeat,
   Gauge,
+  Truck,
+  Gift,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -56,6 +58,8 @@ const navigation: NavItem[] = [
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
   { name: "Reclami/NC", href: "/segnalazioni", icon: AlertTriangle },
   { name: "Riordino", href: "/riordino", icon: Repeat },
+  { name: "Consegne", href: "/consegne", icon: Truck },
+  { name: "Omaggi", href: "/omaggi", icon: Gift },
   { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge },
 
   { name: "Aziende", href: "/aziende", icon: Building2 },
