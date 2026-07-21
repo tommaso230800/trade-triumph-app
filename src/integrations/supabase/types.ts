@@ -2806,6 +2806,170 @@ export type Database = {
           },
         ]
       }
+      segnalazioni: {
+        Row: {
+          azienda_id: string | null
+          causa: string | null
+          cliente_id: string | null
+          created_at: string
+          data_apertura: string
+          data_emissione_nc: string | null
+          data_risoluzione: string | null
+          descrizione: string | null
+          documento_id: string | null
+          id: string
+          importo_richiesto: number | null
+          importo_riconosciuto: number | null
+          meta: Json | null
+          numero_nota_credito: string | null
+          oggetto: string
+          ordine_id: string | null
+          priorita: string
+          responsabile: string | null
+          scadenza: string | null
+          soluzione: string | null
+          stato: string
+          tipo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          causa?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          data_apertura?: string
+          data_emissione_nc?: string | null
+          data_risoluzione?: string | null
+          descrizione?: string | null
+          documento_id?: string | null
+          id?: string
+          importo_richiesto?: number | null
+          importo_riconosciuto?: number | null
+          meta?: Json | null
+          numero_nota_credito?: string | null
+          oggetto: string
+          ordine_id?: string | null
+          priorita?: string
+          responsabile?: string | null
+          scadenza?: string | null
+          soluzione?: string | null
+          stato?: string
+          tipo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string | null
+          causa?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          data_apertura?: string
+          data_emissione_nc?: string | null
+          data_risoluzione?: string | null
+          descrizione?: string | null
+          documento_id?: string | null
+          id?: string
+          importo_richiesto?: number | null
+          importo_riconosciuto?: number | null
+          meta?: Json | null
+          numero_nota_credito?: string | null
+          oggetto?: string
+          ordine_id?: string | null
+          priorita?: string
+          responsabile?: string | null
+          scadenza?: string | null
+          soluzione?: string | null
+          stato?: string
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segnalazioni_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "segnalazioni_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "segnalazioni_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "segnalazioni_ordine_id_fkey"
+            columns: ["ordine_id"]
+            isOneToOne: false
+            referencedRelation: "ordini"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      segnalazioni_eventi: {
+        Row: {
+          created_at: string
+          descrizione: string | null
+          documento_id: string | null
+          id: string
+          meta: Json | null
+          segnalazione_id: string
+          stato_nuovo: string | null
+          stato_precedente: string | null
+          tipo_evento: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          descrizione?: string | null
+          documento_id?: string | null
+          id?: string
+          meta?: Json | null
+          segnalazione_id: string
+          stato_nuovo?: string | null
+          stato_precedente?: string | null
+          tipo_evento: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          descrizione?: string | null
+          documento_id?: string | null
+          id?: string
+          meta?: Json | null
+          segnalazione_id?: string
+          stato_nuovo?: string | null
+          stato_precedente?: string | null
+          tipo_evento?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segnalazioni_eventi_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "segnalazioni_eventi_segnalazione_id_fkey"
+            columns: ["segnalazione_id"]
+            isOneToOne: false
+            referencedRelation: "segnalazioni"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       storico_trattative: {
         Row: {
           carta_scelta: string | null

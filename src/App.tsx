@@ -20,6 +20,8 @@ import Provvigioni from "./pages/Provvigioni";
 import Canvass from "./pages/Canvass";
 import AssistenteAI from "./pages/AssistenteAI";
 import AssistenteAICommerciale from "./pages/AssistenteAICommerciale";
+import Segnalazioni from "./pages/Segnalazioni";
+
 import Impostazioni from "./pages/Impostazioni";
 import NotePage from "./pages/Note";
 import PreparaVisita from "./pages/PreparaVisita";
@@ -55,6 +57,8 @@ const App = () => (
               <Route path="/canvass" element={<Canvass />} />
               <Route path="/assistente-ai" element={<AssistenteAI />} />
               <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
+              <Route path="/segnalazioni" element={<Segnalazioni />} />
+
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="/note" element={<NotePage />} />
               <Route path="/prepara-visita" element={<PreparaVisita />} />
