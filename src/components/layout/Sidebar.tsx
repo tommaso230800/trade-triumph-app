@@ -21,6 +21,7 @@ import {
   Sparkles,
   AlertTriangle,
   Repeat,
+  Gauge,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ const navigation: NavItem[] = [
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
   { name: "Reclami/NC", href: "/segnalazioni", icon: AlertTriangle },
   { name: "Riordino", href: "/riordino", icon: Repeat },
+  { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge },
 
   { name: "Aziende", href: "/aziende", icon: Building2 },
   { 
