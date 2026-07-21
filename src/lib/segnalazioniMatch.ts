@@ -82,7 +82,7 @@ export async function trovaCandidatiSegnalazione(input: MatchInput, limit = 6): 
   if (codiceOrdine) {
     const { data } = await supabase
       .from("ordini")
-      .select("id, codice, cliente_id, azienda_id, data_ordine, totale, clienti(ragione_sociale), aziende(nome)")
+      .select("id, codice, cliente_id, azienda_id, data_ordine, totale, clienti(nome), aziende(nome)")
       .eq("user_id", user.id)
       .eq("codice", codiceOrdine)
       .maybeSingle();
@@ -91,7 +91,7 @@ export async function trovaCandidatiSegnalazione(input: MatchInput, limit = 6): 
         ordine_id: data.id,
         ordine_codice: data.codice,
         cliente_id: data.cliente_id,
-        cliente_nome: (data as any).clienti?.ragione_sociale ?? null,
+        cliente_nome: (data as any).clienti?.nome ?? null,
         azienda_id: data.azienda_id,
         azienda_nome: (data as any).aziende?.nome ?? null,
         data_ordine: data.data_ordine,
@@ -109,7 +109,7 @@ export async function trovaCandidatiSegnalazione(input: MatchInput, limit = 6): 
 
   let q = supabase
     .from("ordini")
-    .select("id, codice, cliente_id, azienda_id, data_ordine, totale, clienti(ragione_sociale), aziende(nome)")
+    .select("id, codice, cliente_id, azienda_id, data_ordine, totale, clienti(nome), aziende(nome)")
     .eq("user_id", user.id)
     .order("data_ordine", { ascending: false })
     .limit(120);
@@ -119,7 +119,7 @@ export async function trovaCandidatiSegnalazione(input: MatchInput, limit = 6): 
 
   for (const o of ordini || []) {
     if (candidati.some((c) => c.ordine_id === o.id)) continue;
-    const nomeCliente = (o as any).clienti?.ragione_sociale ?? "";
+    const nomeCliente = (o as any).clienti?.nome ?? "";
     const nomeAzienda = (o as any).aziende?.nome ?? "";
     const scoreCli = jaccard(tokenSet(nomeCliente), clienteTok);
     const scoreAz = jaccard(tokenSet(nomeAzienda), aziendaTok);

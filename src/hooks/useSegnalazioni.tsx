@@ -33,7 +33,7 @@ export type Segnalazione = {
   meta: any;
   created_at: string;
   updated_at: string;
-  clienti?: { ragione_sociale: string | null } | null;
+  clienti?: { nome: string | null } | null;
   aziende?: { nome: string | null } | null;
   ordini?: { codice: string | null } | null;
 };
@@ -57,7 +57,7 @@ export function useSegnalazioni(filtro?: { tipo?: SegnalazioneTipo; stato?: Segn
     queryFn: async () => {
       let q = supabase
         .from("segnalazioni")
-        .select("*, clienti(ragione_sociale), aziende(nome), ordini(codice)")
+        .select("*, clienti(nome), aziende(nome), ordini(codice)")
         .order("created_at", { ascending: false });
       if (filtro?.tipo) q = q.eq("tipo", filtro.tipo);
       if (filtro?.stato && filtro.stato !== "aperte" && filtro.stato !== "tutte") q = q.eq("stato", filtro.stato);
@@ -76,7 +76,7 @@ export function useSegnalazione(id?: string) {
       if (!id) return null;
       const { data, error } = await supabase
         .from("segnalazioni")
-        .select("*, clienti(ragione_sociale), aziende(nome), ordini(codice, data_ordine, totale)")
+        .select("*, clienti(nome), aziende(nome), ordini(codice, data_ordine, totale)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
