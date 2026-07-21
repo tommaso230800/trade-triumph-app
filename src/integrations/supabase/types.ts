@@ -812,11 +812,15 @@ export type Database = {
           cliente_id: string
           consorzio: string | null
           created_at: string
+          cumulabile_arretrati: boolean
           id: string
           is_consorzio: boolean
           note: string | null
           percentuale_premio: number
+          qta_base: number | null
+          qta_omaggio: number | null
           soglia_fatturato: number | null
+          unita_omaggio: string
           updated_at: string
           user_id: string
         }
@@ -826,11 +830,15 @@ export type Database = {
           cliente_id: string
           consorzio?: string | null
           created_at?: string
+          cumulabile_arretrati?: boolean
           id?: string
           is_consorzio?: boolean
           note?: string | null
           percentuale_premio?: number
+          qta_base?: number | null
+          qta_omaggio?: number | null
           soglia_fatturato?: number | null
+          unita_omaggio?: string
           updated_at?: string
           user_id: string
         }
@@ -840,11 +848,15 @@ export type Database = {
           cliente_id?: string
           consorzio?: string | null
           created_at?: string
+          cumulabile_arretrati?: boolean
           id?: string
           is_consorzio?: boolean
           note?: string | null
           percentuale_premio?: number
+          qta_base?: number | null
+          qta_omaggio?: number | null
           soglia_fatturato?: number | null
+          unita_omaggio?: string
           updated_at?: string
           user_id?: string
         }
@@ -1677,6 +1689,57 @@ export type Database = {
         }
         Relationships: []
       }
+      omaggi_erogati: {
+        Row: {
+          cliente_id: string
+          contratto_id: string | null
+          created_at: string
+          data_erogazione: string
+          id: string
+          note: string | null
+          ordine_id: string | null
+          ordine_riga_id: string | null
+          prodotto_id: string
+          promo_id: string | null
+          quantita: number
+          unita: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cliente_id: string
+          contratto_id?: string | null
+          created_at?: string
+          data_erogazione?: string
+          id?: string
+          note?: string | null
+          ordine_id?: string | null
+          ordine_riga_id?: string | null
+          prodotto_id: string
+          promo_id?: string | null
+          quantita?: number
+          unita?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cliente_id?: string
+          contratto_id?: string | null
+          created_at?: string
+          data_erogazione?: string
+          id?: string
+          note?: string | null
+          ordine_id?: string | null
+          ordine_riga_id?: string | null
+          prodotto_id?: string
+          promo_id?: string | null
+          quantita?: number
+          unita?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ordini: {
         Row: {
           aliquota_prevista: number | null
@@ -1686,14 +1749,19 @@ export type Database = {
           condizione_applicata_id: string | null
           created_at: string | null
           data_conferma: string | null
+          data_consegna_effettiva: string | null
+          data_consegna_prevista: string | null
           data_incasso_provvigione: string | null
           data_ordine: string | null
+          destinazione_consegna: string | null
           estratto_riga_id: string | null
           id: string
           importo_provvigione_pagata: number
           metodo_pagamento_provvigione: string | null
           note: string | null
+          note_consegna: string | null
           note_provvigione: string | null
+          problema_consegna: string | null
           prodotti: number | null
           provvigione_pagata: boolean
           provvigione_prevista: number | null
@@ -1708,6 +1776,7 @@ export type Database = {
           stand_by_motivo: string | null
           stand_by_note: string | null
           stand_by_prodotto_bloccato: string | null
+          stato_consegna: string
           stato_provvigione: string
           status: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento: string | null
@@ -1725,14 +1794,19 @@ export type Database = {
           condizione_applicata_id?: string | null
           created_at?: string | null
           data_conferma?: string | null
+          data_consegna_effettiva?: string | null
+          data_consegna_prevista?: string | null
           data_incasso_provvigione?: string | null
           data_ordine?: string | null
+          destinazione_consegna?: string | null
           estratto_riga_id?: string | null
           id?: string
           importo_provvigione_pagata?: number
           metodo_pagamento_provvigione?: string | null
           note?: string | null
+          note_consegna?: string | null
           note_provvigione?: string | null
+          problema_consegna?: string | null
           prodotti?: number | null
           provvigione_pagata?: boolean
           provvigione_prevista?: number | null
@@ -1747,6 +1821,7 @@ export type Database = {
           stand_by_motivo?: string | null
           stand_by_note?: string | null
           stand_by_prodotto_bloccato?: string | null
+          stato_consegna?: string
           stato_provvigione?: string
           status?: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento?: string | null
@@ -1764,14 +1839,19 @@ export type Database = {
           condizione_applicata_id?: string | null
           created_at?: string | null
           data_conferma?: string | null
+          data_consegna_effettiva?: string | null
+          data_consegna_prevista?: string | null
           data_incasso_provvigione?: string | null
           data_ordine?: string | null
+          destinazione_consegna?: string | null
           estratto_riga_id?: string | null
           id?: string
           importo_provvigione_pagata?: number
           metodo_pagamento_provvigione?: string | null
           note?: string | null
+          note_consegna?: string | null
           note_provvigione?: string | null
+          problema_consegna?: string | null
           prodotti?: number | null
           provvigione_pagata?: boolean
           provvigione_prevista?: number | null
@@ -1786,6 +1866,7 @@ export type Database = {
           stand_by_motivo?: string | null
           stand_by_note?: string | null
           stand_by_prodotto_bloccato?: string | null
+          stato_consegna?: string
           stato_provvigione?: string
           status?: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento?: string | null
@@ -2175,14 +2256,18 @@ export type Database = {
           contropartita: string | null
           costo_stimato: number | null
           created_at: string
+          cumulabile_arretrati: boolean
           data_concessione: string
           descrizione: string | null
           id: string
           note: string | null
           prodotto_nome: string | null
+          qta_base: number | null
+          qta_omaggio: number | null
           quantita_cartoni: number | null
           quantita_pezzi: number | null
           tipo_promo: string
+          unita_omaggio: string
           user_id: string
           valore: number
         }
@@ -2191,14 +2276,18 @@ export type Database = {
           contropartita?: string | null
           costo_stimato?: number | null
           created_at?: string
+          cumulabile_arretrati?: boolean
           data_concessione?: string
           descrizione?: string | null
           id?: string
           note?: string | null
           prodotto_nome?: string | null
+          qta_base?: number | null
+          qta_omaggio?: number | null
           quantita_cartoni?: number | null
           quantita_pezzi?: number | null
           tipo_promo: string
+          unita_omaggio?: string
           user_id: string
           valore?: number
         }
@@ -2207,14 +2296,18 @@ export type Database = {
           contropartita?: string | null
           costo_stimato?: number | null
           created_at?: string
+          cumulabile_arretrati?: boolean
           data_concessione?: string
           descrizione?: string | null
           id?: string
           note?: string | null
           prodotto_nome?: string | null
+          qta_base?: number | null
+          qta_omaggio?: number | null
           quantita_cartoni?: number | null
           quantita_pezzi?: number | null
           tipo_promo?: string
+          unita_omaggio?: string
           user_id?: string
           valore?: number
         }
