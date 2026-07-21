@@ -14,7 +14,7 @@ import {
   ChevronDown,
   Bot,
   Brain,
-  Sparkles,
+  
   Repeat,
   Gauge,
   Activity,
@@ -67,7 +67,7 @@ const navigation: NavItem[] = [
       { name: "INDIPENDENTE", href: "/clienti/consorzio/indipendente" },
     ]
   },
-  { name: "Assistente AI", href: "/assistente-ai", icon: Sparkles },
+  
   { name: "Prepara Visita", href: "/prepara-visita", icon: Brain },
   { name: "AI Commerciale", href: "/ai-commerciale", icon: Bot },
 ];
