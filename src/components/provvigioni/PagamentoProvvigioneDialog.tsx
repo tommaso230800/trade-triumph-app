@@ -68,20 +68,41 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
   const [importo, setImporto] = useState<string>("");
   const [metodo, setMetodo] = useState<string>("bonifico");
   const [note, setNote] = useState<string>("");
+  const [annoPag, setAnnoPag] = useState<number>(new Date().getFullYear());
+  const [trimPag, setTrimPag] = useState<number>(Math.floor(new Date().getMonth() / 3) + 1);
+  const [estrattoId, setEstrattoId] = useState<string>("none");
+
+  const { data: estratti = [] } = useQuery({
+    queryKey: ["estratti-picker", annoPag, trimPag],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("estratti_provvigioni")
+        .select("id, azienda_nome, anno, trimestre, data_documento")
+        .eq("anno", annoPag)
+        .eq("trimestre", trimPag)
+        .order("data_documento", { ascending: false })
+        .limit(50);
+      return data || [];
+    },
+    enabled: open && (stato === "pagata" || stato === "parziale"),
+  });
 
   useEffect(() => {
     if (!fattura) return;
     const currentStato = initialStato || (fattura.stato_provvigione as StatoProvvigione) || "pagata";
     setStato(currentStato);
-    setDataPagamento(fattura.data_incasso_provvigione || format(new Date(), "yyyy-MM-dd"));
+    const dPag = fattura.data_incasso_provvigione || format(new Date(), "yyyy-MM-dd");
+    setDataPagamento(dPag);
+    const d = new Date(dPag);
+    setAnnoPag(d.getFullYear());
+    setTrimPag(Math.floor(d.getMonth() / 3) + 1);
     const preset = currentStato === "pagata"
       ? (fattura.provvigione_calcolata || 0)
-      : currentStato === "parziale"
-      ? (fattura.importo_provvigione_pagata || 0)
       : (fattura.importo_provvigione_pagata || 0);
     setImporto(String(preset));
     setMetodo(fattura.metodo_pagamento_provvigione || "bonifico");
     setNote(fattura.note_provvigione || "");
+    setEstrattoId("none");
   }, [fattura, open, initialStato]);
 
   if (!fattura) return null;
@@ -101,12 +122,16 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
       data_pagamento: stato === "pagata" || stato === "parziale" ? dataPagamento : null,
       metodo: stato === "pagata" || stato === "parziale" ? metodo : null,
       note: note.trim() || null,
+      anno_pagamento: stato === "pagata" || stato === "parziale" ? annoPag : null,
+      trimestre_pagamento: stato === "pagata" || stato === "parziale" ? trimPag : null,
+      estratto_id: (stato === "pagata" || stato === "parziale") && estrattoId !== "none" ? estrattoId : null,
     });
     onOpenChange(false);
   };
 
   const showPayFields = stato === "pagata" || stato === "parziale";
   const showResidual = stato === "parziale";
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
