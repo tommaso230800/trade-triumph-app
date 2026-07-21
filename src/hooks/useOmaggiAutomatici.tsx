@@ -33,8 +33,8 @@ export function useOmaggiSpettanti(clienteId?: string, aziendaId?: string) {
         .eq("attiva", true);
       if (e1) throw e1;
 
-      // 2) regole da contratti_clienti (con qta_base > 0). I contratti valgono per l'anno indicato.
-      const { data: contrattiRows, error: e2 } = await supabase
+      // 2) regole da contratti_clienti
+      const { data: contrattiRows, error: e2 } = await (supabase as any)
         .from("contratti_clienti")
         .select("id, cliente_id, azienda_id, anno, qta_base, qta_omaggio, unita_omaggio, cumulabile_arretrati, note")
         .not("qta_base", "is", null)
