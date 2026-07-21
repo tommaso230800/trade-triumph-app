@@ -61,6 +61,7 @@ const App = () => (
               <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
               <Route path="/segnalazioni" element={<Segnalazioni />} />
               <Route path="/riordino" element={<RiordinoForecast />} />
+              <Route path="/intelligenza-commerciale" element={<IntelligenzaCommerciale />} />
 
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="/note" element={<NotePage />} />
