@@ -20,6 +20,8 @@ import Provvigioni from "./pages/Provvigioni";
 import Canvass from "./pages/Canvass";
 import AssistenteAI from "./pages/AssistenteAI";
 import AssistenteAICommerciale from "./pages/AssistenteAICommerciale";
+import Segnalazioni from "./pages/Segnalazioni";
+
 import Impostazioni from "./pages/Impostazioni";
 import NotePage from "./pages/Note";
 import PreparaVisita from "./pages/PreparaVisita";
