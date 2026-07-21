@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, ShoppingCart, Target, StickyNote, X } from "lucide-react";
+import { Plus, ShoppingCart, Target, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Action = {
@@ -13,7 +13,6 @@ type Action = {
 const actions: Action[] = [
   { label: "Nuovo Ordine", icon: ShoppingCart, href: "/ordini?new=1", tone: "blue" },
   { label: "Nuova Trattativa", icon: Target, href: "/trattative?new=1", tone: "yellow" },
-  { label: "Nuova Nota", icon: StickyNote, href: "/note?new=1", tone: "green" },
 ];
 
 const toneRing: Record<Action["tone"], string> = {
