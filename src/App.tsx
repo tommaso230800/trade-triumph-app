@@ -21,6 +21,7 @@ import Canvass from "./pages/Canvass";
 import AssistenteAI from "./pages/AssistenteAI";
 import AssistenteAICommerciale from "./pages/AssistenteAICommerciale";
 import Segnalazioni from "./pages/Segnalazioni";
+import RiordinoForecast from "./pages/RiordinoForecast";
 
 import Impostazioni from "./pages/Impostazioni";
 import NotePage from "./pages/Note";
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="/assistente-ai" element={<AssistenteAI />} />
               <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
               <Route path="/segnalazioni" element={<Segnalazioni />} />
+              <Route path="/riordino" element={<RiordinoForecast />} />
 
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="/note" element={<NotePage />} />
