@@ -88,8 +88,11 @@ export function useCommercialIntelligence(aziendaFilter?: string) {
         cliMap,
         aziMap,
         aziende: aziende || [],
+        ordiniIC,
+        righeIC,
       };
     },
     staleTime: 60_000,
   });
 }
+
