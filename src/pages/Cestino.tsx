@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, RotateCcw, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { it } from "date-fns/locale";
+import { it as itLocale } from "date-fns/locale";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 
@@ -64,7 +64,7 @@ export default function Cestino() {
               <Badge variant="outline">{TIPO_LABEL[it.tipo] ?? it.tipo}</Badge>
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{it.nome}</p>
-                <p className="text-xs text-muted-foreground">Eliminato {format(new Date(it.deleted_at), "dd MMM yyyy HH:mm", { locale: it })}</p>
+                <p className="text-xs text-muted-foreground">Eliminato {format(new Date(it.deleted_at), "dd MMM yyyy HH:mm", { locale: itLocale })}</p>
               </div>
               <Button size="sm" variant="outline" onClick={() => ripristina.mutate({ tipo: it.tipo, id: it.id })} disabled={ripristina.isPending}>
                 <RotateCcw className="h-4 w-4 mr-1" /> Ripristina
