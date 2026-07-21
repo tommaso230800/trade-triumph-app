@@ -22,6 +22,7 @@ import AssistenteAI from "./pages/AssistenteAI";
 import AssistenteAICommerciale from "./pages/AssistenteAICommerciale";
 import Segnalazioni from "./pages/Segnalazioni";
 import RiordinoForecast from "./pages/RiordinoForecast";
+import IntelligenzaCommerciale from "./pages/IntelligenzaCommerciale";
 
 import Impostazioni from "./pages/Impostazioni";
 import NotePage from "./pages/Note";
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
               <Route path="/segnalazioni" element={<Segnalazioni />} />
               <Route path="/riordino" element={<RiordinoForecast />} />
+              <Route path="/intelligenza-commerciale" element={<IntelligenzaCommerciale />} />
 
               <Route path="/impostazioni" element={<Impostazioni />} />
               <Route path="/note" element={<NotePage />} />
