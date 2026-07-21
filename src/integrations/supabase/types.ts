@@ -3179,6 +3179,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       visit_preparations: {
         Row: {
           analisi_concorrenza: string | null
@@ -3397,6 +3418,14 @@ export type Database = {
         Args: { p_ordine_id: string }
         Returns: number
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       trova_condizione_provvigione: {
         Args: {
           p_azienda_id: string
@@ -3433,6 +3462,13 @@ export type Database = {
       }
     }
     Enums: {
+      app_role:
+        | "admin"
+        | "agente"
+        | "collaboratore"
+        | "amministrazione"
+        | "brand_ambassador"
+        | "readonly"
       client_status: "premium" | "standard" | "nuovo"
       company_status: "attivo" | "in_pausa"
       documento_entita:
@@ -3590,6 +3626,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: [
+        "admin",
+        "agente",
+        "collaboratore",
+        "amministrazione",
+        "brand_ambassador",
+        "readonly",
+      ],
       client_status: ["premium", "standard", "nuovo"],
       company_status: ["attivo", "in_pausa"],
       documento_entita: [

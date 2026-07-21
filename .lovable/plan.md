@@ -1,99 +1,99 @@
-# Roadmap Evolutiva CRM AMG HO.RE.CA.
+# Fasi 4 + 5 + 6 — Piano unico
 
-Hai chiesto 20 aree di miglioramento. È un progetto grande: se lo tocco tutto in un colpo solo rompo cose stabili e diluisco la qualità. Propongo di lavorare **a fasi verticali**, ognuna consegnata funzionante e testata, seguendo la tua stessa priorità (le "5 successive più importanti") e appoggiandola sulle infrastrutture che già abbiamo (metricsEngine, riconciliazione, alias, condizioni provvigionali).
-
-Confermami la Fase 1 e parto subito. Le altre le rivediamo insieme prima di aprirle.
+Scope enorme (3 fasi = ~15 sotto-moduli, tocca DB, RLS, UI, integrazioni esterne). Le faccio tutte, ma in **ordine deterministico** per non rompere ciò che già funziona. Nessuna UI cambia prima che il backend sia pronto.
 
 ---
 
-## Fase 1 — Documenti commerciali (base trasversale) — punto 1
+## Fase 5 — Ruoli & Sicurezza (PRIMA di tutto)
 
-Prerequisito di quasi tutto il resto (conferme d'ordine, note di credito, contratti, estratti). 
+Va fatta per prima: la Fase 4 (incassi, comunicazioni) e la Fase 6 (soft delete, export) toccano tabelle sensibili — senza ruoli corretti si rischia di aprire buchi RLS.
 
-Cosa faccio:
-- Nuovo bucket privato `documenti` + tabella `documenti` con: entità collegata (ordine / cliente / azienda / provvigione / reclamo), tipo (`ordine_originale`, `conferma_ordine`, `fattura`, `nota_credito`, `contratto`, `listino`, `accordo_provv`, `promo`, `email`, `estratto_provv`, `altro`), file, mime, dimensione, tag, note, hash.
-- Upload drag&drop + preview PDF/immagine in scheda Cliente, Azienda, Ordine, Provvigione.
-- Auto-classificazione: piccola edge function che dal nome file + prime pagine (Gemini) propone tipo documento e entità candidate (es. "conferma d'ordine Polara" → suggerisce ordine di Polara della settimana). L'utente conferma con un click.
-- Timeline documenti per entità.
-
-Deliverable: sezione "Documenti" visibile in Cliente / Azienda / Ordine / Provvigione con caricamento e auto-collegamento.
-
----
-
-## Fase 2 — Le 5 priorità che hai indicato
-
-### 2A · Confronto ordine CRM ↔ conferma azienda (punto 2)
-- Riuso l'infrastruttura di `parse-order-multi` per estrarre righe dalla conferma PDF/Excel.
-- Nuovo motore `orderMatchEngine.ts`: confronta riga per riga (prodotto via alias, quantità pz/ct, prezzo, sc1/sc2/sc3, omaggi, pagamento, destinazione, data consegna).
-- UI "Verifica conferma" nella scheda ordine con badge per differenza (mancante, quantità errata, prezzo diverso, sconto mancante, omaggio mancante, sostituito, parziale).
-- Stato ordine arricchito con `verificato_conferma` (bool) + data.
-
-### 2B · Reclami + Note di credito (punti 4 e 5, unificati)
-- Tabella `segnalazioni` (tipo, stato, responsabile, importo, allegati, timeline email/risposte, scadenza, soluzione).
-- Sotto-flusso "Nota di credito" con stati `da_richiedere → richiesta → sollecitata → approvata → emessa → ricevuta → chiusa` + solleciti automatici quando la pratica resta ferma oltre soglia.
-- Pagina dedicata "Segnalazioni" + widget dashboard "Pratiche aperte / NC attese".
-
-### 2C · Previsione riordino e clienti da contattare (punto 11)
-Estendo il `reorder_tracking` già presente:
-- Aggiungo previsione **per prodotto** (non solo per cliente/azienda): intervallo medio, ultima quantità, data prossimo riordino stimato.
-- Widget "In rottura tra X giorni" con azione rapida "Contatta / Prepara proposta".
-
-### 2D · Promozioni e omaggi automatici (punto 7)
-- Sui `promo_clienti` / `contratti_clienti` aggiungo campi `qta_base`, `qta_omaggio` (es. 80+4) e `cumulabile_arretrati`.
-- In creazione ordine: calcolo omaggi spettanti in tempo reale sulla quantità inserita, con banner "spettano 12 omaggi, inseriti 8 → mancano 4" e bottone "Aggiungi omaggi mancanti".
-- Report "Omaggi arretrati" per cliente.
-
-### 2E · Consegne e rotture di stock (punto 3)
-- Estendo `ordini` con `data_consegna_prevista`, `stato_consegna` (da_consegnare, in_consegna, consegnata, parziale, problema), `problema_consegna` (enum), `destinazione_consegna`.
-- Nuova sezione "Consegne" con filtri (oggi, in ritardo, parziali, problemi) e generazione automatica di un'attività/segnalazione per ogni anomalia.
+- Enum `app_role`: `admin`, `agente`, `collaboratore`, `amministrazione`, `brand_ambassador`, `readonly`.
+- Tabella `user_roles(user_id, role)` + funzione `has_role(_user_id, _role)` SECURITY DEFINER.
+- Trigger su primo signup → assegna `admin` al primo utente, `agente` agli altri.
+- RLS aggiornata su tabelle sensibili: `ordini`, `clienti`, `provvigioni_*`, `estratti_provvigioni*`, `scadenziario_fatture`, `movimenti_provvigione`, `documenti`, `segnalazioni*`, `omaggi_erogati`.
+  - `admin` / `amministrazione`: full access
+  - `agente`: solo propri `user_id` (comportamento attuale)
+  - `collaboratore`: read+insert sui propri
+  - `brand_ambassador`: read-only clienti/prodotti, write solo `visite`/`daily_reports`
+  - `readonly`: solo SELECT
+- Pagina **Impostazioni → Utenti & Ruoli** (solo admin): elenco utenti, cambio ruolo, invito nuovo utente.
 
 ---
 
-## Fase 3 — Intelligenza commerciale (punti 6, 12, 13, 14, 15)
-Controllo prezzi/condizioni in fase d'ordine, classificazione automatica clienti (nuovo/attivo/in calo/perso/recuperato), archivio opportunità, obiettivi per mandante/cliente/prodotto, simulatore chiusura mese.
+## Fase 4 — Operatività quotidiana
 
-## Fase 4 — Operatività quotidiana (punti 8, 9, 10, 16, 17)
-Incassi e affidabilità cliente (con blocco/rilascio provvigione), mappa zone + percorsi visite ottimizzati (Google Maps già disponibile come connector), pianificazione settimanale, centro comunicazioni (email/WA/PDF precompilati dai dati CRM), sistema follow-up automatici.
+### 4A — Incassi & affidabilità cliente
+- Colonne `affidabilita_score` (0–100), `blocco_provvigione` (bool), `motivo_blocco` su `clienti`.
+- Motore `src/lib/clientReliabilityEngine.ts`: calcola score da fatture scadute, DSO, insoluti, storico pagamenti.
+- Regola: cliente con score < soglia → provvigioni relative marcate `bloccata` in `scadenziario_fatture.stato_provvigione`.
+- UI in `ClienteDettaglio`: card "Affidabilità" con score, dettaglio insoluti, toggle blocco manuale.
 
-## Fase 5 — Multiutente e sicurezza (punto 18)
-Ruoli (`admin`, `agente`, `collaboratore`, `amministrazione`, `brand_ambassador`, `readonly`) via tabella `user_roles` + `has_role()`, aggiornamento RLS di tutte le tabelle sensibili.
+### 4B — Mappa zone & percorsi visite
+- Google Maps JS API tramite chiave utente (chiedo `GOOGLE_MAPS_API_KEY` con `add_secret`).
+- Colonne `latitudine`, `longitudine` su `clienti` (geocoding on-demand al salvataggio indirizzo, edge function `geocode-client`).
+- Pagina **Mappa** (`/mappa`): marker clienti colorati per priorità (Risk/Target/Potential/Routine), filtri zona, cluster.
+- Bottone "Pianifica giro" → ottimizzazione ordine visite (algoritmo nearest-neighbor lato client, senza Directions API a pagamento).
 
-## Fase 6 — Backup, esportazioni, salute tecnica (punti 19, 20)
-Cestino con soft delete su tabelle chiave, export completo strutturato (JSON/ZIP), pagina "Diagnostica" con stato backend/DB, errori recenti, import falliti, query lente, ultimo backup. Ottimizzazioni: virtualizzazione tabelle grandi, indici mirati, paginazione server-side, cache mirata.
+### 4C — Pianificazione settimanale
+- Tabella `pianificazione_settimanale(user_id, settimana, giorno, cliente_id, ora_prevista, note, stato)`.
+- Pagina **Pianificazione** (`/pianificazione`): vista settimanale tipo agenda, drag & drop clienti da lista suggerimenti (riordino urgente + priorità).
 
----
+### 4D — Centro comunicazioni
+- Tabella `comunicazioni_log(cliente_id, canale, template, contenuto, inviata_at, stato)`.
+- Templates precompilati (WhatsApp/Email/PDF): sollecito, offerta, follow-up, benvenuto.
+- Edge function `render-comunicazione` che compila template con dati cliente/ordine.
+- UI in `ClienteDettaglio`: bottone "Comunica" → dialog scelta template + canale + preview + apertura `wa.me` o `mailto:` o download PDF.
 
-## Dettagli tecnici (per riferimento)
-
-```text
-Fase 1
-  bucket: documenti (private)
-  table:  documenti (entity_type, entity_id, tipo, storage_path, hash, meta jsonb)
-  edge:   classify-document (Gemini) → suggerisce tipo + entità
-
-Fase 2A
-  engine: src/lib/orderMatchEngine.ts
-  table:  ordini_conferme (ordine_id, documento_id, esito jsonb, verificato_at)
-
-Fase 2B
-  tables: segnalazioni, segnalazioni_eventi, note_credito (view su segnalazioni tipo=NC)
-
-Fase 2C
-  view:   v_reorder_prodotto (cliente, azienda, prodotto, media_gg, prossimo)
-
-Fase 2D
-  cols:   promo_clienti.qta_base, qta_omaggio, cumulabile_arretrati
-  hook:   useOmaggiCalcolati(ordineDraft)
-
-Fase 2E
-  cols:   ordini.data_consegna_prevista, stato_consegna, problema_consegna, destinazione_consegna
-```
+### 4E — Follow-up automatici
+- Tabella `follow_up_regole(trigger, giorni_dopo, template, attivo)`.
+- pg_cron job giornaliero → genera `promemoria` in base alle regole (es. "cliente senza ordini da X giorni", "fattura scaduta da Y giorni").
 
 ---
 
-## Cosa mi serve da te
+## Fase 6 — Backup, esportazioni, diagnostica
 
-1. Confermi che partiamo dalla **Fase 1 (Documenti)**? È la base per 2A, 2B e 5 tra le priorità.
-2. In alternativa posso andare dritto sulla **Fase 2A (confronto conferme)** che è la #1 della tua lista, ma senza documenti allegati la conferma sarà solo "one shot" (analizzata e scartata, non archiviata).
+### 6A — Soft delete & cestino
+- Colonna `deleted_at` timestamptz su: `clienti`, `ordini`, `prodotti`, `aziende`, `segnalazioni`, `documenti`, `notes`, `visite`, `contratti_clienti`, `promo_clienti`.
+- Trigger che intercetta DELETE → converte in UPDATE `deleted_at = now()`.
+- Views `*_active` che filtrano `deleted_at IS NULL` (per non riscrivere ogni query).
+- Pagina **Cestino** (`/cestino`): tabella unificata (tipo, nome, data eliminazione, ripristina/elimina definitivo).
+- Auto-purge dopo 30 giorni via pg_cron.
 
-Dimmi quale delle due preferisci e apro solo quella.
+### 6B — Export JSON/ZIP
+- Edge function `export-user-data`: genera ZIP con JSON di ogni tabella dell'utente + file storage referenziati.
+- UI in **Impostazioni → Backup**: bottone "Scarica backup completo".
+
+### 6C — Diagnostica
+- Pagina **Diagnostica** (`/diagnostica`, solo admin):
+  - Stato backend (ping edge function)
+  - Ultimi errori (nuova tabella `error_log` + edge function che riceve errori client)
+  - Import falliti (query su tabelle esistenti)
+  - Query lente (via `supabase--slow_queries` mostrato nella UI se admin)
+  - Ultimo backup effettuato
+- Indici DB aggiuntivi: `ordini(user_id, data_ordine)`, `clienti(user_id, zona)`, `scadenziario_fatture(user_id, stato_provvigione, data_scadenza)`.
+
+---
+
+## Ordine esecuzione
+
+1. **Migrazione 1** (Fase 5): enum + user_roles + has_role + RLS update tabelle sensibili.
+2. **Migrazione 2** (Fase 4A + 6A): affidabilità clienti + soft delete + views.
+3. **Migrazione 3** (Fase 4C + 4D + 4E + 6C): pianificazione, comunicazioni_log, follow_up_regole, error_log, indici.
+4. **Migrazione 4** (Fase 4B): lat/lng clienti + edge function geocode-client.
+5. **Secret**: chiedo `GOOGLE_MAPS_API_KEY` (solo se confermi Fase 4B con Google Maps).
+6. **Codice**: engines (`clientReliabilityEngine`, `routeOptimizer`), hooks, pagine nuove, integrazioni in pagine esistenti, sidebar.
+7. **pg_cron**: follow-up giornaliero + purge cestino.
+
+---
+
+## Rischi & note
+
+- **Fase 5 può bloccare accesso** se un ruolo viene assegnato male: il primo utente diventa `admin` automaticamente, gli altri restano `agente` (comportamento attuale). Nessuno perde accesso.
+- **Google Maps richiede una chiave a pagamento** (quota gratuita mensile Google c'è ma serve carta). Se non vuoi Google Maps, uso **Leaflet + OpenStreetMap** (gratis, nessuna chiave). Default: **Leaflet** se non specifichi.
+- **Soft delete su tabelle esistenti**: le query attuali continuano a funzionare (i trigger convertono DELETE), ma le pagine mostrerebbero anche righe cancellate finché non passo a `*_active`. Migro le query principali (clienti, ordini, prodotti) subito, il resto in modo incrementale.
+- **Volume totale**: ~4 migrazioni, ~3 edge functions, ~6 pagine nuove, ~10 hook, aggiornamenti a 15+ file esistenti. È tanto in un colpo — se qualcosa si rompe, faccio rollback della fase specifica.
+
+Confermi con:
+- **Mappa: Google Maps (con chiave) o Leaflet/OSM (gratis)?**
+- **Vai con tutto?**
