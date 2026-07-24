@@ -377,6 +377,7 @@ export default function CanvassPage() {
       <PromoFormDialog open={isPromoDialogOpen} onOpenChange={(open) => { setIsPromoDialogOpen(open); if (!open) setEditingPromo(null); }} editingPromo={editingPromo} aziende={aziende} clienti={clienti} prodotti={prodotti} onSave={handleSavePromo} isPending={createCanvass.isPending || updateCanvass.isPending} />
       <ContrattoFormDialog open={isContrattoDialogOpen} onOpenChange={(open) => { setIsContrattoDialogOpen(open); if (!open) setEditingContratto(null); }} editingContratto={editingContratto} aziende={aziende} clienti={clienti} consorzi={consorzi} onSave={handleSaveContratto} isPending={createContratto.isPending || updateContratto.isPending} />
       <PromoDetailSheet promo={viewingPromo} open={!!viewingPromo} onOpenChange={(open) => { if (!open) setViewingPromo(null); }} onEdit={(promo) => { setViewingPromo(null); setEditingPromo(promo); setIsPromoDialogOpen(true); }} onDelete={(id) => { deleteCanvass.mutate(id); setViewingPromo(null); }} />
+      <AIImportCanvassDialog open={isAIImportOpen} onOpenChange={setIsAIImportOpen} />
     </MainLayout>
   );
 }
