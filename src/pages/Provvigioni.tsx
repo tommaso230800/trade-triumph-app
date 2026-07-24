@@ -284,6 +284,48 @@ const Provvigioni = () => {
     await aggiornaStatoProvvigione.mutateAsync({ id, source: row.source, stato });
   };
 
+  const setTrimestreInline = async (row: ProvvigioneRow, trimestre: number) => {
+    const id = row.scadenziarioId || row.ordineId;
+    if (!id || row.source === "movimento") return;
+    const anno = row.annoPagamento ?? (row.dataEffettivaPagamento ? new Date(row.dataEffettivaPagamento).getFullYear() : new Date().getFullYear());
+    await aggiornaTrimestrePagamento.mutateAsync({ id, source: row.source, trimestre, anno });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredTableRows.length && filteredTableRows.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      const selectable = filteredTableRows.filter((r) => r.source !== "movimento");
+      setSelectedIds(new Set(selectable.map((r) => r.id)));
+    }
+  };
+  const toggleSelectOne = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+  const selectedRows = useMemo(
+    () => filteredTableRows.filter((r) => selectedIds.has(r.id) && r.source !== "movimento"),
+    [filteredTableRows, selectedIds]
+  );
+  const confirmBulkPagate = async () => {
+    const items = selectedRows.map((r) => ({
+      id: (r.scadenziarioId || r.ordineId)!,
+      source: r.source as "fattura" | "ordine",
+      provvigioneMaturata: r.provvigioneMaturata,
+    }));
+    await aggiornaBulkPagate.mutateAsync({
+      items,
+      trimestre: bulkTrim,
+      anno: bulkYear,
+      data_pagamento: new Date().toISOString().slice(0, 10),
+    });
+    setSelectedIds(new Set());
+    setBulkOpen(false);
+  };
+
+
+
   const simTotale = (Number(simFatturato) * Number(simPct)) / 100 + Number(simBonus) + Number(simPremi);
 
   return (
