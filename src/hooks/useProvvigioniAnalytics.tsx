@@ -115,6 +115,8 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
           giorniRitardo: ritardo,
           metodoPagamento: o.metodo_pagamento_provvigione,
           note: o.note_provvigione || o.note,
+          trimestrePagamento: (o as any).trimestre_pagamento ?? null,
+          annoPagamento: (o as any).anno_pagamento ?? null,
         };
       });
 
