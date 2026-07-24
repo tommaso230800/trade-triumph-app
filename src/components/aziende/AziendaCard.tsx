@@ -172,8 +172,10 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
     if (!file) return;
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Devi essere autenticato");
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('prodotti-images')
@@ -202,8 +204,10 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
 
     setUploading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Devi essere autenticato");
       const fileExt = file.name.split('.').pop();
-      const fileName = `${azienda.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/${azienda.id}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('aziende-logos')
@@ -223,6 +227,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
       setUploading(false);
     }
   };
+
 
   const calcTotaleCartoni = (strati: number, cartoniPerStrato: number) => strati * cartoniPerStrato;
 
