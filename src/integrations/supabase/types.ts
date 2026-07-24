@@ -1901,6 +1901,7 @@ export type Database = {
       ordini: {
         Row: {
           aliquota_prevista: number | null
+          anno_pagamento: number | null
           azienda_id: string | null
           cliente_id: string | null
           codice: string | null
@@ -1940,6 +1941,7 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento: string | null
           totale: number | null
+          trimestre_pagamento: number | null
           updated_at: string | null
           user_id: string
           verificato_conferma: boolean
@@ -1947,6 +1949,7 @@ export type Database = {
         }
         Insert: {
           aliquota_prevista?: number | null
+          anno_pagamento?: number | null
           azienda_id?: string | null
           cliente_id?: string | null
           codice?: string | null
@@ -1986,6 +1989,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento?: string | null
           totale?: number | null
+          trimestre_pagamento?: number | null
           updated_at?: string | null
           user_id: string
           verificato_conferma?: boolean
@@ -1993,6 +1997,7 @@ export type Database = {
         }
         Update: {
           aliquota_prevista?: number | null
+          anno_pagamento?: number | null
           azienda_id?: string | null
           cliente_id?: string | null
           codice?: string | null
@@ -2032,6 +2037,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["order_status"] | null
           tipo_pagamento?: string | null
           totale?: number | null
+          trimestre_pagamento?: number | null
           updated_at?: string | null
           user_id?: string
           verificato_conferma?: boolean
