@@ -178,6 +178,9 @@ const Provvigioni = () => {
     if (statoFilter !== "tutte") {
       rows = rows.filter((r) => r.statoProvvigione === statoFilter);
     }
+    if (trimestreFilter !== 0) {
+      rows = rows.filter((r) => r.trimestrePagamento === trimestreFilter);
+    }
     const sorted = [...rows].sort((a, b) => {
       const av: any = a[sortKey];
       const bv: any = b[sortKey];
@@ -188,7 +191,7 @@ const Provvigioni = () => {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return sorted;
-  }, [analytics.filteredRows, statoFilter, sortKey, sortDir]);
+  }, [analytics.filteredRows, statoFilter, trimestreFilter, sortKey, sortDir]);
 
   const toggleSort = (k: SortKey) => {
     if (k === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
