@@ -136,6 +136,11 @@ const Provvigioni = () => {
   const [statoFilter, setStatoFilter] = useState<"tutte" | "pagata" | "da_pagare" | "scaduta" | "parziale" | "contestazione">("tutte");
   const [sortKey, setSortKey] = useState<SortKey>("data");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [trimestreFilter, setTrimestreFilter] = useState<0 | 1 | 2 | 3 | 4>(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkTrim, setBulkTrim] = useState<number>(Math.floor(now.getMonth() / 3) + 1);
+  const [bulkYear, setBulkYear] = useState<number>(now.getFullYear());
   const [payDialog, setPayDialog] = useState<{ open: boolean; fattura: ProvvigioneDialogItem | null; initialStato?: StatoProvvigione }>({ open: false, fattura: null });
   const [meseDetail, setMeseDetail] = useState<{ open: boolean; detail: any | null }>({ open: false, detail: null });
 
