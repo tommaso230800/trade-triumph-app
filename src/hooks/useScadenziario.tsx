@@ -344,6 +344,8 @@ export const useScadenziario = () => {
     segnaIncassata,
     segnaProvvigioneIncassata,
     aggiornaStatoProvvigione,
+    aggiornaTrimestrePagamento,
+    aggiornaBulkPagate,
     eliminaFattura,
     totaleScaduto,
     provvigionePotenziale,
