@@ -41,6 +41,8 @@ export interface ProvvigioneRow {
   note: string | null;
   scadenziarioId?: string;
   ordineId?: string;
+  trimestrePagamento: number | null;
+  annoPagamento: number | null;
 }
 
 const inPeriodo = (dateStr: string, p: PeriodoFilter): boolean => {
