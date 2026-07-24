@@ -519,23 +519,102 @@ const Provvigioni = () => {
               <StatoSummaryCard label="Contestazione" value={riepiloghi.perStato.contestazione} icon={<Ban className="h-4 w-4" />} accent="purple" />
             </div>
 
+            {/* LIQUIDATO PER TRIMESTRE (Dashboard trimestrale) */}
+            <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-card">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <CalendarClock className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base">Liquidato per trimestre di pagamento</CardTitle>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Basato sul trimestre in cui l'azienda ha effettivamente liquidato la provvigione
+                  </p>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {analytics.perTrimestrePagamento.map((t) => {
+                    const active = trimestreFilter === t.trimestre;
+                    return (
+                      <button
+                        key={t.trimestre}
+                        onClick={() => setTrimestreFilter(active ? 0 : (t.trimestre as 1 | 2 | 3 | 4))}
+                        className={`text-left rounded-lg border p-4 transition ${active ? "border-primary bg-primary/10 shadow-sm" : "border-border hover:border-primary/40 hover:bg-muted/30"}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-semibold">Q{t.trimestre}</span>
+                          <span className="text-xs text-muted-foreground">{["Gen-Mar","Apr-Giu","Lug-Set","Ott-Dic"][t.trimestre-1]}</span>
+                        </div>
+                        <p className="text-xl font-bold text-primary">{fmtEur(t.liquidato)}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t.conteggio} provvigioni</p>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 h-[180px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={analytics.perTrimestrePagamento.map((t) => ({ name: `Q${t.trimestre}`, liquidato: t.liquidato }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
+                      <Bar dataKey="liquidato" radius={[6, 6, 0, 0]}>
+                        {analytics.perTrimestrePagamento.map((t, i) => (
+                          <Cell key={i} fill={trimestreFilter === t.trimestre ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.55)"} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
-              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 space-y-0">
-                <div className="flex flex-wrap gap-2">
-                  {(["tutte", "pagata", "da_pagare", "scaduta", "parziale", "contestazione"] as const).map((s) => (
+              <CardHeader className="flex flex-col gap-3 space-y-0">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    {(["tutte", "pagata", "da_pagare", "scaduta", "parziale", "contestazione"] as const).map((s) => (
+                      <Button
+                        key={s}
+                        size="sm"
+                        variant={statoFilter === s ? "default" : "outline"}
+                        onClick={() => setStatoFilter(s)}
+                      >
+                        {s === "tutte" ? "Tutte" : STATO_CONFIG[s].label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={exportExcel}><Download className="h-4 w-4 mr-1" />Excel{trimestreFilter !== 0 ? ` Q${trimestreFilter}` : ""}</Button>
+                    <Button size="sm" variant="outline" onClick={exportPDF}><Download className="h-4 w-4 mr-1" />PDF{trimestreFilter !== 0 ? ` Q${trimestreFilter}` : ""}</Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/60">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground mr-1">Trimestre pagamento:</span>
+                  {([0, 1, 2, 3, 4] as const).map((q) => (
                     <Button
-                      key={s}
+                      key={q}
                       size="sm"
-                      variant={statoFilter === s ? "default" : "outline"}
-                      onClick={() => setStatoFilter(s)}
+                      variant={trimestreFilter === q ? "default" : "outline"}
+                      onClick={() => setTrimestreFilter(q)}
+                      className="h-7 px-3"
                     >
-                      {s === "tutte" ? "Tutte" : STATO_CONFIG[s].label}
+                      {q === 0 ? "Tutti" : `Q${q}`}
                     </Button>
                   ))}
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={exportExcel}><Download className="h-4 w-4 mr-1" />Excel</Button>
-                  <Button size="sm" variant="outline" onClick={exportPDF}><Download className="h-4 w-4 mr-1" />PDF</Button>
+                  {selectedRows.length > 0 && (
+                    <div className="ml-auto flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5">
+                      <span className="text-xs font-medium">{selectedRows.length} selezionate</span>
+                      <Button size="sm" onClick={() => setBulkOpen(true)} className="h-7">
+                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                        Segna come pagate
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="h-7">
+                        Annulla
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
@@ -543,27 +622,46 @@ const Provvigioni = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-10">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-border cursor-pointer"
+                            checked={filteredTableRows.length > 0 && selectedIds.size === filteredTableRows.filter((r) => r.source !== "movimento").length}
+                            onChange={toggleSelectAll}
+                          />
+                        </TableHead>
                         <SortableHead k="data" label="Data" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                         <SortableHead k="numero" label="N° doc" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                         <SortableHead k="aziendaNome" label="Azienda" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                         <SortableHead k="clienteNome" label="Cliente" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                        <SortableHead k="imponibile" label="Imponibile" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="right" />
+                        <SortableHead k="imponibile" label="Base" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="right" />
                         <SortableHead k="percentualeProvv" label="%" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
                         <SortableHead k="provvigioneMaturata" label="Maturata" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="right" />
                         <SortableHead k="provvigionePagata" label="Pagata" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="right" />
                         <SortableHead k="statoProvvigione" label="Stato" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                        <SortableHead k="giorniRitardo" label="Rit." sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="center" />
+                        <TableHead className="w-[130px]">Trimestre</TableHead>
                         <TableHead className="w-10" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredTableRows.length === 0 ? (
-                        <TableRow><TableCell colSpan={11} className="text-center py-8 text-muted-foreground">Nessuna riga per i filtri selezionati</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">Nessuna riga per i filtri selezionati</TableCell></TableRow>
                       ) : (
                         filteredTableRows.map((r) => {
                           const S = STATO_CONFIG[r.statoProvvigione];
+                          const selectable = r.source !== "movimento";
                           return (
-                            <TableRow key={r.id} className={`transition-colors ${S?.rowBg || "hover:bg-muted/30"}`}>
+                            <TableRow key={r.id} className={`transition-colors ${S?.rowBg || "hover:bg-muted/30"} ${selectedIds.has(r.id) ? "bg-primary/5" : ""}`}>
+                              <TableCell>
+                                {selectable && (
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-border cursor-pointer"
+                                    checked={selectedIds.has(r.id)}
+                                    onChange={() => toggleSelectOne(r.id)}
+                                  />
+                                )}
+                              </TableCell>
                               <TableCell className="whitespace-nowrap text-sm">{format(new Date(r.data), "dd/MM/yy")}</TableCell>
                               <TableCell className="font-mono text-xs">{r.numero}</TableCell>
                               <TableCell className="text-sm font-medium">{r.aziendaNome}</TableCell>
@@ -578,8 +676,25 @@ const Provvigioni = () => {
                                   {S?.label}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-center">
-                                {r.giorniRitardo > 0 ? <Badge variant="destructive" className="text-xs">+{r.giorniRitardo}gg</Badge> : <span className="text-xs text-muted-foreground">—</span>}
+                              <TableCell>
+                                {selectable ? (
+                                  <Select
+                                    value={r.trimestrePagamento ? String(r.trimestrePagamento) : ""}
+                                    onValueChange={(v) => setTrimestreInline(r, Number(v))}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs">
+                                      <SelectValue placeholder="—" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="1">Q1 · Gen-Mar</SelectItem>
+                                      <SelectItem value="2">Q2 · Apr-Giu</SelectItem>
+                                      <SelectItem value="3">Q3 · Lug-Set</SelectItem>
+                                      <SelectItem value="4">Q4 · Ott-Dic</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <DropdownMenu>
