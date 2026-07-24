@@ -190,6 +190,8 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
         giorniRitardo: 0,
         metodoPagamento: m.metodo_pagamento,
         note: m.note,
+        trimestrePagamento: m.trimestre_pagamento ?? (m.data_pagamento ? Math.floor(new Date(m.data_pagamento).getMonth() / 3) + 1 : null),
+        annoPagamento: m.anno_pagamento ?? (m.data_pagamento ? new Date(m.data_pagamento).getFullYear() : null),
       };
     });
 
