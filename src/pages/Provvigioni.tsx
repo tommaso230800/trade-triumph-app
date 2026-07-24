@@ -922,6 +922,58 @@ const Provvigioni = () => {
         detail={meseDetail.detail}
       />
 
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Segna come pagate — selezione multipla</DialogTitle>
+            <DialogDescription>
+              Aggiorna {selectedRows.length} provvigioni impostandole come <b>Pagate</b>. Il trimestre scelto verrà applicato a tutte.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Totale maturato selezionato</span>
+              <span className="font-semibold text-primary">
+                {fmtEur(selectedRows.reduce((s, r) => s + r.provvigioneMaturata, 0))}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Anno</Label>
+              <Select value={String(bulkYear)} onValueChange={(v) => setBulkYear(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[0, 1, 2, 3, 4].map((o) => {
+                    const y = new Date().getFullYear() - o;
+                    return <SelectItem key={y} value={String(y)}>{y}</SelectItem>;
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Trimestre di pagamento</Label>
+              <Select value={String(bulkTrim)} onValueChange={(v) => setBulkTrim(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Q1 · Gen-Mar</SelectItem>
+                  <SelectItem value="2">Q2 · Apr-Giu</SelectItem>
+                  <SelectItem value="3">Q3 · Lug-Set</SelectItem>
+                  <SelectItem value="4">Q4 · Ott-Dic</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkOpen(false)}>Annulla</Button>
+            <Button onClick={confirmBulkPagate} disabled={aggiornaBulkPagate.isPending}>
+              {aggiornaBulkPagate.isPending ? "Salvataggio…" : `Conferma ${selectedRows.length} righe`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
     </MainLayout>
   );
