@@ -231,7 +231,7 @@ const Provvigioni = () => {
     doc.text(`Generato: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 22);
     autoTable(doc, {
       startY: 28,
-      head: [["Data", "N°", "Azienda", "Cliente", "Imponibile", "%", "Maturata", "Pagata", "Stato"]],
+      head: [["Data", "N°", "Azienda", "Cliente", "Imponibile", "%", "Maturata", "Pagata", "Stato", "Trim. pag."]],
       body: filteredTableRows.map((r) => [
         format(new Date(r.data), "dd/MM/yy"),
         r.numero,
@@ -242,11 +242,13 @@ const Provvigioni = () => {
         fmtEur(r.provvigioneMaturata),
         fmtEur(r.provvigionePagata),
         STATO_CONFIG[r.statoProvvigione]?.label || r.statoProvvigione,
+        r.trimestrePagamento ? `Q${r.trimestrePagamento} ${r.annoPagamento ?? ""}`.trim() : "—",
       ]),
       styles: { fontSize: 8 },
       headStyles: { fillColor: [30, 30, 60] },
     });
-    doc.save(`provvigioni_${format(new Date(), "yyyyMMdd")}.pdf`);
+    const suffix = trimestreFilter !== 0 ? `_Q${trimestreFilter}` : "";
+    doc.save(`provvigioni${suffix}_${format(new Date(), "yyyyMMdd")}.pdf`);
   };
 
   const openPayDialog = (row: ProvvigioneRow, initialStato?: StatoProvvigione) => {
