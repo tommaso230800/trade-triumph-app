@@ -191,9 +191,8 @@ export default function CanvassPage() {
             <p className="text-muted-foreground">Gestisci promozioni, sconti e premi fine anno</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isParsingAI} className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-200 hover:border-purple-300">
-              {isParsingAI ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2 text-purple-600" />}
+            <Button variant="outline" onClick={() => setIsAIImportOpen(true)} className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-200 hover:border-purple-300">
+              <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
               Importa con AI
             </Button>
             <Button variant="outline" onClick={() => { setEditingContratto(null); setIsContrattoDialogOpen(true); }}>
