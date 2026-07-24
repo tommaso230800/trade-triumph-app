@@ -5,12 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface ContrattoObbiettivo {
-  soglia_fatturato: number;
-  percentuale_premio: number;
-  descrizione?: string;
-}
-
+// Legacy result shape (still supported by callers of the old flow)
 interface PromozioneEstratta {
   nome: string;
   tipo: "sconto_percentuale" | "prezzo_fisso" | "premio_fine_anno";
@@ -23,174 +18,205 @@ interface PromozioneEstratta {
   periodi?: { data_inizio: string; data_fine: string }[];
 }
 
-interface ParsedCanvassResult {
-  tipo: "contratto" | "promozione" | "misto";
+// New structured row shape for the AI import preview
+interface RigaEstratta {
+  prodotto_testo: string;
+  codice_prodotto?: string | null;
+  formato?: string | null;
+  prodotto_id?: string | null;
+  prodotto_match_confidence?: number;
+  candidati_prodotti?: { id: string; nome: string; codice?: string | null; score: number }[];
+  tipologia:
+    | "sconto_percentuale"
+    | "prezzo_promozionale"
+    | "prezzo_netto"
+    | "x_piu_y"
+    | "cartoni_omaggio"
+    | "sconto_cartone"
+    | "sconto_pallet"
+    | "contributo_fisso"
+    | "premio_sell_in"
+    | "premio_sell_out"
+    | "incentivo_quantita"
+    | "bonus_carburante"
+    | "materiale_promozionale"
+    | "canvass_obiettivo"
+    | "altro";
+  valore?: number | null;
+  prezzo_promozionale?: number | null;
+  sconto_percentuale?: number | null;
+  quantita_minima?: number | null;
+  cartoni_acquisto?: number | null;
+  cartoni_omaggio?: number | null;
+  omaggio_descrizione?: string | null;
+  data_inizio?: string | null;
+  data_fine?: string | null;
+  clienti_target?: string | null;
+  note?: string | null;
+  warnings?: string[];
+}
+
+interface AiExtractionResult {
+  tipo_suggerito: "canvass" | "promozione" | "misto";
+  azienda_nome?: string | null;
+  periodo_generale?: { data_inizio?: string | null; data_fine?: string | null };
+  note_generali?: string | null;
+  righe: RigaEstratta[];
+  warnings_globali?: string[];
+  confidence: number;
+  // Legacy fields kept for the older automatic-import flow
   cliente_nome?: string;
   consorzio?: string;
-  azienda_nome?: string;
   anno?: number;
-  // Per contratti con obbiettivi multipli
-  obbiettivi?: ContrattoObbiettivo[];
-  // Fallback singolo obbiettivo
+  obbiettivi?: { soglia_fatturato: number; percentuale_premio: number; descrizione?: string }[];
   percentuale_premio?: number;
   soglia_fatturato?: number;
-  // Promozioni (può essere array per documenti misti)
   promozioni?: PromozioneEstratta[];
-  // Fallback singola promozione (retrocompatibilità)
   promozione?: PromozioneEstratta;
   note?: string;
-  confidence: number;
+}
+
+function normalize(s: string) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function tokenScore(a: string, b: string) {
+  const ta = new Set(normalize(a).split(" ").filter((t) => t.length > 1));
+  const tb = new Set(normalize(b).split(" ").filter((t) => t.length > 1));
+  if (!ta.size || !tb.size) return 0;
+  let common = 0;
+  ta.forEach((t) => tb.has(t) && common++);
+  return common / Math.max(ta.size, tb.size);
+}
+
+function findProductCandidates(
+  query: string,
+  code: string | null | undefined,
+  prodotti: { id: string; nome: string; codice?: string | null }[],
+) {
+  const scored = prodotti.map((p) => {
+    let score = 0;
+    if (code && p.codice && normalize(code) === normalize(p.codice)) score = 1;
+    else {
+      const nameScore = tokenScore(query, p.nome);
+      const codeScore = code && p.codice ? tokenScore(code, p.codice) : 0;
+      score = Math.max(nameScore, codeScore);
+    }
+    return { id: p.id, nome: p.nome, codice: p.codice ?? null, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.filter((s) => s.score > 0.15).slice(0, 5);
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { file_base64, file_type, clienti, aziende, prodotti } = await req.json();
+    const body = await req.json();
+    const {
+      file_base64,
+      file_type,
+      text_input,
+      azienda_id,
+      azienda_nome,
+      clienti,
+      aziende,
+      prodotti,
+    } = body;
 
-    if (!file_base64) {
-      return new Response(JSON.stringify({ error: "Nessun file fornito" }), {
+    if (!file_base64 && !text_input) {
+      return new Response(JSON.stringify({ error: "Fornisci un file o del testo da analizzare" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY non configurata");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY non configurata");
 
-    // Build context for the AI
-    const clientiList = clienti?.map((c: any) => `- ${c.nome}${c.azienda ? ` (${c.azienda})` : ""}${c.consorzio ? ` [Consorzio: ${c.consorzio}]` : ""}`).join("\n") || "Nessun cliente";
-    const aziendeList = aziende?.map((a: any) => `- ${a.nome}`).join("\n") || "Nessuna azienda";
-    const prodottiList = prodotti?.map((p: any) => `- ${p.nome}${p.codice ? ` (${p.codice})` : ""}`).join("\n") || "Nessun prodotto";
+    const prodottiList =
+      (prodotti || [])
+        .map((p: any) => `- ${p.nome}${p.codice ? ` [cod ${p.codice}]` : ""}${p.formato ? ` (${p.formato})` : ""}`)
+        .join("\n") || "Nessun prodotto";
+    const clientiList =
+      (clienti || []).slice(0, 200).map((c: any) => `- ${c.nome}${c.consorzio ? ` [${c.consorzio}]` : ""}`).join("\n") || "Nessun cliente";
 
-    const systemPrompt = `Sei un assistente specializzato nell'analisi di documenti commerciali per agenti di commercio.
-Devi analizzare immagini o PDF di contratti e promozioni (canvass) e estrarre le informazioni rilevanti.
+    const systemPrompt = `Sei un assistente specializzato nell'analisi di documenti commerciali (canvass, promozioni, listini, circolari) per agenti HORECA.
+${azienda_nome ? `AZIENDA DI RIFERIMENTO GIÀ SELEZIONATA: ${azienda_nome}` : ""}
 
-CLIENTI DISPONIBILI:
-${clientiList}
-
-AZIENDE DISPONIBILI:
-${aziendeList}
-
-PRODOTTI DISPONIBILI:
+CATALOGO PRODOTTI DELL'AZIENDA:
 ${prodottiList}
 
-Analizza il documento con intelligenza. Può essere:
-1. Un CONTRATTO PREMIO FINE ANNO - accordo annuale con soglie di fatturato e premi percentuali
-2. Una PROMOZIONE/CANVASS - sconto temporaneo su prodotti specifici
-3. Un DOCUMENTO MISTO - contiene sia contratto che promozioni, o più obbiettivi
+CLIENTI DISPONIBILI (usa nomi esatti se citati):
+${clientiList}
 
-IMPORTANTE: I contratti premio spesso hanno:
-- Obbiettivi multipli con soglie crescenti (es. +3% sopra 10.000€, +4% sopra 20.000€)
-- Riferimenti a promozioni incluse nel periodo contrattuale
-- Periodi di validità multipli per le promozioni (es. Marzo, Giugno, Ottobre)
+Devi estrarre TUTTE le condizioni commerciali presenti nel documento in righe strutturate.
+Ogni riga rappresenta una condizione applicata a un prodotto (o categoria/generico).
 
-Restituisci un JSON con questa struttura:
-
+Restituisci SOLO JSON in questo formato:
 {
-  "tipo": "contratto" | "promozione" | "misto",
-  "cliente_nome": "nome esatto del cliente se presente (usa nomi dalla lista)",
-  "consorzio": "nome del consorzio se il contratto è per un consorzio",
-  "azienda_nome": "nome esatto dell'azienda fornitrice (usa nomi dalla lista)",
-  "anno": 2024,
-  
-  "obbiettivi": [
+  "tipo_suggerito": "canvass" | "promozione" | "misto",
+  "azienda_nome": "${azienda_nome || ""}",
+  "periodo_generale": { "data_inizio": "YYYY-MM-DD" | null, "data_fine": "YYYY-MM-DD" | null },
+  "note_generali": "testo o null",
+  "warnings_globali": ["avvisi generali"],
+  "confidence": 0.0-1.0,
+  "righe": [
     {
-      "soglia_fatturato": 0,
-      "percentuale_premio": 2.5,
-      "descrizione": "Incondizionato sul fatturato totale"
-    },
-    {
-      "soglia_fatturato": 65000,
-      "percentuale_premio": 1.5,
-      "descrizione": "Condizionato al raggiungimento €65.000"
-    },
-    {
-      "soglia_fatturato": 75000,
-      "percentuale_premio": 1.0,
-      "descrizione": "Condizionato al raggiungimento €75.000"
+      "prodotto_testo": "nome del prodotto come scritto nel documento",
+      "codice_prodotto": "codice se presente o null",
+      "formato": "es 6x1L o null",
+      "tipologia": "sconto_percentuale | prezzo_promozionale | prezzo_netto | x_piu_y | cartoni_omaggio | sconto_cartone | sconto_pallet | contributo_fisso | premio_sell_in | premio_sell_out | incentivo_quantita | bonus_carburante | materiale_promozionale | canvass_obiettivo | altro",
+      "valore": null,
+      "prezzo_promozionale": null,
+      "sconto_percentuale": null,
+      "quantita_minima": null,
+      "cartoni_acquisto": null,
+      "cartoni_omaggio": null,
+      "omaggio_descrizione": null,
+      "data_inizio": null,
+      "data_fine": null,
+      "clienti_target": null,
+      "note": null,
+      "warnings": []
     }
-  ],
-  
-  "percentuale_premio": 3.5,
-  "soglia_fatturato": 10000,
-  
-  "promozioni": [
-    {
-      "nome": "Promo Estate",
-      "tipo": "sconto_percentuale",
-      "valore": 10,
-      "data_inizio": "2024-06-01",
-      "data_fine": "2024-06-30",
-      "prodotti": ["nome prodotto 1"],
-      "cartoni_omaggio": 0,
-      "cartoni_acquisto": 0,
-      "periodi": [
-        { "data_inizio": "2024-03-01", "data_fine": "2024-03-31" },
-        { "data_inizio": "2024-06-01", "data_fine": "2024-06-30" }
-      ]
-    }
-  ],
-  
-  "note": "eventuali note aggiuntive estratte dal documento",
-  "confidence": 0.95
+  ]
 }
 
-REGOLE CRITICHE:
+REGOLE:
+1. Estrai UNA riga per ogni condizione (es. "80+4 su X" = 1 riga tipologia "x_piu_y" con cartoni_acquisto=80, cartoni_omaggio=4).
+2. "Borgofulvia Extra Dry 80+4 omaggio - prezzo 1,85€" ⇒ 1 riga: prodotto_testo="Borgofulvia Extra Dry", tipologia="x_piu_y", prezzo_promozionale=1.85, cartoni_acquisto=80, cartoni_omaggio=4.
+3. Se il documento indica solo uno sconto% ⇒ tipologia="sconto_percentuale", sconto_percentuale=numero.
+4. Se prezzo netto/promo ⇒ tipologia="prezzo_promozionale" o "prezzo_netto", prezzo_promozionale=numero.
+5. Se ci sono OMAGGI in materiale (frigo, espositori, gadget) ⇒ tipologia="materiale_promozionale", omaggio_descrizione=descrizione.
+6. Se il documento è un CANVASS con obiettivi/scaglioni ⇒ tipologia="canvass_obiettivo", quantita_minima o valore = soglia, note = premio.
+7. NON INVENTARE valori: se un dato non è presente lascia null.
+8. Aggiungi in "warnings" della riga se il prodotto non è chiaro o se la condizione è ambigua.
+9. Usa date ISO YYYY-MM-DD.
+10. Se non c'è nessuna condizione promozionale ma solo obiettivi ⇒ tipo_suggerito="canvass". Se solo prezzi/omaggi ⇒ "promozione".
+11. Rispondi SOLO col JSON, senza markdown.`;
 
-1. TIPI PROMOZIONE VALIDI - usa SOLO questi tre valori per il campo "tipo" delle promozioni:
-   - "sconto_percentuale" = sconto in percentuale (es. 5%, 3%)
-   - "prezzo_fisso" = prezzo netto specifico in euro (es. €1,85)
-   - "premio_fine_anno" = premio percentuale a fine anno
-   NON INVENTARE ALTRI TIPI. Se una condizione ha sia prezzo fisso che sconto, CREA DUE PROMOZIONI SEPARATE.
-
-2. OGNI CONDIZIONE COMMERCIALE DIVENTA UNA PROMOZIONE SEPARATA:
-   - "Prezzo netto €1,85 su prodotto X" → promozione tipo "prezzo_fisso", valore 1.85
-   - "Extra sconto 3% per ritiro 16 bancali" → promozione tipo "sconto_percentuale", valore 3, cartoni_acquisto 16
-   - "Extra sconto 5% nei periodi promozionali" → promozione tipo "sconto_percentuale", valore 5, con periodi
-
-3. IL CAMPO "valore" NON DEVE MAI ESSERE null. Metti sempre un numero:
-   - Per prezzo_fisso: il prezzo in euro (es. 1.85)
-   - Per sconto_percentuale: la percentuale (es. 5)
-   - Per premio_fine_anno: la percentuale premio (es. 2.5)
-
-4. DATE: Se non ci sono date specifiche per una promozione, usa l'anno del contratto (es. "2026-01-01" e "2026-12-31")
-
-5. Per contratti con OBBIETTIVI MULTIPLI/SCAGLIONI (premi fine anno):
-   - Popola l'array "obbiettivi" con tutte le soglie e premi trovati
-   - Usa anche percentuale_premio e soglia_fatturato per il primo/principale obbiettivo
-
-6. Per promozioni con PERIODI MULTIPLI (es. valida a Marzo, Giugno, Ottobre):
-   - Usa data_inizio e data_fine per il primo periodo
-   - Usa l'array "periodi" per TUTTI i periodi (incluso il primo)
-
-7. Se il documento è SOLO un contratto premio annuale, usa tipo="contratto"
-8. Se contiene SOLO promozioni/canvass, usa tipo="promozione"  
-9. Se contiene ENTRAMBI, usa tipo="misto"
-
-10. Usa i nomi ESATTI di clienti, aziende e prodotti dalla lista fornita quando possibile
-11. Imposta confidence da 0 a 1 in base a quanto sei sicuro dell'interpretazione
-
-Rispondi SOLO con il JSON, senza markdown o testo aggiuntivo.`;
-
-    const userContent = [
+    const userContent: any[] = [
       {
         type: "text",
-        text: "Analizza questo documento commerciale ed estrai TUTTE le informazioni su contratti, obbiettivi, promozioni e periodi. Sii intelligente nell'identificare se è un contratto premio, una promozione, o entrambi:"
+        text: text_input
+          ? `Analizza il seguente testo commerciale ed estrai tutte le righe:\n\n${text_input}`
+          : "Analizza questo documento commerciale ed estrai tutte le righe di condizioni:",
       },
-      {
+    ];
+    if (file_base64) {
+      userContent.push({
         type: "image_url",
         image_url: {
-          url: file_base64.startsWith("data:") ? file_base64 : `data:${file_type};base64,${file_base64}`
-        }
-      }
-    ];
-
-    console.log("Calling Lovable AI to parse document...");
+          url: file_base64.startsWith("data:") ? file_base64 : `data:${file_type};base64,${file_base64}`,
+        },
+      });
+    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -202,7 +228,7 @@ Rispondi SOLO con il JSON, senza markdown o testo aggiuntivo.`;
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userContent }
+          { role: "user", content: userContent },
         ],
       }),
     });
@@ -210,7 +236,6 @@ Rispondi SOLO con il JSON, senza markdown o testo aggiuntivo.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI Gateway error:", response.status, errorText);
-      
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Limite richieste superato, riprova più tardi" }), {
           status: 429,
@@ -223,34 +248,65 @@ Rispondi SOLO con il JSON, senza markdown o testo aggiuntivo.`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
+    if (!content) throw new Error("Nessuna risposta dall'AI");
 
-    if (!content) {
-      throw new Error("Nessuna risposta dall'AI");
-    }
-
-    console.log("AI response:", content);
-
-    // Parse the JSON response
-    let parsed: ParsedCanvassResult;
+    let parsed: AiExtractionResult;
     try {
-      // Remove any markdown code blocks if present
       const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       parsed = JSON.parse(jsonStr);
     } catch (e) {
-      console.error("Failed to parse AI response:", e);
+      console.error("Failed to parse AI response:", e, content);
       throw new Error("Impossibile interpretare la risposta AI");
+    }
+
+    // Post-process: attach product candidates per row against provided catalog
+    if (Array.isArray(parsed.righe) && Array.isArray(prodotti)) {
+      parsed.righe = parsed.righe.map((r) => {
+        const candidati = findProductCandidates(r.prodotto_testo || "", r.codice_prodotto, prodotti);
+        const best = candidati[0];
+        const auto = best && best.score >= 0.7 ? best : null;
+        return {
+          ...r,
+          candidati_prodotti: candidati,
+          prodotto_id: auto ? auto.id : null,
+          prodotto_match_confidence: best?.score ?? 0,
+          warnings: [
+            ...(r.warnings || []),
+            ...(!auto ? ["Prodotto non riconosciuto con certezza. Seleziona il prodotto corretto."] : []),
+          ],
+        };
+      });
+    }
+
+    // Also fabricate legacy fields to keep the old auto-import call site working
+    if (!parsed.promozioni && Array.isArray(parsed.righe)) {
+      parsed.promozioni = parsed.righe
+        .filter((r) => r.tipologia !== "canvass_obiettivo" && r.tipologia !== "materiale_promozionale")
+        .map((r) => ({
+          nome: r.prodotto_testo || "Promozione",
+          tipo:
+            r.tipologia === "sconto_percentuale"
+              ? "sconto_percentuale"
+              : r.prezzo_promozionale != null
+                ? "prezzo_fisso"
+                : "sconto_percentuale",
+          valore: r.sconto_percentuale ?? r.prezzo_promozionale ?? r.valore ?? 0,
+          data_inizio: r.data_inizio ?? parsed.periodo_generale?.data_inizio ?? undefined,
+          data_fine: r.data_fine ?? parsed.periodo_generale?.data_fine ?? undefined,
+          prodotti: r.prodotto_testo ? [r.prodotto_testo] : [],
+          cartoni_omaggio: r.cartoni_omaggio ?? 0,
+          cartoni_acquisto: r.cartoni_acquisto ?? 0,
+        }));
     }
 
     return new Response(JSON.stringify({ success: true, data: parsed }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (error) {
     console.error("Error in parse-canvass-document:", error);
     const errorMessage = error instanceof Error ? error.message : "Errore sconosciuto";

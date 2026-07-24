@@ -20,6 +20,7 @@ import { PromoFormDialog, PromoFormData } from "@/components/canvass/PromoFormDi
 import { ContrattoFormDialog, ContrattoFormData } from "@/components/canvass/ContrattoFormDialog";
 import { PromoDetailSheet } from "@/components/canvass/PromoDetailSheet";
 import { ActivePromosSection } from "@/components/canvass/ActivePromosSection";
+import { AIImportCanvassDialog } from "@/components/canvass/AIImportCanvassDialog";
 
 const tipoConfig = {
   sconto_percentuale: { label: "Sconto %", icon: Percent, color: "bg-blue-100 text-blue-800" },
@@ -48,8 +49,7 @@ export default function CanvassPage() {
 
   const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
   const [isContrattoDialogOpen, setIsContrattoDialogOpen] = useState(false);
-  const [isParsingAI, setIsParsingAI] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAIImportOpen, setIsAIImportOpen] = useState(false);
   
   const [editingPromo, setEditingPromo] = useState<Canvass | null>(null);
   const [editingContratto, setEditingContratto] = useState<ContrattoCliente | null>(null);
@@ -159,147 +159,6 @@ export default function CanvassPage() {
     setIsContrattoDialogOpen(false);
   };
 
-  const findAziendaId = (nome: string | undefined) => {
-    if (!nome) return null;
-    const lower = nome.toLowerCase();
-    return aziende.find(a => a.nome.toLowerCase().includes(lower) || lower.includes(a.nome.toLowerCase()))?.id || null;
-  };
-
-  const findClienteId = (nome: string | undefined) => {
-    if (!nome) return null;
-    const lower = nome.toLowerCase();
-    return clienti.find(c => c.nome.toLowerCase().includes(lower) || lower.includes(c.nome.toLowerCase()))?.id || null;
-  };
-
-  const findProdottoId = (nome: string) => {
-    const lower = nome.toLowerCase();
-    return prodotti.find(p => p.nome.toLowerCase().includes(lower) || lower.includes(p.nome.toLowerCase()) || p.codice?.toLowerCase().includes(lower))?.id || null;
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-    if (!validTypes.includes(file.type)) { toast.error("Formato non supportato"); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error("File troppo grande"); return; }
-    setIsParsingAI(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const { data, error } = await supabase.functions.invoke("parse-canvass-document", {
-            body: { file_base64: reader.result, file_type: file.type, clienti: clienti.map(c => ({ nome: c.nome, azienda: c.azienda, consorzio: c.consorzio })), aziende: aziende.map(a => ({ nome: a.nome })), prodotti: prodotti.map(p => ({ nome: p.nome, codice: p.codice })) },
-          });
-          if (error || data.error) { toast.error(data?.error || "Errore nell'analisi"); setIsParsingAI(false); return; }
-          
-          const parsed = data.data;
-          const aziendaId = findAziendaId(parsed.azienda_nome);
-          if (!aziendaId) { toast.error(`Azienda "${parsed.azienda_nome}" non trovata. Creala prima.`); setIsParsingAI(false); return; }
-
-          let savedContratti = 0;
-          let savedPromo = 0;
-
-          // Save contratti/obiettivi
-          if (parsed.tipo === "contratto" || parsed.tipo === "misto") {
-            const clienteId = findClienteId(parsed.cliente_nome);
-            const isConsorzio = !!parsed.consorzio && !clienteId;
-            
-            // Build obbiettivi array from parsed data
-            const obbiettivi = (parsed.obbiettivi && parsed.obbiettivi.length > 0)
-              ? parsed.obbiettivi.map((obj: any) => ({
-                  tipo: (obj.soglia_fatturato && obj.soglia_fatturato > 0) ? "condizionato" : "incondizionato",
-                  percentuale_premio: obj.percentuale_premio || 0,
-                  soglia_fatturato: obj.soglia_fatturato || 0,
-                  descrizione: obj.descrizione || "",
-                }))
-              : parsed.percentuale_premio
-                ? [{
-                    tipo: (parsed.soglia_fatturato && parsed.soglia_fatturato > 0) ? "condizionato" : "incondizionato",
-                    percentuale_premio: parsed.percentuale_premio || 0,
-                    soglia_fatturato: parsed.soglia_fatturato || 0,
-                    descrizione: "",
-                  }]
-                : [];
-
-            if (obbiettivi.length > 0) {
-              const mainObj = obbiettivi[0];
-              const contrattoData = {
-                cliente_id: clienteId || clienti[0]?.id,
-                azienda_id: aziendaId,
-                anno: parsed.anno || new Date().getFullYear(),
-                percentuale_premio: mainObj.percentuale_premio,
-                soglia_fatturato: mainObj.tipo === "incondizionato" ? 0 : mainObj.soglia_fatturato,
-                note: parsed.note || null,
-                consorzio: parsed.consorzio || null,
-                is_consorzio: isConsorzio,
-                obbiettivi,
-              };
-              await createContratto.mutateAsync(contrattoData);
-              savedContratti++;
-            }
-          }
-
-          // Save promozioni
-          if (parsed.tipo === "promozione" || parsed.tipo === "misto") {
-            const promoList = parsed.promozioni && parsed.promozioni.length > 0 
-              ? parsed.promozioni 
-              : parsed.promozione ? [parsed.promozione] : [];
-
-            for (const promo of promoList) {
-              const prodottiIds = (promo.prodotti || [])
-                .map((nome: string) => findProdottoId(nome))
-                .filter(Boolean)
-                .map((id: string) => ({ prodotto_id: id }));
-
-              const periodi = (promo.periodi || [])
-                .filter((p: any) => p.data_inizio && p.data_fine)
-                .slice(1); // first period is the main one
-
-              // Normalize tipo to valid values
-              const validTipi = ["sconto_percentuale", "prezzo_fisso", "premio_fine_anno"];
-              let tipo = promo.tipo || "sconto_percentuale";
-              if (!validTipi.includes(tipo)) {
-                tipo = tipo.includes("prezzo") ? "prezzo_fisso" : "sconto_percentuale";
-              }
-
-              const defaultYear = parsed.anno || new Date().getFullYear();
-              const canvassData = {
-                nome: promo.nome || "Promozione importata",
-                descrizione: (promo as any).note || parsed.note || null,
-                tipo: tipo as "sconto_percentuale" | "prezzo_fisso" | "premio_fine_anno",
-                valore: promo.valore || 0,
-                data_inizio: promo.data_inizio || promo.periodi?.[0]?.data_inizio || `${defaultYear}-01-01`,
-                data_fine: promo.data_fine || promo.periodi?.[0]?.data_fine || `${defaultYear}-12-31`,
-                attivo: true,
-                tutti_clienti: true,
-                azienda_id: aziendaId,
-                cartoni_omaggio: promo.cartoni_omaggio || 0,
-                cartoni_acquisto: promo.cartoni_acquisto || 0,
-              };
-
-              await createCanvass.mutateAsync({
-                canvass: canvassData,
-                clienti_ids: [],
-                prodotti: prodottiIds,
-                periodi,
-              });
-              savedPromo++;
-            }
-          }
-
-          const messages = [];
-          if (savedContratti > 0) messages.push(`${savedContratti} contratt${savedContratti === 1 ? 'o' : 'i'}`);
-          if (savedPromo > 0) messages.push(`${savedPromo} promozion${savedPromo === 1 ? 'e' : 'i'}`);
-          toast.success(`Importati: ${messages.join(" e ")}!`);
-        } catch (err: any) {
-          toast.error("Errore nel salvataggio: " + (err.message || "Errore sconosciuto"));
-        }
-        setIsParsingAI(false);
-      };
-      reader.readAsDataURL(file);
-    } catch { toast.error("Errore nella lettura"); setIsParsingAI(false); }
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
 
   const getPromoStatus = (promo: Canvass) => {
     const todayStr = format(today, "yyyy-MM-dd");
@@ -332,9 +191,8 @@ export default function CanvassPage() {
             <p className="text-muted-foreground">Gestisci promozioni, sconti e premi fine anno</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <input type="file" ref={fileInputRef} className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isParsingAI} className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-200 hover:border-purple-300">
-              {isParsingAI ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2 text-purple-600" />}
+            <Button variant="outline" onClick={() => setIsAIImportOpen(true)} className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-200 hover:border-purple-300">
+              <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
               Importa con AI
             </Button>
             <Button variant="outline" onClick={() => { setEditingContratto(null); setIsContrattoDialogOpen(true); }}>
@@ -519,6 +377,7 @@ export default function CanvassPage() {
       <PromoFormDialog open={isPromoDialogOpen} onOpenChange={(open) => { setIsPromoDialogOpen(open); if (!open) setEditingPromo(null); }} editingPromo={editingPromo} aziende={aziende} clienti={clienti} prodotti={prodotti} onSave={handleSavePromo} isPending={createCanvass.isPending || updateCanvass.isPending} />
       <ContrattoFormDialog open={isContrattoDialogOpen} onOpenChange={(open) => { setIsContrattoDialogOpen(open); if (!open) setEditingContratto(null); }} editingContratto={editingContratto} aziende={aziende} clienti={clienti} consorzi={consorzi} onSave={handleSaveContratto} isPending={createContratto.isPending || updateContratto.isPending} />
       <PromoDetailSheet promo={viewingPromo} open={!!viewingPromo} onOpenChange={(open) => { if (!open) setViewingPromo(null); }} onEdit={(promo) => { setViewingPromo(null); setEditingPromo(promo); setIsPromoDialogOpen(true); }} onDelete={(id) => { deleteCanvass.mutate(id); setViewingPromo(null); }} />
+      <AIImportCanvassDialog open={isAIImportOpen} onOpenChange={setIsAIImportOpen} />
     </MainLayout>
   );
 }
