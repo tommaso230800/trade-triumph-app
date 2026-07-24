@@ -234,16 +234,19 @@ export const useScadenziario = () => {
         updates.data_incasso_provvigione = null;
         updates.importo_provvigione_pagata = 0;
       }
-      // Only scadenziario has the new quarterly tracking columns
+      // Trimestre/anno di pagamento — ora salvato SIA su fatture sia su ordini
+      if (input.stato === 'pagata' || input.stato === 'parziale') {
+        const d = input.data_pagamento ? new Date(input.data_pagamento) : new Date();
+        updates.anno_pagamento = input.anno_pagamento ?? d.getFullYear();
+        updates.trimestre_pagamento = input.trimestre_pagamento ?? Math.floor(d.getMonth() / 3) + 1;
+      } else {
+        updates.anno_pagamento = null;
+        updates.trimestre_pagamento = null;
+      }
       if (source === 'fattura') {
         if (input.stato === 'pagata' || input.stato === 'parziale') {
-          const d = input.data_pagamento ? new Date(input.data_pagamento) : new Date();
-          updates.anno_pagamento = input.anno_pagamento ?? d.getFullYear();
-          updates.trimestre_pagamento = input.trimestre_pagamento ?? Math.floor(d.getMonth() / 3) + 1;
           updates.estratto_id = input.estratto_id ?? null;
         } else {
-          updates.anno_pagamento = null;
-          updates.trimestre_pagamento = null;
           updates.estratto_id = null;
         }
       }
@@ -260,8 +263,66 @@ export const useScadenziario = () => {
     onError: (e) => toast.error(`Errore: ${e.message}`),
   });
 
+  // Aggiorna solo trimestre/anno pagamento (inline dropdown in tabella)
+  const aggiornaTrimestrePagamento = useMutation({
+    mutationFn: async (input: {
+      id: string;
+      source: 'fattura' | 'ordine';
+      trimestre: number;
+      anno: number;
+    }) => {
+      const updates = { trimestre_pagamento: input.trimestre, anno_pagamento: input.anno };
+      const { error } = input.source === 'ordine'
+        ? await supabase.from('ordini').update(updates).eq('id', input.id)
+        : await supabase.from('scadenziario_fatture').update(updates).eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scadenziario'] });
+      queryClient.invalidateQueries({ queryKey: ['ordini'] });
+      toast.success('Trimestre aggiornato');
+    },
+    onError: (e) => toast.error(`Errore: ${e.message}`),
+  });
 
-  // Calcolo statistiche
+  // Selezione massiva: imposta stato Pagata + trimestre su molte righe
+  const aggiornaBulkPagate = useMutation({
+    mutationFn: async (input: {
+      items: { id: string; source: 'fattura' | 'ordine'; provvigioneMaturata: number }[];
+      trimestre: number;
+      anno: number;
+      data_pagamento: string;
+    }) => {
+      const ordiniItems = input.items.filter((i) => i.source === 'ordine');
+      const fattureItems = input.items.filter((i) => i.source === 'fattura');
+
+      const doUpdate = async (table: 'ordini' | 'scadenziario_fatture', items: typeof input.items) => {
+        for (const it of items) {
+          const base: any = {
+            stato_provvigione: 'pagata',
+            data_incasso_provvigione: input.data_pagamento,
+            importo_provvigione_pagata: it.provvigioneMaturata,
+            anno_pagamento: input.anno,
+            trimestre_pagamento: input.trimestre,
+          };
+          if (table === 'ordini') base.provvigione_pagata = true;
+          else base.provvigione_incassata = true;
+          const { error } = await supabase.from(table).update(base).eq('id', it.id);
+          if (error) throw error;
+        }
+      };
+      await doUpdate('ordini', ordiniItems);
+      await doUpdate('scadenziario_fatture', fattureItems);
+    },
+    onSuccess: (_data, vars) => {
+      queryClient.invalidateQueries({ queryKey: ['scadenziario'] });
+      queryClient.invalidateQueries({ queryKey: ['ordini'] });
+      toast.success(`${vars.items.length} provvigioni segnate come pagate in Q${vars.trimestre} ${vars.anno}`);
+    },
+    onError: (e) => toast.error(`Errore: ${e.message}`),
+  });
+
+
   // Fatture incassate con provvigione ancora da riscuotere
   const provvigioniDaIncassare = fattureIncassate.filter(f => !f.provvigione_incassata);
   const provvigioniIncassate = fattureIncassate.filter(f => f.provvigione_incassata);
@@ -283,6 +344,8 @@ export const useScadenziario = () => {
     segnaIncassata,
     segnaProvvigioneIncassata,
     aggiornaStatoProvvigione,
+    aggiornaTrimestrePagamento,
+    aggiornaBulkPagate,
     eliminaFattura,
     totaleScaduto,
     provvigionePotenziale,

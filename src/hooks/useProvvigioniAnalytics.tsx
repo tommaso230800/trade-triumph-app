@@ -41,6 +41,8 @@ export interface ProvvigioneRow {
   note: string | null;
   scadenziarioId?: string;
   ordineId?: string;
+  trimestrePagamento: number | null;
+  annoPagamento: number | null;
 }
 
 const inPeriodo = (dateStr: string, p: PeriodoFilter): boolean => {
@@ -113,6 +115,8 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
           giorniRitardo: ritardo,
           metodoPagamento: o.metodo_pagamento_provvigione,
           note: o.note_provvigione || o.note,
+          trimestrePagamento: (o as any).trimestre_pagamento ?? null,
+          annoPagamento: (o as any).anno_pagamento ?? null,
         };
       });
 
@@ -156,6 +160,8 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
         giorniRitardo: ritardo,
         metodoPagamento: f.metodo_pagamento_provvigione,
         note: f.note_provvigione,
+        trimestrePagamento: (f as any).trimestre_pagamento ?? null,
+        annoPagamento: (f as any).anno_pagamento ?? null,
       };
     });
 
@@ -184,6 +190,8 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
         giorniRitardo: 0,
         metodoPagamento: m.metodo_pagamento,
         note: m.note,
+        trimestrePagamento: m.trimestre_pagamento ?? (m.data_pagamento ? Math.floor(new Date(m.data_pagamento).getMonth() / 3) + 1 : null),
+        annoPagamento: m.anno_pagamento ?? (m.data_pagamento ? new Date(m.data_pagamento).getFullYear() : null),
       };
     });
 
@@ -265,6 +273,27 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
       completamentoObiettivo,
     };
   }, [filteredRows, allRows]);
+
+  // Liquidato per trimestre di PAGAMENTO (indipendente dalla data ordine)
+  const perTrimestrePagamento = useMemo(() => {
+    const trims: Record<number, { trimestre: number; liquidato: number; conteggio: number }> = {
+      1: { trimestre: 1, liquidato: 0, conteggio: 0 },
+      2: { trimestre: 2, liquidato: 0, conteggio: 0 },
+      3: { trimestre: 3, liquidato: 0, conteggio: 0 },
+      4: { trimestre: 4, liquidato: 0, conteggio: 0 },
+    };
+    filteredRows.forEach((r) => {
+      if (!r.trimestrePagamento) return;
+      if (r.statoProvvigione !== "pagata" && r.statoProvvigione !== "parziale") return;
+      const t = trims[r.trimestrePagamento];
+      if (!t) return;
+      t.liquidato += r.provvigionePagata;
+      t.conteggio += 1;
+    });
+    return [trims[1], trims[2], trims[3], trims[4]];
+  }, [filteredRows]);
+
+
 
   // Conto Economico Personale
   const contoEconomico = useMemo(() => {
@@ -585,5 +614,6 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
     insights,
     aziende,
     clienti,
+    perTrimestrePagamento,
   };
 }
