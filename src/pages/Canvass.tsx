@@ -49,8 +49,7 @@ export default function CanvassPage() {
 
   const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
   const [isContrattoDialogOpen, setIsContrattoDialogOpen] = useState(false);
-  const [isParsingAI, setIsParsingAI] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAIImportOpen, setIsAIImportOpen] = useState(false);
   
   const [editingPromo, setEditingPromo] = useState<Canvass | null>(null);
   const [editingContratto, setEditingContratto] = useState<ContrattoCliente | null>(null);
