@@ -234,16 +234,19 @@ export const useScadenziario = () => {
         updates.data_incasso_provvigione = null;
         updates.importo_provvigione_pagata = 0;
       }
-      // Only scadenziario has the new quarterly tracking columns
+      // Trimestre/anno di pagamento — ora salvato SIA su fatture sia su ordini
+      if (input.stato === 'pagata' || input.stato === 'parziale') {
+        const d = input.data_pagamento ? new Date(input.data_pagamento) : new Date();
+        updates.anno_pagamento = input.anno_pagamento ?? d.getFullYear();
+        updates.trimestre_pagamento = input.trimestre_pagamento ?? Math.floor(d.getMonth() / 3) + 1;
+      } else {
+        updates.anno_pagamento = null;
+        updates.trimestre_pagamento = null;
+      }
       if (source === 'fattura') {
         if (input.stato === 'pagata' || input.stato === 'parziale') {
-          const d = input.data_pagamento ? new Date(input.data_pagamento) : new Date();
-          updates.anno_pagamento = input.anno_pagamento ?? d.getFullYear();
-          updates.trimestre_pagamento = input.trimestre_pagamento ?? Math.floor(d.getMonth() / 3) + 1;
           updates.estratto_id = input.estratto_id ?? null;
         } else {
-          updates.anno_pagamento = null;
-          updates.trimestre_pagamento = null;
           updates.estratto_id = null;
         }
       }
