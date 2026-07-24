@@ -614,5 +614,6 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
     insights,
     aziende,
     clienti,
+    perTrimestrePagamento,
   };
 }
