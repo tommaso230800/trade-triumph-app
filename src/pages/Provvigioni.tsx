@@ -212,15 +212,15 @@ const Provvigioni = () => {
       Maturata: r.provvigioneMaturata,
       Pagata: r.provvigionePagata,
       Stato: STATO_CONFIG[r.statoProvvigione]?.label || r.statoProvvigione,
-      "Data prevista": r.dataPrevistaPagamento ? format(new Date(r.dataPrevistaPagamento), "dd/MM/yyyy") : "",
+      "Trimestre pagamento": r.trimestrePagamento ? `Q${r.trimestrePagamento} ${r.annoPagamento ?? ""}`.trim() : "",
       "Data effettiva": r.dataEffettivaPagamento ? format(new Date(r.dataEffettivaPagamento), "dd/MM/yyyy") : "",
-      "Giorni ritardo": r.giorniRitardo,
       Note: r.note || "",
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Provvigioni");
-    XLSX.writeFile(wb, `provvigioni_${format(new Date(), "yyyyMMdd")}.xlsx`);
+    const suffix = trimestreFilter !== 0 ? `_Q${trimestreFilter}` : "";
+    XLSX.utils.book_append_sheet(wb, ws, `Provvigioni${suffix}`);
+    XLSX.writeFile(wb, `provvigioni${suffix}_${format(new Date(), "yyyyMMdd")}.xlsx`);
   };
 
   const exportPDF = () => {
