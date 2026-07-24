@@ -20,6 +20,7 @@ import { PromoFormDialog, PromoFormData } from "@/components/canvass/PromoFormDi
 import { ContrattoFormDialog, ContrattoFormData } from "@/components/canvass/ContrattoFormDialog";
 import { PromoDetailSheet } from "@/components/canvass/PromoDetailSheet";
 import { ActivePromosSection } from "@/components/canvass/ActivePromosSection";
+import { AIImportCanvassDialog } from "@/components/canvass/AIImportCanvassDialog";
 
 const tipoConfig = {
   sconto_percentuale: { label: "Sconto %", icon: Percent, color: "bg-blue-100 text-blue-800" },
