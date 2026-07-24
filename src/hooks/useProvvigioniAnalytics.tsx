@@ -274,6 +274,27 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
     };
   }, [filteredRows, allRows]);
 
+  // Liquidato per trimestre di PAGAMENTO (indipendente dalla data ordine)
+  const perTrimestrePagamento = useMemo(() => {
+    const trims: Record<number, { trimestre: number; liquidato: number; conteggio: number }> = {
+      1: { trimestre: 1, liquidato: 0, conteggio: 0 },
+      2: { trimestre: 2, liquidato: 0, conteggio: 0 },
+      3: { trimestre: 3, liquidato: 0, conteggio: 0 },
+      4: { trimestre: 4, liquidato: 0, conteggio: 0 },
+    };
+    filteredRows.forEach((r) => {
+      if (!r.trimestrePagamento) return;
+      if (r.statoProvvigione !== "pagata" && r.statoProvvigione !== "parziale") return;
+      const t = trims[r.trimestrePagamento];
+      if (!t) return;
+      t.liquidato += r.provvigionePagata;
+      t.conteggio += 1;
+    });
+    return [trims[1], trims[2], trims[3], trims[4]];
+  }, [filteredRows]);
+
+
+
   // Conto Economico Personale
   const contoEconomico = useMemo(() => {
     const now = new Date();
