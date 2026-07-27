@@ -263,7 +263,7 @@
   .hover-glow:hover { box-shadow: var(--shadow-glow); transform: translateY(-2px); border-color: hsl(220 95% 62% / 0.5); }
 
   .shimmer {
-    background: linear-gradient(110deg, hsl(222 22% 12%) 25%, hsl(220 60% 22%) 50%, hsl(222 22% 12%) 75%);
+    background: linear-gradient(110deg, hsl(var(--muted)) 25%, hsl(var(--secondary)) 50%, hsl(var(--muted)) 75%);
     background-size: 200% 100%;
     animation: shimmer 2s linear infinite;
   }
