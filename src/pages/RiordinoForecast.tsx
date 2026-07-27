@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,7 @@ export default function RiordinoForecast() {
   const [tab, setTab] = useState<"tutti" | "critica" | "alta" | "media">("critica");
   const [search, setSearch] = useState("");
   const [aziendaFilter, setAziendaFilter] = useState<string>("all");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const forecasts = data?.forecasts || [];
   const kpi = data?.kpi;
@@ -90,9 +92,9 @@ export default function RiordinoForecast() {
 
   return (
     <div className="flex min-h-[100dvh] bg-background">
-      <Sidebar />
+      <Sidebar mobileOpen={mobileMenuOpen} onMobileOpenChange={setMobileMenuOpen} />
       <main className="flex-1 overflow-x-hidden pb-24 md:pb-8 md:pl-64">
-        <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8 animate-rise-in">
+        <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
           <header className="space-y-1">
             <div className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" />
@@ -331,6 +333,7 @@ export default function RiordinoForecast() {
           </Card>
         </div>
       </main>
+      <BottomNav onOpenMore={() => setMobileMenuOpen(true)} moreActive={mobileMenuOpen} />
     </div>
   );
 }

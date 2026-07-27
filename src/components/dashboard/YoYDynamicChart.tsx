@@ -56,17 +56,19 @@ export function YoYDynamicChart({ data, yearCurr, yearPrev }: Props) {
 
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-          <XAxis dataKey="mese" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false}
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <XAxis dataKey="mese" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickMargin={8} />
+          <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} width={48}
             tickFormatter={v => `€${(v/1000).toFixed(0)}k`} />
           <Tooltip
-            contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+            cursor={{ fill: "hsl(var(--muted) / 0.4)" }}
+            contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 10, boxShadow: "var(--shadow-md)" }}
+            labelStyle={{ fontWeight: 600 }}
             formatter={(v: number, n: string) => [fmt(v), n]}
           />
           <Legend />
-          <Bar dataKey="prev" fill="hsl(30 80% 55%)" radius={[4,4,0,0]} name={String(yearPrev)} />
-          <Bar dataKey="curr" fill="hsl(var(--primary))" radius={[4,4,0,0]} name={String(yearCurr)} />
+          <Bar dataKey="prev" fill="hsl(30 80% 55%)" radius={[4,4,0,0]} name={String(yearPrev)} maxBarSize={40} />
+          <Bar dataKey="curr" fill="hsl(var(--primary))" radius={[4,4,0,0]} name={String(yearCurr)} maxBarSize={40} />
         </ComposedChart>
       </ResponsiveContainer>
 

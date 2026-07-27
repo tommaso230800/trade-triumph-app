@@ -27,29 +27,31 @@ export function SalesChart({ data, type = "area" }: SalesChartProps) {
     return (
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
           <XAxis
             dataKey="mese"
             stroke="hsl(var(--muted-foreground))"
             fontSize={12}
             tickLine={false}
             axisLine={false}
+            tickMargin={8}
           />
           <YAxis
             stroke="hsl(var(--muted-foreground))"
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `${value}`}
+            width={40}
           />
           <Tooltip
+            cursor={{ fill: "hsl(var(--muted) / 0.4)" }}
             contentStyle={{
               backgroundColor: "hsl(var(--card))",
               border: "1px solid hsl(var(--border))",
-              borderRadius: "8px",
+              borderRadius: "10px",
               boxShadow: "var(--shadow-md)",
             }}
-            labelStyle={{ color: "hsl(var(--foreground))" }}
+            labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
             formatter={(value: number, name: string) => [
               name === "fatturato" ? formatCurrency(value) : value,
               name === "fatturato" ? "Fatturato" : "Ordini",
@@ -59,6 +61,7 @@ export function SalesChart({ data, type = "area" }: SalesChartProps) {
             dataKey="ordini"
             fill="hsl(var(--primary))"
             radius={[4, 4, 0, 0]}
+            maxBarSize={48}
           />
         </BarChart>
       </ResponsiveContainer>
@@ -70,33 +73,35 @@ export function SalesChart({ data, type = "area" }: SalesChartProps) {
       <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="colorFatturato" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.28} />
             <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
         <XAxis
           dataKey="mese"
           stroke="hsl(var(--muted-foreground))"
           fontSize={12}
           tickLine={false}
           axisLine={false}
+          tickMargin={8}
         />
         <YAxis
           stroke="hsl(var(--muted-foreground))"
           fontSize={12}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(value) => formatCurrency(value)}
+          width={48}
+          tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
         />
         <Tooltip
           contentStyle={{
             backgroundColor: "hsl(var(--card))",
             border: "1px solid hsl(var(--border))",
-            borderRadius: "8px",
+            borderRadius: "10px",
             boxShadow: "var(--shadow-md)",
           }}
-          labelStyle={{ color: "hsl(var(--foreground))" }}
+          labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
           formatter={(value: number) => [formatCurrency(value), "Fatturato"]}
         />
         <Area
@@ -106,6 +111,7 @@ export function SalesChart({ data, type = "area" }: SalesChartProps) {
           strokeWidth={2}
           fillOpacity={1}
           fill="url(#colorFatturato)"
+          activeDot={{ r: 5, strokeWidth: 2, stroke: "hsl(var(--card))" }}
         />
       </AreaChart>
     </ResponsiveContainer>

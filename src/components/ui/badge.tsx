@@ -21,7 +21,7 @@ const badgeVariants = cva(
         info:
           "border-info/35 bg-info/12 text-[hsl(var(--primary))] hover:bg-info/18 hover:shadow-glow",
         spectrum:
-          "border-transparent text-white [background:var(--gradient-spectrum)] [background-size:200%_200%] [animation:spectrum-shift_8s_ease-in-out_infinite] hover:shadow-glow",
+          "border-transparent text-white [background:var(--gradient-spectrum)] hover:shadow-glow",
         outline:
           "border-border bg-card text-foreground hover:border-primary/50 hover:text-primary",
       },

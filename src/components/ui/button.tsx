@@ -14,7 +14,7 @@ const buttonVariants = cva(
         gradient:
           "text-white border-0 shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.7)] hover:shadow-glow hover:-translate-y-[1px] [background:var(--gradient-primary)]",
         spectrum:
-          "text-white border-0 shadow-[0_10px_28px_-10px_hsl(var(--primary)/0.7)] hover:shadow-glow hover:-translate-y-[1px] [background:var(--gradient-spectrum)] [background-size:200%_200%] [animation:spectrum-shift_8s_ease-in-out_infinite]",
+          "text-white border-0 shadow-[0_10px_28px_-10px_hsl(var(--primary)/0.7)] hover:shadow-glow hover:-translate-y-[1px] [background:var(--gradient-spectrum)]",
         destructive:
           "bg-destructive text-destructive-foreground shadow-[0_6px_20px_-6px_hsl(var(--destructive)/0.55)] hover:bg-destructive/90 hover:shadow-glow-red active:bg-destructive/80",
         success:
