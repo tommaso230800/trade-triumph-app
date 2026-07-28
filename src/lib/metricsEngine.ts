@@ -42,16 +42,22 @@ export type RigaLike = {
   prodotti?: { id?: string; nome?: string; brand_id?: string | null } | null;
 };
 
-const EXCLUDED_STATUSES = new Set(["bozza", "da_confermare", "stand_by", "annullato"]);
+// Stati esclusi dagli aggregati economici.
+// Allineati a useKPIYoY: solo annullato e stand_by restano fuori, così bozze e
+// ordini "da confermare" vengono contati in modo uniforme in tutta l'app.
+const EXCLUDED_STATUSES = new Set(["stand_by", "annullato"]);
 
 const num = (v: unknown): number => {
   const n = typeof v === "number" ? v : parseFloat(String(v ?? "0"));
   return Number.isFinite(n) ? n : 0;
 };
 
-/** Data economica di riferimento di un ordine (YYYY-MM-DD or ISO). */
+/** Data economica di riferimento di un ordine (YYYY-MM-DD or ISO).
+ *  Si usa la DATA D'ORDINE: è il momento in cui il cliente ordina, ed è la
+ *  stessa regola applicata dal confronto anno-su-anno (useKPIYoY), così tutti
+ *  i punti dell'app assegnano un ordine allo stesso mese. */
 export const orderDate = (o: OrdineLike): string | null =>
-  o.data_conferma || o.data_ordine || o.created_at || null;
+  o.data_ordine || o.data_conferma || o.created_at || null;
 
 /** Vero se l'ordine deve entrare negli aggregati economici. */
 export const isCounted = (o: OrdineLike): boolean => {

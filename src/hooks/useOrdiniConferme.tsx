@@ -41,7 +41,7 @@ export function useOrdineConferme(ordine_id?: string) {
 export async function loadCRMRighe(ordine_id: string): Promise<CRMRiga[]> {
   const { data, error } = await supabase
     .from("ordini_righe")
-    .select("id, prodotto_id, quantita_cartoni, quantita_pezzi, prezzo_unitario, sc1, sc2, sc3, is_omaggio, prodotti(nome, codice)")
+    .select("id, prodotto_id, quantita_cartoni, quantita_pezzi, prezzo_unitario, sc1, sc2, sc3, is_omaggio, prodotti(nome, codice, pezzi_per_cartone)")
     .eq("ordine_id", ordine_id);
   if (error) throw error;
   return (data || []).map((r: any) => ({
@@ -51,6 +51,7 @@ export async function loadCRMRighe(ordine_id: string): Promise<CRMRiga[]> {
     prodotto_codice: r.prodotti?.codice ?? null,
     quantita_cartoni: Number(r.quantita_cartoni ?? 0),
     quantita_pezzi: Number(r.quantita_pezzi ?? 0),
+    pezzi_per_cartone: Number(r.prodotti?.pezzi_per_cartone ?? 1) || 1,
     prezzo_unitario: Number(r.prezzo_unitario ?? 0),
     sc1: Number(r.sc1 ?? 0),
     sc2: Number(r.sc2 ?? 0),

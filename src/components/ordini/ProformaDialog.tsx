@@ -10,7 +10,7 @@ import agencyLogo from "@/assets/agency-logo.jpg";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-type RigaOrdine = {
+export type ProformaRigaOrdine = {
   prodotto_codice?: string;
   prodotto_nome: string;
   prodotto_brand?: string;
@@ -27,13 +27,13 @@ type RigaOrdine = {
   promo_valore?: number;
 };
 
-type PromoApplicata = {
+export type PromoApplicata = {
   nome: string;
   tipo: string;
   valore: number;
 };
 
-type ProformaData = {
+export type ProformaData = {
   codice: string;
   created_at: string;
   cliente_nome: string;
@@ -49,7 +49,7 @@ type ProformaData = {
   sconto_merce: number;
   totale: number;
   note?: string;
-  righe: RigaOrdine[];
+  righe: ProformaRigaOrdine[];
   promozioni_applicate?: PromoApplicata[];
 };
 

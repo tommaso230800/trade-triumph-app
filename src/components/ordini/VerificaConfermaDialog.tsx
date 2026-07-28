@@ -32,9 +32,10 @@ const STATO_LABEL: Record<MatchStato, { label: string; cls: string; icon: any }>
   prezzo_diff: { label: "Prezzo diverso", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: XCircle },
   sconto_diff: { label: "Sconto diverso", cls: "bg-yellow-600/20 text-yellow-500 border-yellow-600/40", icon: AlertCircle },
   omaggio_diff: { label: "Omaggio diverso", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: XCircle },
+  imponibile_diff: { label: "Imponibile diverso", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: XCircle },
   mancante_in_conferma: { label: "Mancante in conferma", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: MinusCircle },
   extra_in_conferma: { label: "Extra in conferma", cls: "bg-orange-600/20 text-orange-500 border-orange-600/40", icon: PlusCircle },
-  sostituito: { label: "Sostituito", cls: "bg-blue-600/20 text-blue-500 border-blue-600/40", icon: AlertCircle },
+  match_incerto: { label: "Abbinamento incerto", cls: "bg-blue-600/20 text-blue-500 border-blue-600/40", icon: AlertCircle },
 };
 
 function fileToBase64(file: File): Promise<string> {
