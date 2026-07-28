@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.parse-estratto-provvigioni]
 verify_jwt = false
+
+[functions.sync-email-orders]
+verify_jwt = false
