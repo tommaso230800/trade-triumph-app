@@ -12,6 +12,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  isParseOrderMultiSuccess,
+  type ParseOrderMultiResponseBody,
+} from "../../../supabase/functions/_shared/parseOrderMultiTypes.ts";
 import * as XLSX from "xlsx";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -246,9 +250,9 @@ export function MultiFileImportDialog({
         payload = { fileBase64: b64, mimeType: f.type || (isPdf ? "application/pdf" : "image/jpeg"), fileName: f.name };
       }
 
-      const { data, error } = await supabase.functions.invoke("parse-order-multi", { body: payload });
+      const { data, error } = await supabase.functions.invoke<ParseOrderMultiResponseBody>("parse-order-multi", { body: payload });
       if (error) throw new Error(error.message);
-      if (!data?.success) throw new Error(data?.error || "Errore analisi");
+      if (!isParseOrderMultiSuccess(data)) throw new Error(data?.error || "Errore analisi");
 
       const dt = data.data.document_type || "order";
       const rawOrders: any[] = Array.isArray(data.data.orders) ? data.data.orders : [];

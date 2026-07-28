@@ -1,9 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import type {
+  ParseOrderMultiParsed,
+  ParseOrderMultiResponseBody,
+} from "../_shared/parseOrderMultiTypes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Ogni risposta passa da qui: il body è vincolato al contratto condiviso con
+// i client (parseOrderMultiTypes.ts), quindi un campo con nome sbagliato in
+// QUESTA funzione è un errore di compilazione, non solo lato client.
+function jsonResponse(body: ParseOrderMultiResponseBody, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 const systemPrompt = `Sei un assistente esperto di ordini commerciali italiani (food & beverage).
 Ricevi UN documento (PDF, immagine di ordine scritto a mano, o testo da Excel).
@@ -168,40 +182,30 @@ serve(async (req) => {
         { type: "image_url", image_url: { url: `data:${mimeType};base64,${fileBase64}` } },
       ];
     } else {
-      return new Response(JSON.stringify({ error: "Devi fornire fileBase64+mimeType oppure sheetText" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Devi fornire fileBase64+mimeType oppure sheetText" }, 400);
     }
 
     const response = await callAI(parts, LOVABLE_API_KEY);
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit superato, riprova tra poco." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse({ error: "Rate limit superato, riprova tra poco." }, 429);
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Crediti AI esauriti." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse({ error: "Crediti AI esauriti." }, 402);
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      return new Response(JSON.stringify({ error: "Servizio AI non disponibile, riprova." }), {
-        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Servizio AI non disponibile, riprova." }, 503);
     }
 
     const aiResponse = await response.json();
     const content = aiResponse.choices?.[0]?.message?.content;
     if (!content) {
-      return new Response(JSON.stringify({ error: "Nessuna risposta dall'AI" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Nessuna risposta dall'AI" }, 500);
     }
 
-    let parsed;
+    let parsed: ParseOrderMultiParsed;
     try {
       let s = content.trim();
       if (s.includes("```json")) s = s.replace(/```json\n?/g, "").replace(/```\n?/g, "");
@@ -209,22 +213,18 @@ serve(async (req) => {
       const start = s.indexOf("{");
       const end = s.lastIndexOf("}");
       if (start >= 0 && end > start) s = s.slice(start, end + 1);
-      parsed = JSON.parse(s);
+      parsed = JSON.parse(s) as ParseOrderMultiParsed;
     } catch (e) {
       console.error("JSON parse error:", e, content);
-      return new Response(JSON.stringify({ error: "Errore parsing risposta AI", raw: content }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Errore parsing risposta AI", raw: content }, 500);
     }
 
-    return new Response(JSON.stringify({ success: true, data: parsed }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ success: true, data: parsed }, 200);
   } catch (error) {
     console.error("parse-order-multi error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Errore sconosciuto" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    return jsonResponse(
+      { error: error instanceof Error ? error.message : "Errore sconosciuto" },
+      500
     );
   }
 });
