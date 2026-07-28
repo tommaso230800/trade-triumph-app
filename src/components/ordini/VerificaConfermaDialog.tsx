@@ -99,6 +99,7 @@ const STATO_LABEL: Record<MatchStato, { label: string; cls: string; icon: any }>
   mancante_in_conferma: { label: "Mancante in conferma", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: MinusCircle },
   extra_in_conferma: { label: "Extra in conferma", cls: "bg-orange-600/20 text-orange-500 border-orange-600/40", icon: PlusCircle },
   match_incerto: { label: "Abbinamento incerto", cls: "bg-blue-600/20 text-blue-500 border-blue-600/40", icon: AlertCircle },
+  unita_incerta: { label: "Unità di misura incerta", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: AlertCircle },
 };
 
 function fileToBase64(file: File): Promise<string> {
@@ -300,6 +301,12 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
 
         {esito && (
           <div className="space-y-4">
+            {esito.possibile_errore_matching && esito.avviso_matching && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-600/40 bg-amber-600/10 p-3 text-sm text-amber-600">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{esito.avviso_matching}</span>
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <StatBox label="Score" value={`${scorePct}%`} className={scoreColor} />
               <StatBox label="OK" value={String(esito.righe_ok)} className="text-green-500" />

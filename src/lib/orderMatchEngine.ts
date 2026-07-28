@@ -44,6 +44,7 @@ export type MatchStato =
   | "sconto_diff"
   | "omaggio_diff"
   | "match_incerto"
+  | "unita_incerta"
   | "mancante_in_conferma"
   | "extra_in_conferma";
 
@@ -70,9 +71,13 @@ export type ConfrontoOpts = {
   // con nomi simili (gusti/formati diversi) che non vanno mai dati per buoni
   // in automatico.
   certaintyThreshold?: number;
-  // Tolleranza sul prezzo per cartone, in EURO ASSOLUTI (non percentuale): su
-  // un cartone costoso il vecchio 2% relativo nascondeva differenze di diversi
-  // euro. Default: solo arrotondamento al centesimo.
+  // Tolleranza sul prezzo NETTO per cartone (dopo sconti a cascata), in EURO
+  // ASSOLUTI (non percentuale): su un cartone costoso un % relativo nascondeva
+  // differenze di diversi euro. Il default copre il rumore di arrotondamento
+  // che si accumula quando un lato registra il prezzo già scontato e l'altro
+  // lordo+sconti applicati in cascata (es. agente arrotonda il netto a 2
+  // decimali, il fornitore arrotonda il lordo: il netto ricalcolato dai due
+  // lati può divergere di qualche centesimo pur essendo lo stesso prezzo).
   tolleranzaPrezzoEuro?: number;
   // Tolleranza sull'imponibile di riga (post sconti), in euro assoluti.
   tolleranzaImponibileEuro?: number;
@@ -88,14 +93,28 @@ export type ConfrontoEsito = {
   totale_crm: number;
   totale_pdf: number;
   delta_totale: number;
+  // Se molte righe risultano senza corrispondenza ma il delta sui totali
+  // documento è piccolo, è quasi certo un problema di ABBINAMENTO (nomi
+  // prodotto non riconosciuti) e non un vero disallineamento dell'ordine:
+  // presentare quelle righe come "mancanti"/"extra" affidabili sarebbe
+  // fuorviante. Vedi confrontaOrdine per la soglia esatta.
+  possibile_errore_matching: boolean;
+  avviso_matching?: string;
 };
 
 const DEFAULTS: Required<ConfrontoOpts> = {
   matchThreshold: 0.45,
   certaintyThreshold: 0.75,
-  tolleranzaPrezzoEuro: 0.02,
+  tolleranzaPrezzoEuro: 0.05,
   tolleranzaImponibileEuro: 0.05,
 };
+
+// Sotto questa frazione di righe senza corrispondenza sul totale, e con un
+// delta_totale relativo sotto questa soglia, l'esito viene segnalato come
+// "possibile errore di abbinamento" invece che preso per buono (vedi
+// possibile_errore_matching in confrontaOrdine).
+const SOGLIA_QUOTA_RIGHE_SENZA_MATCH = 0.3;
+const SOGLIA_DELTA_RELATIVO_SOSPETTO = 0.15;
 
 const normalize = (s: string | null | undefined) =>
   (s ?? "")
@@ -105,6 +124,27 @@ const normalize = (s: string | null | undefined) =>
     .replace(/[^a-z0-9 ]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+/** Bigrammi di carattere (spazi rimossi), usati per catturare la quasi-identità
+ *  tra due nomi quando la similarità a parole intere fallisce. */
+function bigrams(s: string): Set<string> {
+  const compact = s.replace(/\s+/g, "");
+  if (compact.length < 2) return new Set(compact ? [compact] : []);
+  const set = new Set<string>();
+  for (let i = 0; i < compact.length - 1; i++) set.add(compact.slice(i, i + 2));
+  return set;
+}
+
+function diceBigram(a: string, b: string): number {
+  const A = bigrams(a);
+  const B = bigrams(b);
+  if (A.size === 0 || B.size === 0) return 0;
+  let inter = 0;
+  A.forEach((g) => {
+    if (B.has(g)) inter++;
+  });
+  return (2 * inter) / (A.size + B.size);
+}
 
 function similarity(a: string, b: string): number {
   const A = normalize(a);
@@ -116,8 +156,19 @@ function similarity(a: string, b: string): number {
   const inter = [...tokA].filter((t) => tokB.has(t)).length;
   const uni = new Set([...tokA, ...tokB]).size;
   const jaccard = uni > 0 ? inter / uni : 0;
+  // Nomi corti che condividono solo una parola generica (es. un suffisso di
+  // linea come "ARS" comune a tutti i gusti) ma differiscono nella parola che
+  // distingue davvero il prodotto per una piccola variazione ortografica
+  // (aranciata/arancia, abbreviazioni diverse tra CRM e conferma OCR): la
+  // similarità a parole intere tratta "aranciata" e "arancia" come token
+  // completamente diversi (0 in comune) e sottostima il match vero, mentre
+  // NON discrimina a sufficienza tra il prodotto giusto e un altro gusto della
+  // stessa linea (entrambi condividono "ARS" e nient'altro). I bigrammi di
+  // carattere risolvono entrambi i problemi: colgono la quasi-identità
+  // ortografica e restano bassi tra prodotti realmente diversi.
+  const bigramScore = diceBigram(A, B);
   const contains = A.includes(B) || B.includes(A) ? 0.15 : 0;
-  return Math.min(1, jaccard + contains);
+  return Math.min(1, Math.max(jaccard, bigramScore) + contains);
 }
 
 function matchScore(crm: CRMRiga, pdf: PDFRiga): number {
@@ -131,9 +182,14 @@ const withinAbs = (a: number, b: number, tol: number) => Math.abs(a - b) <= tol 
 
 /** Pezzi per cartone da usare per normalizzare la riga: quelli dichiarati nella
  *  conferma se presenti (è quello che il fornitore intende), altrimenti quelli
- *  del prodotto CRM come riferimento. */
-function pezziPerCartoneEffettivo(crm: CRMRiga, pdf: PDFRiga): number {
-  return pdf.pezzi_per_cartone && pdf.pezzi_per_cartone > 0 ? pdf.pezzi_per_cartone : crm.pezzi_per_cartone || 1;
+ *  del prodotto CRM come riferimento. Se NESSUNO dei due lati lo valorizza, il
+ *  fallback a 1 non è affidabile (equivarrebbe a trattare un cartone come un
+ *  singolo pezzo): va segnalato esplicitamente invece di confrontare quantità
+ *  e prezzo su un'unità di misura inventata. */
+function pezziPerCartoneEffettivo(crm: CRMRiga, pdf: PDFRiga): { valore: number; affidabile: boolean } {
+  if (pdf.pezzi_per_cartone && pdf.pezzi_per_cartone > 0) return { valore: pdf.pezzi_per_cartone, affidabile: true };
+  if (crm.pezzi_per_cartone && crm.pezzi_per_cartone > 0) return { valore: crm.pezzi_per_cartone, affidabile: true };
+  return { valore: 1, affidabile: false };
 }
 
 /** Pezzi totali ordinati sul CRM: cartoni pieni (convertiti in pezzi) + eventuali
@@ -176,8 +232,14 @@ function confrontoRiga(
   let stato: MatchStato = "ok";
   let gravita: RigaEsito["gravita"] = "ok";
 
-  const pezziPerCartone = pezziPerCartoneEffettivo(crm, pdf);
-  if (!pdf.pezzi_per_cartone) {
+  const { valore: pezziPerCartone, affidabile: pezziAffidabili } = pezziPerCartoneEffettivo(crm, pdf);
+  if (!pezziAffidabili) {
+    diffs.push(
+      "Pezzi/cartone non disponibili né dalla conferma né dal catalogo CRM: quantità e prezzo confrontati con un fallback di 1 pz/cartone, NON AFFIDABILE — verifica manuale necessaria"
+    );
+    stato = "unita_incerta";
+    gravita = "error";
+  } else if (!pdf.pezzi_per_cartone) {
     diffs.push("Conferma senza pezzi/cartone espliciti: normalizzato con il formato prodotto CRM");
   }
 
@@ -200,38 +262,40 @@ function confrontoRiga(
     gravita = "error";
   }
 
-  // 3) Prezzo — normalizzato sulla stessa unità (per cartone) prima di
-  // confrontare. Tolleranza solo in euro assoluti, niente percentuale relativa.
+  // 3) Prezzo — confronto sul NETTO (dopo sconti a cascata), mai sul lordo. La
+  // conferma espone spesso il prezzo di listino con gli sconti a parte, mentre
+  // il CRM registra a volte il prezzo già scontato con sc1/sc2/sc3 a 0:
+  // confrontare i due "lordi" grezzi (o le percentuali di sconto isolate) è un
+  // confronto tra grandezze diverse e genera differenze inesistenti. L'unico
+  // valore che conta davvero — perché è quello che si paga — è il netto
+  // risultante, quindi è l'unico confronto affidabile qui.
   if (!crm.is_omaggio && !pdf.is_omaggio) {
-    const crmPrezzoPerCartone = crm.prezzo_unitario * pezziPerCartone;
-    if (!withinAbs(crmPrezzoPerCartone, pdf.prezzo_per_cartone, opts.tolleranzaPrezzoEuro)) {
+    const crmLordoPerCartone = crm.prezzo_unitario * pezziPerCartone;
+    const crmNettoPerCartone = crmLordoPerCartone * scontoFattore(crm.sc1, crm.sc2, crm.sc3);
+    const pdfNettoPerCartone = pdf.prezzo_per_cartone * scontoFattore(pdf.sc1 || 0, pdf.sc2 || 0, pdf.sc3 || 0);
+    if (!withinAbs(crmNettoPerCartone, pdfNettoPerCartone, opts.tolleranzaPrezzoEuro)) {
       diffs.push(
-        `Prezzo/cartone CRM € ${crmPrezzoPerCartone.toFixed(2)} (€ ${crm.prezzo_unitario.toFixed(2)}/pz × ${pezziPerCartone}) vs conferma € ${pdf.prezzo_per_cartone.toFixed(2)}`
+        `Prezzo netto/cartone CRM € ${crmNettoPerCartone.toFixed(2)} (lordo € ${crmLordoPerCartone.toFixed(2)} = € ${crm.prezzo_unitario.toFixed(2)}/pz × ${pezziPerCartone}, sc ${crm.sc1}/${crm.sc2}/${crm.sc3}) vs conferma € ${pdfNettoPerCartone.toFixed(2)} (lordo € ${pdf.prezzo_per_cartone.toFixed(2)}, sc ${pdf.sc1 || 0}/${pdf.sc2 || 0}/${pdf.sc3 || 0})`
       );
       if (stato === "ok") stato = "prezzo_diff";
       gravita = "error";
     }
   }
 
-  // 4) Sconti a cascata
-  const cSc = [crm.sc1 || 0, crm.sc2 || 0, crm.sc3 || 0];
-  const pSc = [pdf.sc1 || 0, pdf.sc2 || 0, pdf.sc3 || 0];
-  cSc.forEach((v, i) => {
-    if (!withinAbs(v, pSc[i], 0.05)) {
-      diffs.push(`sc${i + 1} CRM ${v} vs conferma ${pSc[i]}`);
-      if (stato === "ok") stato = "sconto_diff";
-      if (gravita === "ok") gravita = "warning";
-    }
-  });
-
-  // 5) Imponibile di riga — controllo incrociato indipendente in euro. Se prezzo,
+  // 4) Imponibile di riga — controllo incrociato indipendente in euro. Se prezzo,
   // quantità e sconti sopra tornano tutti ma l'imponibile dichiarato dalla
   // conferma no, c'è qualcosa (arrotondamento, sconto non dichiarato) che i
-  // controlli singoli non vedono da soli.
+  // controlli singoli non vedono da soli. Il rumore di arrotondamento tollerato
+  // sul prezzo/cartone (punto 3) si moltiplica per il numero di cartoni una
+  // volta portato a livello di imponibile totale di riga: una tolleranza fissa
+  // in euro assoluti farebbe scattare falsi errori su ordini con più cartoni
+  // pur essendo lo stesso identico scarto di arrotondamento per unità.
   const impCrm = crmImponibileRiga(crm);
   const impPdf = pdfImponibileRiga(pdf, pezziPerCartone);
   const deltaImp = impPdf - impCrm;
-  if (stato === "ok" && !withinAbs(impCrm, impPdf, opts.tolleranzaImponibileEuro)) {
+  const cartoniRiferimento = Math.max(crm.quantita_cartoni, pdf.quantita_cartoni, 1);
+  const tolImponibileEffettiva = Math.max(opts.tolleranzaImponibileEuro, opts.tolleranzaPrezzoEuro * cartoniRiferimento);
+  if (stato === "ok" && !withinAbs(impCrm, impPdf, tolImponibileEffettiva)) {
     diffs.push(
       `Imponibile riga CRM € ${impCrm.toFixed(2)} vs conferma € ${impPdf.toFixed(2)} (Δ € ${deltaImp.toFixed(2)})`
     );
@@ -239,7 +303,7 @@ function confrontoRiga(
     gravita = "error";
   }
 
-  // 6) Affidabilità dell'abbinamento prodotto: sotto la soglia di certezza va
+  // 5) Affidabilità dell'abbinamento prodotto: sotto la soglia di certezza va
   // sempre segnalato per verifica manuale, anche se i numeri sopra combaciano —
   // potrebbe essere il prodotto sbagliato della stessa linea (gusto/formato).
   if (nameScore < opts.certaintyThreshold) {
@@ -343,6 +407,23 @@ export function confrontaOrdine(
   const totalScore =
     risultati.length === 0 ? 0 : risultati.reduce((s, r) => s + r.score, 0) / risultati.length;
 
+  // Controllo di coerenza: molte righe senza corrispondenza ma un delta sui
+  // totali piccolo sono quasi sempre un problema di ABBINAMENTO (nomi prodotto
+  // non riconosciuti), non un vero disallineamento dell'ordine — se davvero
+  // mancassero/avanzassero così tante righe, i totali sarebbero lontani. Va
+  // segnalato esplicitamente: presentare quelle righe come "mancanti"/"extra"
+  // senza avviso farebbe sembrare attendibile un risultato che non lo è.
+  const righeSenzaMatch = righe_mancanti + righe_extra;
+  const deltaRelativo = totale_crm > 0 ? Math.abs(totale_pdf - totale_crm) / totale_crm : 0;
+  const possibile_errore_matching =
+    risultati.length > 0 &&
+    righeSenzaMatch > 0 &&
+    righeSenzaMatch / risultati.length >= SOGLIA_QUOTA_RIGHE_SENZA_MATCH &&
+    deltaRelativo <= SOGLIA_DELTA_RELATIVO_SOSPETTO;
+  const avviso_matching = possibile_errore_matching
+    ? `${righeSenzaMatch} righe su ${risultati.length} risultano senza corrispondenza, ma il totale differisce solo di € ${Math.abs(totale_pdf - totale_crm).toFixed(2)} (${(deltaRelativo * 100).toFixed(1)}%): se mancassero davvero, i totali sarebbero molto più lontani. È probabile un errore di ABBINAMENTO (nomi prodotto non riconosciuti tra CRM e conferma), non un reale disallineamento dell'ordine — verifica manualmente prima di considerare l'esito attendibile.`
+    : undefined;
+
   return {
     righe: risultati,
     score: totalScore,
@@ -353,5 +434,7 @@ export function confrontaOrdine(
     totale_crm,
     totale_pdf,
     delta_totale: totale_pdf - totale_crm,
+    possibile_errore_matching,
+    avviso_matching,
   };
 }

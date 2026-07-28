@@ -74,11 +74,13 @@ describe("confrontaOrdine — tolleranza prezzo (bug #1)", () => {
     expect(res.righe[0].stato).toBe("ok");
   });
 
-  it("10 centesimi di scarto sul prezzo/cartone vengono segnalati anche se relativamente sono <1%", () => {
-    // Col vecchio approxEqual(prezzo, tolAbs=0.01, tolRel=0.02) una differenza di
-    // 0.10 su 102 (0.098% relativo) sarebbe passata inosservata. Ora la tolleranza
-    // è solo assoluta (default 0.02 €): deve essere segnalata.
-    const res = confrontaOrdine([crmRiga()], [pdfRiga({ prezzo_per_cartone: 102.1, importo_riga: 154.22 })]);
+  it("50 centesimi di scarto sul prezzo lordo/cartone vengono segnalati anche dopo la normalizzazione al netto", () => {
+    // Col vecchio approxEqual(prezzo, tolAbs=0.01, tolRel=0.02) una differenza
+    // relativa piccola sarebbe passata inosservata. Ora la tolleranza è solo
+    // assoluta e si applica al NETTO (dopo sc1/sc2/sc3, uguali su entrambi i
+    // lati in questo fixture): 0.50 di scarto sul lordo diventa 0.50*0.504=0.252
+    // sul netto, ben sopra la tolleranza di default (0.05 €) — deve restare segnalato.
+    const res = confrontaOrdine([crmRiga()], [pdfRiga({ prezzo_per_cartone: 102.5, importo_riga: 154.22 })]);
     expect(res.righe[0].stato).toBe("prezzo_diff");
     expect(res.righe[0].gravita).toBe("error");
   });
@@ -204,6 +206,110 @@ describe("confrontaOrdine — soglia troppo bassa / abbinamento incerto (bug #4)
     );
     expect(res.righe_mancanti).toBe(1);
     expect(res.righe_extra).toBe(1);
+  });
+});
+
+describe("confrontaOrdine — prezzo lordo+sconti vs prezzo netto (Problema 1, caso reale ORD-2026-0339)", () => {
+  it("stesso prezzo espresso lordo+sconti a cascata (conferma) o già netto (CRM) non genera prezzo_diff", () => {
+    // Caso reale: CRM registra il prezzo LIMONATA ARS già netto (0,62 €/pz,
+    // sconti a 0), la conferma espone il lordo di listino con gli sconti
+    // applicati in cascata: 26,50 € × 0,75 × 0,75 = 14,90625, praticamente
+    // identico ai 14,88 € del CRM (0,62 × 24). Confrontare il lordo grezzo
+    // della conferma col netto del CRM (o le percentuali di sconto isolate,
+    // 0 vs 25/25) segnalava una differenza inesistente.
+    const crm = crmRiga({
+      prezzo_unitario: 0.62,
+      pezzi_per_cartone: 24,
+      sc1: 0,
+      sc2: 0,
+      sc3: 0,
+      quantita_cartoni: 1,
+      quantita_pezzi: 0,
+    });
+    const pdf = pdfRiga({
+      prezzo_per_cartone: 26.5,
+      pezzi_per_cartone: 24,
+      sc1: 25,
+      sc2: 25,
+      sc3: 0,
+      quantita_cartoni: 1,
+      importo_riga: undefined,
+    });
+    const res = confrontaOrdine([crm], [pdf]);
+    expect(res.righe[0].stato).toBe("ok");
+    expect(res.righe[0].differenze).toEqual([]);
+  });
+});
+
+describe("confrontaOrdine — nomi prodotto corti con suffisso comune (Problema 2)", () => {
+  it("abbina correttamente varianti ortografiche di nomi corti invece di lasciarle mancanti", () => {
+    // "ARANCIATA ARS" (CRM) vs "ARANCIA ARS" (conferma, variante ortografica) e
+    // "SPUMA ARS" (CRM) vs "SPUMA ARS" (conferma): con la similarità a sole
+    // parole intere, "aranciata" e "arancia" sono token completamente diversi
+    // (0 in comune) e il suffisso "ars" condiviso da TUTTI i prodotti non aiuta
+    // a distinguere il match giusto da quello sbagliato (in entrambi i casi
+    // condividono solo "ars" su 3 parole totali, punteggio 0.33 sotto la soglia
+    // di 0.45) — la riga giusta risultava "mancante in conferma". I bigrammi di
+    // carattere colgono la quasi-identità ortografica e risolvono il caso.
+    const c1 = crmRiga({ id: "r1", prodotto_codice: null, prodotto_nome: "ARANCIATA ARS" });
+    const c2 = crmRiga({ id: "r2", prodotto_codice: null, prodotto_nome: "SPUMA ARS" });
+    const p1 = pdfRiga({ codice_prodotto: null, nome_prodotto: "ARANCIA ARS" });
+    const p2 = pdfRiga({ codice_prodotto: null, nome_prodotto: "SPUMA ARS" });
+
+    const res = confrontaOrdine([c1, c2], [p1, p2]);
+    const esitoC1 = res.righe.find((r) => r.crm?.id === "r1");
+    const esitoC2 = res.righe.find((r) => r.crm?.id === "r2");
+
+    expect(esitoC1?.pdf?.nome_prodotto).toBe("ARANCIA ARS");
+    expect(esitoC2?.pdf?.nome_prodotto).toBe("SPUMA ARS");
+    expect(res.righe_mancanti).toBe(0);
+    expect(res.righe_extra).toBe(0);
+  });
+});
+
+describe("confrontaOrdine — controllo di coerenza abbinamento (Problema 2)", () => {
+  it("delta totale piccolo ma molte righe senza corrispondenza -> possibile_errore_matching", () => {
+    // Se davvero mancassero 3 prodotti su 4, i totali sarebbero lontanissimi:
+    // qui hanno tutti lo stesso importo di riga, quindi il delta resta ~0 pur
+    // avendo 6 righe su 7 senza corrispondenza. È il matching a essere rotto
+    // (nomi troppo diversi), non l'ordine a essere disallineato: va segnalato.
+    const crm = [
+      crmRiga({ id: "r1", prodotto_codice: null, prodotto_nome: "PRODOTTO A" }),
+      crmRiga({ id: "r2", prodotto_codice: null, prodotto_nome: "PRODOTTO B" }),
+      crmRiga({ id: "r3", prodotto_codice: null, prodotto_nome: "PRODOTTO C" }),
+      crmRiga({ id: "r4", prodotto_codice: null, prodotto_nome: "PRODOTTO D" }),
+    ];
+    const pdf = [
+      pdfRiga({ codice_prodotto: null, nome_prodotto: "ARTICOLO XX" }),
+      pdfRiga({ codice_prodotto: null, nome_prodotto: "ARTICOLO YY" }),
+      pdfRiga({ codice_prodotto: null, nome_prodotto: "ARTICOLO ZZ" }),
+      pdfRiga({ codice_prodotto: null, nome_prodotto: "PRODOTTO D" }),
+    ];
+    const res = confrontaOrdine(crm, pdf);
+    expect(res.righe_mancanti).toBe(3);
+    expect(res.righe_extra).toBe(3);
+    expect(Math.abs(res.delta_totale)).toBeLessThan(1);
+    expect(res.possibile_errore_matching).toBe(true);
+    expect(res.avviso_matching).toBeTruthy();
+  });
+
+  it("nessun avviso quando il delta è in realtà grande (riga davvero mancante, non un problema di matching)", () => {
+    const res = confrontaOrdine(
+      [crmRiga({ id: "r1" }), crmRiga({ id: "r2", prodotto_nome: "VODKA PREMIUM 70CL", prodotto_codice: "V99" })],
+      [pdfRiga()]
+    );
+    expect(res.righe_mancanti).toBe(1);
+    expect(res.possibile_errore_matching).toBe(false);
+  });
+});
+
+describe("confrontaOrdine — pezzi/cartone mancanti su entrambi i lati (Problema 3)", () => {
+  it("se né CRM né conferma valorizzano pezzi_per_cartone, la riga è segnalata come unità incerta invece di confrontare alla cieca con un fallback a 1", () => {
+    const crm = crmRiga({ pezzi_per_cartone: 0 });
+    const pdf = pdfRiga({ pezzi_per_cartone: undefined });
+    const res = confrontaOrdine([crm], [pdf]);
+    expect(res.righe[0].stato).toBe("unita_incerta");
+    expect(res.righe[0].gravita).toBe("error");
   });
 });
 
