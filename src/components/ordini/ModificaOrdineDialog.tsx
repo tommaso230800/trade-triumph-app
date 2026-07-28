@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,16 +18,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { Loader2, Plus } from "lucide-react";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
-import { useOrdiniRighe, useUpdateOrdineRiga, useUpdateOrdineTotale } from "@/hooks/useOrdiniRighe";
+import { useProdotti } from "@/hooks/useProdotti";
+import { useBrands } from "@/hooks/useBrands";
+import {
+  useOrdiniRighe,
+  useCreateOrdineRiga,
+  useUpdateOrdineRiga,
+  useUpdateOrdineTotale,
+} from "@/hooks/useOrdiniRighe";
 import { useUpdateOrdine, type Ordine } from "@/hooks/useOrdini";
 import { OrdineRigaEditor } from "./OrdineRigaEditor";
 import { formatCurrency, parseDecimalInput, TIPI_PAGAMENTO } from "./ordiniShared";
 
 type EditRiga = {
   id: string;
+  prodotto_id: string;
   prodotto_nome: string;
   quantita_pezzi: number;
   quantita_cartoni: number;
@@ -36,6 +45,10 @@ type EditRiga = {
   sc1: string;
   sc2: string;
   sc3: string;
+  // Riga aggiunta in questa sessione di modifica, non ancora salvata: va
+  // creata (non aggiornata) al salvataggio, e può essere rimossa prima di
+  // allora senza toccare il database.
+  isNew?: boolean;
 };
 
 interface ModificaOrdineDialogProps {
@@ -55,11 +68,15 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
     data_ordine: "",
   });
   const [editRighe, setEditRighe] = useState<EditRiga[]>([]);
+  const [selectedProdotto, setSelectedProdotto] = useState("");
 
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
   const { data: righeForEdit } = useOrdiniRighe(ordine?.id);
+  const { data: allProdotti } = useProdotti();
+  const { data: brands } = useBrands();
   const updateRigaMutation = useUpdateOrdineRiga();
+  const createRigaMutation = useCreateOrdineRiga();
   const updateOrdineTotale = useUpdateOrdineTotale();
   const updateOrdine = useUpdateOrdine();
 
@@ -83,6 +100,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
       setEditRighe(
         righeForEdit.map((r) => ({
           id: r.id,
+          prodotto_id: r.prodotto_id,
           prodotto_nome: r.prodotti?.nome || "Prodotto",
           quantita_pezzi: r.quantita_pezzi,
           quantita_cartoni: r.quantita_cartoni,
@@ -100,6 +118,52 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
     const updated = [...editRighe];
     updated[index] = { ...updated[index], [field]: value } as EditRiga;
     setEditRighe(updated);
+  };
+
+  const removeEditRiga = (index: number) => {
+    setEditRighe(editRighe.filter((_, i) => i !== index));
+  };
+
+  // Prodotti dell'azienda correntemente selezionata, per aggiungere righe
+  // nuove all'ordine in modifica (non solo cambiarne le quantità/prezzi).
+  const prodottiAzienda = useMemo(() => {
+    if (!editFormData.azienda_id || !allProdotti) return [];
+    return allProdotti.filter((p) => p.azienda_id === editFormData.azienda_id);
+  }, [editFormData.azienda_id, allProdotti]);
+
+  const prodottiOptions = useMemo(
+    () =>
+      prodottiAzienda.map((p) => {
+        const brand = brands?.find((b) => b.id === p.brand_id);
+        return {
+          value: p.id,
+          label: `${p.nome} - ${formatCurrency(p.prezzo_listino)}`,
+          searchTerms: [p.codice || "", p.formato || "", brand?.name || ""],
+        };
+      }),
+    [prodottiAzienda, brands]
+  );
+
+  const addProdottoToOrder = () => {
+    if (!selectedProdotto) return;
+    const prodotto = prodottiAzienda.find((p) => p.id === selectedProdotto);
+    if (!prodotto) return;
+
+    const nuovaRiga: EditRiga = {
+      id: `nuovo-${crypto.randomUUID()}`,
+      prodotto_id: prodotto.id,
+      prodotto_nome: prodotto.nome,
+      quantita_pezzi: 0,
+      quantita_cartoni: 0,
+      prezzo_unitario: String(prodotto.prezzo_listino).replace(".", ","),
+      pezzi_per_cartone: prodotto.pezzi_per_cartone,
+      sc1: String(prodotto.sc1_default || 0).replace(".", ","),
+      sc2: String(prodotto.sc2_default || 0).replace(".", ","),
+      sc3: String(prodotto.sc3_default || 0).replace(".", ","),
+      isNew: true,
+    };
+    setEditRighe([...editRighe, nuovaRiga]);
+    setSelectedProdotto("");
   };
 
   const rigaSubtotale = (riga: EditRiga): number => {
@@ -128,15 +192,29 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
 
     try {
       for (const riga of editRighe) {
-        await updateRigaMutation.mutateAsync({
-          id: riga.id,
-          quantita_pezzi: riga.quantita_pezzi,
-          quantita_cartoni: riga.quantita_cartoni,
-          prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
-          sc1: parseDecimalInput(riga.sc1),
-          sc2: parseDecimalInput(riga.sc2),
-          sc3: parseDecimalInput(riga.sc3),
-        });
+        if (riga.isNew) {
+          await createRigaMutation.mutateAsync({
+            ordine_id: ordine.id,
+            prodotto_id: riga.prodotto_id,
+            quantita_pezzi: riga.quantita_pezzi,
+            quantita_cartoni: riga.quantita_cartoni,
+            prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
+            sc1: parseDecimalInput(riga.sc1),
+            sc2: parseDecimalInput(riga.sc2),
+            sc3: parseDecimalInput(riga.sc3),
+            is_omaggio: false,
+          });
+        } else {
+          await updateRigaMutation.mutateAsync({
+            id: riga.id,
+            quantita_pezzi: riga.quantita_pezzi,
+            quantita_cartoni: riga.quantita_cartoni,
+            prezzo_unitario: parseDecimalInput(riga.prezzo_unitario),
+            sc1: parseDecimalInput(riga.sc1),
+            sc2: parseDecimalInput(riga.sc2),
+            sc3: parseDecimalInput(riga.sc3),
+          });
+        }
       }
 
       await updateOrdine.mutateAsync({
@@ -158,7 +236,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
     }
   };
 
-  const isSubmitting = updateRigaMutation.isPending || updateOrdine.isPending;
+  const isSubmitting = updateRigaMutation.isPending || createRigaMutation.isPending || updateOrdine.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -221,6 +299,25 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
 
           <section className="space-y-3 border-t border-border pt-4">
             <h4 className="text-sm font-semibold">Prodotti</h4>
+
+            {editFormData.azienda_id && (
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <SearchableSelect
+                    options={prodottiOptions}
+                    value={selectedProdotto}
+                    onValueChange={setSelectedProdotto}
+                    placeholder="Aggiungi un prodotto..."
+                    searchPlaceholder="Cerca per nome, codice, brand..."
+                    emptyMessage="Nessun prodotto trovato"
+                  />
+                </div>
+                <Button type="button" onClick={addProdottoToOrder} disabled={!selectedProdotto}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
             {editRighe.length === 0 ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -245,6 +342,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
                     onChangeSc1={(v) => updateEditRiga(index, "sc1", v)}
                     onChangeSc2={(v) => updateEditRiga(index, "sc2", v)}
                     onChangeSc3={(v) => updateEditRiga(index, "sc3", v)}
+                    onRemove={riga.isNew ? () => removeEditRiga(index) : undefined}
                   />
                 ))}
               </div>

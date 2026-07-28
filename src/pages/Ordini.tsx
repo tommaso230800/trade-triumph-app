@@ -13,9 +13,9 @@ import {
   Upload,
   FileText,
   Edit,
-  Truck,
   CheckCircle2,
   FileSearch,
+  Paperclip,
   PauseCircle,
   PlayCircle,
   Ban,
@@ -48,6 +48,8 @@ import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
 import { MultiFileImportDialog } from "@/components/ordini/MultiFileImportDialog";
 import { StandByDialog } from "@/components/ordini/StandByDialog";
 import { VerificaConfermaDialog } from "@/components/ordini/VerificaConfermaDialog";
+import { DocumentiSection } from "@/components/documenti/DocumentiSection";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatCurrency } from "@/components/ordini/ordiniShared";
 
 const Ordini = () => {
@@ -64,6 +66,7 @@ const Ordini = () => {
   const [isMultiImportOpen, setIsMultiImportOpen] = useState(false);
   const [standByTarget, setStandByTarget] = useState<{ id: string; codice?: string } | null>(null);
   const [verificaTarget, setVerificaTarget] = useState<{ id: string; codice?: string } | null>(null);
+  const [documentiTarget, setDocumentiTarget] = useState<{ id: string; codice?: string } | null>(null);
 
   const { data: ordini, isLoading, isError, refetch } = useOrdini(searchTerm, statusFilter, monthFilters);
   const { data: clienti } = useClienti();
@@ -151,8 +154,7 @@ const Ordini = () => {
   // Azioni per riga, condivise fra vista mobile (card) e desktop (tabella)
   const buildAttiviActions = (ordine: Ordine): OrdineCardAction[] => [
     { label: "Visualizza Proforma", icon: FileText, onClick: () => handleShowProforma(ordine) },
-    { label: "Modifica Quantità", icon: Edit, onClick: () => openEditDialog(ordine) },
-    { label: "Segna come Spedito", icon: Truck, onClick: () => updateStatus.mutate({ id: ordine.id, status: "spedito" }) },
+    { label: "Modifica Ordine", icon: Edit, onClick: () => openEditDialog(ordine) },
     {
       label: "Segna come Completato",
       icon: CheckCircle2,
@@ -162,6 +164,11 @@ const Ordini = () => {
       label: "Verifica conferma azienda",
       icon: FileSearch,
       onClick: () => setVerificaTarget({ id: ordine.id, codice: ordine.codice }),
+    },
+    {
+      label: "Documenti ordine",
+      icon: Paperclip,
+      onClick: () => setDocumentiTarget({ id: ordine.id, codice: ordine.codice }),
     },
     {
       label: "Metti in Stand-by",
@@ -180,6 +187,11 @@ const Ordini = () => {
     { label: "Visualizza Proforma", icon: FileText, onClick: () => handleShowProforma(ordine) },
     { label: "Modifica", icon: Edit, onClick: () => openEditDialog(ordine) },
     {
+      label: "Documenti ordine",
+      icon: Paperclip,
+      onClick: () => setDocumentiTarget({ id: ordine.id, codice: ordine.codice }),
+    },
+    {
       label: "Annulla ordine",
       icon: Ban,
       destructive: true,
@@ -189,6 +201,11 @@ const Ordini = () => {
 
   const buildAnnullatiActions = (ordine: Ordine): OrdineCardAction[] => [
     { label: "Visualizza Proforma", icon: FileText, onClick: () => handleShowProforma(ordine) },
+    {
+      label: "Documenti ordine",
+      icon: Paperclip,
+      onClick: () => setDocumentiTarget({ id: ordine.id, codice: ordine.codice }),
+    },
     {
       label: "Riattiva Ordine",
       icon: RotateCcw,
@@ -431,6 +448,22 @@ const Ordini = () => {
           ordineId={verificaTarget?.id || null}
           ordineCodice={verificaTarget?.codice}
         />
+
+        <Dialog
+          open={!!documentiTarget}
+          onOpenChange={(v) => {
+            if (!v) setDocumentiTarget(null);
+          }}
+        >
+          <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto p-2 sm:p-4">
+            <DialogHeader className="px-2 pt-2 sm:px-0 sm:pt-0">
+              <DialogTitle>Documenti ordine {documentiTarget?.codice}</DialogTitle>
+            </DialogHeader>
+            {documentiTarget && (
+              <DocumentiSection entita="ordine" entita_id={documentiTarget.id} title="Documenti" compact />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

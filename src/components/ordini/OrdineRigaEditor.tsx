@@ -77,7 +77,7 @@ export function OrdineRigaEditor({
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {isOmaggio ? (
-            <span className="inline-flex h-8 items-center gap-1 rounded-md bg-success/20 px-2 text-xs font-semibold text-success">
+            <span className="inline-flex h-11 items-center gap-1 rounded-md bg-success/20 px-2 text-xs font-semibold text-success">
               <Gift className="h-3.5 w-3.5" /> Omaggio
             </span>
           ) : (
@@ -86,7 +86,7 @@ export function OrdineRigaEditor({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1"
+                className="h-11 gap-1 touch-target"
                 onClick={onAddOmaggio}
                 title="Aggiungi una riga omaggio per questo prodotto"
               >
@@ -100,7 +100,7 @@ export function OrdineRigaEditor({
               type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
+              className="h-11 w-11 text-destructive hover:text-destructive touch-target"
               onClick={onRemove}
             >
               <Trash2 className="h-4 w-4" />

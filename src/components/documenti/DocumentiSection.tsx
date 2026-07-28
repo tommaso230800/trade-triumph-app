@@ -84,7 +84,7 @@ export function DocumentiSection({ entita, entita_id, title = "Documenti", compa
 
   return (
     <Card className="p-4 md:p-6 surface-noir">
-      <div className="flex items-center justify-between gap-2 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
           <Paperclip className="h-5 w-5 text-primary" />
           <h3 className="font-semibold text-lg">{title}</h3>
@@ -92,7 +92,7 @@ export function DocumentiSection({ entita, entita_id, title = "Documenti", compa
         </div>
         <div className="flex items-center gap-2">
           <Select value={pendingTipo} onValueChange={(v) => setPendingTipo(v as DocumentoTipo)}>
-            <SelectTrigger className="w-[180px] h-9">
+            <SelectTrigger className="w-[160px] sm:w-[180px] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -200,8 +200,12 @@ describe("confrontaOrdine — soglia troppo bassa / abbinamento incerto (bug #4)
   });
 
   it("prodotti di famiglie palesemente diverse non vengono abbinati affatto", () => {
+    // Quantità/prezzo diversi dal default apposta: altrimenti coincidendo con
+    // la riga pdf (stesso fixture di base) scatterebbe la proposta di alias
+    // per quantità+importo coincidenti (comportamento corretto in generale,
+    // ma non quello che questo test vuole isolare: nessun abbinamento affatto).
     const res = confrontaOrdine(
-      [crmRiga({ prodotto_codice: null, prodotto_nome: "GRAPPA BIANCA" })],
+      [crmRiga({ prodotto_codice: null, prodotto_nome: "GRAPPA BIANCA", quantita_cartoni: 1, prezzo_unitario: 5 })],
       [pdfRiga({ codice_prodotto: null, nome_prodotto: "LIMONCELLO ARTIGIANALE" })]
     );
     expect(res.righe_mancanti).toBe(1);
@@ -270,25 +274,30 @@ describe("confrontaOrdine — nomi prodotto corti con suffisso comune (Problema 
 describe("confrontaOrdine — controllo di coerenza abbinamento (Problema 2)", () => {
   it("delta totale piccolo ma molte righe senza corrispondenza -> possibile_errore_matching", () => {
     // Se davvero mancassero 3 prodotti su 4, i totali sarebbero lontanissimi:
-    // qui hanno tutti lo stesso importo di riga, quindi il delta resta ~0 pur
-    // avendo 6 righe su 7 senza corrispondenza. È il matching a essere rotto
-    // (nomi troppo diversi), non l'ordine a essere disallineato: va segnalato.
+    // qui la somma resta vicina pur avendo 6 righe su 7 senza corrispondenza.
+    // È il matching a essere rotto (nomi troppo diversi), non l'ordine a
+    // essere disallineato: va segnalato. Quantità/prezzo scelti apposta
+    // diversi tra loro (e diversi dai decoy) per non far scattare la
+    // proposta di alias (Problema 6) sulle righe sbagliate.
     const crm = [
-      crmRiga({ id: "r1", prodotto_codice: null, prodotto_nome: "PRODOTTO A" }),
-      crmRiga({ id: "r2", prodotto_codice: null, prodotto_nome: "PRODOTTO B" }),
-      crmRiga({ id: "r3", prodotto_codice: null, prodotto_nome: "PRODOTTO C" }),
-      crmRiga({ id: "r4", prodotto_codice: null, prodotto_nome: "PRODOTTO D" }),
+      crmRiga({ id: "r1", prodotto_codice: null, prodotto_nome: "PRODOTTO A", quantita_cartoni: 2, prezzo_unitario: 1, sc1: 0, sc2: 0, sc3: 0 }),
+      crmRiga({ id: "r2", prodotto_codice: null, prodotto_nome: "PRODOTTO B", quantita_cartoni: 3, prezzo_unitario: 1, sc1: 0, sc2: 0, sc3: 0 }),
+      crmRiga({ id: "r3", prodotto_codice: null, prodotto_nome: "PRODOTTO C", quantita_cartoni: 4, prezzo_unitario: 1, sc1: 0, sc2: 0, sc3: 0 }),
+      crmRiga({ id: "r4", prodotto_codice: null, prodotto_nome: "PRODOTTO D", quantita_cartoni: 5, prezzo_unitario: 1, sc1: 0, sc2: 0, sc3: 0 }),
     ];
     const pdf = [
-      pdfRiga({ codice_prodotto: null, nome_prodotto: "ARTICOLO XX" }),
-      pdfRiga({ codice_prodotto: null, nome_prodotto: "ARTICOLO YY" }),
-      pdfRiga({ codice_prodotto: null, nome_prodotto: "ARTICOLO ZZ" }),
-      pdfRiga({ codice_prodotto: null, nome_prodotto: "PRODOTTO D" }),
+      pdfRiga({ codice_prodotto: null, nome_prodotto: "ARTICOLO XX", quantita_cartoni: 3, pezzi_per_cartone: 5, prezzo_per_cartone: 5, sc1: 0, sc2: 0, sc3: 0, importo_riga: undefined }),
+      pdfRiga({ codice_prodotto: null, nome_prodotto: "ARTICOLO YY", quantita_cartoni: 4, pezzi_per_cartone: 5, prezzo_per_cartone: 5, sc1: 0, sc2: 0, sc3: 0, importo_riga: undefined }),
+      pdfRiga({ codice_prodotto: null, nome_prodotto: "ARTICOLO ZZ", quantita_cartoni: 5, pezzi_per_cartone: 5, prezzo_per_cartone: 5, sc1: 0, sc2: 0, sc3: 0, importo_riga: undefined }),
+      pdfRiga({ codice_prodotto: null, nome_prodotto: "PRODOTTO D", quantita_cartoni: 5, pezzi_per_cartone: 6, prezzo_per_cartone: 6, sc1: 0, sc2: 0, sc3: 0, importo_riga: undefined }),
     ];
     const res = confrontaOrdine(crm, pdf);
     expect(res.righe_mancanti).toBe(3);
     expect(res.righe_extra).toBe(3);
-    expect(Math.abs(res.delta_totale)).toBeLessThan(1);
+    // Delta reale (6€) ben sotto quanto ci si aspetterebbe se 3 prodotti su 4
+    // mancassero davvero (totale_crm è 84€: un vero disallineamento di quella
+    // portata sarebbe un delta di decine di euro, non 6).
+    expect(Math.abs(res.delta_totale)).toBeLessThan(10);
     expect(res.possibile_errore_matching).toBe(true);
     expect(res.avviso_matching).toBeTruthy();
   });
@@ -310,6 +319,190 @@ describe("confrontaOrdine — pezzi/cartone mancanti su entrambi i lati (Problem
     const res = confrontaOrdine([crm], [pdf]);
     expect(res.righe[0].stato).toBe("unita_incerta");
     expect(res.righe[0].gravita).toBe("error");
+  });
+});
+
+describe("confrontaOrdine — matching per codice, uno-a-molti, alias prodotto (Problemi 1/2/4/5/6, caso reale ORD-2026-0339)", () => {
+  it("9 righe con codice riconosciuto (7 esatte + 1 fuzzy), 1 riga con differenza reale (CEDRATA), 1 alias da confermare (B189/B210)", () => {
+    // Verità di riferimento fornita dall'utente dopo verifica manuale
+    // riga-per-riga di ORD-2026-0339 contro la conferma del fornitore.
+    // Non ho accesso diretto al PDF/CRM (RLS blocca le query anon): le righe
+    // "pulite" — di cui l'utente ha dato solo le coppie di codici, non i
+    // numeri — sono ricostruite con lo stesso schema di prezzo reale della
+    // CEDRATA (0,62 €/pz netto CRM vs 13,25 €/cartone lordo -25%/-25% lato
+    // conferma) per dimostrare che il CODICE le aggancia nonostante nomi
+    // completamente diversi. CEDRATA e l'alias B189/B210 usano i numeri reali
+    // esatti forniti dall'utente.
+    const prodottiPuliti: Array<[string, string]> = [
+      ["ARS123", "V12ARS123"],
+      ["ARS124SP", "V12ARS124SP"],
+      ["ARS124CH", "V12ARS124CH"],
+      ["ARS124T", "V12ARS124T"],
+      ["ARS202", "V12ARS202"],
+      ["ARS203", "V12ARS203"],
+      ["ARS124L", "ARS124L"], // la conferma non antepone sempre il prefisso V12
+    ];
+
+    const crm: CRMRiga[] = prodottiPuliti.map(([codiceCrm], i) =>
+      crmRiga({
+        id: `ok${i}`,
+        prodotto_codice: codiceCrm,
+        prodotto_nome: `PRODOTTO ${codiceCrm}`,
+        quantita_cartoni: 2,
+        quantita_pezzi: 0,
+        pezzi_per_cartone: 12,
+        prezzo_unitario: 0.62,
+        sc1: 0,
+        sc2: 0,
+        sc3: 0,
+      })
+    );
+    const pdf: PDFRiga[] = prodottiPuliti.map(([, codicePdf]) =>
+      pdfRiga({
+        codice_prodotto: codicePdf,
+        // Nome volutamente inconfrontabile col CRM, come nel caso reale
+        // ("ARANCIATA ARS" vs "ANT.RIC.SICIL.ARANCIATA x12 bott CL 27.5").
+        nome_prodotto: `ANT.RIC.SICIL. ${codicePdf} x12 bott`,
+        quantita_cartoni: 2,
+        pezzi_per_cartone: 12,
+        prezzo_per_cartone: 13.25,
+        sc1: 25,
+        sc2: 25,
+        sc3: 0,
+        importo_riga: undefined,
+      })
+    );
+
+    // Caso particolare: codice CRM "ARS 124 ARA" vs conferma "V12ARS124AR"
+    // (suffisso ARA/AR, non un suffisso pulito) — deve agganciare via
+    // similarità a bigrammi sul codice, non per suffisso esatto.
+    crm.push(
+      crmRiga({
+        id: "ara",
+        prodotto_codice: "ARS 124 ARA",
+        prodotto_nome: "PRODOTTO ARS124ARA",
+        quantita_cartoni: 2,
+        quantita_pezzi: 0,
+        pezzi_per_cartone: 12,
+        prezzo_unitario: 0.62,
+        sc1: 0,
+        sc2: 0,
+        sc3: 0,
+      })
+    );
+    pdf.push(
+      pdfRiga({
+        codice_prodotto: "V12ARS124AR",
+        nome_prodotto: "ANT.RIC.SICIL. ARANCIA RARA x12 bott",
+        quantita_cartoni: 2,
+        pezzi_per_cartone: 12,
+        prezzo_per_cartone: 13.25,
+        sc1: 25,
+        sc2: 25,
+        sc3: 0,
+        importo_riga: undefined,
+      })
+    );
+
+    // CEDRATA (ARS 124CE / V12ARS124CE): l'UNICA discrepanza reale verificata
+    // a mano. CRM: 5 cart × 12 pz = 60 pz @ 0,62 €/pz = 37,20 €. Conferma:
+    // spezzata su 2 righe con formati diversi (2 cart × 12 pz + 2 cart × 24
+    // pz = 72 pz), stesso prezzo netto/pz di tutte le altre righe = 44,72 €.
+    // Differenza reale: +12 pezzi, +7,52 €.
+    crm.push(
+      crmRiga({
+        id: "cedrata",
+        prodotto_codice: "ARS124CE",
+        prodotto_nome: "CEDRATA ARS",
+        quantita_cartoni: 5,
+        quantita_pezzi: 0,
+        pezzi_per_cartone: 12,
+        prezzo_unitario: 0.62,
+        sc1: 0,
+        sc2: 0,
+        sc3: 0,
+      })
+    );
+    pdf.push(
+      pdfRiga({
+        codice_prodotto: "V12ARS124CE",
+        nome_prodotto: "ANT.RIC.SICIL. CEDRATA x12 bott",
+        quantita_cartoni: 2,
+        pezzi_per_cartone: 12,
+        prezzo_per_cartone: 13.25,
+        sc1: 25,
+        sc2: 25,
+        sc3: 0,
+        importo_riga: undefined,
+      }),
+      pdfRiga({
+        codice_prodotto: "V12ARS124CE",
+        nome_prodotto: "ANT.RIC.SICIL. CEDRATA x24 bott",
+        quantita_cartoni: 2,
+        pezzi_per_cartone: 24,
+        prezzo_per_cartone: 26.5,
+        sc1: 25,
+        sc2: 25,
+        sc3: 0,
+        importo_riga: undefined,
+      })
+    );
+
+    // Alias non risolvibile automaticamente: codice ("B189" vs "B210") e nome
+    // ("TONICA LEMON 1LT" vs "P53 LEMON LT 1 X 6 BOTT") entrambi diversi su
+    // entrambi i lati, ma quantità (25 pz) e imponibile (85,50 €) identici.
+    // Semplificato a "25 unità da 1 pezzo" invece del reale formato
+    // bottiglie/cartone: non cambia il meccanismo testato (rilevare che
+    // nessun segnale di codice/nome aggancia, ma i numeri sì).
+    crm.push(
+      crmRiga({
+        id: "b189",
+        prodotto_codice: "B189",
+        prodotto_nome: "TONICA LEMON 1LT",
+        quantita_cartoni: 25,
+        quantita_pezzi: 0,
+        pezzi_per_cartone: 1,
+        prezzo_unitario: 3.42,
+        sc1: 0,
+        sc2: 0,
+        sc3: 0,
+      })
+    );
+    pdf.push(
+      pdfRiga({
+        codice_prodotto: "B210",
+        nome_prodotto: "P53 LEMON LT 1 X 6 BOTT",
+        quantita_cartoni: 25,
+        pezzi_per_cartone: 1,
+        prezzo_per_cartone: 3.42,
+        sc1: 0,
+        sc2: 0,
+        sc3: 0,
+        importo_riga: undefined,
+      })
+    );
+
+    const res = confrontaOrdine(crm, pdf);
+
+    expect(res.righe_ok).toBe(8); // 7 codice esatto + 1 codice fuzzy (ARA/AR)
+    expect(res.righe_diff).toBe(1); // CEDRATA
+    expect(res.righe_alias_suggerito).toBe(1); // B189/B210
+    expect(res.righe_mancanti).toBe(0);
+    expect(res.righe_extra).toBe(0);
+
+    const cedrataEsito = res.righe.find((r) => r.crm?.id === "cedrata");
+    expect(cedrataEsito?.stato).toBe("qta_diff");
+    expect(cedrataEsito?.gravita).toBe("error");
+    expect(cedrataEsito?.pdfRighe?.length).toBe(2); // uno-a-molti: due righe conferma raggruppate
+    expect(cedrataEsito?.delta_imponibile).toBeCloseTo(7.52, 1);
+
+    const aliasEsito = res.righe.find((r) => r.crm?.id === "b189");
+    expect(aliasEsito?.stato).toBe("alias_suggerito");
+    expect(aliasEsito?.pdf?.codice_prodotto).toBe("B210");
+
+    const araEsito = res.righe.find((r) => r.crm?.id === "ara");
+    expect(araEsito?.stato).toBe("ok"); // agganciato per bigrammi sul codice, non per suffisso esatto
+    expect(araEsito?.pdf?.codice_prodotto).toBe("V12ARS124AR");
   });
 });
 

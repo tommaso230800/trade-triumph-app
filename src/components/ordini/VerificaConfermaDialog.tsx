@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FunctionsFetchError, FunctionsHttpError } from "@supabase/supabase-js";
 import { confrontaOrdine, type ConfrontoEsito, type MatchStato, type PDFRiga } from "@/lib/orderMatchEngine";
 import { loadCRMRighe, useOrdineConferme, useSaveOrdineConferma } from "@/hooks/useOrdiniConferme";
+import { useUploadDocumento } from "@/hooks/useDocumenti";
 import {
   isParseOrderMultiSuccess,
   type ParseOrderMultiResponseBody,
@@ -100,6 +101,7 @@ const STATO_LABEL: Record<MatchStato, { label: string; cls: string; icon: any }>
   extra_in_conferma: { label: "Extra in conferma", cls: "bg-orange-600/20 text-orange-500 border-orange-600/40", icon: PlusCircle },
   match_incerto: { label: "Abbinamento incerto", cls: "bg-blue-600/20 text-blue-500 border-blue-600/40", icon: AlertCircle },
   unita_incerta: { label: "Unità di misura incerta", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: AlertCircle },
+  alias_suggerito: { label: "Possibile alias", cls: "bg-blue-600/20 text-blue-500 border-blue-600/40", icon: AlertCircle },
 };
 
 function fileToBase64(file: File): Promise<string> {
@@ -121,7 +123,9 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
   const [sorgente, setSorgente] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [errore, setErrore] = useState<ErroreAnalisi | null>(null);
+  const [fileCaricato, setFileCaricato] = useState<File | null>(null);
   const save = useSaveOrdineConferma();
+  const uploadDocumento = useUploadDocumento();
   const { data: precedenti = [] } = useOrdineConferme(ordineId ?? undefined);
 
   useEffect(() => {
@@ -130,6 +134,7 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
       setSorgente(null);
       setNote("");
       setErrore(null);
+      setFileCaricato(null);
     }
   }, [open]);
 
@@ -177,6 +182,7 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
       const cfr = confrontaOrdine(crmRighe, pdfRighe);
       setEsito(cfr);
       setSorgente(file.name);
+      setFileCaricato(file);
     } catch (e) {
       setErrore(await interpretaErrore(e));
     } finally {
@@ -190,11 +196,34 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
     inputRef.current?.click();
   };
 
-  const salva = (verificato = false) => {
+  const salva = async (verificato = false) => {
     if (!esito || !ordineId) return;
+
+    // Carica il documento originale nello storage "documenti" (stessa
+    // infrastruttura già usata da AziendaDettaglio/ClienteDettaglio) così
+    // resta consultabile dall'ordine anche dopo la verifica, non solo
+    // durante questa sessione di analisi. Se l'upload fallisce, si salva
+    // comunque l'esito del confronto: meglio un documento mancante che
+    // perdere l'analisi già fatta.
+    let documentoId: string | null = null;
+    if (fileCaricato) {
+      try {
+        const doc = await uploadDocumento.mutateAsync({
+          file: fileCaricato,
+          entita: "ordine",
+          entita_id: ordineId,
+          tipo: "conferma_ordine",
+        });
+        documentoId = doc.id;
+      } catch {
+        // upload già mostra un toast di errore proprio
+      }
+    }
+
     save.mutate(
       {
         ordine_id: ordineId,
+        documento_id: documentoId,
         nome_sorgente: sorgente,
         esito,
         note: note.trim() || null,
@@ -307,12 +336,13 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
                 <span>{esito.avviso_matching}</span>
               </div>
             )}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
               <StatBox label="Score" value={`${scorePct}%`} className={scoreColor} />
               <StatBox label="OK" value={String(esito.righe_ok)} className="text-green-500" />
               <StatBox label="Differenze" value={String(esito.righe_diff)} className="text-yellow-500" />
               <StatBox label="Mancanti" value={String(esito.righe_mancanti)} className="text-red-500" />
               <StatBox label="Extra" value={String(esito.righe_extra)} className="text-orange-500" />
+              <StatBox label="Da confermare" value={String(esito.righe_alias_suggerito)} className="text-blue-500" />
             </div>
             <Progress value={scorePct} />
 
@@ -396,14 +426,26 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
         <DialogFooter className="gap-2">
           {esito && (
             <>
-              <Button variant="outline" onClick={() => { setEsito(null); setSorgente(null); }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEsito(null);
+                  setSorgente(null);
+                  setFileCaricato(null);
+                }}
+              >
                 Analizza un altro file
               </Button>
-              <Button variant="secondary" onClick={() => salva(false)} disabled={save.isPending}>
+              <Button
+                variant="secondary"
+                onClick={() => salva(false)}
+                disabled={save.isPending || uploadDocumento.isPending}
+              >
+                {(save.isPending || uploadDocumento.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Salva esito
               </Button>
-              <Button onClick={() => salva(true)} disabled={save.isPending}>
-                {save.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              <Button onClick={() => salva(true)} disabled={save.isPending || uploadDocumento.isPending}>
+                {(save.isPending || uploadDocumento.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Salva e segna come verificato
               </Button>
             </>

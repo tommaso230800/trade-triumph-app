@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -126,6 +126,62 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
 
   const scontoPercentuale = subtotale * (data.sconto / 100);
 
+  // Colonne quasi sempre vuote nel proforma reale (marchio/sconti a cascata
+  // non sempre valorizzati): se NESSUNA riga le usa, si nascondono e il loro
+  // spazio va alle colonne che servono davvero — invece di sprecarlo su una
+  // colonna piena di "—".
+  const mostraMarchio = data.righe.some((r) => (r.prodotto_brand ?? "").trim() !== "");
+  const mostraSc1 = data.righe.some((r) => (r.sc1 || 0) > 0);
+  const mostraSc2 = data.righe.some((r) => (r.sc2 || 0) > 0);
+  const mostraSc3 = data.righe.some((r) => (r.sc3 || 0) > 0);
+
+  type Allineamento = "left" | "center" | "right";
+  type ColonnaDef = { chiave: string; etichetta: string; peso: number; align: Allineamento; visibile: boolean };
+  // "peso" è un valore relativo, non una percentuale: la larghezza reale si
+  // ricalcola sulla somma dei soli pesi VISIBILI, così le colonne restanti
+  // riempiono sempre il 100% dello spazio utile (mai una tabella più stretta
+  // del foglio, né più larga: table-fixed + queste larghezze la vincolano).
+  const tutteLeColonne: ColonnaDef[] = [
+    { chiave: "codice", etichetta: "C.P", peso: 11, align: "left", visibile: true },
+    { chiave: "prodotto", etichetta: "Prodotto", peso: 23, align: "left", visibile: true },
+    { chiave: "marchio", etichetta: "Marchio", peso: 9, align: "left", visibile: mostraMarchio },
+    { chiave: "prezzo", etichetta: "Prezzo", peso: 9, align: "right", visibile: true },
+    { chiave: "sc1", etichetta: "Sc.1", peso: 6, align: "center", visibile: mostraSc1 },
+    { chiave: "sc2", etichetta: "Sc.2", peso: 6, align: "center", visibile: mostraSc2 },
+    { chiave: "sc3", etichetta: "Sc.3", peso: 6, align: "center", visibile: mostraSc3 },
+    { chiave: "cartoni", etichetta: "Cart.", peso: 6, align: "center", visibile: true },
+    { chiave: "totPezzi", etichetta: "Tot. Pz", peso: 9, align: "center", visibile: true },
+    { chiave: "subtotale", etichetta: "Subtot.", peso: 13, align: "right", visibile: true },
+  ];
+  const colonne = tutteLeColonne.filter((c) => c.visibile);
+  const pesoTotale = colonne.reduce((s, c) => s + c.peso, 0);
+  const larghezzaCol = (peso: number) => `${((peso / pesoTotale) * 100).toFixed(2)}%`;
+  const classeAllineamento = (align: Allineamento) =>
+    align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left";
+
+  // Densità adattiva: più righe prodotto ci sono, più altezza/padding/carattere
+  // si riducono (entro limiti che restano leggibili), così l'intero documento
+  // — anche con molte righe — resta su una sola pagina A4 invece di uscirne o
+  // di essere schiacciato in modo incontrollato dal solo ridimensionamento
+  // dell'immagine in fase di export.
+  const numRighe = data.righe.length;
+  const densita: "normale" | "compatta" | "molto-compatta" | "minima" =
+    numRighe <= 8 ? "normale" : numRighe <= 15 ? "compatta" : numRighe <= 25 ? "molto-compatta" : "minima";
+  const paddingCella = { normale: "py-2", compatta: "py-1.5", "molto-compatta": "py-1", minima: "py-0.5" }[densita];
+  const testoCorpo = {
+    normale: "text-sm",
+    compatta: "text-xs",
+    "molto-compatta": "text-[11px]",
+    minima: "text-[10px]",
+  }[densita];
+  const testoIntestazione = {
+    normale: "text-xs",
+    compatta: "text-xs",
+    "molto-compatta": "text-[10px]",
+    minima: "text-[9px]",
+  }[densita];
+  const mostraSottotesto = densita !== "minima";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible print:shadow-none print:border-none">
@@ -193,20 +249,23 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
           </div>
 
           {/* Order Details Table */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden overflow-x-auto">
-            <Table>
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <Table className="table-fixed w-full">
+              <colgroup>
+                {colonne.map((c) => (
+                  <col key={c.chiave} style={{ width: larghezzaCol(c.peso) }} />
+                ))}
+              </colgroup>
               <TableHeader>
                 <TableRow className="bg-gray-100">
-                  <TableHead className="font-semibold text-gray-900 text-xs">C.P</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-xs">Prodotto</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-xs">Marchio</TableHead>
-                  <TableHead className="text-right font-semibold text-gray-900 text-xs">Prezzo</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.1</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.2</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.3</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Cart.</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Tot. Pz</TableHead>
-                  <TableHead className="text-right font-semibold text-gray-900 text-xs">Subtot.</TableHead>
+                  {colonne.map((c) => (
+                    <TableHead
+                      key={c.chiave}
+                      className={`h-8 px-2 font-semibold text-gray-900 ${testoIntestazione} ${classeAllineamento(c.align)}`}
+                    >
+                      {c.etichetta}
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -220,13 +279,11 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                   const prezzo2 = prezzo1 * (1 - sc2 / 100);
                   const prezzoNetto = prezzo2 * (1 - sc3 / 100);
                   const rigaSubtotale = riga.is_omaggio ? 0 : pezziTotali * prezzoNetto;
-                  return (
-                    <TableRow key={idx} className={`border-b border-gray-100 ${riga.is_omaggio ? "bg-green-50" : ""}`}>
-                      <TableCell className="py-2 text-xs text-gray-600">
-                        {riga.prodotto_codice || "—"}
-                      </TableCell>
-                      <TableCell className="py-2">
-                        <p className="font-medium text-gray-900 text-sm">
+                  const contenuto: Record<string, ReactNode> = {
+                    codice: riga.prodotto_codice || "—",
+                    prodotto: (
+                      <>
+                        <p className={`font-medium text-gray-900 truncate ${testoCorpo}`}>
                           {riga.prodotto_nome}
                           {riga.is_omaggio && (
                             <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-green-100 text-green-700">
@@ -234,36 +291,43 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
                             </span>
                           )}
                         </p>
-                        <p className="text-xs text-gray-500">{riga.pezzi_per_cartone} pz/cart</p>
-                        {riga.promo_applicata && (
-                          <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
-                            <Gift className="h-3 w-3" />
+                        {mostraSottotesto && (
+                          <p className="text-xs text-gray-500 truncate">{riga.pezzi_per_cartone} pz/cart</p>
+                        )}
+                        {mostraSottotesto && riga.promo_applicata && (
+                          <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1 truncate">
+                            <Gift className="h-3 w-3 shrink-0" />
                             {riga.promo_applicata}
                           </p>
                         )}
-                      </TableCell>
-                      <TableCell className="py-2 text-xs text-gray-600">
-                        {riga.prodotto_brand || "—"}
-                      </TableCell>
-                      <TableCell className="text-right py-2">
-                        <span className="text-gray-700 text-sm">
-                          {riga.is_omaggio ? "—" : formatCurrency(riga.prezzo_unitario)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center text-gray-700 text-sm py-2">
-                        {riga.is_omaggio ? "—" : sc1 > 0 ? `${sc1}%` : "—"}
-                      </TableCell>
-                      <TableCell className="text-center text-gray-700 text-sm py-2">
-                        {riga.is_omaggio ? "—" : sc2 > 0 ? `${sc2}%` : "—"}
-                      </TableCell>
-                      <TableCell className="text-center text-gray-700 text-sm py-2">
-                        {riga.is_omaggio ? "—" : sc3 > 0 ? `${sc3}%` : "—"}
-                      </TableCell>
-                      <TableCell className="text-center text-gray-700 text-sm py-2">{riga.quantita_cartoni}</TableCell>
-                      <TableCell className="text-center font-medium text-gray-900 text-sm py-2">{pezziTotali}</TableCell>
-                      <TableCell className="text-right font-semibold text-gray-900 text-sm py-2">
-                        {riga.is_omaggio ? <span className="text-green-700">Omaggio</span> : formatCurrency(rigaSubtotale)}
-                      </TableCell>
+                      </>
+                    ),
+                    marchio: riga.prodotto_brand || "—",
+                    prezzo: riga.is_omaggio ? "—" : formatCurrency(riga.prezzo_unitario),
+                    sc1: riga.is_omaggio ? "—" : sc1 > 0 ? `${sc1}%` : "—",
+                    sc2: riga.is_omaggio ? "—" : sc2 > 0 ? `${sc2}%` : "—",
+                    sc3: riga.is_omaggio ? "—" : sc3 > 0 ? `${sc3}%` : "—",
+                    cartoni: riga.quantita_cartoni,
+                    totPezzi: pezziTotali,
+                    subtotale: riga.is_omaggio ? (
+                      <span className="text-green-700">Omaggio</span>
+                    ) : (
+                      formatCurrency(rigaSubtotale)
+                    ),
+                  };
+                  const pesante = new Set(["totPezzi", "subtotale"]);
+                  return (
+                    <TableRow key={idx} className={`border-b border-gray-100 ${riga.is_omaggio ? "bg-green-50" : ""}`}>
+                      {colonne.map((c) => (
+                        <TableCell
+                          key={c.chiave}
+                          className={`${paddingCella} px-2 ${testoCorpo} text-gray-700 ${classeAllineamento(c.align)} ${
+                            c.chiave === "codice" || c.chiave === "marchio" ? "truncate" : ""
+                          } ${pesante.has(c.chiave) ? "font-semibold text-gray-900" : ""}`}
+                        >
+                          {contenuto[c.chiave]}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   );
                 })}
