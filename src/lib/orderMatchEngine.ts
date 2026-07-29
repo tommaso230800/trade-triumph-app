@@ -28,12 +28,31 @@ export type PDFRiga = {
   nome_prodotto: string;
   quantita_cartoni: number;
   pezzi_per_cartone?: number;
-  prezzo_per_cartone: number; // sempre per CARTONE, normalizzato da parse-order-multi
+  // Il nome storico ("per cartone") NON è una garanzia: ogni fornitore espone
+  // questo numero nell'unità e nella base (lorda/netta) che preferisce, e
+  // parse-order-multi non può sempre distinguerle con certezza in fase di
+  // estrazione. Non assumere mai quale delle due sia — vedi
+  // deduciPrezzoPerPezzoRiga, che la deduce riga per riga dall'imponibile
+  // dichiarato dal documento invece di dare per scontata un'unità fissa.
+  prezzo_per_cartone: number;
   sc1?: number;
   sc2?: number;
   sc3?: number;
   is_omaggio?: boolean;
   importo_riga?: number;
+};
+
+// Abbinamento prodotto CRM <-> fornitore già confermato manualmente in una
+// verifica precedente (tabella prodotti_alias): usato per riconoscere in
+// automatico, nelle conferme FUTURE della stessa azienda, prodotti che non
+// hanno mai un codice/nome comparabile tra CRM e fornitore (vedi FASE 0 in
+// confrontaOrdine). Lo scoping per azienda è responsabilità del chiamante:
+// il motore riceve solo gli alias già filtrati per l'azienda fornitrice.
+export type AliasProdotto = {
+  id: string;
+  prodotto_id: string;
+  codice_fornitore: string | null;
+  descrizione_fornitore: string | null;
 };
 
 export type MatchStato =
@@ -65,6 +84,11 @@ export type RigaEsito = {
   imponibile_crm?: number;
   imponibile_pdf?: number;
   delta_imponibile?: number;
+  // true se l'abbinamento viene da un alias prodotto già confermato in una
+  // verifica precedente (FASE 0), non da codice/nome/quantità+imponibile di
+  // questa analisi: usato dal chiamante per aggiornare match_count/ultimo_match
+  // sull'alias quando l'esito viene salvato.
+  viaAlias?: string; // id della riga in prodotti_alias usata per l'abbinamento
 };
 
 export type ConfrontoOpts = {
@@ -261,25 +285,87 @@ function gruppoImponibile(gruppo: PDFRiga[], fallbackPezziPerCartone: number): n
   return gruppo.reduce((s, p) => s + pdfImponibileRiga(p, fallbackPezziPerCartone), 0);
 }
 
-/** Prezzo netto per pezzo e pezzi totali calcolati SEMPRE da prezzo/cartone e
- *  sconti (mai dall'importo_riga dichiarato): è un controllo indipendente
- *  dall'imponibile dichiarato, altrimenti diventerebbe tautologico (se la
- *  conferma dichiara un importo_riga che "per caso" torna, un prezzo/cartone
- *  sbagliato non verrebbe mai rilevato). */
+// Sopra questo scarto RELATIVO tra il candidato più vicino e l'imponibile di
+// riga dichiarato, nessuna delle 4 interpretazioni è nemmeno lontanamente
+// plausibile: il dato è internamente incoerente in un modo che le 4
+// combinazioni modellate non spiegano, va segnalato come "unità non
+// determinabile" invece di scegliere comunque il candidato meno peggio.
+// Soglia volutamente larga: un errore di battitura o un vero disallineamento
+// sul totale dichiarato (non un problema di unità) resta comunque sotto
+// questa soglia — va scelto il candidato più vicino e lasciato emergere come
+// prezzo_diff/imponibile_diff, non mascherato da "non determinabile".
+const SOGLIA_RELATIVA_UNITA_INDETERMINABILE = 0.5;
+
+/** Le quattro interpretazioni possibili del campo prezzo_per_cartone di UNA
+ *  riga conferma: il fornitore può esprimerlo per PEZZO o per CARTONE, già
+ *  NETTO (sconti compresi) o LORDO (sconti ancora da applicare in cascata).
+ *  Il nome del campo non garantisce quale delle quattro sia — vedi
+ *  deduciPrezzoPerPezzoRiga, che sceglie in base all'imponibile dichiarato. */
+function candidatiPrezzoPerPezzo(p: PDFRiga, ppc: number): number[] {
+  const raw = p.prezzo_per_cartone;
+  const sconto = scontoFattore(p.sc1 || 0, p.sc2 || 0, p.sc3 || 0);
+  return [
+    (raw / ppc) * sconto, // per cartone, lordo + sconti a cascata (assunzione storica)
+    raw / ppc, // per cartone, già netto (sconti ignorati: già inclusi)
+    raw * sconto, // per pezzo, lordo + sconti a cascata
+    raw, // per pezzo, già netto
+  ];
+}
+
+/** Deduce il prezzo netto/pezzo di UNA riga conferma provando le quattro
+ *  interpretazioni possibili e scegliendo quella il cui imponibile
+ *  (prezzo × pezzi) riproduce più fedelmente l'imponibile di riga dichiarato
+ *  dal documento — il dato più affidabile perché non richiede assumere alcuna
+ *  unità. Senza imponibile di riga dichiarato non c'è modo di verificare
+ *  quale interpretazione sia corretta: si mantiene il comportamento storico
+ *  (per cartone, lordo con sconti a cascata), il più comune tra i fornitori
+ *  finora integrati — resta comunque soggetto al confronto col prezzo CRM
+ *  subito dopo, quindi un'assunzione sbagliata continua a essere rilevabile
+ *  quando esiste un imponibile CRM indipendente con cui non torna. */
+function deduciPrezzoPerPezzoRiga(
+  p: PDFRiga,
+  ppc: number,
+  pezzi: number
+): { prezzoPerPezzo: number; indeterminabile: boolean } {
+  const candidati = candidatiPrezzoPerPezzo(p, ppc);
+  if (typeof p.importo_riga !== "number" || p.importo_riga <= 0 || pezzi <= 0) {
+    return { prezzoPerPezzo: candidati[0], indeterminabile: false };
+  }
+  let migliore = candidati[0];
+  let scartoMinimo = Infinity;
+  candidati.forEach((prezzo) => {
+    const scarto = Math.abs(prezzo * pezzi - (p.importo_riga as number));
+    if (scarto < scartoMinimo) {
+      scartoMinimo = scarto;
+      migliore = prezzo;
+    }
+  });
+  const scartoRelativo = scartoMinimo / p.importo_riga;
+  return { prezzoPerPezzo: migliore, indeterminabile: scartoRelativo > SOGLIA_RELATIVA_UNITA_INDETERMINABILE };
+}
+
+/** Prezzo netto per pezzo e pezzi totali di un GRUPPO di righe conferma:
+ *  ciascuna riga deduce la propria unità indipendentemente (vedi
+ *  deduciPrezzoPerPezzoRiga) prima di sommare — un gruppo è indeterminabile
+ *  se lo è anche una sola delle righe che lo compongono, perché a quel punto
+ *  il netto/pezzo aggregato non sarebbe più affidabile. */
 function gruppoPrezzoNettoPerPezzo(
   gruppo: PDFRiga[],
   fallbackPezziPerCartone: number
-): { pezzi: number; nettoPerPezzo: number } {
+): { pezzi: number; nettoPerPezzo: number; indeterminabile: boolean } {
   let pezzi = 0;
   let imponibileDaPrezzo = 0;
+  let indeterminabile = false;
   gruppo.forEach((p) => {
     if (p.is_omaggio) return;
     const ppc = pezziPerCartoneRiga(p, fallbackPezziPerCartone);
     const pz = p.quantita_cartoni * ppc;
     pezzi += pz;
-    imponibileDaPrezzo += pz * (p.prezzo_per_cartone / ppc) * scontoFattore(p.sc1 || 0, p.sc2 || 0, p.sc3 || 0);
+    const dedotto = deduciPrezzoPerPezzoRiga(p, ppc, pz);
+    if (dedotto.indeterminabile) indeterminabile = true;
+    imponibileDaPrezzo += pz * dedotto.prezzoPerPezzo;
   });
-  return { pezzi, nettoPerPezzo: pezzi > 0 ? imponibileDaPrezzo / pezzi : 0 };
+  return { pezzi, nettoPerPezzo: pezzi > 0 ? imponibileDaPrezzo / pezzi : 0, indeterminabile };
 }
 
 function confrontoRigaGruppo(
@@ -338,15 +424,22 @@ function confrontoRigaGruppo(
 
   // 3) Prezzo — confronto sul NETTO PER PEZZO, non per cartone: il pezzo è
   // l'unica unità di misura sempre coerente tra i due lati quando i formati
-  // di cartone differiscono. La conferma espone spesso il prezzo di listino
-  // con gli sconti a parte, mentre il CRM registra a volte il prezzo già
-  // scontato con sc1/sc2/sc3 a 0: confrontare grandezze diverse (lordo vs
-  // netto) genera differenze inesistenti. Calcolato SEMPRE da prezzo×sconti,
-  // mai dall'importo_riga dichiarato (vedi gruppoPrezzoNettoPerPezzo).
+  // di cartone differiscono. Il fornitore può esprimere il prezzo per pezzo o
+  // per cartone, lordo o già netto: MAI assumerlo, va dedotto riga per riga
+  // dall'imponibile dichiarato (vedi deduciPrezzoPerPezzoRiga). Se nessuna
+  // interpretazione riproduce l'imponibile dichiarato, l'unità non è
+  // determinabile: segnalarlo invece di confrontare un prezzo indovinato a
+  // caso e inventare una differenza (o una coincidenza) inesistente.
   if (!crm.is_omaggio && !pdfOmaggio) {
     const crmNettoPerPezzo = crm.prezzo_unitario * scontoFattore(crm.sc1, crm.sc2, crm.sc3);
-    const { nettoPerPezzo: pdfNettoPerPezzo } = gruppoPrezzoNettoPerPezzo(pdfGruppo, fallback);
-    if (!withinAbs(crmNettoPerPezzo, pdfNettoPerPezzo, opts.tolleranzaPrezzoEuro)) {
+    const { nettoPerPezzo: pdfNettoPerPezzo, indeterminabile } = gruppoPrezzoNettoPerPezzo(pdfGruppo, fallback);
+    if (indeterminabile) {
+      diffs.push(
+        "Unità prezzo non determinabile: nessuna interpretazione (per pezzo/per cartone, lordo/netto) del prezzo dichiarato in conferma riproduce l'imponibile di riga del documento — verifica manuale necessaria"
+      );
+      if (stato === "ok") stato = "unita_incerta";
+      gravita = "error";
+    } else if (!withinAbs(crmNettoPerPezzo, pdfNettoPerPezzo, opts.tolleranzaPrezzoEuro)) {
       diffs.push(
         `Prezzo netto/pz CRM € ${crmNettoPerPezzo.toFixed(5)} (€ ${crm.prezzo_unitario.toFixed(2)}/pz, sc ${crm.sc1}/${crm.sc2}/${crm.sc3}) vs conferma € ${pdfNettoPerPezzo.toFixed(5)}`
       );
@@ -402,12 +495,51 @@ function confrontoRigaGruppo(
 export function confrontaOrdine(
   crmRighe: CRMRiga[],
   pdfRighe: PDFRiga[],
-  opts?: ConfrontoOpts
+  opts?: ConfrontoOpts,
+  aliasNoti?: AliasProdotto[]
 ): ConfrontoEsito {
   const o: Required<ConfrontoOpts> = { ...DEFAULTS, ...opts };
 
   const usedPdf = new Set<number>();
   const risultati: (RigaEsito | undefined)[] = new Array(crmRighe.length).fill(undefined);
+
+  // FASE 0 — ALIAS GIÀ CONFERMATI (prodotti_alias). Se in una verifica
+  // precedente per questa STESSA azienda fornitrice l'utente ha già confermato
+  // manualmente che un prodotto CRM corrisponde a un certo codice/descrizione
+  // fornitore (tipicamente perché codice e nome non erano comparabili tra i
+  // due lati, vedi FASE 3), va riconosciuto qui in automatico, prima di
+  // qualunque euristica: non è più un'ipotesi da riproporre, è un dato certo.
+  // Lo scoping per azienda è responsabilità del chiamante (aliasNoti contiene
+  // solo gli alias di QUESTA azienda).
+  if (aliasNoti && aliasNoti.length > 0) {
+    const aliasPerProdotto = new Map<string, AliasProdotto>();
+    aliasNoti.forEach((a) => aliasPerProdotto.set(a.prodotto_id, a));
+    crmRighe.forEach((c, ci) => {
+      if (risultati[ci] || !c.prodotto_id) return;
+      const alias = aliasPerProdotto.get(c.prodotto_id);
+      if (!alias) return;
+      const codiceAlias = normalizeCodice(alias.codice_fornitore);
+      const descrizioneAlias = normalize(alias.descrizione_fornitore);
+
+      let gruppo: number[] = [];
+      if (codiceAlias) {
+        pdfRighe.forEach((p, pi) => {
+          if (usedPdf.has(pi)) return;
+          const codePdf = normalizeCodice(p.codice_prodotto);
+          if (codePdf && codiciCombaciano(codiceAlias, codePdf)) gruppo.push(pi);
+        });
+      }
+      if (gruppo.length === 0 && descrizioneAlias) {
+        const pi = pdfRighe.findIndex((p, i) => !usedPdf.has(i) && normalize(p.nome_prodotto) === descrizioneAlias);
+        if (pi >= 0) gruppo = [pi];
+      }
+      if (gruppo.length > 0) {
+        gruppo.forEach((pi) => usedPdf.add(pi));
+        risultati[ci] = confrontoRigaGruppo(c, gruppo.map((pi) => pdfRighe[pi]), 1, o);
+        risultati[ci]!.viaAlias = alias.id;
+      }
+    });
+  }
 
   // FASE 1 — matching per CODICE, chiave PRIMARIA. I nomi prodotto tra CRM e
   // conferma possono essere scritti in modo completamente diverso (sigle
@@ -415,6 +547,7 @@ export function confrontaOrdine(
   // codice articolo è lo stesso dato con al più del rumore di formattazione
   // (spazi, punteggiatura, un prefisso anteposto dal fornitore).
   crmRighe.forEach((c, ci) => {
+    if (risultati[ci]) return; // già risolto in FASE 0 (alias confermato)
     const codeCrm = normalizeCodice(c.prodotto_codice);
     if (!codeCrm) return; // nessun codice CRM: si prova col nome in fase 2
 

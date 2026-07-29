@@ -733,6 +733,66 @@ export type Database = {
           },
         ]
       }
+      prodotti_alias: {
+        Row: {
+          azienda_id: string
+          codice_fornitore: string | null
+          created_at: string
+          descrizione_fornitore: string | null
+          id: string
+          match_count: number
+          note: string | null
+          prodotto_id: string
+          source: string
+          ultimo_match: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id: string
+          codice_fornitore?: string | null
+          created_at?: string
+          descrizione_fornitore?: string | null
+          id?: string
+          match_count?: number
+          note?: string | null
+          prodotto_id: string
+          source?: string
+          ultimo_match?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string
+          codice_fornitore?: string | null
+          created_at?: string
+          descrizione_fornitore?: string | null
+          id?: string
+          match_count?: number
+          note?: string | null
+          prodotto_id?: string
+          source?: string
+          ultimo_match?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prodotti_alias_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prodotti_alias_prodotto_id_fkey"
+            columns: ["prodotto_id"]
+            isOneToOne: false
+            referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_products: {
         Row: {
           agente_concorrente: string | null
