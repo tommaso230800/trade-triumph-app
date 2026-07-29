@@ -6,7 +6,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,8 +17,9 @@ import {
 import { MoreHorizontal, CheckCircle2, Loader2, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import type { Ordine } from "@/hooks/useOrdini";
-import { formatCurrency, statusConfig } from "./ordiniShared";
+import { formatCurrency, formatNumberIT, numeroRigheOrdine, scattoStatusBadge } from "./ordiniShared";
 import type { OrdineCardAction } from "./OrdineCard";
+import { aziendaDotClass } from "@/lib/aziendaColor";
 
 export interface OrdiniTableRow {
   ordine: Ordine;
@@ -41,56 +41,67 @@ interface OrdiniTableProps {
 
 export function OrdiniTable({ rows, showStandByColumns }: OrdiniTableProps) {
   return (
-    <div className="hidden overflow-hidden rounded-xl border border-border bg-card shadow-card md:block">
+    <div className="hidden overflow-hidden rounded-2xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_rgba(32,20,15,0.05)] md:block">
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead>ID Ordine</TableHead>
-            <TableHead>Cliente</TableHead>
+          <TableRow className="border-scatto-line bg-scatto-bg hover:bg-scatto-bg hover:shadow-none">
+            <TableHead className="font-bold uppercase tracking-wide text-scatto-muted">ID Ordine</TableHead>
+            <TableHead className="font-bold uppercase tracking-wide text-scatto-muted">Cliente</TableHead>
             {showStandByColumns ? (
               <>
-                <TableHead>Motivo</TableHead>
-                <TableHead>Prodotto bloccato</TableHead>
-                <TableHead>Data prevista</TableHead>
+                <TableHead className="font-bold uppercase tracking-wide text-scatto-muted">Motivo</TableHead>
+                <TableHead className="font-bold uppercase tracking-wide text-scatto-muted">Prodotto bloccato</TableHead>
+                <TableHead className="font-bold uppercase tracking-wide text-scatto-muted">Data prevista</TableHead>
               </>
             ) : (
               <>
-                <TableHead>Prodotti</TableHead>
-                <TableHead>Pagamento</TableHead>
-                <TableHead>Data</TableHead>
+                <TableHead className="font-bold uppercase tracking-wide text-scatto-muted">Prodotti</TableHead>
+                <TableHead className="font-bold uppercase tracking-wide text-scatto-muted">Pagamento</TableHead>
+                <TableHead className="font-bold uppercase tracking-wide text-scatto-muted">Data</TableHead>
               </>
             )}
-            <TableHead className="text-right">Totale</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-12 text-right">Azioni</TableHead>
+            <TableHead className="text-right font-bold uppercase tracking-wide text-scatto-muted">Totale</TableHead>
+            <TableHead className="font-bold uppercase tracking-wide text-scatto-muted">Status</TableHead>
+            <TableHead className="w-12 text-right font-bold uppercase tracking-wide text-scatto-muted">Azioni</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map(({ ordine, muted, actions, primaryAction, giorniInStandBy }) => {
-            const status = statusConfig[ordine.status];
-            const verificato = Boolean((ordine as { verificato_conferma?: boolean }).verificato_conferma);
+            const verificato = Boolean(ordine.verificato_conferma);
+            const status = scattoStatusBadge[ordine.status];
             return (
-              <TableRow key={ordine.id} className={muted ? "opacity-70" : "hover:bg-muted/30 transition-colors"}>
-                <TableCell className="font-mono text-xs font-medium text-primary">
+              <TableRow
+                key={ordine.id}
+                className={`border-scatto-line hover:bg-scatto-bg/60 hover:shadow-none ${muted ? "opacity-60" : ""}`}
+              >
+                <TableCell className="text-xs font-bold text-scatto-accent">
                   {ordine.codice}
                   {giorniInStandBy !== undefined && giorniInStandBy > 0 && (
-                    <div className="mt-0.5 text-[10px] text-muted-foreground">
+                    <div className="mt-0.5 text-[10px] font-normal text-scatto-muted">
                       {giorniInStandBy}g in stand-by
                     </div>
                   )}
                 </TableCell>
-                <TableCell className={`font-medium ${muted ? "text-muted-foreground" : "text-card-foreground"}`}>
-                  {ordine.clienti?.nome || "—"}
+                <TableCell className={`font-bold ${muted ? "text-scatto-muted" : "text-scatto-ink"}`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${aziendaDotClass(ordine.azienda_id)}`} />
+                    {ordine.clienti?.nome || "—"}
+                  </div>
+                  {ordine.aziende?.nome && (
+                    <div className="mt-0.5 pl-4 text-xs font-normal text-scatto-muted">{ordine.aziende.nome}</div>
+                  )}
                 </TableCell>
                 {showStandByColumns ? (
                   <>
                     <TableCell>
-                      <Badge variant="warning">{ordine.stand_by_motivo || "Stand-by"}</Badge>
+                      <span className="rounded-full bg-scatto-warning px-2.5 py-0.5 text-[11px] font-extrabold text-white">
+                        {ordine.stand_by_motivo || "Stand-by"}
+                      </span>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
+                    <TableCell className="text-sm text-scatto-muted">
                       {ordine.stand_by_prodotto_bloccato || "—"}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-sm text-scatto-ink">
                       {ordine.stand_by_data_prevista
                         ? format(new Date(ordine.stand_by_data_prevista), "dd/MM/yyyy")
                         : "—"}
@@ -98,29 +109,33 @@ export function OrdiniTable({ rows, showStandByColumns }: OrdiniTableProps) {
                   </>
                 ) : (
                   <>
-                    <TableCell className="text-muted-foreground">{ordine.prodotti} articoli</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{ordine.tipo_pagamento || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-scatto-muted">
+                      {numeroRigheOrdine(ordine)} prodotti · {formatNumberIT(ordine.prodotti)} pz
+                    </TableCell>
+                    <TableCell className="text-sm text-scatto-muted">{ordine.tipo_pagamento || "—"}</TableCell>
+                    <TableCell className="text-scatto-ink">
                       {format(new Date(ordine.data_ordine || ordine.created_at), "dd/MM/yyyy")}
                     </TableCell>
                   </>
                 )}
                 <TableCell
-                  className={`text-right font-semibold tabular-nums ${
-                    muted ? "text-muted-foreground line-through" : ""
+                  className={`text-right font-extrabold tabular-nums ${
+                    muted ? "text-scatto-muted line-through" : "text-scatto-ink"
                   }`}
                 >
                   {formatCurrency(Number(ordine.totale))}
                 </TableCell>
                 <TableCell>
-                  <div className="flex flex-wrap items-center gap-1">
-                    <Badge variant={status.variant}>{status.label}</Badge>
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {verificato && (
-                      <Badge variant="success">
-                        <CheckCircle2 className="mr-1 h-3 w-3" />
+                      <span className="flex items-center gap-1 rounded-full bg-scatto-accent px-2.5 py-0.5 text-[11px] font-extrabold text-white">
+                        <CheckCircle2 className="h-3 w-3" />
                         Verif.
-                      </Badge>
+                      </span>
                     )}
+                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold text-white ${status.bg}`}>
+                      {status.label}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -128,8 +143,7 @@ export function OrdiniTable({ rows, showStandByColumns }: OrdiniTableProps) {
                     {primaryAction && (
                       <Button
                         size="sm"
-                        variant="success"
-                        className="gap-1"
+                        className="gap-1 bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90"
                         onClick={primaryAction.onClick}
                         disabled={primaryAction.pending}
                       >
@@ -143,19 +157,23 @@ export function OrdiniTable({ rows, showStandByColumns }: OrdiniTableProps) {
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" className="text-scatto-ink hover:bg-scatto-bg">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="border-scatto-line bg-scatto-surface text-scatto-ink">
                         {actions.map((action) => {
                           const Icon = action.icon;
                           return (
                             <div key={action.label}>
-                              {action.destructive && <DropdownMenuSeparator />}
+                              {action.destructive && <DropdownMenuSeparator className="bg-scatto-line" />}
                               <DropdownMenuItem
                                 onClick={action.onClick}
-                                className={action.destructive ? "text-destructive" : undefined}
+                                className={
+                                  action.destructive
+                                    ? "text-scatto-danger focus:bg-scatto-bg focus:text-scatto-danger"
+                                    : "focus:bg-scatto-bg focus:text-scatto-ink"
+                                }
                               >
                                 <Icon className="mr-2 h-4 w-4" />
                                 {action.label}

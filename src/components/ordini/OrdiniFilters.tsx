@@ -31,6 +31,9 @@ interface OrdiniFiltersProps {
   onMonthFiltersChange: (value: string[]) => void;
 }
 
+const inputCls =
+  "rounded-xl border-scatto-line bg-scatto-surface text-scatto-ink placeholder:text-scatto-muted focus-visible:ring-scatto-accent";
+
 export function OrdiniFilters({
   searchTerm,
   onSearchTermChange,
@@ -42,30 +45,30 @@ export function OrdiniFilters({
   return (
     <div className="flex flex-col gap-3 sm:flex-row">
       <div className="relative max-w-md flex-1">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-scatto-muted" />
         <Input
-          placeholder="Cerca per cliente, azienda o prodotto..."
-          className="pl-10"
+          placeholder="Cerca cliente, azienda o prodotto..."
+          className={`pl-10 ${inputCls}`}
           value={searchTerm}
           onChange={(e) => onSearchTermChange(e.target.value)}
         />
       </div>
       <Select value={statusFilter} onValueChange={(v) => onStatusFilterChange(v as Ordine["status"] | "tutti")}>
-        <SelectTrigger className="w-full sm:w-40">
+        <SelectTrigger className={`w-full sm:w-40 ${inputCls}`}>
           <Filter className="mr-2 h-4 w-4" />
           <SelectValue placeholder="Status" />
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="tutti">Tutti</SelectItem>
-          <SelectItem value="in_attesa">In Attesa</SelectItem>
-          <SelectItem value="stand_by">Stand-by</SelectItem>
-          <SelectItem value="spedito">Spedito</SelectItem>
-          <SelectItem value="completato">Completato</SelectItem>
-          <SelectItem value="annullato">Annullato</SelectItem>
+        <SelectContent className="border-scatto-line bg-scatto-surface text-scatto-ink">
+          <SelectItem value="tutti" className="focus:bg-scatto-bg focus:text-scatto-ink">Tutti</SelectItem>
+          <SelectItem value="in_attesa" className="focus:bg-scatto-bg focus:text-scatto-ink">In attesa</SelectItem>
+          <SelectItem value="stand_by" className="focus:bg-scatto-bg focus:text-scatto-ink">Stand-by</SelectItem>
+          <SelectItem value="spedito" className="focus:bg-scatto-bg focus:text-scatto-ink">Spedito</SelectItem>
+          <SelectItem value="completato" className="focus:bg-scatto-bg focus:text-scatto-ink">Completato</SelectItem>
+          <SelectItem value="annullato" className="focus:bg-scatto-bg focus:text-scatto-ink">Annullato</SelectItem>
         </SelectContent>
       </Select>
       <MultiSelect
-        className="w-full sm:w-64"
+        className={`w-full sm:w-64 ${inputCls}`}
         placeholder="Filtra per mese"
         values={monthFilters}
         onValuesChange={onMonthFiltersChange}

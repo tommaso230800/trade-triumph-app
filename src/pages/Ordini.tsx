@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import {
   useOrdini,
+  useOrdiniValoreMoM,
   useCreateOrdine,
   useUpdateOrdineStatus,
   useConfermaOrdineDaStandBy,
@@ -69,6 +70,7 @@ const Ordini = () => {
   const [documentiTarget, setDocumentiTarget] = useState<{ id: string; codice?: string } | null>(null);
 
   const { data: ordini, isLoading, isError, refetch } = useOrdini(searchTerm, statusFilter, monthFilters);
+  const { data: mom } = useOrdiniValoreMoM();
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
   const { data: allProdotti, refetch: refetchProdotti } = useProdotti();
@@ -144,6 +146,7 @@ const Ordini = () => {
     totale: ordiniAttivi.length,
     inAttesa: ordiniAttivi.filter((o) => o.status === "in_attesa").length,
     completati: ordiniAttivi.filter((o) => o.status === "completato").length,
+    daVerificare: ordiniAttivi.filter((o) => o.status === "completato" && !o.verificato_conferma).length,
     valoreTotale: ordiniAttivi.reduce((sum, o) => sum + Number(o.totale), 0),
     annullati: ordiniAnnullati.length,
     valoreAnnullato: ordiniAnnullati.reduce((sum, o) => sum + Number(o.totale), 0),
@@ -250,93 +253,118 @@ const Ordini = () => {
       <div className="space-y-6 animate-fade-in">
         <TransparencyBanner scope="ordini" />
 
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="page-title">Gestione Ordini</h1>
-            <p className="text-sm text-muted-foreground">Crea e gestisci gli ordini dei tuoi clienti</p>
+        {/* Direzione "Scatto": pannello con scope proprio (token --scatto-*,
+            non tocca il tema globale dell'app). */}
+        <div className="space-y-6 rounded-2xl bg-scatto-bg p-4 lg:p-6">
+          {/* Header */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-extrabold tracking-tight text-scatto-ink">Ordini</h1>
+              <p className="text-sm text-scatto-muted">Crea e gestisci gli ordini dei tuoi clienti</p>
+            </div>
+            <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2 rounded-xl border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg">
+                    <Upload className="h-4 w-4" />
+                    <span className="hidden sm:inline">Importa</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="border-scatto-line bg-scatto-surface text-scatto-ink">
+                  <DropdownMenuItem
+                    onClick={() => setIsMultiImportOpen(true)}
+                    className="focus:bg-scatto-bg focus:text-scatto-ink"
+                  >
+                    Carica più file ordini
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setIsImportPDFOpen(true)}
+                    className="focus:bg-scatto-bg focus:text-scatto-ink"
+                  >
+                    Importa singolo PDF/Excel
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                className="hidden gap-2 rounded-xl bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90 lg:inline-flex"
+                onClick={() => setIsDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Nuovo Ordine
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Upload className="h-4 w-4" />
-                  <span className="hidden sm:inline">Importa</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsMultiImportOpen(true)}>Carica più file ordini</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsImportPDFOpen(true)}>
-                  Importa singolo PDF/Excel
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Nuovo Ordine</span>
-              <span className="sm:hidden">Aggiungi</span>
-            </Button>
-          </div>
+
+          <OrdiniStatsRow stats={stats} mom={mom} isLoading={isLoading} />
+
+          <OrdiniFilters
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            monthFilters={monthFilters}
+            onMonthFiltersChange={setMonthFilters}
+          />
+
+          <OrdiniList
+            rows={attiviRows}
+            isLoading={isLoading}
+            isError={isError}
+            onRetry={() => refetch()}
+            emptyState={
+              hasActiveFilters
+                ? {
+                    icon: SearchX,
+                    title: "Nessun ordine corrisponde ai filtri",
+                    description: "Prova a modificare ricerca, stato o mese selezionato.",
+                    actionLabel: "Rimuovi filtri",
+                    onAction: resetFilters,
+                  }
+                : {
+                    icon: ShoppingCart,
+                    title: "Nessun ordine questo mese",
+                    description: "Crea il tuo primo ordine per iniziare.",
+                    actionLabel: "Crea ordine",
+                    onAction: () => setIsDialogOpen(true),
+                  }
+            }
+          />
+
+          {ordiniStandBy.length > 0 && (
+            <div className="space-y-3 border-t border-scatto-line pt-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <PauseCircle className="h-5 w-5 text-scatto-warning" />
+                <h2 className="text-base font-bold text-scatto-ink">Ordini in Stand-by ({ordiniStandBy.length})</h2>
+                <span className="text-sm text-scatto-muted">
+                  Valore sospeso (non in KPI): {formatCurrency(stats.valoreStandBy)}
+                </span>
+              </div>
+              <OrdiniList rows={standByRows} showStandByColumns />
+            </div>
+          )}
+
+          {ordiniAnnullati.length > 0 && (
+            <div className="space-y-3 border-t border-scatto-line pt-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Ban className="h-5 w-5 text-scatto-danger" />
+                <h2 className="text-base font-bold text-scatto-ink">Ordini Annullati ({ordiniAnnullati.length})</h2>
+                <span className="text-sm text-scatto-muted">Valore perso: {formatCurrency(stats.valoreAnnullato)}</span>
+              </div>
+              <OrdiniList rows={annullatiRows} />
+            </div>
+          )}
         </div>
 
-        <OrdiniStatsRow stats={stats} isLoading={isLoading} />
-
-        <OrdiniFilters
-          searchTerm={searchTerm}
-          onSearchTermChange={setSearchTerm}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          monthFilters={monthFilters}
-          onMonthFiltersChange={setMonthFilters}
-        />
-
-        <OrdiniList
-          rows={attiviRows}
-          isLoading={isLoading}
-          isError={isError}
-          onRetry={() => refetch()}
-          emptyState={
-            hasActiveFilters
-              ? {
-                  icon: SearchX,
-                  title: "Nessun ordine corrisponde ai filtri",
-                  description: "Prova a modificare ricerca, stato o mese selezionato.",
-                  actionLabel: "Rimuovi filtri",
-                  onAction: resetFilters,
-                }
-              : {
-                  icon: ShoppingCart,
-                  title: "Nessun ordine questo mese",
-                  description: "Crea il tuo primo ordine per iniziare.",
-                  actionLabel: "Crea ordine",
-                  onAction: () => setIsDialogOpen(true),
-                }
-          }
-        />
-
-        {ordiniStandBy.length > 0 && (
-          <div className="space-y-3 pt-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <PauseCircle className="h-5 w-5 text-warning" />
-              <h2 className="text-base font-semibold text-foreground">Ordini in Stand-by ({ordiniStandBy.length})</h2>
-              <span className="text-sm text-muted-foreground">
-                Valore sospeso (non in KPI): {formatCurrency(stats.valoreStandBy)}
-              </span>
-            </div>
-            <OrdiniList rows={standByRows} showStandByColumns />
-          </div>
-        )}
-
-        {ordiniAnnullati.length > 0 && (
-          <div className="space-y-3 pt-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Ban className="h-5 w-5 text-destructive" />
-              <h2 className="text-base font-semibold text-foreground">Ordini Annullati ({ordiniAnnullati.length})</h2>
-              <span className="text-sm text-muted-foreground">Valore perso: {formatCurrency(stats.valoreAnnullato)}</span>
-            </div>
-            <OrdiniList rows={annullatiRows} />
-          </div>
-        )}
+        {/* Azione principale raggiungibile col pollice su mobile: sopra la
+            bottom-nav (stesso breakpoint lg:hidden), non sotto/dietro. */}
+        <Button
+          size="icon"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-40 h-14 w-14 rounded-full bg-scatto-accent text-white shadow-glow hover:bg-scatto-accent/90 lg:hidden"
+          onClick={() => setIsDialogOpen(true)}
+          aria-label="Nuovo Ordine"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
 
         <NuovoOrdineDialog
           open={isDialogOpen}

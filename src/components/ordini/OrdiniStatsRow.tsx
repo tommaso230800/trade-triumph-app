@@ -1,61 +1,55 @@
-import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import { formatCurrency } from "./ordiniShared";
 
 interface OrdiniStatsRowProps {
   stats: {
     totale: number;
     inAttesa: number;
-    completati: number;
+    daVerificare: number;
     valoreTotale: number;
   };
+  mom?: { variazionePct: number | null };
   isLoading: boolean;
 }
 
-export function OrdiniStatsRow({ stats, isLoading }: OrdiniStatsRowProps) {
+export function OrdiniStatsRow({ stats, mom, isLoading }: OrdiniStatsRowProps) {
   if (isLoading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-[92px] w-full rounded-2xl lg:h-[104px]" />
-        <div className="grid grid-cols-3 gap-3">
-          <Skeleton className="h-[72px] rounded-2xl" />
-          <Skeleton className="h-[72px] rounded-2xl" />
-          <Skeleton className="h-[72px] rounded-2xl" />
-        </div>
-      </div>
-    );
+    return <Skeleton className="h-[132px] w-full rounded-2xl bg-scatto-surface" />;
   }
 
+  const variazione = mom?.variazionePct ?? null;
+  const inCrescita = variazione !== null && variazione > 0.05;
+  const inCalo = variazione !== null && variazione < -0.05;
+
   return (
-    <div className="space-y-3">
-      {/* Dato protagonista */}
-      <Card className="p-4 lg:p-6">
-        <p className="text-xs text-muted-foreground">Valore ordini attivi</p>
-        <p className="mt-1 text-3xl font-bold tracking-tight tabular-nums text-card-foreground lg:text-4xl">
+    <div className="overflow-hidden rounded-2xl border border-scatto-line bg-scatto-surface p-5 shadow-[0_1px_2px_rgba(32,20,15,0.05)]">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-scatto-muted">Valore ordini attivi</p>
+      <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <p className="text-[2.75rem] font-extrabold leading-none tracking-tighter tabular-nums text-scatto-ink lg:text-6xl">
           {formatCurrency(stats.valoreTotale)}
         </p>
-      </Card>
+        {variazione !== null && (inCrescita || inCalo) && (
+          <span
+            className={`flex items-center gap-0.5 rounded-full px-2 py-1 text-sm font-bold tabular-nums ${
+              inCrescita ? "bg-scatto-success/15 text-scatto-success" : "bg-scatto-danger/15 text-scatto-danger"
+            }`}
+          >
+            {inCrescita ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
+            {Math.abs(variazione).toFixed(1)}%
+          </span>
+        )}
+      </div>
 
-      {/* Dati di supporto */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="p-3 lg:p-4">
-          <p className="text-xs text-muted-foreground">Ordini</p>
-          <p className="mt-1 text-xl font-bold tabular-nums text-card-foreground lg:text-2xl">
-            {stats.totale}
-          </p>
-        </Card>
-        <Card className="p-3 lg:p-4">
-          <p className="text-xs text-muted-foreground">In attesa</p>
-          <p className="mt-1 text-xl font-bold tabular-nums text-warning lg:text-2xl">
-            {stats.inAttesa}
-          </p>
-        </Card>
-        <Card className="p-3 lg:p-4">
-          <p className="text-xs text-muted-foreground">Completati</p>
-          <p className="mt-1 text-xl font-bold tabular-nums text-success lg:text-2xl">
-            {stats.completati}
-          </p>
-        </Card>
+      <div className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-scatto-line pt-3 text-xs text-scatto-muted">
+        <span className="font-bold tabular-nums text-scatto-ink">{stats.totale}</span>
+        <span>ordini</span>
+        <span>·</span>
+        <span className="font-bold tabular-nums text-scatto-warning">{stats.inAttesa}</span>
+        <span>in attesa</span>
+        <span>·</span>
+        <span className="font-bold tabular-nums text-scatto-accent">{stats.daVerificare}</span>
+        <span>da verificare</span>
       </div>
     </div>
   );

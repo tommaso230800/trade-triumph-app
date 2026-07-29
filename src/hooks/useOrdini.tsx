@@ -21,6 +21,7 @@ export type Ordine = {
   stand_by_note?: string | null;
   stand_by_data_inizio?: string | null;
   data_conferma?: string | null;
+  verificato_conferma?: boolean;
   provvigione_pagata: boolean;
   stato_provvigione: "da_pagare" | "pagata" | "parziale" | "contestazione" | "scaduta";
   importo_provvigione_pagata: number;
@@ -31,6 +32,7 @@ export type Ordine = {
   data_ordine: string | null;
   clienti?: { nome: string; azienda: string | null } | null;
   aziende?: { nome: string } | null;
+  ordini_righe?: { count: number }[];
 };
 
 export function useOrdini(
@@ -89,7 +91,8 @@ export function useOrdini(
         .select(`
           *,
           clienti (nome, azienda),
-          aziende (nome)
+          aziende (nome),
+          ordini_righe (count)
         `)
         .order("data_ordine", { ascending: false });
 
@@ -114,6 +117,46 @@ export function useOrdini(
       const { data, error } = await query;
       if (error) throw error;
       return data as Ordine[];
+    },
+  });
+}
+
+// Confronto mese corrente vs mese scorso sul valore ordini (non annullati),
+// per il trend nella riga statistiche di Ordini: query indipendente dai
+// filtri della lista, sempre sul calendario reale, non sui dati business
+// (nessun calcolo di provvigioni/ordini coinvolto, solo una somma di totale).
+export function useOrdiniValoreMoM() {
+  return useQuery({
+    queryKey: ["ordini_valore_mom"],
+    queryFn: async () => {
+      const now = new Date();
+      const inizioMeseCorrente = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)).toISOString().slice(0, 10);
+      const inizioMeseProssimo = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1)).toISOString().slice(0, 10);
+      const inizioMeseScorso = new Date(Date.UTC(now.getFullYear(), now.getMonth() - 1, 1)).toISOString().slice(0, 10);
+
+      const [correnteRes, scorsoRes] = await Promise.all([
+        supabase
+          .from("ordini")
+          .select("totale")
+          .neq("status", "annullato")
+          .gte("data_ordine", inizioMeseCorrente)
+          .lt("data_ordine", inizioMeseProssimo),
+        supabase
+          .from("ordini")
+          .select("totale")
+          .neq("status", "annullato")
+          .gte("data_ordine", inizioMeseScorso)
+          .lt("data_ordine", inizioMeseCorrente),
+      ]);
+      if (correnteRes.error) throw correnteRes.error;
+      if (scorsoRes.error) throw scorsoRes.error;
+
+      const valoreMeseCorrente = (correnteRes.data || []).reduce((s, o) => s + Number(o.totale || 0), 0);
+      const valoreMeseScorso = (scorsoRes.data || []).reduce((s, o) => s + Number(o.totale || 0), 0);
+      const variazionePct =
+        valoreMeseScorso > 0 ? ((valoreMeseCorrente - valoreMeseScorso) / valoreMeseScorso) * 100 : null;
+
+      return { valoreMeseCorrente, valoreMeseScorso, variazionePct };
     },
   });
 }

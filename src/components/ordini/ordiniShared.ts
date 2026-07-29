@@ -9,6 +9,17 @@ export const statusConfig: Record<Ordine["status"], { label: string; variant: No
   stand_by: { label: "Stand-by", variant: "warning" },
 };
 
+// Badge di stato nella direzione "Scatto" (Ordini): pillola piena e decisa
+// (non outline), testo bianco sopra il colore semantico — coerente col
+// carattere energico/glanceable della pagina.
+export const scattoStatusBadge: Record<Ordine["status"], { label: string; bg: string }> = {
+  completato: { label: "Completato", bg: "bg-scatto-success" },
+  in_attesa: { label: "In attesa", bg: "bg-scatto-warning" },
+  spedito: { label: "Spedito", bg: "bg-scatto-info" },
+  annullato: { label: "Annullato", bg: "bg-scatto-danger" },
+  stand_by: { label: "Stand-by", bg: "bg-scatto-warning" },
+};
+
 export const TIPI_PAGAMENTO = [
   "Anticipato",
   "Contanti",
@@ -19,6 +30,14 @@ export const TIPI_PAGAMENTO = [
 
 export const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+
+// Intl.NumberFormat("it-IT") non raggruppa le migliaia sotto i 5 cifre (es. 1014 -> "1014"),
+// quindi raggruppiamo a mano per avere sempre "1.014" come da convenzione italiana.
+export const formatNumberIT = (value: number) =>
+  Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+export const numeroRigheOrdine = (ordine: Pick<Ordine, "ordini_righe">) =>
+  ordine.ordini_righe?.[0]?.count ?? 0;
 
 export const parseDecimalInput = (value: string): number => {
   const normalized = value.replace(",", ".");

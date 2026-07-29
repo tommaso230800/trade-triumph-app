@@ -57,6 +57,33 @@
     --accent-green: 150 75% 48%;
     --accent-yellow: 46 100% 56%;
 
+    /* Identità azienda: palette fissa di 8 tinte, assegnata per hash dell'id
+       azienda (vedi src/lib/aziendaColor.ts). Tinte scelte a distanza dagli
+       hue di stato (successo/attesa/errore/info) per non essere confuse con
+       un significato di stato: sono pura identificazione visiva. */
+    --azienda-1: 90 40% 38%;
+    --azienda-2: 185 55% 36%;
+    --azienda-3: 200 60% 44%;
+    --azienda-4: 250 55% 58%;
+    --azienda-5: 275 50% 55%;
+    --azienda-6: 300 45% 52%;
+    --azienda-7: 320 55% 54%;
+    --azienda-8: 340 55% 54%;
+
+    /* Direzione "Scatto": palette scoperta SOLO dai componenti della pagina
+       Ordini (pilota del redesign). Non tocca --background/--card ecc. usati
+       dal resto dell'app: nessun'altra pagina la referenzia. */
+    --scatto-bg: 28 65% 95%;
+    --scatto-surface: 0 0% 100%;
+    --scatto-ink: 18 36% 9%;
+    --scatto-muted: 26 12% 56%;
+    --scatto-line: 27 42% 86%;
+    --scatto-accent: 336 74% 56%;
+    --scatto-success: 144 47% 46%;
+    --scatto-warning: 39 75% 56%;
+    --scatto-danger: 0 64% 55%;
+    --scatto-info: 214 68% 54%;
+
     /* Sidebar */
     --sidebar-background: 222 36% 5%;
     --sidebar-foreground: 0 0% 92%;

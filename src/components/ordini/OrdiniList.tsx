@@ -24,24 +24,29 @@ interface OrdiniListProps {
 export function OrdiniList({ rows, showStandByColumns, isLoading, isError, onRetry, emptyState }: OrdiniListProps) {
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        <Skeleton className="h-20 w-full rounded-xl" />
-        <Skeleton className="h-20 w-full rounded-xl" />
-        <Skeleton className="h-20 w-full rounded-xl" />
+      <div className="space-y-3 md:hidden">
+        <Skeleton className="h-24 w-full rounded-2xl bg-scatto-surface" />
+        <Skeleton className="h-24 w-full rounded-2xl bg-scatto-surface" />
+        <Skeleton className="h-24 w-full rounded-2xl bg-scatto-surface" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card py-12 text-center">
-        <AlertCircle className="h-8 w-8 text-destructive" />
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-scatto-line bg-scatto-surface py-12 text-center">
+        <AlertCircle className="h-8 w-8 text-scatto-danger" />
         <div>
-          <p className="text-sm font-medium text-card-foreground">Non è stato possibile caricare gli ordini</p>
-          <p className="mt-1 text-xs text-muted-foreground">Controlla la connessione e riprova.</p>
+          <p className="text-sm font-bold text-scatto-ink">Non è stato possibile caricare gli ordini</p>
+          <p className="mt-1 text-xs text-scatto-muted">Controlla la connessione e riprova.</p>
         </div>
         {onRetry && (
-          <Button variant="outline" size="sm" onClick={onRetry}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-scatto-accent font-bold text-scatto-accent hover:bg-scatto-accent/10"
+            onClick={onRetry}
+          >
             Riprova
           </Button>
         )}
@@ -52,12 +57,16 @@ export function OrdiniList({ rows, showStandByColumns, isLoading, isError, onRet
   if (rows.length === 0 && emptyState) {
     const Icon = emptyState.icon;
     return (
-      <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card py-12 text-center">
-        <Icon className="h-8 w-8 text-muted-foreground" />
-        <p className="text-sm font-medium text-card-foreground">{emptyState.title}</p>
-        {emptyState.description && <p className="text-xs text-muted-foreground">{emptyState.description}</p>}
+      <div className="flex flex-col items-center gap-2 rounded-2xl border border-scatto-line bg-scatto-surface py-12 text-center">
+        <Icon className="h-8 w-8 text-scatto-muted" />
+        <p className="text-sm font-bold text-scatto-ink">{emptyState.title}</p>
+        {emptyState.description && <p className="text-xs text-scatto-muted">{emptyState.description}</p>}
         {emptyState.actionLabel && emptyState.onAction && (
-          <Button size="sm" className="mt-2" onClick={emptyState.onAction}>
+          <Button
+            size="sm"
+            className="mt-2 bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90"
+            onClick={emptyState.onAction}
+          >
             {emptyState.actionLabel}
           </Button>
         )}
