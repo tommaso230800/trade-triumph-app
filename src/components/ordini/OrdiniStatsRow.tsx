@@ -41,15 +41,20 @@ export function OrdiniStatsRow({ stats, mom, isLoading }: OrdiniStatsRowProps) {
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-scatto-line pt-3 text-xs text-scatto-muted">
-        <span className="font-bold tabular-nums text-scatto-ink">{stats.totale}</span>
-        <span>ordini</span>
-        <span>·</span>
-        <span className="font-bold tabular-nums text-scatto-warning">{stats.inAttesa}</span>
-        <span>in attesa</span>
-        <span>·</span>
-        <span className="font-bold tabular-nums text-scatto-accent">{stats.daVerificare}</span>
-        <span>da verificare</span>
+      <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-scatto-line pt-3">
+        <span className="rounded-full bg-scatto-success/15 px-2.5 py-1 text-xs font-bold tabular-nums text-scatto-success">
+          {stats.totale} ordini
+        </span>
+        {stats.inAttesa > 0 && (
+          <span className="rounded-full bg-scatto-warning/15 px-2.5 py-1 text-xs font-bold tabular-nums text-scatto-warning">
+            {stats.inAttesa} in attesa
+          </span>
+        )}
+        {stats.daVerificare > 0 && (
+          <span className="rounded-full bg-scatto-danger/15 px-2.5 py-1 text-xs font-bold tabular-nums text-scatto-danger">
+            {stats.daVerificare} da verificare
+          </span>
+        )}
       </div>
     </div>
   );

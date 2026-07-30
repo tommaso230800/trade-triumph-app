@@ -8,10 +8,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, MoreHorizontal, CheckCircle2, Loader2, type LucideIcon } from "lucide-react";
+import { ChevronDown, MoreHorizontal, CheckCircle2, Check, Loader2, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
+import { it } from "date-fns/locale";
 import type { Ordine } from "@/hooks/useOrdini";
-import { formatCurrency, formatNumberIT, numeroRigheOrdine, scattoStatusBadge } from "./ordiniShared";
+import {
+  formatCurrency,
+  formatNumberIT,
+  getIniziali,
+  numeroRigheOrdine,
+  scattoStatusBadge,
+  scattoVerificatoBadgeClass,
+} from "./ordiniShared";
 import { aziendaDotClass } from "@/lib/aziendaColor";
 
 export interface OrdineCardAction {
@@ -39,6 +47,7 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
   const verificato = Boolean(ordine.verificato_conferma);
   const aziendaNome = ordine.aziende?.nome;
   const status = scattoStatusBadge[ordine.status];
+  const aziendaClass = aziendaDotClass(ordine.azienda_id);
 
   return (
     <div
@@ -48,57 +57,63 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
     >
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
-          <button type="button" className="group flex w-full items-start justify-between gap-3 p-5 text-left touch-target">
+          <button type="button" className="group flex w-full items-start gap-3 p-4 text-left touch-target">
+            <div className="relative flex-shrink-0">
+              <div className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-white ${aziendaClass}`}>
+                {getIniziali(ordine.clienti?.nome)}
+              </div>
+              {verificato && (
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-scatto-surface bg-scatto-success">
+                  <Check className="h-2.5 w-2.5 text-white" />
+                </span>
+              )}
+            </div>
+
             <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${aziendaDotClass(ordine.azienda_id)}`} />
-                <p className={`truncate text-base font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
+              <div className="flex items-start justify-between gap-2">
+                <p className={`truncate text-[15px] font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
                   {ordine.clienti?.nome || "—"}
                 </p>
+                <p className={`flex-shrink-0 text-lg font-extrabold tabular-nums tracking-tight ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
+                  {formatCurrency(Number(ordine.totale))}
+                </p>
               </div>
-              <div className="mt-1 flex min-w-0 items-center gap-1.5 pl-4 text-xs text-scatto-muted">
-                <span className="shrink-0">{ordine.codice}</span>
+              <p className="mt-0.5 truncate text-xs text-scatto-muted">
+                {ordine.codice} · {numeroRigheOrdine(ordine)} prodotti · {formatNumberIT(ordine.prodotti)} pz
+              </p>
+
+              <div className="mt-2.5 flex items-center gap-2 border-t border-scatto-line pt-2.5">
                 {aziendaNome && (
-                  <>
-                    <span className="shrink-0">·</span>
+                  <span className="flex min-w-0 items-center gap-1.5 text-xs text-scatto-muted">
+                    <span className={`h-2 w-2 flex-shrink-0 rounded-full ${aziendaClass}`} />
                     <span className="truncate">{aziendaNome}</span>
-                  </>
+                  </span>
                 )}
-              </div>
-              <div className="mt-2 flex items-center gap-1.5 pl-4">
-                {verificato && (
-                  <span className="flex items-center gap-1 rounded-full bg-scatto-success px-2.5 py-0.5 text-[11px] font-extrabold text-white">
+                <span className="flex-shrink-0 text-xs text-scatto-muted">
+                  {format(new Date(ordine.data_ordine || ordine.created_at), "d MMM", { locale: it })}
+                </span>
+                {verificato ? (
+                  <span className={`ml-auto flex flex-shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${scattoVerificatoBadgeClass}`}>
                     <CheckCircle2 className="h-3 w-3" />
                     Verificato
                   </span>
+                ) : (
+                  <span className={`ml-auto flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${status.className}`}>
+                    {status.label}
+                  </span>
                 )}
-                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold text-white ${status.bg}`}>
-                  {status.label}
-                </span>
               </div>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              <p className={`text-xl font-extrabold tabular-nums tracking-tight ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
-                {formatCurrency(Number(ordine.totale))}
-              </p>
-              <ChevronDown className="h-4 w-4 shrink-0 text-scatto-muted transition-transform group-data-[state=open]:rotate-180" />
-            </div>
+
+            <ChevronDown className="mt-1 h-4 w-4 flex-shrink-0 text-scatto-muted transition-transform group-data-[state=open]:rotate-180" />
           </button>
         </CollapsibleTrigger>
 
         <CollapsibleContent>
           <div className="space-y-4 border-t border-scatto-line px-5 pb-5 pt-4">
             <div className="grid grid-cols-2 gap-y-2 text-sm">
-              <span className="text-scatto-muted">Prodotti</span>
-              <span className="text-right tabular-nums text-scatto-ink">
-                {numeroRigheOrdine(ordine)} prodotti · {formatNumberIT(ordine.prodotti)} pz
-              </span>
               <span className="text-scatto-muted">Pagamento</span>
               <span className="text-right text-scatto-ink">{ordine.tipo_pagamento || "—"}</span>
-              <span className="text-scatto-muted">Data</span>
-              <span className="text-right text-scatto-ink">
-                {format(new Date(ordine.data_ordine || ordine.created_at), "dd/MM/yyyy")}
-              </span>
               {giorniInStandBy !== undefined && giorniInStandBy > 0 && (
                 <>
                   <span className="text-scatto-muted">In stand-by da</span>

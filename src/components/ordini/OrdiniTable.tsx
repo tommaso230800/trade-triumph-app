@@ -17,7 +17,13 @@ import {
 import { MoreHorizontal, CheckCircle2, Loader2, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import type { Ordine } from "@/hooks/useOrdini";
-import { formatCurrency, formatNumberIT, numeroRigheOrdine, scattoStatusBadge } from "./ordiniShared";
+import {
+  formatCurrency,
+  formatNumberIT,
+  numeroRigheOrdine,
+  scattoStatusBadge,
+  scattoVerificatoBadgeClass,
+} from "./ordiniShared";
 import type { OrdineCardAction } from "./OrdineCard";
 import { aziendaDotClass } from "@/lib/aziendaColor";
 
@@ -129,15 +135,16 @@ export function OrdiniTable({ rows, showStandByColumns }: OrdiniTableProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {verificato && (
-                      <span className="flex items-center gap-1 rounded-full bg-scatto-success px-2.5 py-0.5 text-[11px] font-extrabold text-white">
+                    {verificato ? (
+                      <span className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${scattoVerificatoBadgeClass}`}>
                         <CheckCircle2 className="h-3 w-3" />
                         Verif.
                       </span>
+                    ) : (
+                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${status.className}`}>
+                        {status.label}
+                      </span>
                     )}
-                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-extrabold text-white ${status.bg}`}>
-                      {status.label}
-                    </span>
                   </div>
                 </TableCell>
                 <TableCell>
