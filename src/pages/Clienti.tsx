@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,6 +121,19 @@ const Clienti = () => {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const [newEmail, setNewEmail] = useState("");
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Apertura automatica da azione rapida globale (FAB "+" nel layout): arriva
+  // come /clienti?nuovo=1, apre la scheda e ripulisce l'URL.
+  useEffect(() => {
+    if (searchParams.get("nuovo") === "1") {
+      setIsDialogOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("nuovo");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: clienti, isLoading } = useClienti(searchTerm, statusFilter);
   const createCliente = useCreateCliente();

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { TransparencyBanner } from "@/components/metrics/TransparencyBanner";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,19 @@ const Ordini = () => {
   const [standByTarget, setStandByTarget] = useState<{ id: string; codice?: string } | null>(null);
   const [verificaTarget, setVerificaTarget] = useState<{ id: string; codice?: string } | null>(null);
   const [documentiTarget, setDocumentiTarget] = useState<{ id: string; codice?: string } | null>(null);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Apertura automatica da azione rapida globale (FAB "+" nel layout): arriva
+  // come /ordini?nuovo=1, apre la scheda e ripulisce l'URL.
+  useEffect(() => {
+    if (searchParams.get("nuovo") === "1") {
+      setIsDialogOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("nuovo");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const { data: ordini, isLoading, isError, refetch } = useOrdini(searchTerm, statusFilter, monthFilters);
   const { data: mom } = useOrdiniValoreMoM();
@@ -286,11 +300,12 @@ const Ordini = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
-                className="hidden gap-2 rounded-xl bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90 lg:inline-flex"
+                className="gap-2 rounded-xl bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90"
                 onClick={() => setIsDialogOpen(true)}
               >
                 <Plus className="h-4 w-4" />
-                Nuovo Ordine
+                <span className="hidden sm:inline">Nuovo Ordine</span>
+                <span className="sm:hidden">Aggiungi</span>
               </Button>
             </div>
           </div>
@@ -354,17 +369,6 @@ const Ordini = () => {
             </div>
           )}
         </div>
-
-        {/* Azione principale raggiungibile col pollice su mobile: sopra la
-            bottom-nav (stesso breakpoint lg:hidden), non sotto/dietro. */}
-        <Button
-          size="icon"
-          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-40 h-14 w-14 rounded-full bg-scatto-accent text-white shadow-glow hover:bg-scatto-accent/90 lg:hidden"
-          onClick={() => setIsDialogOpen(true)}
-          aria-label="Nuovo Ordine"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
 
         <NuovoOrdineDialog
           open={isDialogOpen}

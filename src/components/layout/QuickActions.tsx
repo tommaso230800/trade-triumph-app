@@ -9,12 +9,11 @@ type Action = {
   href: string;
 };
 
-// Nota: puntano a rotte esistenti in App.tsx. L'apertura automatica del
-// relativo dialog di creazione (via query param) è prevista in una fase
-// successiva, quando Ordini.tsx e Clienti.tsx verranno scomposti.
+// Il query param "nuovo=1" viene letto da Ordini.tsx/Clienti.tsx per aprire
+// automaticamente la relativa scheda di creazione all'arrivo sulla pagina.
 const actions: Action[] = [
-  { label: "Nuovo Ordine", icon: ShoppingCart, href: "/ordini" },
-  { label: "Nuovo Cliente", icon: UserPlus, href: "/clienti" },
+  { label: "Nuovo Ordine", icon: ShoppingCart, href: "/ordini?nuovo=1" },
+  { label: "Nuovo Cliente", icon: UserPlus, href: "/clienti?nuovo=1" },
 ];
 
 export function QuickActions() {
