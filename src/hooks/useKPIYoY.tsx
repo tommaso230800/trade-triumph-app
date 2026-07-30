@@ -111,13 +111,15 @@ export function useKPIYoY(filters: KPIYoYFilters) {
 
       const monthlyCurr: Record<string, number> = {};
       const monthlyPrev: Record<string, number> = {};
-      monthsIT.forEach(m => { monthlyCurr[m] = 0; monthlyPrev[m] = 0; });
+      const monthlyOrdiniCurr: Record<string, number> = {};
+      const monthlyOrdiniPrev: Record<string, number> = {};
+      monthsIT.forEach(m => { monthlyCurr[m] = 0; monthlyPrev[m] = 0; monthlyOrdiniCurr[m] = 0; monthlyOrdiniPrev[m] = 0; });
       (yearOrdini || []).forEach((o: any) => {
         const d = new Date(o.data_ordine);
         const m = monthsIT[d.getMonth()];
         const y = d.getFullYear();
-        if (y === yearCurr) monthlyCurr[m] += Number(o.totale) || 0;
-        else if (y === yearPrev) monthlyPrev[m] += Number(o.totale) || 0;
+        if (y === yearCurr) { monthlyCurr[m] += Number(o.totale) || 0; monthlyOrdiniCurr[m] += 1; }
+        else if (y === yearPrev) { monthlyPrev[m] += Number(o.totale) || 0; monthlyOrdiniPrev[m] += 1; }
       });
 
       const monthlyComparison = monthsIT.map(m => ({
@@ -126,6 +128,8 @@ export function useKPIYoY(filters: KPIYoYFilters) {
         prev: monthlyPrev[m],
         delta: monthlyCurr[m] - monthlyPrev[m],
         deltaPct: monthlyPrev[m] > 0 ? ((monthlyCurr[m] - monthlyPrev[m]) / monthlyPrev[m]) * 100 : 0,
+        ordiniCurr: monthlyOrdiniCurr[m],
+        ordiniPrev: monthlyOrdiniPrev[m],
       }));
 
       const buildDim = (c: Map<string, number>, p: Map<string, number>): Map<string, DimensionYoY> => {
