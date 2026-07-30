@@ -111,3 +111,26 @@ export function useSaveOrdineConferma() {
     onError: (e: any) => toast.error("Errore: " + e.message),
   });
 }
+
+// Segna/rimuove la verifica di un ordine in base al solo caricamento (o
+// rimozione) della conferma d'ordine, senza passare da un confronto AI.
+export function useSetOrdineVerificatoConferma() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ordine_id, verificato }: { ordine_id: string; verificato: boolean }) => {
+      const { error } = await supabase
+        .from("ordini")
+        .update({
+          verificato_conferma: verificato,
+          verificato_conferma_at: verificato ? new Date().toISOString() : null,
+        })
+        .eq("id", ordine_id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["ordini"] });
+      toast.success(v.verificato ? "Ordine segnato come verificato" : "Verifica rimossa");
+    },
+    onError: (e: any) => toast.error("Errore: " + e.message),
+  });
+}

@@ -42,9 +42,9 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
 
   return (
     <div
-      className={`rounded-2xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_rgba(32,20,15,0.05)] ${
-        muted ? "opacity-60" : ""
-      }`}
+      className={`rounded-2xl border bg-scatto-surface shadow-[0_1px_2px_rgba(32,20,15,0.05)] ${
+        verificato ? "border-scatto-success/40" : "border-scatto-line"
+      } ${muted ? "opacity-60" : ""}`}
     >
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
@@ -67,7 +67,7 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
               </div>
               <div className="mt-2 flex items-center gap-1.5 pl-4">
                 {verificato && (
-                  <span className="flex items-center gap-1 rounded-full bg-scatto-accent px-2.5 py-0.5 text-[11px] font-extrabold text-white">
+                  <span className="flex items-center gap-1 rounded-full bg-scatto-success px-2.5 py-0.5 text-[11px] font-extrabold text-white">
                     <CheckCircle2 className="h-3 w-3" />
                     Verificato
                   </span>

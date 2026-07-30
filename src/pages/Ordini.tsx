@@ -15,8 +15,7 @@ import {
   FileText,
   Edit,
   CheckCircle2,
-  FileSearch,
-  Paperclip,
+  FileCheck2,
   PauseCircle,
   PlayCircle,
   Ban,
@@ -49,9 +48,7 @@ import { ProformaDialog, type ProformaData } from "@/components/ordini/ProformaD
 import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
 import { MultiFileImportDialog } from "@/components/ordini/MultiFileImportDialog";
 import { StandByDialog } from "@/components/ordini/StandByDialog";
-import { VerificaConfermaDialog } from "@/components/ordini/VerificaConfermaDialog";
-import { DocumentiSection } from "@/components/documenti/DocumentiSection";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ConfermaOrdineDialog } from "@/components/ordini/ConfermaOrdineDialog";
 import { formatCurrency } from "@/components/ordini/ordiniShared";
 
 const Ordini = () => {
@@ -67,8 +64,7 @@ const Ordini = () => {
   const [isImportPDFOpen, setIsImportPDFOpen] = useState(false);
   const [isMultiImportOpen, setIsMultiImportOpen] = useState(false);
   const [standByTarget, setStandByTarget] = useState<{ id: string; codice?: string } | null>(null);
-  const [verificaTarget, setVerificaTarget] = useState<{ id: string; codice?: string } | null>(null);
-  const [documentiTarget, setDocumentiTarget] = useState<{ id: string; codice?: string } | null>(null);
+  const [confermaTarget, setConfermaTarget] = useState<{ id: string; codice?: string } | null>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -178,14 +174,9 @@ const Ordini = () => {
       onClick: () => updateStatus.mutate({ id: ordine.id, status: "completato" }),
     },
     {
-      label: "Verifica conferma azienda",
-      icon: FileSearch,
-      onClick: () => setVerificaTarget({ id: ordine.id, codice: ordine.codice }),
-    },
-    {
-      label: "Documenti ordine",
-      icon: Paperclip,
-      onClick: () => setDocumentiTarget({ id: ordine.id, codice: ordine.codice }),
+      label: "Conferma Ordine",
+      icon: FileCheck2,
+      onClick: () => setConfermaTarget({ id: ordine.id, codice: ordine.codice }),
     },
     {
       label: "Metti in Stand-by",
@@ -204,9 +195,9 @@ const Ordini = () => {
     { label: "Visualizza Proforma", icon: FileText, onClick: () => handleShowProforma(ordine) },
     { label: "Modifica", icon: Edit, onClick: () => openEditDialog(ordine) },
     {
-      label: "Documenti ordine",
-      icon: Paperclip,
-      onClick: () => setDocumentiTarget({ id: ordine.id, codice: ordine.codice }),
+      label: "Conferma Ordine",
+      icon: FileCheck2,
+      onClick: () => setConfermaTarget({ id: ordine.id, codice: ordine.codice }),
     },
     {
       label: "Annulla ordine",
@@ -219,9 +210,9 @@ const Ordini = () => {
   const buildAnnullatiActions = (ordine: Ordine): OrdineCardAction[] => [
     { label: "Visualizza Proforma", icon: FileText, onClick: () => handleShowProforma(ordine) },
     {
-      label: "Documenti ordine",
-      icon: Paperclip,
-      onClick: () => setDocumentiTarget({ id: ordine.id, codice: ordine.codice }),
+      label: "Conferma Ordine",
+      icon: FileCheck2,
+      onClick: () => setConfermaTarget({ id: ordine.id, codice: ordine.codice }),
     },
     {
       label: "Riattiva Ordine",
@@ -472,30 +463,14 @@ const Ordini = () => {
           ordineCodice={standByTarget?.codice}
         />
 
-        <VerificaConfermaDialog
-          open={!!verificaTarget}
+        <ConfermaOrdineDialog
+          open={!!confermaTarget}
           onOpenChange={(v) => {
-            if (!v) setVerificaTarget(null);
+            if (!v) setConfermaTarget(null);
           }}
-          ordineId={verificaTarget?.id || null}
-          ordineCodice={verificaTarget?.codice}
+          ordineId={confermaTarget?.id || null}
+          ordineCodice={confermaTarget?.codice}
         />
-
-        <Dialog
-          open={!!documentiTarget}
-          onOpenChange={(v) => {
-            if (!v) setDocumentiTarget(null);
-          }}
-        >
-          <DialogContent className="max-w-2xl max-h-[90dvh] overflow-y-auto p-2 sm:p-4">
-            <DialogHeader className="px-2 pt-2 sm:px-0 sm:pt-0">
-              <DialogTitle>Documenti ordine {documentiTarget?.codice}</DialogTitle>
-            </DialogHeader>
-            {documentiTarget && (
-              <DocumentiSection entita="ordine" entita_id={documentiTarget.id} title="Documenti" compact />
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </MainLayout>
   );

@@ -72,7 +72,9 @@ export function OrdiniTable({ rows, showStandByColumns }: OrdiniTableProps) {
             return (
               <TableRow
                 key={ordine.id}
-                className={`border-scatto-line hover:bg-scatto-bg/60 hover:shadow-none ${muted ? "opacity-60" : ""}`}
+                className={`border-scatto-line hover:bg-scatto-bg/60 hover:shadow-none ${
+                  verificato ? "border-l-2 border-l-scatto-success" : ""
+                } ${muted ? "opacity-60" : ""}`}
               >
                 <TableCell className="text-xs font-bold text-scatto-accent">
                   {ordine.codice}
@@ -128,7 +130,7 @@ export function OrdiniTable({ rows, showStandByColumns }: OrdiniTableProps) {
                 <TableCell>
                   <div className="flex flex-wrap items-center gap-1.5">
                     {verificato && (
-                      <span className="flex items-center gap-1 rounded-full bg-scatto-accent px-2.5 py-0.5 text-[11px] font-extrabold text-white">
+                      <span className="flex items-center gap-1 rounded-full bg-scatto-success px-2.5 py-0.5 text-[11px] font-extrabold text-white">
                         <CheckCircle2 className="h-3 w-3" />
                         Verif.
                       </span>
