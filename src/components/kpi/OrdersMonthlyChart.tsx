@@ -1,4 +1,5 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { meseChartColor } from "./kpiShared";
 
 interface OrdersMonthlyChartProps {
   data: { mese: string; ordini: number }[];
@@ -23,10 +24,16 @@ export function OrdersMonthlyChart({ data }: OrdersMonthlyChartProps) {
             labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
             formatter={(value: number) => [`${value} ordini`, ""]}
           />
-          <Bar dataKey="ordini" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={36} />
+          <Bar dataKey="ordini" radius={[4, 4, 0, 0]} maxBarSize={36}>
+            {data.map((m) => (
+              <Cell key={m.mese} fill={meseChartColor(m.mese)} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
-      <p className="mt-1 px-1 text-[11px] text-muted-foreground">Tocca una barra per mese e numero di ordini.</p>
+      <p className="mt-1 px-1 text-[11px] text-muted-foreground">
+        Stessi colori per mese del grafico sopra. Tocca una barra per mese e numero di ordini.
+      </p>
     </div>
   );
 }

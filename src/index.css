@@ -77,6 +77,32 @@
     --azienda-11: 320 58% 58%;
     --azienda-12: 20 75% 44%;
 
+    /* Palette decorativa multicolore per la pagina KPI, richiesta
+       esplicitamente dall'utente per tessere/grafici mensili/top clienti
+       (deroga puntuale al principio "un solo accento" di CLAUDE.md, solo
+       per questi elementi). --kpi-* sono i 6 ruoli fissi delle tessere
+       "Altri indicatori"; --chart-1..12 è la palette ciclica riusata
+       identica tra i due grafici mensili e le barre Top clienti. */
+    --kpi-utile: 161 94% 30%;
+    --kpi-margine: 243 75% 59%;
+    --kpi-mom: 199 89% 48%;
+    --kpi-yoy: 25 95% 53%;
+    --kpi-sconto1: 258 90% 66%;
+    --kpi-sconto2: 173 80% 40%;
+
+    --chart-1: 243 75% 59%;
+    --chart-2: 199 89% 48%;
+    --chart-3: 161 94% 30%;
+    --chart-4: 258 90% 66%;
+    --chart-5: 25 95% 53%;
+    --chart-6: 173 80% 40%;
+    --chart-7: 0 84% 60%;
+    --chart-8: 38 92% 50%;
+    --chart-9: 221 83% 53%;
+    --chart-10: 330 81% 60%;
+    --chart-11: 84 81% 44%;
+    --chart-12: 292 84% 61%;
+
     /* Direzione "Scatto": palette scoperta SOLO dai componenti della pagina
        Ordini (pilota del redesign). Non tocca --background/--card ecc. usati
        dal resto dell'app: nessun'altra pagina la referenzia. */

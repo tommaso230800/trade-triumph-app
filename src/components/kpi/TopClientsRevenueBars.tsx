@@ -1,4 +1,4 @@
-import { formatCurrency } from "./kpiShared";
+import { chartColorByIndex, formatCurrency } from "./kpiShared";
 
 interface TopClientsRevenueBarsProps {
   clienti: { id: string; nome: string; fatturato: number }[];
@@ -16,7 +16,7 @@ export function TopClientsRevenueBars({ clienti }: TopClientsRevenueBarsProps) {
         Top clienti per fatturato
       </h2>
       <div className="space-y-3">
-        {top.map((c) => (
+        {top.map((c, i) => (
           <div key={c.id}>
             <div className="mb-1.5 flex items-baseline justify-between gap-2">
               <span className="truncate text-sm font-semibold text-foreground">{c.nome}</span>
@@ -26,8 +26,11 @@ export function TopClientsRevenueBars({ clienti }: TopClientsRevenueBarsProps) {
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-primary"
-                style={{ width: `${Math.max(4, (c.fatturato / max) * 100)}%` }}
+                className="h-full rounded-full"
+                style={{
+                  width: `${Math.max(4, (c.fatturato / max) * 100)}%`,
+                  backgroundColor: chartColorByIndex(i),
+                }}
               />
             </div>
           </div>

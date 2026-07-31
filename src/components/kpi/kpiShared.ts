@@ -15,3 +15,13 @@ export const formatCompact = (value: number) => {
 
 export const mesiLabel = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
 export const mesiLettera = ["G", "F", "M", "A", "M", "G", "L", "A", "S", "O", "N", "D"];
+
+// Colore multicolore per mese (richiesta esplicita, riusato identico nei due
+// grafici mensili e nelle barre Top clienti): stesso mese, stesso colore
+// ovunque compaia. --chart-1..12 definiti in index.css.
+export const meseChartColor = (mese: string) => {
+  const idx = mesiLabel.indexOf(mese);
+  return `hsl(var(--chart-${(idx >= 0 ? idx : 0) + 1}))`;
+};
+
+export const chartColorByIndex = (i: number) => `hsl(var(--chart-${(i % 12) + 1}))`;

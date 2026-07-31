@@ -1,7 +1,7 @@
 import {
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ComposedChart, Bar, Cell, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
-import { formatCurrency } from "./kpiShared";
+import { formatCurrency, meseChartColor } from "./kpiShared";
 
 interface RevenueMarginChartProps {
   data: { mese: string; fatturato: number; marginePct: number }[];
@@ -11,10 +11,7 @@ export function RevenueMarginChart({ data }: RevenueMarginChartProps) {
   return (
     <div>
       <div className="mb-2 flex items-center gap-4 px-1 text-[11px] font-medium text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <i className="inline-block h-2 w-3 rounded-sm bg-primary" />
-          Fatturato
-        </span>
+        <span>Ogni mese ha il suo colore, ripetuto identico nel grafico ordini</span>
         <span className="flex items-center gap-1.5">
           <i className="inline-block h-[3px] w-3 rounded-full bg-warning" />
           Margine %
@@ -36,7 +33,11 @@ export function RevenueMarginChart({ data }: RevenueMarginChartProps) {
             labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
             formatter={(value: number) => [formatCurrency(value), "Fatturato"]}
           />
-          <Bar yAxisId="fatturato" dataKey="fatturato" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} maxBarSize={36} />
+          <Bar yAxisId="fatturato" dataKey="fatturato" radius={[4, 4, 0, 0]} maxBarSize={36}>
+            {data.map((m) => (
+              <Cell key={m.mese} fill={meseChartColor(m.mese)} />
+            ))}
+          </Bar>
           <Line
             yAxisId="margine"
             type="monotone"

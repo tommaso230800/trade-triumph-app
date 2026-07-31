@@ -42,7 +42,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Euro,
   TrendingUp,
-  TrendingDown,
   Search,
   Loader2,
   CalendarIcon,
@@ -410,16 +409,16 @@ const KPI = () => {
           marginePercentuale={stats?.marginePercentuale || 0}
         />
 
-        {/* Altri indicatori: confronti, sconti, margine — colore solo dove
-            comunica davvero uno stato (utile/margine/MoM/YoY); sconto medio e
-            sconto merce restano neutri perché non sono un "buono/cattivo". */}
+        {/* Altri indicatori: confronti, sconti, margine — colore fisso per
+            ruolo, come nel mockup (richiesta esplicita, deroga puntuale al
+            "un solo accento" di CLAUDE.md solo per queste tessere). */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 animate-fade-in">
-          <div className="rounded-lg bg-gradient-to-br from-success/15 to-success/5 border border-success/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
+          <div className="rounded-lg bg-gradient-to-br from-kpi-utile/15 to-kpi-utile/5 border border-kpi-utile/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
             <div className="flex items-center gap-2">
-              <Euro className="h-4 w-4 text-success" />
+              <Euro className="h-4 w-4 text-kpi-utile" />
               <p className="text-xs text-muted-foreground">Utile lordo</p>
             </div>
-            <p className="text-2xl font-bold mt-1 text-success">
+            <p className="text-2xl font-bold mt-1 text-kpi-utile">
               {formatCurrency(stats?.utileLordo || 0)}
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -427,12 +426,12 @@ const KPI = () => {
             </p>
           </div>
 
-          <div className="rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
+          <div className="rounded-lg bg-gradient-to-br from-kpi-margine/15 to-kpi-margine/5 border border-kpi-margine/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
+              <TrendingUp className="h-4 w-4 text-kpi-margine" />
               <p className="text-xs text-muted-foreground">Margine %</p>
             </div>
-            <p className="text-2xl font-bold mt-1 text-primary">
+            <p className="text-2xl font-bold mt-1 text-kpi-margine">
               {(stats?.marginePercentuale || 0).toFixed(1)}%
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -440,55 +439,44 @@ const KPI = () => {
             </p>
           </div>
 
-          <div className={cn(
-            "rounded-lg border p-4 shadow-card transition-transform hover:-translate-y-0.5 bg-gradient-to-br",
-            (stats?.mom || 0) >= 0 ? "from-success/15 to-success/5 border-success/30" : "from-destructive/15 to-destructive/5 border-destructive/30"
-          )}>
+          <div className="rounded-lg bg-gradient-to-br from-kpi-mom/15 to-kpi-mom/5 border border-kpi-mom/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
             <div className="flex items-center gap-2">
-              {(stats?.mom || 0) >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-success" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-destructive" />
-              )}
+              <RotateCcw className="h-4 w-4 text-kpi-mom" />
               <p className="text-xs text-muted-foreground">MoM (mese vs precedente)</p>
             </div>
-            <p className={cn(
-              "text-2xl font-bold mt-1",
-              (stats?.mom || 0) >= 0 ? "text-success" : "text-destructive"
-            )}>
+            <p className="text-2xl font-bold mt-1 text-kpi-mom">
               {(stats?.mom || 0) >= 0 ? "+" : ""}{(stats?.mom || 0).toFixed(1)}%
             </p>
           </div>
 
-          <div className={cn(
-            "rounded-lg border p-4 shadow-card transition-transform hover:-translate-y-0.5 bg-gradient-to-br",
-            (stats?.yoy || 0) >= 0 ? "from-success/15 to-success/5 border-success/30" : "from-destructive/15 to-destructive/5 border-destructive/30"
-          )}>
+          <div className="rounded-lg bg-gradient-to-br from-kpi-yoy/15 to-kpi-yoy/5 border border-kpi-yoy/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
             <div className="flex items-center gap-2">
-              {(stats?.yoy || 0) >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-success" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-destructive" />
-              )}
+              <CalendarIcon className="h-4 w-4 text-kpi-yoy" />
               <p className="text-xs text-muted-foreground">YoY (stesso periodo a/p)</p>
             </div>
-            <p className={cn(
-              "text-2xl font-bold mt-1",
-              (stats?.yoy || 0) >= 0 ? "text-success" : "text-destructive"
-            )}>
-              {(stats?.yoy || 0) >= 0 ? "+" : ""}{(stats?.yoy || 0).toFixed(1)}%
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              vs {formatCurrency(stats?.yoyPrevFatturato || 0)}
-            </p>
+            {(stats?.yoyPrevFatturato || 0) > 0 ? (
+              <>
+                <p className="text-2xl font-bold mt-1 text-kpi-yoy">
+                  {(stats?.yoy || 0) >= 0 ? "+" : ""}{(stats?.yoy || 0).toFixed(1)}%
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  vs {formatCurrency(stats?.yoyPrevFatturato || 0)}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-bold mt-1 text-muted-foreground">N/D</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">manca dato anno prec. filtrato</p>
+              </>
+            )}
           </div>
 
-          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
+          <div className="rounded-lg bg-gradient-to-br from-kpi-sconto1/15 to-kpi-sconto1/5 border border-kpi-sconto1/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
             <div className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-primary" />
+              <Tag className="h-4 w-4 text-kpi-sconto1" />
               <p className="text-xs text-muted-foreground">Sconto medio applicato</p>
             </div>
-            <p className="text-2xl font-bold mt-1 text-foreground">
+            <p className="text-2xl font-bold mt-1 text-kpi-sconto1">
               {(stats?.scontoCascataMedio || 0).toFixed(1)}%
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -496,12 +484,12 @@ const KPI = () => {
             </p>
           </div>
 
-          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
+          <div className="rounded-lg bg-gradient-to-br from-kpi-sconto2/15 to-kpi-sconto2/5 border border-kpi-sconto2/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
             <div className="flex items-center gap-2">
-              <Euro className="h-4 w-4 text-primary" />
+              <Euro className="h-4 w-4 text-kpi-sconto2" />
               <p className="text-xs text-muted-foreground">Sconto merce medio / ordine</p>
             </div>
-            <p className="text-2xl font-bold mt-1 text-foreground">
+            <p className="text-2xl font-bold mt-1 text-kpi-sconto2">
               {formatCurrency(stats?.scontoMerceMedio || 0)}
             </p>
           </div>
