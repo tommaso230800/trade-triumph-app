@@ -1,10 +1,8 @@
 import { useState, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { AllocationsEnginePanel } from "@/components/provvigioni/AllocationsEnginePanel";
 import { useAdvancedKPIStats, AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { YoYDimensionPanel } from "@/components/dashboard/YoYDimensionPanel";
-import { KPIOpportunitiesPanel } from "@/components/dashboard/KPIOpportunitiesPanel";
 import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
 import { KPITiles } from "@/components/kpi/KPITiles";
 import { InsightsPanel, type Insight } from "@/components/kpi/InsightsPanel";
@@ -605,17 +603,6 @@ const KPI = () => {
           <MonthlyComparisonCards data={yoy.monthlyComparison} yearCurr={yoy.yearCurr} yearPrev={yoy.yearPrev} />
         )}
 
-        {/* Opportunities + AI */}
-        {yoy && (
-          <KPIOpportunitiesPanel
-            yoy={yoy}
-            clientiNames={clientiNames}
-            prodottiNames={prodottiNames}
-            aziendeNames={aziendeNames}
-            brandsNames={brandsNames}
-          />
-        )}
-
         {/* Detailed Tabs */}
         <Tabs defaultValue="clienti" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4 max-w-lg">
@@ -744,11 +731,6 @@ const KPI = () => {
             />
           </TabsContent>
         </Tabs>
-
-        {/* Fase 2 — Motore di riconciliazione M:N (globale) */}
-        <div className="mt-6">
-          <AllocationsEnginePanel all title="Riconciliazione M:N — vista globale" />
-        </div>
       </div>
     </MainLayout>
 
