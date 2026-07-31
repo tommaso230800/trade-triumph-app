@@ -20,6 +20,7 @@ import { BrandRevenueBars } from "@/components/kpi/BrandRevenueBars";
 import { OrdersStatusDonut } from "@/components/kpi/OrdersStatusDonut";
 import { MonthlyComparisonCards } from "@/components/kpi/MonthlyComparisonCards";
 import { ClientRevenueCards } from "@/components/kpi/ClientRevenueCards";
+import { KpiEntityCards } from "@/components/kpi/KpiEntityCards";
 import { buildAziendaColorIndex } from "@/lib/aziendaColor";
 import { formatCurrency, formatNumberIT, mesiLabel } from "@/components/kpi/kpiShared";
 import { MultiSelect } from "@/components/ui/multi-select";
@@ -30,14 +31,6 @@ import { cn } from "@/lib/utils";
 import { format, startOfMonth, endOfMonth, subMonths, startOfYear } from "date-fns";
 import { it } from "date-fns/locale";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -45,9 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import {
   Euro,
   TrendingUp,
@@ -271,6 +262,8 @@ const KPI = () => {
 
   const maxFatturato = Math.max(...(stats?.clientiKPI?.map((c) => c.fatturato) || [1]));
   const maxProdottoFatturato = Math.max(...(stats?.prodottiKPI?.map((p) => p.fatturato_totale) || [1]));
+  const maxAziendaFatturato = Math.max(...(stats?.aziendeKPI?.map((a) => a.fatturato_totale) || [1]));
+  const maxBrandFatturato = Math.max(...(stats?.brandsKPI?.map((b) => b.fatturato_totale) || [1]));
 
   if (isLoading) {
     return (
@@ -679,57 +672,21 @@ const KPI = () => {
                 yearPrev={yoy.yearPrev}
               />
             )}
-            <div className="rounded-xl bg-card shadow-card overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Azienda</TableHead>
-                      <TableHead>Settore</TableHead>
-                      <TableHead className="text-right">Ordini</TableHead>
-                      <TableHead className="text-right">Cartoni</TableHead>
-                      <TableHead className="text-right">Pezzi</TableHead>
-                      <TableHead className="text-right">Fatturato</TableHead>
-                      <TableHead className="w-32">Performance</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {stats?.aziendeKPI.map((azienda) => {
-                      const maxAziendaFatturato = Math.max(
-                        ...(stats?.aziendeKPI.map((a) => a.fatturato_totale) || [1])
-                      );
-                      return (
-                        <TableRow key={azienda.id} className="hover:bg-muted/30">
-                          <TableCell className="font-medium">{azienda.nome}</TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {azienda.settore || "—"}
-                          </TableCell>
-                          <TableCell className="text-right">{azienda.ordini_count}</TableCell>
-                          <TableCell className="text-right">{formatNumberIT(azienda.cartoni_venduti)}</TableCell>
-                          <TableCell className="text-right">{formatNumberIT(azienda.prodotti_venduti)}</TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {formatCurrency(azienda.fatturato_totale)}
-                          </TableCell>
-                          <TableCell>
-                            <Progress
-                              value={(azienda.fatturato_totale / maxAziendaFatturato) * 100}
-                              className="h-2"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {(stats?.aziendeKPI?.length || 0) === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                          Nessuna azienda trovata
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+            <KpiEntityCards
+              items={(stats?.aziendeKPI || []).map((azienda) => ({
+                id: azienda.id,
+                nome: azienda.nome,
+                fatturato: azienda.fatturato_totale,
+                facts: [
+                  azienda.settore || "Settore n/d",
+                  `${azienda.ordini_count} ordini`,
+                  `${formatNumberIT(azienda.cartoni_venduti)} cartoni`,
+                  `${formatNumberIT(azienda.prodotti_venduti)} pz`,
+                ],
+                pct: (azienda.fatturato_totale / maxAziendaFatturato) * 100,
+              }))}
+              emptyLabel="Nessuna azienda trovata"
+            />
           </TabsContent>
 
           {/* Brands Tab */}
@@ -743,60 +700,20 @@ const KPI = () => {
                 yearPrev={yoy.yearPrev}
               />
             )}
-            <div className="rounded-xl bg-card shadow-card overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Marchio</TableHead>
-                      <TableHead>Azienda</TableHead>
-                      <TableHead className="text-right">Ordini</TableHead>
-                      <TableHead className="text-right">Pezzi Venduti</TableHead>
-                      <TableHead className="text-right">Fatturato</TableHead>
-                      <TableHead className="w-32">Performance</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {stats?.brandsKPI.map((brand) => {
-                      const maxBrandFatturato = Math.max(
-                        ...(stats?.brandsKPI.map((b) => b.fatturato_totale) || [1])
-                      );
-                      return (
-                        <TableRow key={brand.id} className="hover:bg-muted/30">
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              <Tag className="h-4 w-4 text-primary" />
-                              {brand.name}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {brand.azienda_nome || "—"}
-                          </TableCell>
-                          <TableCell className="text-right">{brand.ordini_count}</TableCell>
-                          <TableCell className="text-right">{formatNumberIT(brand.quantita_venduta)}</TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {formatCurrency(brand.fatturato_totale)}
-                          </TableCell>
-                          <TableCell>
-                            <Progress
-                              value={(brand.fatturato_totale / maxBrandFatturato) * 100}
-                              className="h-2"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {(stats?.brandsKPI?.length || 0) === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                          Nessun marchio trovato
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+            <KpiEntityCards
+              items={(stats?.brandsKPI || []).map((brand) => ({
+                id: brand.id,
+                nome: brand.name,
+                fatturato: brand.fatturato_totale,
+                facts: [
+                  brand.azienda_nome || "Azienda n/d",
+                  `${brand.ordini_count} ordini`,
+                  `${formatNumberIT(brand.quantita_venduta)} pz venduti`,
+                ],
+                pct: (brand.fatturato_totale / maxBrandFatturato) * 100,
+              }))}
+              emptyLabel="Nessun marchio trovato"
+            />
           </TabsContent>
 
           {/* Prodotti Tab */}
@@ -820,65 +737,23 @@ const KPI = () => {
               />
             </div>
 
-            <div className="rounded-xl bg-card shadow-card overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Prodotto</TableHead>
-                      <TableHead>Azienda</TableHead>
-                      <TableHead>Marchio</TableHead>
-                      <TableHead className="text-right">Prezzo</TableHead>
-                      <TableHead className="text-right">Cartoni</TableHead>
-                      <TableHead className="text-right">Pezzi</TableHead>
-                      <TableHead className="text-right">N° Ordini</TableHead>
-                      <TableHead className="text-right">Fatturato</TableHead>
-                      <TableHead className="w-32">Performance</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProdotti.map((prodotto) => (
-                      <TableRow key={prodotto.id} className="hover:bg-muted/30">
-                        <TableCell className="font-medium">{prodotto.nome}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {prodotto.azienda_nome}
-                        </TableCell>
-                        <TableCell>
-                          {prodotto.brand_nome ? (
-                            <Badge variant="outline" className="gap-1">
-                              <Tag className="h-3 w-3" />
-                              {prodotto.brand_nome}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">{formatCurrency(prodotto.prezzo_listino)}</TableCell>
-                        <TableCell className="text-right">{formatNumberIT(prodotto.cartoni_venduti)}</TableCell>
-                        <TableCell className="text-right">{formatNumberIT(prodotto.quantita_venduta)}</TableCell>
-                        <TableCell className="text-right">{prodotto.ordini_count}</TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatCurrency(prodotto.fatturato_totale)}
-                        </TableCell>
-                        <TableCell>
-                          <Progress
-                            value={(prodotto.fatturato_totale / maxProdottoFatturato) * 100}
-                            className="h-2"
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {filteredProdotti.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                          Nessun prodotto trovato
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+            <KpiEntityCards
+              items={filteredProdotti.map((prodotto) => ({
+                id: prodotto.id,
+                nome: prodotto.nome,
+                fatturato: prodotto.fatturato_totale,
+                facts: [
+                  prodotto.azienda_nome,
+                  prodotto.brand_nome || "Marchio n/d",
+                  formatCurrency(prodotto.prezzo_listino),
+                  `${formatNumberIT(prodotto.cartoni_venduti)} cartoni`,
+                  `${formatNumberIT(prodotto.quantita_venduta)} pz`,
+                  `${prodotto.ordini_count} ordini`,
+                ],
+                pct: (prodotto.fatturato_totale / maxProdottoFatturato) * 100,
+              }))}
+              emptyLabel="Nessun prodotto trovato"
+            />
           </TabsContent>
         </Tabs>
 
