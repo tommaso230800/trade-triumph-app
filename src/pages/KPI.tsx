@@ -19,6 +19,7 @@ import { RipartizioniHighlights } from "@/components/kpi/RipartizioniHighlights"
 import { BrandRevenueBars } from "@/components/kpi/BrandRevenueBars";
 import { OrdersStatusDonut } from "@/components/kpi/OrdersStatusDonut";
 import { MonthlyComparisonCards } from "@/components/kpi/MonthlyComparisonCards";
+import { ClientRevenueCards } from "@/components/kpi/ClientRevenueCards";
 import { formatCurrency, formatNumberIT, mesiLabel } from "@/components/kpi/kpiShared";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Calendar } from "@/components/ui/calendar";
@@ -656,88 +657,7 @@ const KPI = () => {
               />
             </div>
 
-            <div className="rounded-xl bg-card shadow-card overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Consorzio</TableHead>
-                      <TableHead className="text-right">Ordini</TableHead>
-                      <TableHead className="text-right">Fatturato 2026</TableHead>
-                      <TableHead className="text-right">Fatturato 2025</TableHead>
-                      <TableHead className="text-right">Var %</TableHead>
-                      <TableHead className="w-32">Avanzamento</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredClienti.map((cliente) => {
-                      const fat2025 = cliente.fatturato_2025 || 0;
-                      const variazione = fat2025 > 0 
-                        ? ((cliente.fatturato - fat2025) / fat2025) * 100 
-                        : 0;
-                      const avanzamento = fat2025 > 0 
-                        ? Math.min((cliente.fatturato / fat2025) * 100, 100) 
-                        : 0;
-                      
-                      return (
-                        <TableRow key={cliente.id} className="hover:bg-muted/30">
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{cliente.nome}</p>
-                              <p className="text-xs text-muted-foreground">{cliente.citta || "—"}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {cliente.consorzio ? (
-                              <Badge variant="outline">{cliente.consorzio}</Badge>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">{cliente.ordini_count}</TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {formatCurrency(cliente.fatturato)}
-                          </TableCell>
-                          <TableCell className="text-right text-orange-500">
-                            {fat2025 > 0 ? formatCurrency(fat2025) : "—"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {fat2025 > 0 ? (
-                              <span className={cn(
-                                "font-semibold",
-                                variazione > 0 ? "text-success" : variazione < 0 ? "text-destructive" : "text-muted-foreground"
-                              )}>
-                                {variazione > 0 ? "+" : ""}{variazione.toFixed(0)}%
-                              </span>
-                            ) : "—"}
-                          </TableCell>
-                          <TableCell>
-                            {fat2025 > 0 ? (
-                              <div className="flex items-center gap-2">
-                                <Progress value={avanzamento} className="h-2 flex-1" />
-                                <span className="text-xs text-muted-foreground w-10 text-right">
-                                  {avanzamento.toFixed(0)}%
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {filteredClienti.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                          Nessun cliente trovato
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+            <ClientRevenueCards clienti={filteredClienti} yearPrev={yoy?.yearPrev} />
           </TabsContent>
 
           {/* Aziende Tab */}

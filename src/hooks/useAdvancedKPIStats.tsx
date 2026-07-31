@@ -30,6 +30,7 @@ export type ClienteKPI = {
   ordini_count: number;
   cartoni_totali: number;
   pezzi_totali: number;
+  perAzienda: { aziendaId: string; aziendaNome: string; fatturato: number }[];
 };
 
 export type ProdottoKPI = {
@@ -175,6 +176,10 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
 
       // Intensità riordini cliente×mese (top clienti per fatturato)
       const clienteMonthlyMap = new Map<string, number[]>();
+
+      // Fatturato cliente diviso per azienda fornitrice (barra a segmenti
+      // nella lista clienti): stessa riga ordine già letta, nessuna query in più.
+      const clienteAziendaMap = new Map<string, Map<string, number>>();
 
       ordini.forEach((ordine) => {
         const totaleOrdine = Number(ordine.totale);
@@ -323,6 +328,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
               ordini_count: 1,
               cartoni_totali: ordineCartoni,
               pezzi_totali: ordinePezzi,
+              perAzienda: [],
             });
           }
         }
@@ -349,6 +355,12 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
             });
           }
         }
+
+        if (clienteId && aziendaId) {
+          if (!clienteAziendaMap.has(clienteId)) clienteAziendaMap.set(clienteId, new Map());
+          const perAziendaMap = clienteAziendaMap.get(clienteId)!;
+          perAziendaMap.set(aziendaId, (perAziendaMap.get(aziendaId) || 0) + totaleOrdine);
+        }
       });
 
       const scontrinoMedio = ordiniTotali > 0 ? fatturatoTotale / ordiniTotali : 0;
@@ -359,7 +371,21 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       const marginePercentuale = fatturatoTotale > 0 ? (utileLordo / fatturatoTotale) * 100 : 0;
 
       // Sort all KPI arrays by fatturato
-      const clientiKPI = Array.from(clientiMap.values()).sort((a, b) => b.fatturato - a.fatturato);
+      const clientiKPI = Array.from(clientiMap.values())
+        .map((c) => {
+          const perAziendaMap = clienteAziendaMap.get(c.id);
+          const perAzienda = perAziendaMap
+            ? Array.from(perAziendaMap.entries())
+                .map(([aziendaId, fatturato]) => ({
+                  aziendaId,
+                  aziendaNome: aziende.find((a) => a.id === aziendaId)?.nome || "N/A",
+                  fatturato,
+                }))
+                .sort((a, b) => b.fatturato - a.fatturato)
+            : [];
+          return { ...c, perAzienda };
+        })
+        .sort((a, b) => b.fatturato - a.fatturato);
       const aziendeKPI = Array.from(aziendeMap.values()).sort((a, b) => b.fatturato_totale - a.fatturato_totale);
       const brandsKPI = Array.from(brandsMap.values()).sort((a, b) => b.fatturato_totale - a.fatturato_totale);
       const prodottiKPI = Array.from(prodottiMap.values()).sort((a, b) => b.fatturato_totale - a.fatturato_totale);
