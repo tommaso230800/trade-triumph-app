@@ -20,7 +20,7 @@ import {
   scattoStatusBadge,
   scattoVerificatoBadgeClass,
 } from "./ordiniShared";
-import { aziendaDotClass } from "@/lib/aziendaColor";
+import { aziendaDotClass, useAziendaColorIndex } from "@/lib/aziendaColor";
 
 export interface OrdineCardAction {
   label: string;
@@ -48,7 +48,8 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
   const aziendaNome = ordine.aziende?.nome;
   const aziendaLogo = ordine.aziende?.logo_url;
   const status = scattoStatusBadge[ordine.status];
-  const aziendaClass = aziendaDotClass(ordine.azienda_id);
+  const aziendaColorMap = useAziendaColorIndex();
+  const aziendaClass = aziendaDotClass(ordine.azienda_id, aziendaColorMap);
   const dataOrdine = new Date(ordine.data_ordine || ordine.created_at);
   const oraOrdine = format(new Date(ordine.created_at), "HH:mm");
 

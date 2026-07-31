@@ -1,16 +1,17 @@
-import { aziendaDotClass } from "@/lib/aziendaColor";
+import { aziendaDotClass, type AziendaColorIndexMap } from "@/lib/aziendaColor";
 import { formatCurrency } from "./kpiShared";
 import type { ClienteKPI } from "@/hooks/useAdvancedKPIStats";
 
 interface ClientRevenueCardsProps {
   clienti: ClienteKPI[];
   yearPrev?: number;
+  aziendaColorMap?: AziendaColorIndexMap;
 }
 
 // Sostituisce la vecchia tabella larga (scroll orizzontale su mobile): una
 // card per cliente con una barra a segmenti che spezza il totale nei colori
 // identità delle aziende fornitrici, invece di colonne fisse.
-export function ClientRevenueCards({ clienti, yearPrev }: ClientRevenueCardsProps) {
+export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap }: ClientRevenueCardsProps) {
   if (clienti.length === 0) {
     return (
       <div className="rounded-xl bg-card p-8 text-center text-muted-foreground shadow-card">
@@ -53,7 +54,7 @@ export function ClientRevenueCards({ clienti, yearPrev }: ClientRevenueCardsProp
                   {cliente.perAzienda.map((a) => (
                     <span
                       key={a.aziendaId}
-                      className={aziendaDotClass(a.aziendaId)}
+                      className={aziendaDotClass(a.aziendaId, aziendaColorMap)}
                       style={{ width: `${(a.fatturato / totaleSegmenti) * 100}%` }}
                     />
                   ))}
@@ -61,7 +62,7 @@ export function ClientRevenueCards({ clienti, yearPrev }: ClientRevenueCardsProp
                 <div className="mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 text-xs text-muted-foreground">
                   {cliente.perAzienda.map((a) => (
                     <span key={a.aziendaId} className="inline-flex items-center gap-1.5">
-                      <span className={`h-2 w-2 flex-shrink-0 rounded-sm ${aziendaDotClass(a.aziendaId)}`} />
+                      <span className={`h-2 w-2 flex-shrink-0 rounded-sm ${aziendaDotClass(a.aziendaId, aziendaColorMap)}`} />
                       {a.aziendaNome} <b className="font-display font-semibold text-foreground">{formatCurrency(a.fatturato)}</b>
                     </span>
                   ))}

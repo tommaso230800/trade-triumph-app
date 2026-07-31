@@ -95,6 +95,10 @@ export default {
           6: "hsl(var(--azienda-6))",
           7: "hsl(var(--azienda-7))",
           8: "hsl(var(--azienda-8))",
+          9: "hsl(var(--azienda-9))",
+          10: "hsl(var(--azienda-10))",
+          11: "hsl(var(--azienda-11))",
+          12: "hsl(var(--azienda-12))",
         },
         scatto: {
           bg: "hsl(var(--scatto-bg))",

@@ -25,7 +25,7 @@ import {
   scattoVerificatoBadgeClass,
 } from "./ordiniShared";
 import type { OrdineCardAction } from "./OrdineCard";
-import { aziendaDotClass } from "@/lib/aziendaColor";
+import { aziendaDotClass, useAziendaColorIndex } from "@/lib/aziendaColor";
 
 export interface OrdiniTableRow {
   ordine: Ordine;
@@ -46,6 +46,7 @@ interface OrdiniTableProps {
 }
 
 export function OrdiniTable({ rows, showStandByColumns }: OrdiniTableProps) {
+  const aziendaColorMap = useAziendaColorIndex();
   return (
     <div className="hidden overflow-hidden rounded-2xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_rgba(32,20,15,0.05)] md:block">
       <Table>
@@ -92,7 +93,7 @@ export function OrdiniTable({ rows, showStandByColumns }: OrdiniTableProps) {
                 </TableCell>
                 <TableCell className={`font-bold ${muted ? "text-scatto-muted" : "text-scatto-ink"}`}>
                   <div className="flex items-center gap-2">
-                    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${aziendaDotClass(ordine.azienda_id)}`} />
+                    <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${aziendaDotClass(ordine.azienda_id, aziendaColorMap)}`} />
                     {ordine.clienti?.nome || "—"}
                   </div>
                   {ordine.aziende?.nome && (

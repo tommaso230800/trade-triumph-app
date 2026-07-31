@@ -5,12 +5,14 @@ interface ReorderHeatmapProps {
   data: { clienteId: string; nome: string; mesi: number[] }[];
 }
 
-function intensityClass(value: number, max: number) {
+// Scala assoluta (non più relativa al massimo della riga): 0 ordini = nessun
+// riordino quel mese, 1 = riordino raro, 2 = nella norma, 3+ = frequente.
+// Semaforo grigio/rosso/ambra/verde, coerente con gli altri stati dell'app.
+function intensityClass(value: number) {
   if (value <= 0) return "bg-muted";
-  const ratio = value / max;
-  if (ratio < 0.4) return "bg-primary/25";
-  if (ratio < 0.75) return "bg-primary/55";
-  return "bg-primary";
+  if (value === 1) return "bg-destructive/70";
+  if (value === 2) return "bg-warning/70";
+  return "bg-success";
 }
 
 export function ReorderHeatmap({ data }: ReorderHeatmapProps) {
@@ -28,25 +30,37 @@ export function ReorderHeatmap({ data }: ReorderHeatmapProps) {
             {m}
           </span>
         ))}
-        {data.map((row) => {
-          const max = Math.max(1, ...row.mesi);
-          return (
-            <Fragment key={row.clienteId}>
-              <span className="truncate pr-1 text-[11px] text-muted-foreground">{row.nome}</span>
-              {row.mesi.map((v, i) => (
-                <span
-                  key={i}
-                  className={`aspect-square rounded ${intensityClass(v, max)}`}
-                  title={`${v} ${v === 1 ? "ordine" : "ordini"}`}
-                />
-              ))}
-            </Fragment>
-          );
-        })}
+        {data.map((row) => (
+          <Fragment key={row.clienteId}>
+            <span className="truncate pr-1 text-[11px] text-muted-foreground">{row.nome}</span>
+            {row.mesi.map((v, i) => (
+              <span
+                key={i}
+                className={`aspect-square rounded ${intensityClass(v)}`}
+                title={`${v} ${v === 1 ? "ordine" : "ordini"}`}
+              />
+            ))}
+          </Fragment>
+        ))}
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">
-        Fila scura continua = cliente regolare · celle chiare = mesi saltati, da recuperare.
-      </p>
+      <div className="mt-3 flex flex-wrap gap-x-3.5 gap-y-1 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-muted" />
+          Nessun ordine
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-destructive/70" />
+          Bassa (1)
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-warning/70" />
+          Media (2)
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-success" />
+          Alta (3+)
+        </span>
+      </div>
     </div>
   );
 }

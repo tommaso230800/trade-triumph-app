@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { TransparencyBanner } from "@/components/metrics/TransparencyBanner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -256,7 +255,6 @@ const Ordini = () => {
   return (
     <MainLayout>
       <div className="space-y-6 animate-fade-in">
-        <TransparencyBanner scope="ordini" />
 
         {/* Direzione "Scatto": pannello con scope proprio (token --scatto-*,
             non tocca il tema globale dell'app). */}

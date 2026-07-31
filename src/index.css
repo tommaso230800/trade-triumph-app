@@ -57,18 +57,25 @@
     --accent-green: 150 75% 48%;
     --accent-yellow: 46 100% 56%;
 
-    /* Identità azienda: palette fissa di 8 tinte, assegnata per hash dell'id
-       azienda (vedi src/lib/aziendaColor.ts). Tinte scelte a distanza dagli
-       hue di stato (successo/attesa/errore/info) per non essere confuse con
-       un significato di stato: sono pura identificazione visiva. */
-    --azienda-1: 90 40% 38%;
-    --azienda-2: 185 55% 36%;
-    --azienda-3: 200 60% 44%;
-    --azienda-4: 250 55% 58%;
-    --azienda-5: 275 50% 55%;
-    --azienda-6: 300 45% 52%;
-    --azienda-7: 320 55% 54%;
-    --azienda-8: 340 55% 54%;
+    /* Identità azienda: palette fissa di 12 tinte, assegnata per hash dell'id
+       azienda (vedi src/lib/aziendaColor.ts). 12 invece di 8 per ridurre il
+       rischio che due fornitori reali finiscano sulla stessa tinta (con 6-10
+       aziende la probabilità di collisione su 8 sole tinte è concreta).
+       Tinte scelte a distanza dagli hue di stato (successo/attesa/errore/
+       info) per non essere confuse con un significato di stato, e con
+       luminosità alternata anche fra tinte vicine per restare distinguibili. */
+    --azienda-1: 72 60% 34%;
+    --azienda-2: 92 55% 46%;
+    --azienda-3: 112 52% 32%;
+    --azienda-4: 176 65% 30%;
+    --azienda-5: 196 68% 48%;
+    --azienda-6: 245 62% 46%;
+    --azienda-7: 260 58% 58%;
+    --azienda-8: 275 66% 40%;
+    --azienda-9: 291 55% 56%;
+    --azienda-10: 306 64% 42%;
+    --azienda-11: 320 58% 58%;
+    --azienda-12: 20 75% 44%;
 
     /* Direzione "Scatto": palette scoperta SOLO dai componenti della pagina
        Ordini (pilota del redesign). Non tocca --background/--card ecc. usati

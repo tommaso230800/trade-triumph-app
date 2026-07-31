@@ -8,7 +8,8 @@ import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
 import { useClientiAttiviMese } from "@/hooks/useClientiAttiviMese";
-import { aziendaDotClass } from "@/lib/aziendaColor";
+import { useAziende } from "@/hooks/useAziende";
+import { aziendaDotClass, buildAziendaColorIndex } from "@/lib/aziendaColor";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, ChevronRight, PhoneOff, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
@@ -47,8 +48,12 @@ const Index = () => {
   });
   const { data: forecastData, isLoading: forecastLoading } = useReorderForecast();
   const { data: clientiAttiviMese, isLoading: clientiAttiviLoading } = useClientiAttiviMese();
+  const { data: aziendeList, isLoading: aziendeLoading } = useAziende();
+  // Colore identità per posizione nell'elenco reale (non per hash dell'id):
+  // con 6-10 aziende un hash su 12 caselle collide troppo spesso.
+  const aziendaColorMap = useMemo(() => buildAziendaColorIndex(aziendeList || []), [aziendeList]);
 
-  const isLoading = yoyLoading || forecastLoading || clientiAttiviLoading;
+  const isLoading = yoyLoading || forecastLoading || clientiAttiviLoading || aziendeLoading;
 
   const heroMonth = yoy?.monthlyComparison[currentMonthIndex];
   const meseCorrenteLabel = format(now, "MMMM yyyy", { locale: it });
@@ -84,6 +89,19 @@ const Index = () => {
     return arr;
   }, [forecastData, yoy]);
 
+  // Fatturato per fornitore (anno in corso): riusa yoy.aziendeYoY per il
+  // fatturato e useAziende (già esistente, usato in Aziende.tsx) per i nomi.
+  const fornitoriTop = useMemo(() => {
+    if (!yoy) return [];
+    const nomeMap = new Map((aziendeList || []).map((a) => [a.id, a.nome]));
+    return Array.from(yoy.aziendeYoY.values())
+      .filter((a) => a.curr > 0)
+      .map((a) => ({ ...a, nome: nomeMap.get(a.id) || "—" }))
+      .sort((a, b) => b.curr - a.curr)
+      .slice(0, 4);
+  }, [yoy, aziendeList]);
+  const fornitoreMax = Math.max(1, ...fornitoriTop.map((f) => f.curr));
+
   if (isLoading) {
     return (
       <MainLayout>
@@ -108,6 +126,7 @@ const Index = () => {
             <Skeleton className="h-24 rounded-2xl" />
             <Skeleton className="h-24 rounded-2xl" />
           </div>
+          <Skeleton className="h-40 w-full rounded-2xl" />
           <Skeleton className="h-5 w-32" />
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -176,9 +195,20 @@ const Index = () => {
 
         {/* Grafico andamento fatturato */}
         <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
-          <h2 className="mb-1 px-1 text-sm font-semibold tracking-tight text-foreground">
-            Andamento fatturato
-          </h2>
+          <div className="mb-1 flex items-center justify-between px-1">
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">
+              Andamento fatturato
+            </h2>
+            {yoy && yoy.prev.fatturato > 0 && (
+              <span
+                className={`rounded-lg px-2 py-0.5 text-xs font-bold ${
+                  yoy.deltaPct >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                }`}
+              >
+                {yoy.deltaPct >= 0 ? "↑" : "↓"} {Math.abs(yoy.deltaPct).toFixed(1)}%
+              </span>
+            )}
+          </div>
           <RevenueTrendChart
             data={yoy?.monthlyComparison || []}
             currentMonthIndex={currentMonthIndex}
@@ -246,6 +276,33 @@ const Index = () => {
           </div>
         </div>
 
+        {/* Fatturato per fornitore */}
+        {fornitoriTop.length > 0 && (
+          <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
+            <h2 className="mb-3 px-1 text-sm font-semibold tracking-tight text-foreground">
+              Fatturato per fornitore
+            </h2>
+            <div className="space-y-3">
+              {fornitoriTop.map((f) => (
+                <div key={f.id}>
+                  <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                    <span className="truncate text-sm font-semibold text-foreground">{f.nome}</span>
+                    <span className="flex-shrink-0 font-display text-sm font-semibold tabular-nums text-foreground">
+                      {formatNumberIT(f.curr / 1000)}k €
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={`h-full rounded-full ${aziendaDotClass(f.id, aziendaColorMap)}`}
+                      style={{ width: `${Math.max(4, (f.curr / fornitoreMax) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Da ricontattare */}
         <div>
           <div className="mb-3 flex items-center justify-between">
@@ -284,13 +341,13 @@ const Index = () => {
                     to={`/clienti/${f.cliente_id}`}
                     className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-border/50 bg-card p-3.5 shadow-sm"
                   >
-                    <span className={`absolute inset-y-2 left-0 w-1 rounded-r-full ${aziendaDotClass(f.azienda_id)}`} />
+                    <span className={`absolute inset-y-2 left-0 w-1 rounded-r-full ${aziendaDotClass(f.azienda_id, aziendaColorMap)}`} />
                     <div className="min-w-0 flex-1 pl-2">
                       <p className="truncate text-[15px] font-bold tracking-tight text-foreground">
                         {f.cliente_nome}
                       </p>
                       <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <span className={`h-2 w-2 flex-shrink-0 rounded-full ${aziendaDotClass(f.azienda_id)}`} />
+                        <span className={`h-2 w-2 flex-shrink-0 rounded-full ${aziendaDotClass(f.azienda_id, aziendaColorMap)}`} />
                         <span className="truncate">
                           {f.prodotto_nome} · {f.azienda_nome}
                         </span>

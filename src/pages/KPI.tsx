@@ -20,6 +20,7 @@ import { BrandRevenueBars } from "@/components/kpi/BrandRevenueBars";
 import { OrdersStatusDonut } from "@/components/kpi/OrdersStatusDonut";
 import { MonthlyComparisonCards } from "@/components/kpi/MonthlyComparisonCards";
 import { ClientRevenueCards } from "@/components/kpi/ClientRevenueCards";
+import { buildAziendaColorIndex } from "@/lib/aziendaColor";
 import { formatCurrency, formatNumberIT, mesiLabel } from "@/components/kpi/kpiShared";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Calendar } from "@/components/ui/calendar";
@@ -60,7 +61,6 @@ import {
   FileText,
 } from "lucide-react";
 import { exportKPIToPDF, exportKPIToCSV } from "@/lib/exportKPI";
-import { TransparencyBanner } from "@/components/metrics/TransparencyBanner";
 
 type PeriodPreset = "mese" | "trimestre" | "semestre" | "anno" | "custom";
 
@@ -109,6 +109,12 @@ const KPI = () => {
     (stats?.allAziende || []).forEach((a: any) => m.set(a.id, a.nome));
     return m;
   }, [stats?.allAziende]);
+  // Colore identità per posizione nell'elenco reale (non per hash dell'id):
+  // con più aziende un hash su 12 caselle collide troppo spesso.
+  const aziendaColorMap = useMemo(
+    () => buildAziendaColorIndex(stats?.allAziende || []),
+    [stats?.allAziende]
+  );
   const clientiNames = useMemo(() => {
     const m = new Map<string, string>();
     (stats?.allClienti || []).forEach((c: any) => m.set(c.id, c.nome));
@@ -279,7 +285,6 @@ const KPI = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
-        <TransparencyBanner scope="kpi" />
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
@@ -412,6 +417,103 @@ const KPI = () => {
           marginePercentuale={stats?.marginePercentuale || 0}
         />
 
+        {/* Altri indicatori: confronti, sconti, margine — colore solo dove
+            comunica davvero uno stato (utile/margine/MoM/YoY); sconto medio e
+            sconto merce restano neutri perché non sono un "buono/cattivo". */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 animate-fade-in">
+          <div className="rounded-lg bg-gradient-to-br from-success/15 to-success/5 border border-success/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center gap-2">
+              <Euro className="h-4 w-4 text-success" />
+              <p className="text-xs text-muted-foreground">Utile lordo</p>
+            </div>
+            <p className="text-2xl font-bold mt-1 text-success">
+              {formatCurrency(stats?.utileLordo || 0)}
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              costo: {formatCurrency(stats?.costoAcquistoTotale || 0)}
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              <p className="text-xs text-muted-foreground">Margine %</p>
+            </div>
+            <p className="text-2xl font-bold mt-1 text-primary">
+              {(stats?.marginePercentuale || 0).toFixed(1)}%
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              su fatturato periodo
+            </p>
+          </div>
+
+          <div className={cn(
+            "rounded-lg border p-4 shadow-card transition-transform hover:-translate-y-0.5 bg-gradient-to-br",
+            (stats?.mom || 0) >= 0 ? "from-success/15 to-success/5 border-success/30" : "from-destructive/15 to-destructive/5 border-destructive/30"
+          )}>
+            <div className="flex items-center gap-2">
+              {(stats?.mom || 0) >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-success" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-destructive" />
+              )}
+              <p className="text-xs text-muted-foreground">MoM (mese vs precedente)</p>
+            </div>
+            <p className={cn(
+              "text-2xl font-bold mt-1",
+              (stats?.mom || 0) >= 0 ? "text-success" : "text-destructive"
+            )}>
+              {(stats?.mom || 0) >= 0 ? "+" : ""}{(stats?.mom || 0).toFixed(1)}%
+            </p>
+          </div>
+
+          <div className={cn(
+            "rounded-lg border p-4 shadow-card transition-transform hover:-translate-y-0.5 bg-gradient-to-br",
+            (stats?.yoy || 0) >= 0 ? "from-success/15 to-success/5 border-success/30" : "from-destructive/15 to-destructive/5 border-destructive/30"
+          )}>
+            <div className="flex items-center gap-2">
+              {(stats?.yoy || 0) >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-success" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-destructive" />
+              )}
+              <p className="text-xs text-muted-foreground">YoY (stesso periodo a/p)</p>
+            </div>
+            <p className={cn(
+              "text-2xl font-bold mt-1",
+              (stats?.yoy || 0) >= 0 ? "text-success" : "text-destructive"
+            )}>
+              {(stats?.yoy || 0) >= 0 ? "+" : ""}{(stats?.yoy || 0).toFixed(1)}%
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              vs {formatCurrency(stats?.yoyPrevFatturato || 0)}
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-primary" />
+              <p className="text-xs text-muted-foreground">Sconto medio applicato</p>
+            </div>
+            <p className="text-2xl font-bold mt-1 text-foreground">
+              {(stats?.scontoCascataMedio || 0).toFixed(1)}%
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              + {(stats?.scontoMedio || 0).toFixed(1)}% sconto globale
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
+            <div className="flex items-center gap-2">
+              <Euro className="h-4 w-4 text-primary" />
+              <p className="text-xs text-muted-foreground">Sconto merce medio / ordine</p>
+            </div>
+            <p className="text-2xl font-bold mt-1 text-foreground">
+              {formatCurrency(stats?.scontoMerceMedio || 0)}
+            </p>
+          </div>
+        </div>
+
         {/* Andamento anno corrente vs precedente */}
         {yoy && (
           <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
@@ -522,100 +624,6 @@ const KPI = () => {
           <MonthlyComparisonCards data={yoy.monthlyComparison} yearCurr={yoy.yearCurr} yearPrev={yoy.yearPrev} />
         )}
 
-        <h2 className="flex items-center gap-2 px-1 pt-4 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-          <span className="inline-block h-3.5 w-1 rounded-sm bg-muted-foreground" />
-          Altri indicatori
-        </h2>
-
-        {/* Detail KPIs: confronti, sconti, margine */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 animate-fade-in">
-          <div className="rounded-lg bg-gradient-to-br from-success/15 to-success/5 border border-success/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center gap-2">
-              <Euro className="h-4 w-4 text-success" />
-              <p className="text-xs text-muted-foreground">Utile lordo</p>
-            </div>
-            <p className="text-2xl font-bold mt-1 text-success">
-              {formatCurrency(stats?.utileLordo || 0)}
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              costo: {formatCurrency(stats?.costoAcquistoTotale || 0)}
-            </p>
-          </div>
-
-          <div className="rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 p-4 shadow-card transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Margine %</p>
-            </div>
-            <p className="text-2xl font-bold mt-1 text-primary">
-              {(stats?.marginePercentuale || 0).toFixed(1)}%
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              su fatturato periodo
-            </p>
-          </div>
-
-          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center gap-2">
-              {(stats?.mom || 0) >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-success" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-destructive" />
-              )}
-              <p className="text-xs text-muted-foreground">MoM (mese vs precedente)</p>
-            </div>
-            <p className={cn(
-              "text-2xl font-bold mt-1",
-              (stats?.mom || 0) >= 0 ? "text-success" : "text-destructive"
-            )}>
-              {(stats?.mom || 0) >= 0 ? "+" : ""}{(stats?.mom || 0).toFixed(1)}%
-            </p>
-          </div>
-
-          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center gap-2">
-              {(stats?.yoy || 0) >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-success" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-destructive" />
-              )}
-              <p className="text-xs text-muted-foreground">YoY (stesso periodo a/p)</p>
-            </div>
-            <p className={cn(
-              "text-2xl font-bold mt-1",
-              (stats?.yoy || 0) >= 0 ? "text-success" : "text-destructive"
-            )}>
-              {(stats?.yoy || 0) >= 0 ? "+" : ""}{(stats?.yoy || 0).toFixed(1)}%
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              vs {formatCurrency(stats?.yoyPrevFatturato || 0)}
-            </p>
-          </div>
-
-          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Sconto medio applicato</p>
-            </div>
-            <p className="text-2xl font-bold mt-1 text-foreground">
-              {(stats?.scontoCascataMedio || 0).toFixed(1)}%
-            </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              + {(stats?.scontoMedio || 0).toFixed(1)}% sconto globale
-            </p>
-          </div>
-
-          <div className="rounded-lg bg-card p-4 shadow-card transition-transform hover:-translate-y-0.5">
-            <div className="flex items-center gap-2">
-              <Euro className="h-4 w-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Sconto merce medio / ordine</p>
-            </div>
-            <p className="text-2xl font-bold mt-1 text-foreground">
-              {formatCurrency(stats?.scontoMerceMedio || 0)}
-            </p>
-          </div>
-        </div>
-
         {/* Opportunities + AI */}
         {yoy && (
           <KPIOpportunitiesPanel
@@ -657,7 +665,7 @@ const KPI = () => {
               />
             </div>
 
-            <ClientRevenueCards clienti={filteredClienti} yearPrev={yoy?.yearPrev} />
+            <ClientRevenueCards clienti={filteredClienti} yearPrev={yoy?.yearPrev} aziendaColorMap={aziendaColorMap} />
           </TabsContent>
 
           {/* Aziende Tab */}
