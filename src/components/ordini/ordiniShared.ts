@@ -1,5 +1,20 @@
 import type { Ordine } from "@/hooks/useOrdini";
 import type { BadgeProps } from "@/components/ui/badge";
+import type { LucideIcon } from "lucide-react";
+import type { OrdineCardAction } from "./OrdineCard";
+
+export interface OrdiniTableRow {
+  ordine: Ordine;
+  muted?: boolean;
+  actions: OrdineCardAction[];
+  primaryAction?: {
+    label: string;
+    icon: LucideIcon;
+    onClick: () => void;
+    pending?: boolean;
+  };
+  giorniInStandBy?: number;
+}
 
 export const statusConfig: Record<Ordine["status"], { label: string; variant: NonNullable<BadgeProps["variant"]> }> = {
   completato: { label: "Completato", variant: "success" },

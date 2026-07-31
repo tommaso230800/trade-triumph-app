@@ -39,7 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OrdiniStatsRow } from "@/components/ordini/OrdiniStatsRow";
 import { OrdiniFilters } from "@/components/ordini/OrdiniFilters";
 import { OrdiniList } from "@/components/ordini/OrdiniList";
-import type { OrdiniTableRow } from "@/components/ordini/OrdiniTable";
+import type { OrdiniTableRow } from "@/components/ordini/ordiniShared";
 import type { OrdineCardAction } from "@/components/ordini/OrdineCard";
 import { NuovoOrdineDialog } from "@/components/ordini/NuovoOrdineDialog";
 import { ModificaOrdineDialog } from "@/components/ordini/ModificaOrdineDialog";
@@ -343,7 +343,7 @@ const Ordini = () => {
                   Valore sospeso (non in KPI): {formatCurrency(stats.valoreStandBy)}
                 </span>
               </div>
-              <OrdiniList rows={standByRows} showStandByColumns />
+              <OrdiniList rows={standByRows} />
             </div>
           )}
 

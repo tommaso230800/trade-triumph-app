@@ -134,6 +134,26 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
                   <span className="text-right text-scatto-ink">{giorniInStandBy}g</span>
                 </>
               )}
+              {ordine.stand_by_motivo && (
+                <>
+                  <span className="text-scatto-muted">Motivo</span>
+                  <span className="text-right text-scatto-ink">{ordine.stand_by_motivo}</span>
+                </>
+              )}
+              {ordine.stand_by_prodotto_bloccato && (
+                <>
+                  <span className="text-scatto-muted">Prodotto bloccato</span>
+                  <span className="text-right text-scatto-ink">{ordine.stand_by_prodotto_bloccato}</span>
+                </>
+              )}
+              {ordine.stand_by_data_prevista && (
+                <>
+                  <span className="text-scatto-muted">Data prevista</span>
+                  <span className="text-right text-scatto-ink">
+                    {format(new Date(ordine.stand_by_data_prevista), "dd/MM/yyyy")}
+                  </span>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-2">

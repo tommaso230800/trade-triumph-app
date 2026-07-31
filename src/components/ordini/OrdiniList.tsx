@@ -6,7 +6,7 @@ import { format, isToday, isYesterday } from "date-fns";
 import { it } from "date-fns/locale";
 import type { Ordine } from "@/hooks/useOrdini";
 import { OrdineCard } from "./OrdineCard";
-import { OrdiniTable, type OrdiniTableRow } from "./OrdiniTable";
+import type { OrdiniTableRow } from "./ordiniShared";
 
 const getOrderDate = (ordine: Ordine) => new Date(ordine.data_ordine || ordine.created_at);
 const dayKey = (date: Date) => format(date, "yyyy-MM-dd");
@@ -29,14 +29,16 @@ interface OrdiniListEmptyState {
 
 interface OrdiniListProps {
   rows: OrdiniTableRow[];
-  showStandByColumns?: boolean;
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
   emptyState?: OrdiniListEmptyState;
 }
 
-export function OrdiniList({ rows, showStandByColumns, isLoading, isError, onRetry, emptyState }: OrdiniListProps) {
+// Un'unica lista di card ad ogni larghezza (niente tabella desktop separata):
+// da 375px a 1440px è lo stesso design, solo le card si ridispongono in più
+// colonne quando c'è spazio.
+export function OrdiniList({ rows, isLoading, isError, onRetry, emptyState }: OrdiniListProps) {
   // Righe già ordinate per data_ordine DESC dalla query: giorni uguali sono
   // sempre contigui, quindi un raggruppamento in un solo passaggio basta.
   const groups = useMemo(() => {
@@ -52,7 +54,7 @@ export function OrdiniList({ rows, showStandByColumns, isLoading, isError, onRet
 
   if (isLoading) {
     return (
-      <div className="space-y-3 md:hidden">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Skeleton className="h-24 w-full rounded-2xl bg-scatto-surface" />
         <Skeleton className="h-24 w-full rounded-2xl bg-scatto-surface" />
         <Skeleton className="h-24 w-full rounded-2xl bg-scatto-surface" />
@@ -103,34 +105,31 @@ export function OrdiniList({ rows, showStandByColumns, isLoading, isError, onRet
   }
 
   return (
-    <>
-      <div className="space-y-4 md:hidden">
-        {groups.map((group) => (
-          <div key={dayKey(group.date)} className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <h3 className="text-xs font-bold uppercase tracking-wide text-scatto-muted">
-                {groupLabel(group.date)}
-              </h3>
-              <span className="text-xs text-scatto-muted">
-                {group.rows.length} {group.rows.length === 1 ? "ordine" : "ordini"}
-              </span>
-            </div>
-            <div className="space-y-3">
-              {group.rows.map(({ ordine, muted, actions, primaryAction, giorniInStandBy }) => (
-                <OrdineCard
-                  key={ordine.id}
-                  ordine={ordine}
-                  muted={muted}
-                  actions={actions}
-                  primaryAction={primaryAction}
-                  giorniInStandBy={giorniInStandBy}
-                />
-              ))}
-            </div>
+    <div className="space-y-4">
+      {groups.map((group) => (
+        <div key={dayKey(group.date)} className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-scatto-muted">
+              {groupLabel(group.date)}
+            </h3>
+            <span className="text-xs text-scatto-muted">
+              {group.rows.length} {group.rows.length === 1 ? "ordine" : "ordini"}
+            </span>
           </div>
-        ))}
-      </div>
-      <OrdiniTable rows={rows} showStandByColumns={showStandByColumns} />
-    </>
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            {group.rows.map(({ ordine, muted, actions, primaryAction, giorniInStandBy }) => (
+              <OrdineCard
+                key={ordine.id}
+                ordine={ordine}
+                muted={muted}
+                actions={actions}
+                primaryAction={primaryAction}
+                giorniInStandBy={giorniInStandBy}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
