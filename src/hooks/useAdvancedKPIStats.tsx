@@ -163,10 +163,18 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
 
       // Monthly trend
       const mesiNomi = ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
-      const ordiniPerMeseMap: Record<string, { fatturato: number; ordini: number; cartoni: number; pezzi: number }> = {};
+      const ordiniPerMeseMap: Record<string, { fatturato: number; ordini: number; cartoni: number; pezzi: number; costoAcquisto: number }> = {};
       mesiNomi.forEach(m => {
-        ordiniPerMeseMap[m] = { fatturato: 0, ordini: 0, cartoni: 0, pezzi: 0 };
+        ordiniPerMeseMap[m] = { fatturato: 0, ordini: 0, cartoni: 0, pezzi: 0, costoAcquisto: 0 };
       });
+
+      // Distribuzione ordini per stato (verificato ha priorità sullo status)
+      let ordiniVerificati = 0;
+      let ordiniInAttesa = 0;
+      let ordiniAltri = 0;
+
+      // Intensità riordini cliente×mese (top clienti per fatturato)
+      const clienteMonthlyMap = new Map<string, number[]>();
 
       ordini.forEach((ordine) => {
         const totaleOrdine = Number(ordine.totale);
@@ -184,6 +192,21 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         const mese = mesiNomi[meseIndex];
         ordiniPerMeseMap[mese].fatturato += totaleOrdine;
         ordiniPerMeseMap[mese].ordini += 1;
+
+        // Distribuzione stato: verificato ha priorità, poi in_attesa, poi altri
+        // (completato/spedito non ancora verificati). annullato/stand_by sono
+        // già esclusi dalla query.
+        if (ordine.verificato_conferma) ordiniVerificati += 1;
+        else if (ordine.status === "in_attesa") ordiniInAttesa += 1;
+        else ordiniAltri += 1;
+
+        // Intensità riordini: conteggio ordini per cliente per mese
+        if (ordine.cliente_id) {
+          if (!clienteMonthlyMap.has(ordine.cliente_id)) {
+            clienteMonthlyMap.set(ordine.cliente_id, new Array(12).fill(0));
+          }
+          clienteMonthlyMap.get(ordine.cliente_id)![meseIndex] += 1;
+        }
 
         // Allocazione proporzionale del fatturato ordine sulle righe non-omaggio.
         // Così la somma per prodotto/brand riconcilia con `ordini.totale`.
@@ -218,9 +241,10 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
             scontoRigheNumeratore += scontoCascata * rigaFatturatoLordo;
           }
 
-          // Costo acquisto per calcolare margine reale
+          // Costo acquisto per calcolare margine reale (totale e per mese)
           const costoAcq = Number(riga.prodotti.costo_acquisto) || 0;
           costoAcquistoTotale += costoAcq * pezzi;
+          ordiniPerMeseMap[mese].costoAcquisto += costoAcq * pezzi;
 
           ordineCartoni += cartoni;
           ordinePezzi += pezzi;
@@ -351,13 +375,33 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       const topGrowers = [...conConfronto].sort((a, b) => b.variazione_pct - a.variazione_pct).slice(0, 5);
       const topDecliners = [...conConfronto].sort((a, b) => a.variazione_pct - b.variazione_pct).slice(0, 5);
 
-      const ordiniPerMese = mesiNomi.map((mese) => ({
-        mese,
-        fatturato: ordiniPerMeseMap[mese].fatturato,
-        ordini: ordiniPerMeseMap[mese].ordini,
-        cartoni: ordiniPerMeseMap[mese].cartoni,
-        pezzi: ordiniPerMeseMap[mese].pezzi,
+      const ordiniPerMese = mesiNomi.map((mese) => {
+        const m = ordiniPerMeseMap[mese];
+        const utileMese = m.fatturato - m.costoAcquisto;
+        return {
+          mese,
+          fatturato: m.fatturato,
+          ordini: m.ordini,
+          cartoni: m.cartoni,
+          pezzi: m.pezzi,
+          costoAcquisto: m.costoAcquisto,
+          marginePct: m.fatturato > 0 ? (utileMese / m.fatturato) * 100 : 0,
+        };
+      });
+
+      // Intensità riordini: solo i clienti coi fatturati più alti (coerente
+      // col resto della pagina, ordinati come clientiKPI)
+      const reorderHeatmap = clientiKPI.slice(0, 5).map((c) => ({
+        clienteId: c.id,
+        nome: c.nome,
+        mesi: clienteMonthlyMap.get(c.id) || new Array(12).fill(0),
       }));
+
+      const statusDistribuzione = {
+        verificati: ordiniVerificati,
+        inAttesa: ordiniInAttesa,
+        altri: ordiniAltri,
+      };
 
       // Trend vs periodo precedente
       let trendPercentage = 0;
@@ -428,6 +472,8 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         topGrowers,
         topDecliners,
         ordiniPerMese,
+        statusDistribuzione,
+        reorderHeatmap,
         // Options for filters
         allClienti: clienti || [],
         allAziende: aziende || [],

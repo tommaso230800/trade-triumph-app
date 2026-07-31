@@ -3,13 +3,23 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { AllocationsEnginePanel } from "@/components/provvigioni/AllocationsEnginePanel";
 import { useAdvancedKPIStats, AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
-import { KPICard } from "@/components/dashboard/KPICard";
-import { SalesChart } from "@/components/dashboard/SalesChart";
-import { ClientGrowthWidget } from "@/components/dashboard/ClientGrowthWidget";
-import { YoYDynamicChart } from "@/components/dashboard/YoYDynamicChart";
-import { KPIHeroYoY } from "@/components/dashboard/KPIHeroYoY";
 import { YoYDimensionPanel } from "@/components/dashboard/YoYDimensionPanel";
 import { KPIOpportunitiesPanel } from "@/components/dashboard/KPIOpportunitiesPanel";
+import { RevenueTrendChart } from "@/components/dashboard/RevenueTrendChart";
+import { KPITiles } from "@/components/kpi/KPITiles";
+import { InsightsPanel, type Insight } from "@/components/kpi/InsightsPanel";
+import { MonthlyGoalCard } from "@/components/kpi/MonthlyGoalCard";
+import { RevenueMarginChart } from "@/components/kpi/RevenueMarginChart";
+import { OrdersMonthlyChart } from "@/components/kpi/OrdersMonthlyChart";
+import { ClientMovementBadges } from "@/components/kpi/ClientMovementBadges";
+import { TopClientsGrowthDecline } from "@/components/kpi/TopClientsGrowthDecline";
+import { TopClientsRevenueBars } from "@/components/kpi/TopClientsRevenueBars";
+import { ReorderHeatmap } from "@/components/kpi/ReorderHeatmap";
+import { RipartizioniHighlights } from "@/components/kpi/RipartizioniHighlights";
+import { BrandRevenueBars } from "@/components/kpi/BrandRevenueBars";
+import { OrdersStatusDonut } from "@/components/kpi/OrdersStatusDonut";
+import { MonthlyComparisonCards } from "@/components/kpi/MonthlyComparisonCards";
+import { formatCurrency, formatNumberIT, mesiLabel } from "@/components/kpi/kpiShared";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -40,26 +50,16 @@ import {
   Euro,
   TrendingUp,
   TrendingDown,
-  Users,
-  Package,
-  Building2,
-  ShoppingCart,
   Search,
   Loader2,
-  BarChart3,
   CalendarIcon,
   Tag,
-  BoxIcon,
-  Filter,
   RotateCcw,
   Download,
   FileText,
 } from "lucide-react";
 import { exportKPIToPDF, exportKPIToCSV } from "@/lib/exportKPI";
 import { TransparencyBanner } from "@/components/metrics/TransparencyBanner";
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
 
 type PeriodPreset = "mese" | "trimestre" | "semestre" | "anno" | "custom";
 
@@ -123,6 +123,87 @@ const KPI = () => {
     (stats?.allBrands || []).forEach((b: any) => m.set(b.id, b.name));
     return m;
   }, [stats?.allBrands]);
+
+  // Movimento clienti vs anno precedente: stessa soglia ±5% già usata in
+  // ClientGrowthWidget, per restare coerenti col resto dell'app.
+  const clientiClassificati = useMemo(() => {
+    const conConfronto = (stats?.clientiKPI || [])
+      .filter((c) => (c.fatturato_2025 || 0) > 0)
+      .map((c) => ({
+        ...c,
+        variazionePct: ((c.fatturato - (c.fatturato_2025 || 0)) / (c.fatturato_2025 || 1)) * 100,
+      }));
+    const crescita = conConfronto.filter((c) => c.variazionePct > 5).sort((a, b) => b.variazionePct - a.variazionePct);
+    const calo = conConfronto.filter((c) => c.variazionePct < -5).sort((a, b) => a.variazionePct - b.variazionePct);
+    const stabili = conConfronto.filter((c) => c.variazionePct >= -5 && c.variazionePct <= 5);
+    return { crescita, calo, stabili };
+  }, [stats?.clientiKPI]);
+
+  // Obiettivo mensile: media del fatturato negli ultimi 12 mesi (stessa logica
+  // già usata in Provvigioni per l'obiettivo mensile) — nessun target reale
+  // impostabile esiste oggi, è una stima automatica.
+  const now = useMemo(() => new Date(), []);
+  const currentMonthIndex = now.getMonth();
+  const obiettivoMensile = useMemo(() => {
+    if (!yoy) return null;
+    const rolling: number[] = [];
+    for (let k = 1; k <= 12; k++) {
+      const raw = currentMonthIndex - k;
+      const idx = ((raw % 12) + 12) % 12;
+      rolling.push(raw >= 0 ? yoy.monthlyComparison[idx].curr : yoy.monthlyComparison[idx].prev);
+    }
+    const obiettivo = rolling.some((v) => v > 0) ? rolling.reduce((a, b) => a + b, 0) / 12 : 0;
+    const fatturatoMese = yoy.monthlyComparison[currentMonthIndex]?.curr ?? 0;
+    return { obiettivo, fatturatoMese };
+  }, [yoy, currentMonthIndex]);
+
+  // Insight automatici: frasi derivate da numeri già calcolati (nessun dato
+  // nuovo, nessuna IA) — stesso approccio già in uso in Provvigioni.
+  const insights = useMemo<Insight[]>(() => {
+    if (!stats) return [];
+    const list: Insight[] = [];
+
+    const mesiConDati = stats.ordiniPerMese.filter((m) => m.fatturato > 0);
+    if (mesiConDati.length > 0) {
+      const maxFatt = Math.max(...mesiConDati.map((m) => m.fatturato));
+      const recordIdx = stats.ordiniPerMese.findIndex((m) => m.fatturato === maxFatt);
+      const record = stats.ordiniPerMese[recordIdx];
+      const prevMonth = recordIdx > 0 ? stats.ordiniPerMese[recordIdx - 1] : null;
+      const deltaVsPrev = prevMonth && prevMonth.fatturato > 0
+        ? ((record.fatturato - prevMonth.fatturato) / prevMonth.fatturato) * 100
+        : null;
+      list.push({
+        emoji: "📈",
+        bold: `${mesiLabel[recordIdx]} è il mese record`,
+        text: `con ${formatCurrency(record.fatturato)}${
+          deltaVsPrev !== null ? ` (${deltaVsPrev >= 0 ? "+" : ""}${deltaVsPrev.toFixed(1)}% su ${mesiLabel[recordIdx - 1]})` : ""
+        }.`,
+      });
+    }
+
+    if (clientiClassificati.calo.length > 0) {
+      const peggiori = clientiClassificati.calo.slice(0, 2).map((c) => c.nome).join(" e ");
+      list.push({
+        emoji: "⚠️",
+        bold: `${clientiClassificati.calo.length} client${clientiClassificati.calo.length === 1 ? "e" : "i"} in calo`,
+        text: `${peggiori} ${clientiClassificati.calo.length === 1 ? "ha" : "hanno"} perso oltre il ${Math.abs(
+          Math.round(clientiClassificati.calo[0]?.variazionePct ?? 0)
+        )}%. Da ricontattare.`,
+      });
+    }
+
+    const aziendaTop = stats.aziendeKPI[0];
+    if (aziendaTop && stats.fatturatoTotale > 0) {
+      const quota = (aziendaTop.fatturato_totale / stats.fatturatoTotale) * 100;
+      list.push({
+        emoji: "🏆",
+        bold: `${aziendaTop.nome} è il fornitore principale`,
+        text: `${formatCurrency(aziendaTop.fatturato_totale)}, il ${quota.toFixed(0)}% del totale.`,
+      });
+    }
+
+    return list;
+  }, [stats, clientiClassificati]);
 
   const resetFilters = () => {
     setSelectedClienti([]);
@@ -201,11 +282,11 @@ const KPI = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-              Analisi KPI Avanzata
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
+              Analisi KPI
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Filtra e analizza le performance per cliente, azienda, brand e periodo
+              Performance per cliente, azienda, marchio e periodo
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -237,200 +318,213 @@ const KPI = () => {
           </div>
         </div>
 
-        {/* Filters Bar */}
-        <div className="rounded-xl bg-card p-4 shadow-card space-y-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <Filter className="h-4 w-4" />
-            Filtri Avanzati
-          </div>
-          
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            {/* Period Preset */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Periodo</label>
-              <Select value={periodPreset} onValueChange={(v) => setPeriodPreset(v as PeriodPreset)}>
-                <SelectTrigger>
-                  <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <SelectValue placeholder="Periodo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mese">Questo Mese</SelectItem>
-                  <SelectItem value="trimestre">Ultimi 3 Mesi</SelectItem>
-                  <SelectItem value="semestre">Ultimi 6 Mesi</SelectItem>
-                  <SelectItem value="anno">Anno in Corso</SelectItem>
-                  <SelectItem value="custom">Personalizzato</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Filtri a chip */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={periodPreset} onValueChange={(v) => setPeriodPreset(v as PeriodPreset)}>
+            <SelectTrigger className="h-auto w-auto gap-1.5 rounded-full border-none bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm [&>svg]:text-primary-foreground">
+              <CalendarIcon className="h-3.5 w-3.5" />
+              <SelectValue placeholder="Periodo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="mese">Questo mese</SelectItem>
+              <SelectItem value="trimestre">Ultimi 3 mesi</SelectItem>
+              <SelectItem value="semestre">Ultimi 6 mesi</SelectItem>
+              <SelectItem value="anno">Anno in corso</SelectItem>
+              <SelectItem value="custom">Personalizzato</SelectItem>
+            </SelectContent>
+          </Select>
 
-            {/* Custom Date Range */}
-            {periodPreset === "custom" && (
-              <>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">Da</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !customStartDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customStartDate ? format(customStartDate, "dd/MM/yyyy", { locale: it }) : "Seleziona"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={customStartDate}
-                        onSelect={setCustomStartDate}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">A</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !customEndDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customEndDate ? format(customEndDate, "dd/MM/yyyy", { locale: it }) : "Seleziona"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={customEndDate}
-                        onSelect={setCustomEndDate}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </>
-            )}
+          <MultiSelect
+            options={clientiOptions}
+            values={selectedClienti}
+            onValuesChange={setSelectedClienti}
+            placeholder="Tutti i clienti"
+            className="h-auto w-auto min-h-0 rounded-full border-border/60 bg-card px-4 py-2 text-sm font-medium shadow-sm"
+          />
+          <MultiSelect
+            options={aziendeOptions}
+            values={selectedAziende}
+            onValuesChange={setSelectedAziende}
+            placeholder="Tutte le aziende"
+            className="h-auto w-auto min-h-0 rounded-full border-border/60 bg-card px-4 py-2 text-sm font-medium shadow-sm"
+          />
+          <MultiSelect
+            options={brandsOptions}
+            values={selectedBrands}
+            onValuesChange={setSelectedBrands}
+            placeholder="Tutti i marchi"
+            className="h-auto w-auto min-h-0 rounded-full border-border/60 bg-card px-4 py-2 text-sm font-medium shadow-sm"
+          />
 
-            {/* Clienti Multi-Select */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Clienti</label>
-              <MultiSelect
-                options={clientiOptions}
-                values={selectedClienti}
-                onValuesChange={setSelectedClienti}
-                placeholder="Tutti i clienti"
-              />
-            </div>
-
-            {/* Aziende Multi-Select */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Aziende</label>
-              <MultiSelect
-                options={aziendeOptions}
-                values={selectedAziende}
-                onValuesChange={setSelectedAziende}
-                placeholder="Tutte le aziende"
-              />
-            </div>
-
-            {/* Brands Multi-Select */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Marchi</label>
-              <MultiSelect
-                options={brandsOptions}
-                values={selectedBrands}
-                onValuesChange={setSelectedBrands}
-                placeholder="Tutti i marchi"
-              />
-            </div>
-          </div>
-
-          {/* Active filters summary */}
           {hasActiveFilters && (
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-              {selectedClienti.length > 0 && (
-                <Badge variant="secondary" className="gap-1">
-                  <Users className="h-3 w-3" />
-                  {selectedClienti.length} clienti
-                </Badge>
-              )}
-              {selectedAziende.length > 0 && (
-                <Badge variant="secondary" className="gap-1">
-                  <Building2 className="h-3 w-3" />
-                  {selectedAziende.length} aziende
-                </Badge>
-              )}
-              {selectedBrands.length > 0 && (
-                <Badge variant="secondary" className="gap-1">
-                  <Tag className="h-3 w-3" />
-                  {selectedBrands.length} marchi
-                </Badge>
-              )}
-            </div>
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset
+            </button>
           )}
         </div>
 
-        {/* Main KPIs */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-6 animate-fade-in">
-          <KPICard
-            title="Fatturato Totale"
-            value={formatCurrency(stats?.fatturatoTotale || 0)}
-            change={stats?.trendPercentage ? Math.round(stats.trendPercentage) : undefined}
-            changeLabel="vs periodo precedente"
-            icon={<Euro className="h-5 w-5 lg:h-6 lg:w-6" />}
-            variant="primary"
-          />
-          <KPICard
-            title="Ordini"
-            value={stats?.ordiniTotali || 0}
-            icon={<ShoppingCart className="h-5 w-5 lg:h-6 lg:w-6" />}
-            variant="success"
-          />
-          <KPICard
-            title="Cartoni Totali"
-            value={(stats?.cartoniTotali || 0).toLocaleString("it-IT")}
-            icon={<BoxIcon className="h-5 w-5 lg:h-6 lg:w-6" />}
-            variant="default"
-          />
-          <KPICard
-            title="Pezzi Totali"
-            value={(stats?.pezziTotali || 0).toLocaleString("it-IT")}
-            icon={<Package className="h-5 w-5 lg:h-6 lg:w-6" />}
-            variant="default"
-          />
-          <KPICard
-            title="Scontrino Medio"
-            value={formatCurrency(stats?.scontrinoMedio || 0)}
-            icon={<TrendingUp className="h-5 w-5 lg:h-6 lg:w-6" />}
-            variant="default"
-          />
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <div className="flex items-center gap-2">
-              {(stats?.trendPercentage || 0) >= 0 ? (
-                <TrendingUp className="h-4 w-4 text-success" />
-              ) : (
-                <TrendingDown className="h-4 w-4 text-destructive" />
-              )}
-              <p className="text-xs text-muted-foreground">Trend periodo</p>
-            </div>
-            <p className={cn(
-              "text-2xl font-bold mt-1",
-              (stats?.trendPercentage || 0) >= 0 ? "text-success" : "text-destructive"
-            )}>
-              {(stats?.trendPercentage || 0) >= 0 ? "+" : ""}{(stats?.trendPercentage || 0).toFixed(1)}%
-            </p>
+        {/* Custom Date Range */}
+        {periodPreset === "custom" && (
+          <div className="flex flex-wrap gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("rounded-full", !customStartDate && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customStartDate ? format(customStartDate, "dd/MM/yyyy", { locale: it }) : "Da"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={customStartDate} onSelect={setCustomStartDate} initialFocus className="pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("rounded-full", !customEndDate && "text-muted-foreground")}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customEndDate ? format(customEndDate, "dd/MM/yyyy", { locale: it }) : "A"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={customEndDate} onSelect={setCustomEndDate} initialFocus className="pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
           </div>
+        )}
+
+        {/* Tessere KPI */}
+        <KPITiles
+          fatturatoTotale={stats?.fatturatoTotale || 0}
+          ordiniTotali={stats?.ordiniTotali || 0}
+          pezziTotali={stats?.pezziTotali || 0}
+          cartoniTotali={stats?.cartoniTotali || 0}
+          scontrinoMedio={stats?.scontrinoMedio || 0}
+          marginePercentuale={stats?.marginePercentuale || 0}
+        />
+
+        {/* Andamento anno corrente vs precedente */}
+        {yoy && (
+          <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
+            <div className="mb-1 flex items-center justify-between px-1">
+              <h2 className="flex items-center gap-1.5 font-display text-sm font-semibold tracking-tight text-foreground">
+                📊 Andamento · {yoy.yearPrev} vs {yoy.yearCurr}
+              </h2>
+              {yoy.prev.fatturato > 0 && (
+                <span
+                  className={`rounded-lg px-2 py-0.5 text-xs font-bold ${
+                    yoy.deltaPct >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+                  }`}
+                >
+                  {yoy.deltaPct >= 0 ? "↑" : "↓"} {Math.abs(yoy.deltaPct).toFixed(1)}%
+                </span>
+              )}
+            </div>
+            <RevenueTrendChart
+              data={yoy.monthlyComparison}
+              currentMonthIndex={currentMonthIndex}
+              yearCurr={yoy.yearCurr}
+              yearPrev={yoy.yearPrev}
+            />
+          </div>
+        )}
+
+        {/* Insight automatici */}
+        <InsightsPanel insights={insights} />
+
+        {/* Obiettivo mensile (stima: media ultimi 12 mesi) */}
+        {obiettivoMensile && (
+          <MonthlyGoalCard
+            meseLabel={format(now, "MMMM", { locale: it })}
+            fatturatoMese={obiettivoMensile.fatturatoMese}
+            obiettivo={obiettivoMensile.obiettivo}
+          />
+        )}
+
+        <h2 className="flex items-center gap-2 px-1 pt-4 text-[11px] font-bold uppercase tracking-widest text-primary">
+          <span className="inline-block h-3.5 w-1 rounded-sm bg-primary" />
+          Volumi
+        </h2>
+
+        <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
+          <h3 className="mb-1 px-1 text-sm font-semibold tracking-tight text-foreground">📈 Fatturato e margine per mese</h3>
+          <RevenueMarginChart
+            data={(stats?.ordiniPerMese || [])
+              .map((m, i) => ({ mese: mesiLabel[i], fatturato: m.fatturato, marginePct: m.marginePct, ordini: m.ordini }))
+              .filter((m) => m.fatturato > 0 || m.ordini > 0)
+              .map(({ mese, fatturato, marginePct }) => ({ mese, fatturato, marginePct }))}
+          />
         </div>
+
+        <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
+          <h3 className="mb-1 px-1 text-sm font-semibold tracking-tight text-foreground">🛒 Ordini per mese</h3>
+          <OrdersMonthlyChart
+            data={(stats?.ordiniPerMese || [])
+              .map((m, i) => ({ mese: mesiLabel[i], ordini: m.ordini }))
+              .filter((m) => m.ordini > 0)}
+          />
+        </div>
+
+        <h2 className="flex items-center gap-2 px-1 pt-4 text-[11px] font-bold uppercase tracking-widest text-success">
+          <span className="inline-block h-3.5 w-1 rounded-sm bg-success" />
+          Clienti
+        </h2>
+
+        <ClientMovementBadges
+          crescita={clientiClassificati.crescita.length}
+          stabili={clientiClassificati.stabili.length}
+          calo={clientiClassificati.calo.length}
+        />
+
+        <TopClientsGrowthDecline crescita={clientiClassificati.crescita} calo={clientiClassificati.calo} />
+
+        <TopClientsRevenueBars clienti={stats?.clientiKPI || []} />
+
+        <ReorderHeatmap data={stats?.reorderHeatmap || []} />
+
+        <h2 className="flex items-center gap-2 px-1 pt-4 text-[11px] font-bold uppercase tracking-widest text-violet-500">
+          <span className="inline-block h-3.5 w-1 rounded-sm bg-violet-500" />
+          Ripartizioni
+        </h2>
+
+        <RipartizioniHighlights
+          aziendaTop={stats?.aziendeKPI?.[0] || null}
+          prodottoTop={stats?.prodottiKPI?.[0] || null}
+          fatturatoTotale={stats?.fatturatoTotale || 0}
+        />
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          <BrandRevenueBars brands={stats?.brandsKPI || []} />
+          {stats?.statusDistribuzione && (
+            <OrdersStatusDonut
+              verificati={stats.statusDistribuzione.verificati}
+              inAttesa={stats.statusDistribuzione.inAttesa}
+              altri={stats.statusDistribuzione.altri}
+            />
+          )}
+        </div>
+
+        <h2 className="flex items-center gap-2 px-1 pt-4 text-[11px] font-bold uppercase tracking-widest text-warning">
+          <span className="inline-block h-3.5 w-1 rounded-sm bg-warning" />
+          Confronto mensile dettagliato
+        </h2>
+
+        {yoy && (
+          <MonthlyComparisonCards data={yoy.monthlyComparison} yearCurr={yoy.yearCurr} yearPrev={yoy.yearPrev} />
+        )}
+
+        <h2 className="flex items-center gap-2 px-1 pt-4 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+          <span className="inline-block h-3.5 w-1 rounded-sm bg-muted-foreground" />
+          Altri indicatori
+        </h2>
 
         {/* Detail KPIs: confronti, sconti, margine */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 animate-fade-in">
@@ -519,117 +613,6 @@ const KPI = () => {
               {formatCurrency(stats?.scontoMerceMedio || 0)}
             </p>
           </div>
-        </div>
-
-        {/* Top Growers / Decliners */}
-        <div className="grid gap-6 lg:grid-cols-2 animate-fade-in">
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-success" />
-              Top 5 Clienti in Crescita
-            </h3>
-            {(stats?.topGrowers || []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nessun dato di confronto disponibile</p>
-            ) : (
-              <div className="space-y-3">
-                {(stats?.topGrowers || []).map((c) => (
-                  <div key={c.id} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{c.nome}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {formatCurrency(c.fatturato)} vs {formatCurrency(c.fatturato_2025 || 0)}
-                      </p>
-                    </div>
-                    <Badge className="bg-success/10 text-success hover:bg-success/20 shrink-0">
-                      +{c.variazione_pct.toFixed(1)}%
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-destructive" />
-              Top 5 Clienti in Calo
-            </h3>
-            {(stats?.topDecliners || []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nessun dato di confronto disponibile</p>
-            ) : (
-              <div className="space-y-3">
-                {(stats?.topDecliners || []).map((c) => (
-                  <div key={c.id} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{c.nome}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {formatCurrency(c.fatturato)} vs {formatCurrency(c.fatturato_2025 || 0)}
-                      </p>
-                    </div>
-                    <Badge className="bg-destructive/10 text-destructive hover:bg-destructive/20 shrink-0">
-                      {c.variazione_pct.toFixed(1)}%
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Charts */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
-            <div className="flex items-center gap-2 mb-4">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Andamento Fatturato Mensile 2026</h3>
-            </div>
-            <SalesChart data={stats?.ordiniPerMese || []} type="area" />
-          </div>
-          <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
-            <div className="flex items-center gap-2 mb-4">
-              <ShoppingCart className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold">Ordini per Mese 2026</h3>
-            </div>
-            <SalesChart data={stats?.ordiniPerMese || []} type="bar" />
-          </div>
-        </div>
-
-        {/* Client Growth Widget */}
-        <ClientGrowthWidget clienti={stats?.clientiKPI || []} />
-
-        {/* YoY Hero strip (dinamico su dati reali) */}
-        {yoy && (
-          <KPIHeroYoY
-            fattCurr={yoy.curr.fatturato}
-            fattPrev={yoy.prev.fatturato}
-            delta={yoy.delta}
-            deltaPct={yoy.deltaPct}
-            yearCurr={yoy.yearCurr}
-            yearPrev={yoy.yearPrev}
-            aziendeYoY={yoy.aziendeYoY}
-            prodottiYoY={yoy.prodottiYoY}
-            clientiYoY={yoy.clientiYoY}
-            aziendeNames={aziendeNames}
-            prodottiNames={prodottiNames}
-            clientiNames={clientiNames}
-          />
-        )}
-
-        {/* Year Comparison Chart dinamico: anno corrente vs anno precedente */}
-        <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
-            Confronto Fatturato Mese per Mese: {yoy?.yearPrev ?? "anno prec."} vs {yoy?.yearCurr ?? "anno corr."}
-          </h3>
-          {yoy ? (
-            <YoYDynamicChart
-              data={yoy.monthlyComparison}
-              yearCurr={yoy.yearCurr}
-              yearPrev={yoy.yearPrev}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">Caricamento confronto annuale…</p>
-          )}
         </div>
 
         {/* Opportunities + AI */}
@@ -794,8 +777,8 @@ const KPI = () => {
                             {azienda.settore || "—"}
                           </TableCell>
                           <TableCell className="text-right">{azienda.ordini_count}</TableCell>
-                          <TableCell className="text-right">{azienda.cartoni_venduti.toLocaleString("it-IT")}</TableCell>
-                          <TableCell className="text-right">{azienda.prodotti_venduti.toLocaleString("it-IT")}</TableCell>
+                          <TableCell className="text-right">{formatNumberIT(azienda.cartoni_venduti)}</TableCell>
+                          <TableCell className="text-right">{formatNumberIT(azienda.prodotti_venduti)}</TableCell>
                           <TableCell className="text-right font-semibold">
                             {formatCurrency(azienda.fatturato_totale)}
                           </TableCell>
@@ -862,7 +845,7 @@ const KPI = () => {
                             {brand.azienda_nome || "—"}
                           </TableCell>
                           <TableCell className="text-right">{brand.ordini_count}</TableCell>
-                          <TableCell className="text-right">{brand.quantita_venduta.toLocaleString("it-IT")}</TableCell>
+                          <TableCell className="text-right">{formatNumberIT(brand.quantita_venduta)}</TableCell>
                           <TableCell className="text-right font-semibold">
                             {formatCurrency(brand.fatturato_totale)}
                           </TableCell>
@@ -943,8 +926,8 @@ const KPI = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-right">{formatCurrency(prodotto.prezzo_listino)}</TableCell>
-                        <TableCell className="text-right">{prodotto.cartoni_venduti.toLocaleString("it-IT")}</TableCell>
-                        <TableCell className="text-right">{prodotto.quantita_venduta.toLocaleString("it-IT")}</TableCell>
+                        <TableCell className="text-right">{formatNumberIT(prodotto.cartoni_venduti)}</TableCell>
+                        <TableCell className="text-right">{formatNumberIT(prodotto.quantita_venduta)}</TableCell>
                         <TableCell className="text-right">{prodotto.ordini_count}</TableCell>
                         <TableCell className="text-right font-semibold">
                           {formatCurrency(prodotto.fatturato_totale)}
