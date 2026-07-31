@@ -1,8 +1,23 @@
+import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, type LucideIcon } from "lucide-react";
+import { format, isToday, isYesterday } from "date-fns";
+import { it } from "date-fns/locale";
+import type { Ordine } from "@/hooks/useOrdini";
 import { OrdineCard } from "./OrdineCard";
 import { OrdiniTable, type OrdiniTableRow } from "./OrdiniTable";
+
+const getOrderDate = (ordine: Ordine) => new Date(ordine.data_ordine || ordine.created_at);
+const dayKey = (date: Date) => format(date, "yyyy-MM-dd");
+
+// "Oggi 7 agosto" / "Ieri 6 agosto" / "mar 4 agosto" per i giorni più vecchi.
+const groupLabel = (date: Date) => {
+  const giorno = format(date, "d MMMM", { locale: it });
+  if (isToday(date)) return `Oggi ${giorno}`;
+  if (isYesterday(date)) return `Ieri ${giorno}`;
+  return `${format(date, "EEE", { locale: it })} ${giorno}`;
+};
 
 interface OrdiniListEmptyState {
   icon: LucideIcon;
@@ -22,6 +37,19 @@ interface OrdiniListProps {
 }
 
 export function OrdiniList({ rows, showStandByColumns, isLoading, isError, onRetry, emptyState }: OrdiniListProps) {
+  // Righe già ordinate per data_ordine DESC dalla query: giorni uguali sono
+  // sempre contigui, quindi un raggruppamento in un solo passaggio basta.
+  const groups = useMemo(() => {
+    const map = new Map<string, { date: Date; rows: OrdiniTableRow[] }>();
+    for (const row of rows) {
+      const date = getOrderDate(row.ordine);
+      const key = dayKey(date);
+      if (!map.has(key)) map.set(key, { date, rows: [] });
+      map.get(key)!.rows.push(row);
+    }
+    return Array.from(map.values());
+  }, [rows]);
+
   if (isLoading) {
     return (
       <div className="space-y-3 md:hidden">
@@ -76,16 +104,30 @@ export function OrdiniList({ rows, showStandByColumns, isLoading, isError, onRet
 
   return (
     <>
-      <div className="space-y-3 md:hidden">
-        {rows.map(({ ordine, muted, actions, primaryAction, giorniInStandBy }) => (
-          <OrdineCard
-            key={ordine.id}
-            ordine={ordine}
-            muted={muted}
-            actions={actions}
-            primaryAction={primaryAction}
-            giorniInStandBy={giorniInStandBy}
-          />
+      <div className="space-y-4 md:hidden">
+        {groups.map((group) => (
+          <div key={dayKey(group.date)} className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-scatto-muted">
+                {groupLabel(group.date)}
+              </h3>
+              <span className="text-xs text-scatto-muted">
+                {group.rows.length} {group.rows.length === 1 ? "ordine" : "ordini"}
+              </span>
+            </div>
+            <div className="space-y-3">
+              {group.rows.map(({ ordine, muted, actions, primaryAction, giorniInStandBy }) => (
+                <OrdineCard
+                  key={ordine.id}
+                  ordine={ordine}
+                  muted={muted}
+                  actions={actions}
+                  primaryAction={primaryAction}
+                  giorniInStandBy={giorniInStandBy}
+                />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
       <OrdiniTable rows={rows} showStandByColumns={showStandByColumns} />

@@ -31,7 +31,7 @@ export type Ordine = {
   created_at: string;
   data_ordine: string | null;
   clienti?: { nome: string; azienda: string | null } | null;
-  aziende?: { nome: string } | null;
+  aziende?: { nome: string; logo_url: string | null } | null;
   ordini_righe?: { count: number }[];
 };
 
@@ -91,7 +91,7 @@ export function useOrdini(
         .select(`
           *,
           clienti (nome, azienda),
-          aziende (nome),
+          aziende (nome, logo_url),
           ordini_righe (count)
         `)
         .order("data_ordine", { ascending: false });

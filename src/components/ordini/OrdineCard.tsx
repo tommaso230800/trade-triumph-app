@@ -46,22 +46,33 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
   const [open, setOpen] = useState(false);
   const verificato = Boolean(ordine.verificato_conferma);
   const aziendaNome = ordine.aziende?.nome;
+  const aziendaLogo = ordine.aziende?.logo_url;
   const status = scattoStatusBadge[ordine.status];
   const aziendaClass = aziendaDotClass(ordine.azienda_id);
+  const dataOrdine = new Date(ordine.data_ordine || ordine.created_at);
+  const oraOrdine = format(new Date(ordine.created_at), "HH:mm");
 
   return (
     <div
-      className={`rounded-2xl border bg-scatto-surface shadow-[0_1px_2px_rgba(32,20,15,0.05)] ${
-        verificato ? "border-scatto-success/40" : "border-scatto-line"
+      className={`rounded-2xl bg-scatto-surface shadow-[0_1px_2px_rgba(32,20,15,0.05)] ${
+        verificato ? "border-2 border-scatto-success" : "border border-scatto-line"
       } ${muted ? "opacity-60" : ""}`}
     >
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
           <button type="button" className="group flex w-full items-start gap-3 p-4 text-left touch-target">
             <div className="relative flex-shrink-0">
-              <div className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-white ${aziendaClass}`}>
-                {getIniziali(ordine.clienti?.nome)}
-              </div>
+              {aziendaLogo ? (
+                <img
+                  src={aziendaLogo}
+                  alt={aziendaNome || ""}
+                  className="h-11 w-11 rounded-full border border-scatto-line object-cover"
+                />
+              ) : (
+                <div className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-white ${aziendaClass}`}>
+                  {getIniziali(aziendaNome)}
+                </div>
+              )}
               {verificato && (
                 <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-scatto-surface bg-scatto-success">
                   <Check className="h-2.5 w-2.5 text-white" />
@@ -78,8 +89,9 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
                   {formatCurrency(Number(ordine.totale))}
                 </p>
               </div>
-              <p className="mt-0.5 truncate text-xs text-scatto-muted">
-                {ordine.codice} · {numeroRigheOrdine(ordine)} prodotti · {formatNumberIT(ordine.prodotti)} pz
+              <p className="mt-0.5 truncate text-xs">
+                <span className="font-semibold text-scatto-accent">{format(dataOrdine, "d MMMM", { locale: it })}</span>
+                <span className="text-scatto-muted"> · {oraOrdine}</span>
               </p>
 
               <div className="mt-2.5 flex items-center gap-2 border-t border-scatto-line pt-2.5">
@@ -89,9 +101,6 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
                     <span className="truncate">{aziendaNome}</span>
                   </span>
                 )}
-                <span className="flex-shrink-0 text-xs text-scatto-muted">
-                  {format(new Date(ordine.data_ordine || ordine.created_at), "d MMM", { locale: it })}
-                </span>
                 {verificato ? (
                   <span className={`ml-auto flex flex-shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${scattoVerificatoBadgeClass}`}>
                     <CheckCircle2 className="h-3 w-3" />
@@ -112,6 +121,10 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
         <CollapsibleContent>
           <div className="space-y-4 border-t border-scatto-line px-5 pb-5 pt-4">
             <div className="grid grid-cols-2 gap-y-2 text-sm">
+              <span className="text-scatto-muted">Ordine</span>
+              <span className="text-right text-scatto-ink">
+                {ordine.codice} · {numeroRigheOrdine(ordine)} prodotti · {formatNumberIT(ordine.prodotti)} pz
+              </span>
               <span className="text-scatto-muted">Pagamento</span>
               <span className="text-right text-scatto-ink">{ordine.tipo_pagamento || "—"}</span>
               {giorniInStandBy !== undefined && giorniInStandBy > 0 && (

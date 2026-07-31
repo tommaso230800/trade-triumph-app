@@ -21,7 +21,9 @@ export const scattoStatusBadge: Record<Ordine["status"], { label: string; classN
   stand_by: { label: "Stand-by", className: "bg-scatto-warning/15 text-scatto-warning" },
 };
 
-export const scattoVerificatoBadgeClass = "bg-scatto-success/15 text-scatto-success";
+// Pieno, non tenue: il verificato deve saltare all'occhio, non confondersi
+// con gli altri badge tinta-tenue della pagina.
+export const scattoVerificatoBadgeClass = "bg-scatto-success text-white";
 
 export const TIPI_PAGAMENTO = [
   "Anticipato",
