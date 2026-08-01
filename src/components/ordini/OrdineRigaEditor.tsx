@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Gift, Trash2, Boxes } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Gift, Trash2, Boxes, Info } from "lucide-react";
+import { format } from "date-fns";
 import { formatCurrency } from "./ordiniShared";
+import type { LastOrderPriceInfo } from "@/lib/priceResolver";
 
 interface OrdineRigaEditorProps {
   prodottoNome: string;
@@ -18,6 +21,9 @@ interface OrdineRigaEditorProps {
   sc2: string;
   sc3: string;
   subtotale: number;
+  prezzoSourceLabel?: string;
+  prezzoSourceInfo?: LastOrderPriceInfo;
+  onBlurPrezzo?: () => void;
   onChangePrezzo: (value: string) => void;
   onChangeQuantitaPezzi: (value: number) => void;
   onChangeQuantitaCartoni: (value: number) => void;
@@ -42,6 +48,9 @@ export function OrdineRigaEditor({
   sc2,
   sc3,
   subtotale,
+  prezzoSourceLabel,
+  prezzoSourceInfo,
+  onBlurPrezzo,
   onChangePrezzo,
   onChangeQuantitaPezzi,
   onChangeQuantitaCartoni,
@@ -112,7 +121,34 @@ export function OrdineRigaEditor({
       {/* Prezzo / Pezzi / Cartoni */}
       <div className="grid grid-cols-3 gap-2">
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Prezzo</Label>
+          <div className="flex items-center gap-1">
+            <Label className="text-xs text-muted-foreground">Prezzo</Label>
+            {!isOmaggio && prezzoSourceLabel && (
+              <span className="text-[10px] text-muted-foreground">· {prezzoSourceLabel}</span>
+            )}
+            {!isOmaggio && prezzoSourceInfo && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className="text-muted-foreground hover:text-foreground" title="Dettagli ultimo acquisto">
+                    <Info className="h-3 w-3" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 text-xs" align="start">
+                  <p className="font-semibold">Ultimo acquisto</p>
+                  <p className="mt-1 text-muted-foreground">
+                    {format(new Date(prezzoSourceInfo.date), "dd/MM/yyyy")}
+                    {prezzoSourceInfo.orderCode && ` · ordine ${prezzoSourceInfo.orderCode}`}
+                  </p>
+                  <p className="mt-1 tabular-nums">
+                    {formatCurrency(prezzoSourceInfo.price)} ×{" "}
+                    {prezzoSourceInfo.quantitaCartoni > 0 && `${prezzoSourceInfo.quantitaCartoni} cartoni`}
+                    {prezzoSourceInfo.quantitaCartoni > 0 && prezzoSourceInfo.quantitaPezzi > 0 && " + "}
+                    {prezzoSourceInfo.quantitaPezzi > 0 && `${prezzoSourceInfo.quantitaPezzi} pz`}
+                  </p>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
           <Input
             type="text"
             inputMode="decimal"
@@ -120,6 +156,7 @@ export function OrdineRigaEditor({
             value={isOmaggio ? "0" : prezzoUnitario}
             disabled={isOmaggio}
             onChange={(e) => onChangePrezzo(e.target.value)}
+            onBlur={onBlurPrezzo}
             placeholder="1,85"
           />
         </div>

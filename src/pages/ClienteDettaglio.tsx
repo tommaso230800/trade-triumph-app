@@ -4,6 +4,7 @@ import { DocumentiSection } from "@/components/documenti/DocumentiSection";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { VisitsSection } from "@/components/visite/VisitsSection";
 import { CompetitorSection } from "@/components/visite/CompetitorSection";
+import { ListinoPersonalizzatoSection } from "@/components/clienti/ListinoPersonalizzatoSection";
 import { useCliente, useClienteOrdini } from "@/hooks/useClienti";
 import { useCanvassAttive, useCanvassScadute } from "@/hooks/useCanvass";
 import { useClientReports } from "@/hooks/useDailyReports";
@@ -414,6 +415,8 @@ const ClienteDettaglio = () => {
             </div>
           )}
         </div>
+
+        {id && <ListinoPersonalizzatoSection clienteId={id} />}
 
         {/* Promozioni Attive */}
         <div className="rounded-xl bg-card p-6 shadow-card">

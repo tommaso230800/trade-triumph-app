@@ -19,6 +19,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Plus, Loader2, RefreshCw, Gift } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -30,6 +40,13 @@ import { useCanvassAttive, type Canvass } from "@/hooks/useCanvass";
 import { useClientProductHistory } from "@/hooks/useClientProductHistory";
 import { useCreateOrdine } from "@/hooks/useOrdini";
 import { useCreateOrdineRigheBatch } from "@/hooks/useOrdiniRighe";
+import { useCustomerProductPrices, useUpsertCustomerProductPrice } from "@/hooks/useCustomerProductPrices";
+import {
+  resolveProductPrice,
+  PRICE_SOURCE_LABELS,
+  type PriceSource,
+  type LastOrderPriceInfo,
+} from "@/lib/priceResolver";
 import type { ProformaData } from "./ProformaDialog";
 import { OrdineRigaEditor } from "./OrdineRigaEditor";
 import { PromozioniAttiveAlert } from "./PromozioniAttiveAlert";
@@ -51,6 +68,10 @@ type RigaOrdine = {
   strati: number;
   cartoni_per_strato: number;
   formato: string | null;
+  prezzo_source: PriceSource;
+  prezzo_source_info?: LastOrderPriceInfo;
+  prezzo_baseline: string;
+  prezzo_dirty_prompted?: boolean;
 };
 
 const emptyFormData = () => ({
@@ -74,6 +95,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   const [righeOrdine, setRigheOrdine] = useState<RigaOrdine[]>([]);
   const [selectedProdotto, setSelectedProdotto] = useState("");
   const [appliedPromos, setAppliedPromos] = useState<string[]>([]);
+  const [priceConfirmIndex, setPriceConfirmIndex] = useState<number | null>(null);
 
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
@@ -85,6 +107,20 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   const { data: productHistory } = useClientProductHistory(
     formData.cliente_id || undefined,
     formData.azienda_id || undefined
+  );
+  const { data: customPrices } = useCustomerProductPrices(
+    formData.cliente_id || undefined,
+    formData.azienda_id || undefined
+  );
+  const upsertCustomPrice = useUpsertCustomerProductPrice();
+
+  const customPriceMap = useMemo(
+    () => new Map((customPrices ?? []).map((cp) => [cp.product_id, cp])),
+    [customPrices]
+  );
+  const lastOrderMap = useMemo(
+    () => new Map((productHistory?.products ?? []).map((p) => [p.prodotto_id, p])),
+    [productHistory]
   );
 
   const resetForm = () => {
@@ -198,7 +234,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
           const promoProduct = promo.canvass_prodotti?.find((cp) => cp.prodotto_id === riga.prodotto_id);
           if (promoProduct) {
             const prezzoFisso = promoProduct.valore_override ?? promo.valore;
-            return { ...riga, prezzo_unitario: String(prezzoFisso).replace(".", ",") };
+            const prezzoStr = String(prezzoFisso).replace(".", ",");
+            return { ...riga, prezzo_unitario: prezzoStr, prezzo_baseline: prezzoStr };
           }
           return riga;
         });
@@ -238,12 +275,20 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     const getSc2 = () => (prodotto.sc2_default > 0 ? prodotto.sc2_default : azienda?.default_sc2 || 0);
     const getSc3 = () => (prodotto.sc3_default > 0 ? prodotto.sc3_default : azienda?.default_sc3 || 0);
 
+    const resolved = resolveProductPrice({
+      productId: prodotto.id,
+      listPrice: prodotto.prezzo_listino,
+      customPricesByProduct: customPriceMap,
+      lastOrderByProduct: lastOrderMap,
+    });
+    const prezzoIniziale = String(resolved.price).replace(".", ",");
+
     const newRiga: RigaOrdine = {
       prodotto_id: prodotto.id,
       prodotto_nome: prodotto.nome,
       prodotto_codice: prodotto.codice || undefined,
       prodotto_brand_id: prodotto.brand_id || undefined,
-      prezzo_unitario: String(prodotto.prezzo_listino).replace(".", ","),
+      prezzo_unitario: prezzoIniziale,
       quantita_pezzi: 0,
       quantita_cartoni: 0,
       pezzi_per_cartone: prodotto.pezzi_per_cartone,
@@ -253,6 +298,9 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
       strati: prodotto.strati,
       cartoni_per_strato: prodotto.cartoni_per_strato,
       formato: prodotto.formato || null,
+      prezzo_source: resolved.source,
+      prezzo_source_info: resolved.lastOrderInfo,
+      prezzo_baseline: prezzoIniziale,
     };
 
     const availablePromo = promozioniRilevanti.find((promo) =>
@@ -279,6 +327,39 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     setRigheOrdine(righeOrdine.filter((_, i) => i !== index));
   };
 
+  // Se il prezzo digitato manualmente differisce da quello proposto (listino,
+  // ultimo applicato o personalizzato) e non è già stato chiesto per questa
+  // riga, apre la conferma "solo questo ordine" vs "salva come prezzo cliente".
+  const handlePrezzoBlur = (index: number) => {
+    const riga = righeOrdine[index];
+    if (!riga || riga.is_omaggio || riga.prezzo_dirty_prompted) return;
+    if (parseDecimalInput(riga.prezzo_unitario) === parseDecimalInput(riga.prezzo_baseline)) return;
+    setPriceConfirmIndex(index);
+  };
+
+  const closePriceConfirm = (index: number) => {
+    const updated = [...righeOrdine];
+    if (updated[index]) updated[index] = { ...updated[index], prezzo_dirty_prompted: true };
+    setRigheOrdine(updated);
+    setPriceConfirmIndex(null);
+  };
+
+  const handleSaveAsCustomerPrice = async () => {
+    if (priceConfirmIndex === null) return;
+    const riga = righeOrdine[priceConfirmIndex];
+    if (!riga || !formData.cliente_id || !formData.azienda_id) {
+      closePriceConfirm(priceConfirmIndex);
+      return;
+    }
+    await upsertCustomPrice.mutateAsync({
+      customer_id: formData.cliente_id,
+      company_id: formData.azienda_id,
+      product_id: riga.prodotto_id,
+      custom_price: parseDecimalInput(riga.prezzo_unitario),
+    });
+    closePriceConfirm(priceConfirmIndex);
+  };
+
   const addOmaggioFromRiga = (index: number) => {
     const src = righeOrdine[index];
     if (!src) return;
@@ -291,6 +372,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
       sc2: "0",
       sc3: "0",
       is_omaggio: true,
+      prezzo_baseline: "0",
+      prezzo_dirty_prompted: true,
     };
     const updated = [...righeOrdine];
     updated.splice(index + 1, 0, omaggioRiga);
@@ -337,22 +420,38 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
       tipo_pagamento: defaults.tipo_pagamento || "Contanti",
     }));
 
-    const newRighe: RigaOrdine[] = products.map((p) => ({
-      prodotto_id: p.prodotto_id,
-      prodotto_nome: p.prodotto_nome,
-      prodotto_codice: p.prodotto_codice || undefined,
-      prodotto_brand_id: p.brand_id || undefined,
-      prezzo_unitario: String(p.last_prezzo_unitario).replace(".", ","),
-      quantita_pezzi: 0,
-      quantita_cartoni: 0,
-      pezzi_per_cartone: p.pezzi_per_cartone,
-      sc1: String(p.last_sc1).replace(".", ","),
-      sc2: String(p.last_sc2).replace(".", ","),
-      sc3: String(p.last_sc3).replace(".", ","),
-      strati: p.strati,
-      cartoni_per_strato: p.cartoni_per_strato,
-      formato: p.formato,
-    }));
+    const newRighe: RigaOrdine[] = products.map((p) => {
+      const custom = customPriceMap.get(p.prodotto_id);
+      const prezzo = custom ? custom.custom_price : p.last_prezzo_unitario;
+      const prezzoStr = String(prezzo).replace(".", ",");
+      return {
+        prodotto_id: p.prodotto_id,
+        prodotto_nome: p.prodotto_nome,
+        prodotto_codice: p.prodotto_codice || undefined,
+        prodotto_brand_id: p.brand_id || undefined,
+        prezzo_unitario: prezzoStr,
+        quantita_pezzi: 0,
+        quantita_cartoni: 0,
+        pezzi_per_cartone: p.pezzi_per_cartone,
+        sc1: String(p.last_sc1).replace(".", ","),
+        sc2: String(p.last_sc2).replace(".", ","),
+        sc3: String(p.last_sc3).replace(".", ","),
+        strati: p.strati,
+        cartoni_per_strato: p.cartoni_per_strato,
+        formato: p.formato,
+        prezzo_source: custom ? ("custom" as const) : ("last_order" as const),
+        prezzo_source_info: custom
+          ? undefined
+          : {
+              date: p.last_order_date,
+              orderCode: p.last_ordine_codice,
+              price: p.last_prezzo_unitario,
+              quantitaCartoni: p.last_quantita_cartoni,
+              quantitaPezzi: p.last_quantita_pezzi,
+            },
+        prezzo_baseline: prezzoStr,
+      };
+    });
 
     setRigheOrdine(newRighe);
     toast.success(`${products.length} prodotti caricati da ${productHistory.totalOrders} ordini precedenti!`);
@@ -560,6 +659,9 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
                       sc2={riga.sc2}
                       sc3={riga.sc3}
                       subtotale={rigaSubtotale(riga)}
+                      prezzoSourceLabel={riga.is_omaggio ? undefined : PRICE_SOURCE_LABELS[riga.prezzo_source]}
+                      prezzoSourceInfo={riga.prezzo_source_info}
+                      onBlurPrezzo={() => handlePrezzoBlur(index)}
                       onChangePrezzo={(v) => updateRiga(index, "prezzo_unitario", v)}
                       onChangeQuantitaPezzi={(v) => updateRiga(index, "quantita_pezzi", v)}
                       onChangeQuantitaCartoni={(v) => updateRiga(index, "quantita_cartoni", v)}
@@ -655,6 +757,31 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
           </DialogFooter>
         </div>
       </DialogContent>
+
+      <AlertDialog open={priceConfirmIndex !== null} onOpenChange={(v) => !v && priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Prezzo modificato</AlertDialogTitle>
+            <AlertDialogDescription>
+              {priceConfirmIndex !== null && (
+                <>
+                  Hai cambiato il prezzo di <strong>{righeOrdine[priceConfirmIndex]?.prodotto_nome}</strong> rispetto
+                  a quello proposto ({PRICE_SOURCE_LABELS[righeOrdine[priceConfirmIndex]?.prezzo_source ?? "list"]}).
+                  Vuoi applicarlo solo a questo ordine o salvarlo come prezzo riservato per il cliente?
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
+              Solo questo ordine
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleSaveAsCustomerPrice} disabled={upsertCustomPrice.isPending}>
+              Salva come prezzo cliente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

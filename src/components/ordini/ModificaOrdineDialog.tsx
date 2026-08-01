@@ -19,6 +19,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Loader2, Plus } from "lucide-react";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
@@ -31,6 +41,14 @@ import {
   useUpdateOrdineTotale,
 } from "@/hooks/useOrdiniRighe";
 import { useUpdateOrdine, type Ordine } from "@/hooks/useOrdini";
+import { useClientProductHistory } from "@/hooks/useClientProductHistory";
+import { useCustomerProductPrices, useUpsertCustomerProductPrice } from "@/hooks/useCustomerProductPrices";
+import {
+  resolveProductPrice,
+  PRICE_SOURCE_LABELS,
+  type PriceSource,
+  type LastOrderPriceInfo,
+} from "@/lib/priceResolver";
 import { OrdineRigaEditor } from "./OrdineRigaEditor";
 import { formatCurrency, parseDecimalInput, TIPI_PAGAMENTO } from "./ordiniShared";
 
@@ -49,6 +67,13 @@ type EditRiga = {
   // creata (non aggiornata) al salvataggio, e può essere rimossa prima di
   // allora senza toccare il database.
   isNew?: boolean;
+  // Baseline per rilevare modifiche manuali del prezzo: per le righe già
+  // salvate è il prezzo storico dell'ordine (solo un edit vero fa scattare
+  // la conferma); per le righe nuove è il prezzo proposto dal resolver.
+  prezzo_baseline: string;
+  prezzo_dirty_prompted?: boolean;
+  prezzo_source?: PriceSource;
+  prezzo_source_info?: LastOrderPriceInfo;
 };
 
 interface ModificaOrdineDialogProps {
@@ -69,6 +94,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
   });
   const [editRighe, setEditRighe] = useState<EditRiga[]>([]);
   const [selectedProdotto, setSelectedProdotto] = useState("");
+  const [priceConfirmIndex, setPriceConfirmIndex] = useState<number | null>(null);
 
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
@@ -79,6 +105,24 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
   const createRigaMutation = useCreateOrdineRiga();
   const updateOrdineTotale = useUpdateOrdineTotale();
   const updateOrdine = useUpdateOrdine();
+  const { data: productHistory } = useClientProductHistory(
+    editFormData.cliente_id || undefined,
+    editFormData.azienda_id || undefined
+  );
+  const { data: customPrices } = useCustomerProductPrices(
+    editFormData.cliente_id || undefined,
+    editFormData.azienda_id || undefined
+  );
+  const upsertCustomPrice = useUpsertCustomerProductPrice();
+
+  const customPriceMap = useMemo(
+    () => new Map((customPrices ?? []).map((cp) => [cp.product_id, cp])),
+    [customPrices]
+  );
+  const lastOrderMap = useMemo(
+    () => new Map((productHistory?.products ?? []).map((p) => [p.prodotto_id, p])),
+    [productHistory]
+  );
 
   // Precompila il form quando si apre il dialog per un ordine specifico
   useEffect(() => {
@@ -109,6 +153,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
           sc1: String(r.sc1 || 0).replace(".", ","),
           sc2: String(r.sc2 || 0).replace(".", ","),
           sc3: String(r.sc3 || 0).replace(".", ","),
+          prezzo_baseline: String(r.prezzo_unitario).replace(".", ","),
         }))
       );
     }
@@ -149,21 +194,62 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
     const prodotto = prodottiAzienda.find((p) => p.id === selectedProdotto);
     if (!prodotto) return;
 
+    const resolved = resolveProductPrice({
+      productId: prodotto.id,
+      listPrice: prodotto.prezzo_listino,
+      customPricesByProduct: customPriceMap,
+      lastOrderByProduct: lastOrderMap,
+    });
+    const prezzoIniziale = String(resolved.price).replace(".", ",");
+
     const nuovaRiga: EditRiga = {
       id: `nuovo-${crypto.randomUUID()}`,
       prodotto_id: prodotto.id,
       prodotto_nome: prodotto.nome,
       quantita_pezzi: 0,
       quantita_cartoni: 0,
-      prezzo_unitario: String(prodotto.prezzo_listino).replace(".", ","),
+      prezzo_unitario: prezzoIniziale,
       pezzi_per_cartone: prodotto.pezzi_per_cartone,
       sc1: String(prodotto.sc1_default || 0).replace(".", ","),
       sc2: String(prodotto.sc2_default || 0).replace(".", ","),
       sc3: String(prodotto.sc3_default || 0).replace(".", ","),
       isNew: true,
+      prezzo_baseline: prezzoIniziale,
+      prezzo_source: resolved.source,
+      prezzo_source_info: resolved.lastOrderInfo,
     };
     setEditRighe([...editRighe, nuovaRiga]);
     setSelectedProdotto("");
+  };
+
+  const handlePrezzoBlur = (index: number) => {
+    const riga = editRighe[index];
+    if (!riga || riga.prezzo_dirty_prompted) return;
+    if (parseDecimalInput(riga.prezzo_unitario) === parseDecimalInput(riga.prezzo_baseline)) return;
+    setPriceConfirmIndex(index);
+  };
+
+  const closePriceConfirm = (index: number) => {
+    const updated = [...editRighe];
+    if (updated[index]) updated[index] = { ...updated[index], prezzo_dirty_prompted: true };
+    setEditRighe(updated);
+    setPriceConfirmIndex(null);
+  };
+
+  const handleSaveAsCustomerPrice = async () => {
+    if (priceConfirmIndex === null) return;
+    const riga = editRighe[priceConfirmIndex];
+    if (!riga || !editFormData.cliente_id || !editFormData.azienda_id) {
+      closePriceConfirm(priceConfirmIndex);
+      return;
+    }
+    await upsertCustomPrice.mutateAsync({
+      customer_id: editFormData.cliente_id,
+      company_id: editFormData.azienda_id,
+      product_id: riga.prodotto_id,
+      custom_price: parseDecimalInput(riga.prezzo_unitario),
+    });
+    closePriceConfirm(priceConfirmIndex);
   };
 
   const rigaSubtotale = (riga: EditRiga): number => {
@@ -336,6 +422,9 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
                     sc2={riga.sc2}
                     sc3={riga.sc3}
                     subtotale={rigaSubtotale(riga)}
+                    prezzoSourceLabel={riga.prezzo_source ? PRICE_SOURCE_LABELS[riga.prezzo_source] : undefined}
+                    prezzoSourceInfo={riga.prezzo_source_info}
+                    onBlurPrezzo={() => handlePrezzoBlur(index)}
                     onChangePrezzo={(v) => updateEditRiga(index, "prezzo_unitario", v)}
                     onChangeQuantitaPezzi={(v) => updateEditRiga(index, "quantita_pezzi", v)}
                     onChangeQuantitaCartoni={(v) => updateEditRiga(index, "quantita_cartoni", v)}
@@ -426,6 +515,30 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
           </DialogFooter>
         </div>
       </DialogContent>
+
+      <AlertDialog open={priceConfirmIndex !== null} onOpenChange={(v) => !v && priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Prezzo modificato</AlertDialogTitle>
+            <AlertDialogDescription>
+              {priceConfirmIndex !== null && (
+                <>
+                  Hai cambiato il prezzo di <strong>{editRighe[priceConfirmIndex]?.prodotto_nome}</strong> rispetto a
+                  quello di questo ordine. Vuoi applicarlo solo qui o salvarlo come prezzo riservato per il cliente?
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
+              Solo questo ordine
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleSaveAsCustomerPrice} disabled={upsertCustomPrice.isPending}>
+              Salva come prezzo cliente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

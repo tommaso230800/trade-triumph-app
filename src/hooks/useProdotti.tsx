@@ -20,6 +20,7 @@ export type Prodotto = {
   sc2_default: number;
   sc3_default: number;
   brand_id: string | null;
+  deleted_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -31,6 +32,7 @@ export function useProdotti(aziendaId?: string) {
       let query = supabase
         .from("prodotti")
         .select("*")
+        .is("deleted_at", null)
         .order("nome", { ascending: true });
 
       if (aziendaId) {
@@ -48,7 +50,7 @@ export function useCreateProdotto() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (prodotto: Omit<Prodotto, "id" | "user_id" | "created_at" | "updated_at" | "immagine_url" | "formato" | "sc1_default" | "sc2_default" | "sc3_default" | "brand_id" | "costo_acquisto"> & { 
+    mutationFn: async (prodotto: Omit<Prodotto, "id" | "user_id" | "created_at" | "updated_at" | "deleted_at" | "immagine_url" | "formato" | "sc1_default" | "sc2_default" | "sc3_default" | "brand_id" | "costo_acquisto"> & {
       immagine_url?: string | null;
       formato?: string | null;
       sc1_default?: number;

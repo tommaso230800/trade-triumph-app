@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { DocumentiSection } from "@/components/documenti/DocumentiSection";
 
@@ -7,6 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
@@ -43,11 +51,14 @@ import {
   Trash2, 
   Check, 
   X, 
-  Upload, 
+  Upload,
   ImageIcon,
   FileUp,
   Wand2,
-  Tag
+  Tag,
+  Merge,
+  History,
+  AlertTriangle,
 } from "lucide-react";
 import { useAziende, useUpdateAzienda, Azienda } from "@/hooks/useAziende";
 import { useProdotti, useCreateProdotto, useDeleteProdotto, useUpdateProdotto, Prodotto } from "@/hooks/useProdotti";
@@ -55,7 +66,11 @@ import { useBrands, useCreateBrand } from "@/hooks/useBrands";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImportProductsPDFDialog } from "@/components/aziende/ImportProductsPDFDialog";
+import { MergeProdottiDialog } from "@/components/aziende/MergeProdottiDialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
+import { findDuplicateGroups } from "@/lib/productDuplicates";
+import { useProdottiMergeLog } from "@/hooks/useProdottiMerge";
+import { format } from "date-fns";
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
@@ -139,6 +154,19 @@ const AziendaDettaglio = () => {
   const updateAzienda = useUpdateAzienda();
   const { data: brands } = useBrands(id);
   const createBrand = useCreateBrand();
+
+  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
+  const [mergePreselectedIds, setMergePreselectedIds] = useState<string[] | undefined>(undefined);
+  const [isMergeHistoryOpen, setIsMergeHistoryOpen] = useState(false);
+  const { data: mergeLog } = useProdottiMergeLog(id);
+
+  const duplicateGroups = useMemo(() => findDuplicateGroups(prodotti ?? []), [prodotti]);
+  const duplicateCount = duplicateGroups.reduce((sum, g) => sum + g.prodotti.length, 0);
+
+  const openMergeDialog = (preselectedIds?: string[]) => {
+    setMergePreselectedIds(preselectedIds);
+    setIsMergeDialogOpen(true);
+  };
 
   // State for new brand creation
   const [isNewBrandDialogOpen, setIsNewBrandDialogOpen] = useState(false);
@@ -492,12 +520,20 @@ const AziendaDettaglio = () => {
 
         {/* Products Section */}
         <div className="rounded-xl bg-card shadow-card overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-4 border-b">
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold">Prodotti ({prodotti?.length || 0})</h2>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsMergeHistoryOpen(true)}>
+                <History className="h-4 w-4 mr-2" />
+                Storico unificazioni
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => openMergeDialog()}>
+                <Merge className="h-4 w-4 mr-2" />
+                Unifica prodotti
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setIsImportDialogOpen(true)}>
                 <FileUp className="h-4 w-4 mr-2" />
                 Importa PDF
@@ -508,6 +544,32 @@ const AziendaDettaglio = () => {
               </Button>
             </div>
           </div>
+
+          {duplicateGroups.length > 0 && (
+            <div className="p-4 pb-0">
+              <Alert className="border-warning/40 bg-warning/10">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                <AlertTitle className="text-warning">
+                  Rilevati {duplicateCount} possibili prodotti duplicati
+                </AlertTitle>
+                <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    {duplicateGroups.length === 1
+                      ? "1 gruppo di prodotti con lo stesso nome o codice."
+                      : `${duplicateGroups.length} gruppi di prodotti con lo stesso nome o codice.`}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-warning/50 text-warning hover:bg-warning/10"
+                    onClick={() => openMergeDialog(duplicateGroups[0].prodotti.map((p) => p.id))}
+                  >
+                    Rivedi duplicati
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
 
           {isLoadingProdotti ? (
             <div className="flex items-center justify-center py-12">
@@ -956,6 +1018,44 @@ const AziendaDettaglio = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Merge Prodotti Dialog */}
+      <MergeProdottiDialog
+        open={isMergeDialogOpen}
+        onOpenChange={setIsMergeDialogOpen}
+        prodotti={prodotti ?? []}
+        initialSelectedIds={mergePreselectedIds}
+      />
+
+      {/* Storico unificazioni */}
+      <Sheet open={isMergeHistoryOpen} onOpenChange={setIsMergeHistoryOpen}>
+        <SheetContent className="w-full sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Storico unificazioni</SheetTitle>
+            <SheetDescription>Prodotti unificati per questa azienda</SheetDescription>
+          </SheetHeader>
+          <div className="mt-4 space-y-3 overflow-y-auto">
+            {!mergeLog?.length && (
+              <p className="text-sm text-muted-foreground">Nessuna unificazione registrata.</p>
+            )}
+            {mergeLog?.map((entry) => (
+              <div key={entry.id} className="rounded-lg border border-border p-3 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">{entry.primary_prodotto_nome}</span>
+                  <span className="flex-shrink-0 text-xs text-muted-foreground">
+                    {format(new Date(entry.created_at), "dd/MM/yyyy HH:mm")}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Uniti: {entry.merged_prodotti.map((p) => p.nome).join(", ")}
+                </p>
+                {entry.note && <p className="mt-1 text-xs italic text-muted-foreground">"{entry.note}"</p>}
+                <p className="mt-1 text-xs text-muted-foreground">di {entry.utente}</p>
+              </div>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <div className="px-4 pb-6 lg:px-0">
         <DocumentiSection entita="azienda" entita_id={id} title="Documenti azienda" />

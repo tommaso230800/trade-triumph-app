@@ -18,6 +18,8 @@ export type ClientProductHistoryItem = {
   last_sc1: number;
   last_sc2: number;
   last_sc3: number;
+  last_ordine_id: string;
+  last_ordine_codice: string | null;
   // Stats
   ordini_count: number;
   total_cartoni: number;
@@ -44,7 +46,7 @@ export function useClientProductHistory(clienteId?: string, aziendaId?: string) 
       // Get all orders for this client and company
       const { data: ordini, error: ordiniError } = await supabase
         .from("ordini")
-        .select("id, sconto, sconto_merce, tipo_pagamento, created_at, data_ordine")
+        .select("id, codice, sconto, sconto_merce, tipo_pagamento, created_at, data_ordine")
         .eq("cliente_id", clienteId)
         .eq("azienda_id", aziendaId)
         .not("status","in","(annullato,stand_by)")
@@ -88,11 +90,11 @@ export function useClientProductHistory(clienteId?: string, aziendaId?: string) 
 
       // Group by product and aggregate
       const productMap = new Map<string, ClientProductHistoryItem>();
-      const orderDateMap = new Map<string, { ordine_id: string; data_ordine: string }>();
+      const orderDateMap = new Map<string, { ordine_id: string; data_ordine: string; codice: string | null }>();
 
       // Build order date map
       ordini.forEach(o => {
-        orderDateMap.set(o.id, { ordine_id: o.id, data_ordine: o.data_ordine || o.created_at });
+        orderDateMap.set(o.id, { ordine_id: o.id, data_ordine: o.data_ordine || o.created_at, codice: o.codice });
       });
 
       righe.forEach((riga) => {
@@ -118,6 +120,8 @@ export function useClientProductHistory(clienteId?: string, aziendaId?: string) 
             existing.last_sc1 = Number(riga.sc1) || 0;
             existing.last_sc2 = Number(riga.sc2) || 0;
             existing.last_sc3 = Number(riga.sc3) || 0;
+            existing.last_ordine_id = riga.ordine_id;
+            existing.last_ordine_codice = orderInfo.codice;
           }
         } else {
           productMap.set(prodottoId, {
@@ -136,6 +140,8 @@ export function useClientProductHistory(clienteId?: string, aziendaId?: string) 
             last_sc1: Number(riga.sc1) || 0,
             last_sc2: Number(riga.sc2) || 0,
             last_sc3: Number(riga.sc3) || 0,
+            last_ordine_id: riga.ordine_id,
+            last_ordine_codice: orderInfo?.codice ?? null,
             ordini_count: 1,
             total_cartoni: riga.quantita_cartoni,
             total_pezzi: riga.quantita_pezzi,
