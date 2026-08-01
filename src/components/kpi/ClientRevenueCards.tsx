@@ -1,11 +1,11 @@
-import { aziendaDotClass, type AziendaColorIndexMap } from "@/lib/aziendaColor";
+import { aziendaColorValue, type AziendaColorMap } from "@/lib/aziendaColor";
 import { formatCurrency } from "./kpiShared";
 import type { ClienteKPI } from "@/hooks/useAdvancedKPIStats";
 
 interface ClientRevenueCardsProps {
   clienti: ClienteKPI[];
   yearPrev?: number;
-  aziendaColorMap?: AziendaColorIndexMap;
+  aziendaColorMap?: AziendaColorMap;
 }
 
 // Sostituisce la vecchia tabella larga (scroll orizzontale su mobile): una
@@ -54,15 +54,20 @@ export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap }: Clien
                   {cliente.perAzienda.map((a) => (
                     <span
                       key={a.aziendaId}
-                      className={aziendaDotClass(a.aziendaId, aziendaColorMap)}
-                      style={{ width: `${(a.fatturato / totaleSegmenti) * 100}%` }}
+                      style={{
+                        width: `${(a.fatturato / totaleSegmenti) * 100}%`,
+                        backgroundColor: aziendaColorValue(a.aziendaId, aziendaColorMap),
+                      }}
                     />
                   ))}
                 </div>
                 <div className="mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 text-xs text-muted-foreground">
                   {cliente.perAzienda.map((a) => (
                     <span key={a.aziendaId} className="inline-flex items-center gap-1.5">
-                      <span className={`h-2 w-2 flex-shrink-0 rounded-sm ${aziendaDotClass(a.aziendaId, aziendaColorMap)}`} />
+                      <span
+                        className="h-2 w-2 flex-shrink-0 rounded-sm"
+                        style={{ backgroundColor: aziendaColorValue(a.aziendaId, aziendaColorMap) }}
+                      />
                       {a.aziendaNome} <b className="font-display font-semibold text-foreground">{formatCurrency(a.fatturato)}</b>
                     </span>
                   ))}

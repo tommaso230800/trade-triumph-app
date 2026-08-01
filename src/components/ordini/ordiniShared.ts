@@ -24,21 +24,17 @@ export const statusConfig: Record<Ordine["status"], { label: string; variant: No
   stand_by: { label: "Stand-by", variant: "warning" },
 };
 
-// Badge di stato nella direzione "Scatto/Pill" (Ordini): tinta tenue del
-// colore semantico + testo colorato (non pillola piena bianco-su-colore),
-// coerente col carattere morbido della pagina. "Completato" è neutro/grigio:
-// il verde resta esclusivo di "Verificato" per non confondere i due stati.
-export const scattoStatusBadge: Record<Ordine["status"], { label: string; className: string }> = {
-  completato: { label: "Completato", className: "bg-scatto-muted/15 text-scatto-muted" },
-  in_attesa: { label: "In attesa", className: "bg-scatto-warning/15 text-scatto-warning" },
-  spedito: { label: "Spedito", className: "bg-scatto-info/15 text-scatto-info" },
-  annullato: { label: "Annullato", className: "bg-scatto-danger/15 text-scatto-danger" },
-  stand_by: { label: "Stand-by", className: "bg-scatto-warning/15 text-scatto-warning" },
+// Etichette di stato mostrate nella fascia colorata della card (il colore del
+// badge è deciso in OrdineCard in base allo stato: verificato/in_attesa hanno
+// una tinta propria, gli altri un overlay neutro che si adatta al chiaro/scuro
+// della fascia).
+export const scattoStatusBadge: Record<Ordine["status"], { label: string }> = {
+  completato: { label: "Completato" },
+  in_attesa: { label: "In attesa" },
+  spedito: { label: "Spedito" },
+  annullato: { label: "Annullato" },
+  stand_by: { label: "Stand-by" },
 };
-
-// Pieno, non tenue: il verificato deve saltare all'occhio, non confondersi
-// con gli altri badge tinta-tenue della pagina.
-export const scattoVerificatoBadgeClass = "bg-scatto-success text-white";
 
 export const TIPI_PAGAMENTO = [
   "Anticipato",

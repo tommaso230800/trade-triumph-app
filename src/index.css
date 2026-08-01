@@ -105,16 +105,17 @@
 
     /* Direzione "Scatto": palette scoperta SOLO dai componenti della pagina
        Ordini (pilota del redesign). Non tocca --background/--card ecc. usati
-       dal resto dell'app: nessun'altra pagina la referenzia. */
-    --scatto-bg: 28 65% 95%;
+       dal resto dell'app: nessun'altra pagina la referenzia.
+       Bianco pulito (#fbfbfc) al posto del precedente beige/crema. */
+    --scatto-bg: 240 14% 99%;
     --scatto-surface: 0 0% 100%;
-    --scatto-ink: 18 36% 9%;
-    --scatto-muted: 26 12% 56%;
-    --scatto-line: 27 42% 86%;
+    --scatto-ink: 225 18% 9%;
+    --scatto-muted: 219 9% 64%;
+    --scatto-line: 220 14% 91%;
     --scatto-accent: 336 74% 56%;
     --scatto-success: 161 94% 30%;
-    --scatto-warning: 39 75% 56%;
-    --scatto-danger: 0 64% 55%;
+    --scatto-warning: 38 92% 50%;
+    --scatto-danger: 0 84% 60%;
     --scatto-info: 214 68% 54%;
 
     /* Sidebar */

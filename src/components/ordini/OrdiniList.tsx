@@ -108,11 +108,12 @@ export function OrdiniList({ rows, isLoading, isError, onRetry, emptyState }: Or
     <div className="space-y-4">
       {groups.map((group) => (
         <div key={dayKey(group.date)} className="space-y-2">
-          <div className="flex items-center justify-between px-1">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-scatto-muted">
+          <div className="flex items-center gap-2.5 px-1">
+            <h3 className="flex-shrink-0 whitespace-nowrap text-xs font-bold uppercase tracking-wide text-scatto-ink/70">
               {groupLabel(group.date)}
             </h3>
-            <span className="text-xs text-scatto-muted">
+            <span className="h-px flex-1 bg-scatto-line" />
+            <span className="flex-shrink-0 text-xs font-semibold text-scatto-muted">
               {group.rows.length} {group.rows.length === 1 ? "ordine" : "ordini"}
             </span>
           </div>

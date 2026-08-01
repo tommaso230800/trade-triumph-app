@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, MoreHorizontal, CheckCircle2, Check, Loader2, type LucideIcon } from "lucide-react";
+import { ChevronDown, MoreHorizontal, CheckCircle2, Loader2, type LucideIcon } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import type { Ordine } from "@/hooks/useOrdini";
@@ -18,9 +18,8 @@ import {
   getIniziali,
   numeroRigheOrdine,
   scattoStatusBadge,
-  scattoVerificatoBadgeClass,
 } from "./ordiniShared";
-import { aziendaDotClass, useAziendaColorIndex } from "@/lib/aziendaColor";
+import { aziendaColorValue, readableTextColor, useAziendaColorMap } from "@/lib/aziendaColor";
 
 export interface OrdineCardAction {
   label: string;
@@ -48,74 +47,72 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
   const aziendaNome = ordine.aziende?.nome;
   const aziendaLogo = ordine.aziende?.logo_url;
   const status = scattoStatusBadge[ordine.status];
-  const aziendaColorMap = useAziendaColorIndex();
-  const aziendaClass = aziendaDotClass(ordine.azienda_id, aziendaColorMap);
+  const aziendaColorMap = useAziendaColorMap();
+  const aziendaColor = aziendaColorValue(ordine.azienda_id, aziendaColorMap);
+  const fasciaTextColor = readableTextColor(aziendaColor);
+  const fasciaIsDark = fasciaTextColor === "#12141a";
   const dataOrdine = new Date(ordine.data_ordine || ordine.created_at);
   const oraOrdine = format(new Date(ordine.created_at), "HH:mm");
 
   return (
     <div
-      className={`rounded-2xl bg-scatto-surface shadow-[0_1px_2px_rgba(32,20,15,0.05)] ${
-        verificato ? "border-2 border-scatto-success" : "border border-scatto-line"
+      className={`overflow-hidden rounded-2xl bg-scatto-surface ${
+        verificato
+          ? "border-[2.5px] border-scatto-success shadow-[0_4px_16px_rgba(5,150,105,0.16)]"
+          : "border border-scatto-line shadow-[0_2px_10px_rgba(18,20,26,0.05)]"
       } ${muted ? "opacity-60" : ""}`}
     >
+      {/* Fascia col colore identità dell'azienda fornitrice: logo/iniziali + nome a sinistra, stato a destra */}
+      <div
+        className="flex items-center justify-between gap-2 px-3.5 py-2.5"
+        style={{ backgroundColor: aziendaColor, color: fasciaTextColor }}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-white text-[8px] font-bold text-scatto-ink">
+            {aziendaLogo ? (
+              <img src={aziendaLogo} alt="" className="h-full w-full object-cover" />
+            ) : (
+              getIniziali(aziendaNome)
+            )}
+          </div>
+          <span className="truncate font-display text-xs font-bold tracking-wide">{aziendaNome || "—"}</span>
+        </div>
+
+        {verificato ? (
+          <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold text-scatto-success">
+            <CheckCircle2 className="h-3 w-3" />
+            Verificato
+          </span>
+        ) : ordine.status === "in_attesa" || ordine.status === "stand_by" ? (
+          <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-scatto-warning px-2.5 py-0.5 text-[10px] font-bold text-scatto-ink">
+            {status.label}
+          </span>
+        ) : (
+          <span
+            className="flex-shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+            style={{ backgroundColor: fasciaIsDark ? "rgba(0,0,0,.12)" : "rgba(255,255,255,.22)" }}
+          >
+            {status.label}
+          </span>
+        )}
+      </div>
+
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
-          <button type="button" className="group flex w-full items-start gap-3 p-4 text-left touch-target">
-            <div className="relative flex-shrink-0">
-              {aziendaLogo ? (
-                <img
-                  src={aziendaLogo}
-                  alt={aziendaNome || ""}
-                  className="h-11 w-11 rounded-full border border-scatto-line object-cover"
-                />
-              ) : (
-                <div className={`flex h-11 w-11 items-center justify-center rounded-full text-sm font-bold text-white ${aziendaClass}`}>
-                  {getIniziali(aziendaNome)}
-                </div>
-              )}
-              {verificato && (
-                <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-scatto-surface bg-scatto-success">
-                  <Check className="h-2.5 w-2.5 text-white" />
-                </span>
-              )}
-            </div>
-
+          <button type="button" className="group flex w-full items-center gap-3 p-3.5 text-left touch-target">
             <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-2">
-                <p className={`truncate text-[15px] font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
-                  {ordine.clienti?.nome || "—"}
-                </p>
-                <p className={`flex-shrink-0 text-lg font-extrabold tabular-nums tracking-tight ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
-                  {formatCurrency(Number(ordine.totale))}
-                </p>
-              </div>
+              <p className={`truncate text-[15px] font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
+                {ordine.clienti?.nome || "—"}
+              </p>
               <p className="mt-0.5 truncate text-xs">
                 <span className="font-semibold text-scatto-accent">{format(dataOrdine, "d MMMM", { locale: it })}</span>
                 <span className="text-scatto-muted"> · {oraOrdine}</span>
               </p>
-
-              <div className="mt-2.5 flex items-center gap-2 border-t border-scatto-line pt-2.5">
-                {aziendaNome && (
-                  <span className="flex min-w-0 items-center gap-1.5 text-xs text-scatto-muted">
-                    <span className={`h-2 w-2 flex-shrink-0 rounded-full ${aziendaClass}`} />
-                    <span className="truncate">{aziendaNome}</span>
-                  </span>
-                )}
-                {verificato ? (
-                  <span className={`ml-auto flex flex-shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${scattoVerificatoBadgeClass}`}>
-                    <CheckCircle2 className="h-3 w-3" />
-                    Verificato
-                  </span>
-                ) : (
-                  <span className={`ml-auto flex-shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${status.className}`}>
-                    {status.label}
-                  </span>
-                )}
-              </div>
             </div>
-
-            <ChevronDown className="mt-1 h-4 w-4 flex-shrink-0 text-scatto-muted transition-transform group-data-[state=open]:rotate-180" />
+            <p className={`flex-shrink-0 text-base font-bold tabular-nums tracking-tight ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
+              {formatCurrency(Number(ordine.totale))}
+            </p>
+            <ChevronDown className="h-4 w-4 flex-shrink-0 text-scatto-muted transition-transform group-data-[state=open]:rotate-180" />
           </button>
         </CollapsibleTrigger>
 

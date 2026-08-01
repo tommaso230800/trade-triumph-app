@@ -36,6 +36,7 @@ type FormData = {
   email: string;
   status: "attivo" | "in_pausa";
   prodotti: number;
+  colore: string;
   partita_iva: string;
   provvigione_percentuale: string;
   default_sc1: string;
@@ -52,6 +53,7 @@ const defaultFormData: FormData = {
   email: "",
   status: "attivo",
   prodotti: 0,
+  colore: "#2563eb",
   partita_iva: "",
   provvigione_percentuale: "0",
   default_sc1: "0",
@@ -82,6 +84,7 @@ const Aziende = () => {
       email: azienda.email || "",
       status: azienda.status,
       prodotti: azienda.prodotti,
+      colore: azienda.colore || "#2563eb",
       partita_iva: azienda.partita_iva || "",
       provvigione_percentuale: String(azienda.provvigione_percentuale || 0),
       default_sc1: String(azienda.default_sc1 || 0).replace(".", ","),
@@ -223,6 +226,19 @@ const Aziende = () => {
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                     placeholder="Nome azienda"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Colore identità</Label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={formData.colore}
+                      onChange={(e) => setFormData({ ...formData, colore: e.target.value })}
+                      className="h-10 w-14 flex-shrink-0 cursor-pointer rounded-lg border border-input p-1"
+                      aria-label="Colore identità azienda"
+                    />
+                    <span className="text-sm tabular-nums text-muted-foreground">{formData.colore}</span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

@@ -14,6 +14,7 @@ export type Azienda = {
   status: "attivo" | "in_pausa";
   prodotti: number;
   logo_url: string | null;
+  colore: string | null;
   partita_iva: string | null;
   provvigione_percentuale: number;
   default_sc1: number;

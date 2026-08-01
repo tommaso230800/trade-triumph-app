@@ -180,6 +180,7 @@ export type Database = {
       aziende: {
         Row: {
           citta: string | null
+          colore: string | null
           created_at: string | null
           default_sc1: number
           default_sc2: number
@@ -201,6 +202,7 @@ export type Database = {
         }
         Insert: {
           citta?: string | null
+          colore?: string | null
           created_at?: string | null
           default_sc1?: number
           default_sc2?: number
@@ -222,6 +224,7 @@ export type Database = {
         }
         Update: {
           citta?: string | null
+          colore?: string | null
           created_at?: string | null
           default_sc1?: number
           default_sc2?: number

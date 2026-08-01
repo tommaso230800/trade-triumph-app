@@ -9,7 +9,7 @@ import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
 import { useClientiAttiviMese } from "@/hooks/useClientiAttiviMese";
 import { useAziende } from "@/hooks/useAziende";
-import { aziendaDotClass, buildAziendaColorIndex } from "@/lib/aziendaColor";
+import { aziendaColorValue, buildAziendaColorMap } from "@/lib/aziendaColor";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, ChevronRight, PhoneOff, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
@@ -51,7 +51,7 @@ const Index = () => {
   const { data: aziendeList, isLoading: aziendeLoading } = useAziende();
   // Colore identità per posizione nell'elenco reale (non per hash dell'id):
   // con 6-10 aziende un hash su 12 caselle collide troppo spesso.
-  const aziendaColorMap = useMemo(() => buildAziendaColorIndex(aziendeList || []), [aziendeList]);
+  const aziendaColorMap = useMemo(() => buildAziendaColorMap(aziendeList || []), [aziendeList]);
 
   const isLoading = yoyLoading || forecastLoading || clientiAttiviLoading || aziendeLoading;
 
@@ -295,8 +295,11 @@ const Index = () => {
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className={`h-full rounded-full ${aziendaDotClass(f.id, aziendaColorMap)}`}
-                        style={{ width: `${Math.max(4, (f.curr / fornitoreMax) * 100)}%` }}
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.max(4, (f.curr / fornitoreMax) * 100)}%`,
+                          backgroundColor: aziendaColorValue(f.id, aziendaColorMap),
+                        }}
                       />
                     </div>
                   </div>
@@ -342,13 +345,19 @@ const Index = () => {
                       to={`/clienti/${f.cliente_id}`}
                       className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-border/50 bg-card p-3.5 shadow-sm"
                     >
-                      <span className={`absolute inset-y-2 left-0 w-1 rounded-r-full ${aziendaDotClass(f.azienda_id, aziendaColorMap)}`} />
+                      <span
+                        className="absolute inset-y-2 left-0 w-1 rounded-r-full"
+                        style={{ backgroundColor: aziendaColorValue(f.azienda_id, aziendaColorMap) }}
+                      />
                       <div className="min-w-0 flex-1 pl-2">
                         <p className="truncate text-[15px] font-bold tracking-tight text-foreground">
                           {f.cliente_nome}
                         </p>
                         <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <span className={`h-2 w-2 flex-shrink-0 rounded-full ${aziendaDotClass(f.azienda_id, aziendaColorMap)}`} />
+                          <span
+                            className="h-2 w-2 flex-shrink-0 rounded-full"
+                            style={{ backgroundColor: aziendaColorValue(f.azienda_id, aziendaColorMap) }}
+                          />
                           <span className="truncate">
                             {f.prodotto_nome} · {f.azienda_nome}
                           </span>

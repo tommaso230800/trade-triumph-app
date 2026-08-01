@@ -19,7 +19,7 @@ import { OrdersStatusDonut } from "@/components/kpi/OrdersStatusDonut";
 import { MonthlyComparisonCards } from "@/components/kpi/MonthlyComparisonCards";
 import { ClientRevenueCards } from "@/components/kpi/ClientRevenueCards";
 import { KpiEntityCards } from "@/components/kpi/KpiEntityCards";
-import { buildAziendaColorIndex } from "@/lib/aziendaColor";
+import { buildAziendaColorMap } from "@/lib/aziendaColor";
 import { formatCurrency, formatNumberIT, mesiLabel } from "@/components/kpi/kpiShared";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Calendar } from "@/components/ui/calendar";
@@ -97,10 +97,8 @@ const KPI = () => {
     (stats?.allAziende || []).forEach((a: any) => m.set(a.id, a.nome));
     return m;
   }, [stats?.allAziende]);
-  // Colore identità per posizione nell'elenco reale (non per hash dell'id):
-  // con più aziende un hash su 12 caselle collide troppo spesso.
   const aziendaColorMap = useMemo(
-    () => buildAziendaColorIndex(stats?.allAziende || []),
+    () => buildAziendaColorMap(stats?.allAziende || []),
     [stats?.allAziende]
   );
   const clientiNames = useMemo(() => {
