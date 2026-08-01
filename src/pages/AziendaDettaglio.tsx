@@ -123,6 +123,7 @@ type AziendaFormData = {
   telefono: string;
   email: string;
   status: "attivo" | "in_pausa";
+  colore: string;
   partita_iva: string;
   provvigione_percentuale: string;
   default_sc1: string;
@@ -258,6 +259,7 @@ const AziendaDettaglio = () => {
       telefono: azienda.telefono || "",
       email: azienda.email || "",
       status: azienda.status,
+      colore: azienda.colore || "#2563eb",
       partita_iva: azienda.partita_iva || "",
       provvigione_percentuale: String(azienda.provvigione_percentuale || 0),
       default_sc1: String(azienda.default_sc1 || 0).replace(".", ","),
@@ -315,6 +317,7 @@ const AziendaDettaglio = () => {
       email: aziendaForm.email || null,
       partita_iva: aziendaForm.partita_iva || null,
       status: aziendaForm.status,
+      colore: aziendaForm.colore || null,
       provvigione_percentuale: parseDecimalInput(aziendaForm.provvigione_percentuale),
       default_sc1: parseDecimalInput(aziendaForm.default_sc1),
       default_sc2: parseDecimalInput(aziendaForm.default_sc2),
@@ -677,6 +680,19 @@ const AziendaDettaglio = () => {
                   onChange={(e) => setAziendaForm({ ...aziendaForm, nome: e.target.value })}
                   placeholder="Nome azienda"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>Colore identità</Label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={aziendaForm.colore}
+                    onChange={(e) => setAziendaForm({ ...aziendaForm, colore: e.target.value })}
+                    className="h-10 w-14 flex-shrink-0 cursor-pointer rounded-lg border border-input p-1"
+                    aria-label="Colore identità azienda"
+                  />
+                  <span className="text-sm tabular-nums text-muted-foreground">{aziendaForm.colore}</span>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
