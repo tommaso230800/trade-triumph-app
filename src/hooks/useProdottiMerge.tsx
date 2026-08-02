@@ -69,7 +69,7 @@ export function useProdottiMergeLog(aziendaId?: string) {
       if (error) throw error;
       const rows = data ?? [];
 
-      const userIds = [...new Set(rows.map((r) => r.user_id))];
+      const userIds = [...new Set(rows.map((r) => r.user_id as string))] as string[];
       const profileMap = new Map<string, { full_name: string | null; email: string | null }>();
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
