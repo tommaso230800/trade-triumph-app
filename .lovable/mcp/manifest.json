@@ -1,0 +1,378 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://vjwreqnonxjigfgufpil.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "agente-plus",
+      "version": "0.1.0",
+      "title": "Agente Plus"
+    },
+    "tools": [
+      {
+        "name": "list_clienti",
+        "title": "Elenco clienti",
+        "description": "Cerca i clienti del CRM per nome, città o consorzio. Restituisce fatturato, numero ordini e contatti.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "description": "Testo da cercare nel nome del cliente."
+            },
+            "citta": {
+              "type": "string",
+              "description": "Filtra per città."
+            },
+            "consorzio": {
+              "type": "string",
+              "description": "Filtra per consorzio (es. ADAT, CBF)."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Numero massimo di risultati (default 25)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_cliente",
+        "title": "Scheda cliente",
+        "description": "Restituisce la scheda completa di un cliente: anagrafica, fatturato, ultimi ordini e note commerciali.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "cliente_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID del cliente."
+            }
+          },
+          "required": [
+            "cliente_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_ordini",
+        "title": "Elenco ordini",
+        "description": "Elenca gli ordini del CRM con filtri per stato, cliente, azienda e periodo. Include totale, provvigione prevista e stato provvigione.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "stato": {
+              "type": "string",
+              "enum": [
+                "in_attesa",
+                "spedito",
+                "completato",
+                "annullato",
+                "stand_by"
+              ],
+              "description": "Filtra per stato dell'ordine."
+            },
+            "cliente_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID del cliente."
+            },
+            "azienda_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID dell'azienda."
+            },
+            "da_data": {
+              "type": "string",
+              "description": "Data ordine minima, formato AAAA-MM-GG."
+            },
+            "a_data": {
+              "type": "string",
+              "description": "Data ordine massima, formato AAAA-MM-GG."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Numero massimo di risultati (default 25)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_ordine",
+        "title": "Dettaglio ordine",
+        "description": "Restituisce un singolo ordine con tutte le righe: prodotto, quantità in cartoni e pezzi, prezzo, sconti a cascata e omaggi.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "ordine_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID dell'ordine."
+            }
+          },
+          "required": [
+            "ordine_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_aziende",
+        "title": "Elenco aziende",
+        "description": "Elenca le aziende mandanti con settore, provvigione percentuale e sconti di default.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "description": "Testo da cercare nel nome dell'azienda."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Numero massimo di risultati (default 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_prodotti",
+        "title": "Catalogo prodotti",
+        "description": "Cerca i prodotti a catalogo per nome, codice o azienda. Restituisce formato, pezzi per cartone, prezzo di listino e sconti di default.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "description": "Testo da cercare nel nome del prodotto."
+            },
+            "codice": {
+              "type": "string",
+              "description": "Codice prodotto (anche parziale)."
+            },
+            "azienda_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID dell'azienda produttrice."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Numero massimo di risultati (default 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_provvigioni",
+        "title": "Provvigioni e scadenziario",
+        "description": "Elenca le fatture dello scadenziario con la relativa provvigione: stato provvigione, trimestre di competenza e di pagamento, importi.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "stato_provvigione": {
+              "type": "string",
+              "enum": [
+                "da_pagare",
+                "pagata",
+                "parziale",
+                "contestazione",
+                "scaduta"
+              ],
+              "description": "Filtra per stato della provvigione."
+            },
+            "azienda_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID dell'azienda."
+            },
+            "cliente_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID del cliente."
+            },
+            "anno_competenza": {
+              "type": "integer",
+              "description": "Anno di competenza (es. 2026)."
+            },
+            "trimestre_competenza": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4,
+              "description": "Trimestre di competenza 1-4."
+            },
+            "trimestre_pagamento": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4,
+              "description": "Trimestre di pagamento 1-4."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Numero massimo di risultati (default 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_canvass_promo",
+        "title": "Canvass e promozioni",
+        "description": "Elenca i canvass e le promozioni caricati nel CRM, con periodo di validità, sconti e prodotti coinvolti.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "azienda_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID dell'azienda."
+            },
+            "solo_attive": {
+              "type": "boolean",
+              "description": "Se true restituisce solo le iniziative valide alla data odierna."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "description": "Numero massimo di risultati (default 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_nota",
+        "title": "Crea nota commerciale",
+        "description": "Crea una nota commerciale nel CRM, opzionalmente collegata a un cliente o a un'azienda.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "titolo": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Titolo della nota."
+            },
+            "contenuto": {
+              "type": "string",
+              "description": "Testo della nota."
+            },
+            "categoria": {
+              "type": "string",
+              "description": "Categoria della nota (default: generale)."
+            },
+            "priorita": {
+              "type": "string",
+              "enum": [
+                "alta",
+                "media",
+                "bassa"
+              ],
+              "description": "Priorità (default: media)."
+            },
+            "cliente_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID del cliente collegato."
+            },
+            "azienda_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID dell'azienda collegata."
+            },
+            "data_promemoria": {
+              "type": "string",
+              "description": "Data promemoria, formato AAAA-MM-GG."
+            }
+          },
+          "required": [
+            "titolo"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+// Alcune tabelle usate qui non sono ancora presenti nei tipi generati.
+const db = supabase as unknown as { from: (t: string) => any; rpc: (fn: string, args?: any) => any };
 import { toast } from "sonner";
 
 export function useMergeProdotti() {
@@ -15,7 +18,7 @@ export function useMergeProdotti() {
       duplicateIds: string[];
       note?: string;
     }) => {
-      const { error } = await supabase.rpc("merge_prodotti", {
+      const { error } = await db.rpc("merge_prodotti", {
         p_primary_id: primaryId,
         p_duplicate_ids: duplicateIds,
         p_note: note ?? undefined,
@@ -56,7 +59,7 @@ export function useProdottiMergeLog(aziendaId?: string) {
   return useQuery({
     queryKey: ["prodotti_merge_log", aziendaId],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("prodotti_merge_log")
         .select("*")
         .order("created_at", { ascending: false });
@@ -66,7 +69,7 @@ export function useProdottiMergeLog(aziendaId?: string) {
       if (error) throw error;
       const rows = data ?? [];
 
-      const userIds = [...new Set(rows.map((r) => r.user_id))];
+      const userIds = [...new Set(rows.map((r) => r.user_id as string))] as string[];
       const profileMap = new Map<string, { full_name: string | null; email: string | null }>();
       if (userIds.length > 0) {
         const { data: profiles } = await supabase

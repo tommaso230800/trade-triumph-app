@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+// Alcune tabelle usate qui non sono ancora presenti nei tipi generati.
+const db = supabase as unknown as { from: (t: string) => any; rpc: (fn: string, args?: any) => any };
 import { toast } from "sonner";
 
 export type CustomerProductPrice = {
@@ -19,7 +22,7 @@ export function useCustomerProductPrices(customerId?: string, companyId?: string
   return useQuery({
     queryKey: ["customer_product_prices", customerId, companyId],
     queryFn: async () => {
-      let query = supabase.from("customer_product_prices").select("*");
+      let query = db.from("customer_product_prices").select("*");
       if (customerId) query = query.eq("customer_id", customerId);
       if (companyId) query = query.eq("company_id", companyId);
       const { data, error } = await query;
@@ -43,7 +46,7 @@ export function useUpsertCustomerProductPrice() {
       note?: string | null;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("customer_product_prices")
         .upsert({ ...input, user_id: user?.id }, { onConflict: "customer_id,company_id,product_id" })
         .select()
@@ -66,7 +69,7 @@ export function useDeleteCustomerProductPrice() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("customer_product_prices").delete().eq("id", id);
+      const { error } = await db.from("customer_product_prices").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
