@@ -46,7 +46,7 @@ export function useUpsertProdottoAlias() {
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non autenticato");
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("prodotti_alias")
         .upsert(
           {
@@ -82,7 +82,7 @@ export function useMarkAliasUsati() {
     mutationFn: async (ids: string[]) => {
       const uniche = Array.from(new Set(ids));
       if (uniche.length === 0) return;
-      const { data: correnti, error: readErr } = await supabase
+      const { data: correnti, error: readErr } = await db
         .from("prodotti_alias")
         .select("id, match_count")
         .in("id", uniche);
@@ -90,7 +90,7 @@ export function useMarkAliasUsati() {
       const now = new Date().toISOString();
       await Promise.all(
         (correnti || []).map((a) =>
-          supabase
+          db
             .from("prodotti_alias")
             .update({ match_count: (a.match_count || 0) + 1, ultimo_match: now })
             .eq("id", a.id)

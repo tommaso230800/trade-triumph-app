@@ -59,7 +59,7 @@ export function useProdottiMergeLog(aziendaId?: string) {
   return useQuery({
     queryKey: ["prodotti_merge_log", aziendaId],
     queryFn: async () => {
-      let query = supabase
+      let query = db
         .from("prodotti_merge_log")
         .select("*")
         .order("created_at", { ascending: false });

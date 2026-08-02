@@ -46,7 +46,7 @@ export function useUpsertCustomerProductPrice() {
       note?: string | null;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("customer_product_prices")
         .upsert({ ...input, user_id: user?.id }, { onConflict: "customer_id,company_id,product_id" })
         .select()
