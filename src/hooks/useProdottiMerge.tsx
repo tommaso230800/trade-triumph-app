@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+// Alcune tabelle usate qui non sono ancora presenti nei tipi generati.
+const db = supabase as unknown as { from: (t: string) => any; rpc: (fn: string, args?: any) => any };
 import { toast } from "sonner";
 
 export function useMergeProdotti() {
@@ -15,7 +18,7 @@ export function useMergeProdotti() {
       duplicateIds: string[];
       note?: string;
     }) => {
-      const { error } = await supabase.rpc("merge_prodotti", {
+      const { error } = await db.rpc("merge_prodotti", {
         p_primary_id: primaryId,
         p_duplicate_ids: duplicateIds,
         p_note: note ?? undefined,

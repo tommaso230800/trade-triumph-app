@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+
+// Alcune tabelle usate qui non sono ancora presenti nei tipi generati.
+const db = supabase as unknown as { from: (t: string) => any; rpc: (fn: string, args?: any) => any };
 import { toast } from "sonner";
 
 export type ProdottoAlias = {
@@ -21,7 +24,7 @@ export function useProdottiAlias(aziendaId?: string) {
   return useQuery({
     queryKey: ["prodotti_alias", aziendaId],
     queryFn: async () => {
-      let q = supabase.from("prodotti_alias").select("*").order("updated_at", { ascending: false });
+      let q = db.from("prodotti_alias").select("*").order("updated_at", { ascending: false });
       if (aziendaId) q = q.eq("azienda_id", aziendaId);
       const { data, error } = await q;
       if (error) throw error;
@@ -102,7 +105,7 @@ export function useDeleteProdottoAlias() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("prodotti_alias").delete().eq("id", id);
+      const { error } = await db.from("prodotti_alias").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {

@@ -39,7 +39,7 @@ export function useAziende(searchTerm?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Azienda[];
+      return data as unknown as Azienda[];
     },
   });
 }
