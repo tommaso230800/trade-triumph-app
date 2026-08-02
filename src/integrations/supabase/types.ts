@@ -180,7 +180,6 @@ export type Database = {
       aziende: {
         Row: {
           citta: string | null
-          colore: string | null
           created_at: string | null
           default_sc1: number
           default_sc2: number
@@ -202,7 +201,6 @@ export type Database = {
         }
         Insert: {
           citta?: string | null
-          colore?: string | null
           created_at?: string | null
           default_sc1?: number
           default_sc2?: number
@@ -224,7 +222,6 @@ export type Database = {
         }
         Update: {
           citta?: string | null
-          colore?: string | null
           created_at?: string | null
           default_sc1?: number
           default_sc2?: number
@@ -732,66 +729,6 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clienti"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      prodotti_alias: {
-        Row: {
-          azienda_id: string
-          codice_fornitore: string | null
-          created_at: string
-          descrizione_fornitore: string | null
-          id: string
-          match_count: number
-          note: string | null
-          prodotto_id: string
-          source: string
-          ultimo_match: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          azienda_id: string
-          codice_fornitore?: string | null
-          created_at?: string
-          descrizione_fornitore?: string | null
-          id?: string
-          match_count?: number
-          note?: string | null
-          prodotto_id: string
-          source?: string
-          ultimo_match?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          azienda_id?: string
-          codice_fornitore?: string | null
-          created_at?: string
-          descrizione_fornitore?: string | null
-          id?: string
-          match_count?: number
-          note?: string | null
-          prodotto_id?: string
-          source?: string
-          ultimo_match?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prodotti_alias_azienda_id_fkey"
-            columns: ["azienda_id"]
-            isOneToOne: false
-            referencedRelation: "aziende"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "prodotti_alias_prodotto_id_fkey"
-            columns: ["prodotto_id"]
-            isOneToOne: false
-            referencedRelation: "prodotti"
             referencedColumns: ["id"]
           },
         ]
@@ -2323,115 +2260,6 @@ export type Database = {
           },
         ]
       }
-      customer_product_prices: {
-        Row: {
-          company_id: string
-          created_at: string
-          custom_price: number
-          customer_id: string
-          id: string
-          note: string | null
-          product_id: string
-          updated_at: string
-          user_id: string
-          valid_from: string | null
-        }
-        Insert: {
-          company_id: string
-          created_at?: string
-          custom_price: number
-          customer_id: string
-          id?: string
-          note?: string | null
-          product_id: string
-          updated_at?: string
-          user_id: string
-          valid_from?: string | null
-        }
-        Update: {
-          company_id?: string
-          created_at?: string
-          custom_price?: number
-          customer_id?: string
-          id?: string
-          note?: string | null
-          product_id?: string
-          updated_at?: string
-          user_id?: string
-          valid_from?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_product_prices_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "aziende"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_product_prices_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "clienti"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_product_prices_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "prodotti"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      prodotti_merge_log: {
-        Row: {
-          azienda_id: string
-          created_at: string
-          id: string
-          merged_prodotti: Json
-          note: string | null
-          primary_prodotto_id: string
-          primary_prodotto_nome: string
-          user_id: string
-        }
-        Insert: {
-          azienda_id: string
-          created_at?: string
-          id?: string
-          merged_prodotti: Json
-          note?: string | null
-          primary_prodotto_id: string
-          primary_prodotto_nome: string
-          user_id: string
-        }
-        Update: {
-          azienda_id?: string
-          created_at?: string
-          id?: string
-          merged_prodotti?: Json
-          note?: string | null
-          primary_prodotto_id?: string
-          primary_prodotto_nome?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prodotti_merge_log_azienda_id_fkey"
-            columns: ["azienda_id"]
-            isOneToOne: false
-            referencedRelation: "aziende"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "prodotti_merge_log_primary_prodotto_id_fkey"
-            columns: ["primary_prodotto_id"]
-            isOneToOne: false
-            referencedRelation: "prodotti"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       price_anomalies_resolved: {
         Row: {
           anomaly_key: string
@@ -3911,14 +3739,6 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
-      merge_prodotti: {
-        Args: {
-          p_duplicate_ids: string[]
-          p_note?: string
-          p_primary_id: string
-        }
-        Returns: undefined
-      }
       purge_cestino_expired: { Args: never; Returns: undefined }
       trova_condizione_provvigione: {
         Args: {
