@@ -330,28 +330,50 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     setRigheOrdine(righeOrdine.filter((_, i) => i !== index));
   };
 
-  // Se il prezzo digitato manualmente differisce da quello proposto (listino,
-  // ultimo applicato o personalizzato) e non è già stato chiesto per questa
-  // riga, apre la conferma "solo questo ordine" vs "salva come prezzo cliente".
+  // Una riga è "prezzo modificato" quando il valore digitato differisce da
+  // quello proposto (personalizzato, ultimo applicato o listino) e non è già
+  // stata posta la domanda per quella riga.
+  const isPrezzoDirty = (riga?: RigaOrdine) =>
+    !!riga &&
+    !riga.is_omaggio &&
+    !riga.prezzo_dirty_prompted &&
+    parseDecimalInput(riga.prezzo_unitario) !== parseDecimalInput(riga.prezzo_baseline);
+
   const handlePrezzoBlur = (index: number) => {
-    const riga = righeOrdine[index];
-    if (!riga || riga.is_omaggio || riga.prezzo_dirty_prompted) return;
-    if (parseDecimalInput(riga.prezzo_unitario) === parseDecimalInput(riga.prezzo_baseline)) return;
+    if (!isPrezzoDirty(righeOrdine[index])) return;
     setPriceConfirmIndex(index);
   };
 
-  const closePriceConfirm = (index: number) => {
-    const updated = [...righeOrdine];
-    if (updated[index]) updated[index] = { ...updated[index], prezzo_dirty_prompted: true };
+  const markPrompted = (index: number) => {
+    const updated = righeOrdine.map((r, i) => (i === index ? { ...r, prezzo_dirty_prompted: true } : r));
     setRigheOrdine(updated);
     setPriceConfirmIndex(null);
+    return updated;
+  };
+
+  // Dopo la scelta: se restano altre righe con prezzo modificato le chiede in
+  // sequenza, altrimenti prosegue con la creazione dell'ordine se in attesa.
+  const afterPriceChoice = (updated: RigaOrdine[]) => {
+    if (!pendingSubmit) return;
+    const next = updated.findIndex((r) => isPrezzoDirty(r));
+    if (next >= 0) {
+      setPriceConfirmIndex(next);
+      return;
+    }
+    setPendingSubmit(false);
+    void doSubmit(updated);
+  };
+
+  const closePriceConfirm = (index: number) => {
+    afterPriceChoice(markPrompted(index));
   };
 
   const handleSaveAsCustomerPrice = async () => {
     if (priceConfirmIndex === null) return;
-    const riga = righeOrdine[priceConfirmIndex];
+    const index = priceConfirmIndex;
+    const riga = righeOrdine[index];
     if (!riga || !formData.cliente_id || !formData.azienda_id) {
-      closePriceConfirm(priceConfirmIndex);
+      closePriceConfirm(index);
       return;
     }
     await upsertCustomPrice.mutateAsync({
@@ -360,7 +382,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
       product_id: riga.prodotto_id,
       custom_price: parseDecimalInput(riga.prezzo_unitario),
     });
-    closePriceConfirm(priceConfirmIndex);
+    closePriceConfirm(index);
   };
 
   const addOmaggioFromRiga = (index: number) => {
