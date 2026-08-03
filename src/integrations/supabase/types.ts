@@ -1004,6 +1004,67 @@ export type Database = {
           },
         ]
       }
+      customer_product_prices: {
+        Row: {
+          company_id: string
+          created_at: string
+          custom_price: number
+          customer_id: string
+          id: string
+          note: string | null
+          product_id: string
+          updated_at: string
+          user_id: string
+          valid_from: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          custom_price: number
+          customer_id: string
+          id?: string
+          note?: string | null
+          product_id: string
+          updated_at?: string
+          user_id: string
+          valid_from?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          custom_price?: number
+          customer_id?: string
+          id?: string
+          note?: string | null
+          product_id?: string
+          updated_at?: string
+          user_id?: string
+          valid_from?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_product_prices_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_product_prices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_product_prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_reports: {
         Row: {
           campioni_consegnati: boolean | null
