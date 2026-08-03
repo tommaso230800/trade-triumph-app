@@ -131,6 +131,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     setRigheOrdine([]);
     setSelectedProdotto("");
     setAppliedPromos([]);
+    setPendingSubmit(false);
+    setPriceConfirmIndex(null);
   };
 
   const handleOpenChange = (v: boolean) => {
