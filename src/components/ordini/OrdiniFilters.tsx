@@ -62,7 +62,7 @@ export function OrdiniFilters({
           <SelectItem value="tutti" className="focus:bg-scatto-bg focus:text-scatto-ink">Tutti</SelectItem>
           <SelectItem value="in_attesa" className="focus:bg-scatto-bg focus:text-scatto-ink">In attesa</SelectItem>
           <SelectItem value="stand_by" className="focus:bg-scatto-bg focus:text-scatto-ink">Stand-by</SelectItem>
-          <SelectItem value="spedito" className="focus:bg-scatto-bg focus:text-scatto-ink">Spedito</SelectItem>
+          
           <SelectItem value="completato" className="focus:bg-scatto-bg focus:text-scatto-ink">Completato</SelectItem>
           <SelectItem value="annullato" className="focus:bg-scatto-bg focus:text-scatto-ink">Annullato</SelectItem>
         </SelectContent>

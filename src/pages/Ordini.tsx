@@ -21,6 +21,7 @@ import {
   RotateCcw,
   ShoppingCart,
   SearchX,
+  Clock,
 } from "lucide-react";
 import {
   useOrdini,
@@ -176,6 +177,11 @@ const Ordini = () => {
       label: "Conferma Ordine",
       icon: FileCheck2,
       onClick: () => setConfermaTarget({ id: ordine.id, codice: ordine.codice }),
+    },
+    {
+      label: "Metti in attesa",
+      icon: Clock,
+      onClick: () => updateStatus.mutate({ id: ordine.id, status: "in_attesa" }),
     },
     {
       label: "Metti in Stand-by",
