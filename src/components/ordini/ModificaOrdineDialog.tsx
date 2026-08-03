@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -141,8 +141,18 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
     }
   }, [ordine, open]);
 
+  // Carica le righe una sola volta per ordine: un refetch in background non
+  // deve sovrascrivere prezzi/quantità che l'utente sta modificando.
+  const loadedOrdineIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (righeForEdit && open) {
+    if (!open) {
+      loadedOrdineIdRef.current = null;
+      setPendingSubmit(false);
+      setPriceConfirmIndex(null);
+      return;
+    }
+    if (righeForEdit && ordine && loadedOrdineIdRef.current !== ordine.id) {
+      loadedOrdineIdRef.current = ordine.id;
       setEditRighe(
         righeForEdit.map((r) => ({
           id: r.id,
@@ -159,7 +169,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
         }))
       );
     }
-  }, [righeForEdit, open]);
+  }, [righeForEdit, open, ordine]);
 
   const updateEditRiga = (index: number, field: keyof EditRiga, value: number | string) => {
     const updated = [...editRighe];
