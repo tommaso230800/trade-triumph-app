@@ -96,6 +96,9 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   const [selectedProdotto, setSelectedProdotto] = useState("");
   const [appliedPromos, setAppliedPromos] = useState<string[]>([]);
   const [priceConfirmIndex, setPriceConfirmIndex] = useState<number | null>(null);
+  // true quando la conferma prezzo è stata aperta dal salvataggio: dopo la
+  // scelta l'ordine prosegue automaticamente.
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
@@ -128,6 +131,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     setRigheOrdine([]);
     setSelectedProdotto("");
     setAppliedPromos([]);
+    setPendingSubmit(false);
+    setPriceConfirmIndex(null);
   };
 
   const handleOpenChange = (v: boolean) => {
@@ -327,28 +332,50 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     setRigheOrdine(righeOrdine.filter((_, i) => i !== index));
   };
 
-  // Se il prezzo digitato manualmente differisce da quello proposto (listino,
-  // ultimo applicato o personalizzato) e non è già stato chiesto per questa
-  // riga, apre la conferma "solo questo ordine" vs "salva come prezzo cliente".
+  // Una riga è "prezzo modificato" quando il valore digitato differisce da
+  // quello proposto (personalizzato, ultimo applicato o listino) e non è già
+  // stata posta la domanda per quella riga.
+  const isPrezzoDirty = (riga?: RigaOrdine) =>
+    !!riga &&
+    !riga.is_omaggio &&
+    !riga.prezzo_dirty_prompted &&
+    parseDecimalInput(riga.prezzo_unitario) !== parseDecimalInput(riga.prezzo_baseline);
+
   const handlePrezzoBlur = (index: number) => {
-    const riga = righeOrdine[index];
-    if (!riga || riga.is_omaggio || riga.prezzo_dirty_prompted) return;
-    if (parseDecimalInput(riga.prezzo_unitario) === parseDecimalInput(riga.prezzo_baseline)) return;
+    if (!isPrezzoDirty(righeOrdine[index])) return;
     setPriceConfirmIndex(index);
   };
 
-  const closePriceConfirm = (index: number) => {
-    const updated = [...righeOrdine];
-    if (updated[index]) updated[index] = { ...updated[index], prezzo_dirty_prompted: true };
+  const markPrompted = (index: number) => {
+    const updated = righeOrdine.map((r, i) => (i === index ? { ...r, prezzo_dirty_prompted: true } : r));
     setRigheOrdine(updated);
     setPriceConfirmIndex(null);
+    return updated;
+  };
+
+  // Dopo la scelta: se restano altre righe con prezzo modificato le chiede in
+  // sequenza, altrimenti prosegue con la creazione dell'ordine se in attesa.
+  const afterPriceChoice = (updated: RigaOrdine[]) => {
+    if (!pendingSubmit) return;
+    const next = updated.findIndex((r) => isPrezzoDirty(r));
+    if (next >= 0) {
+      setPriceConfirmIndex(next);
+      return;
+    }
+    setPendingSubmit(false);
+    void doSubmit(updated);
+  };
+
+  const closePriceConfirm = (index: number) => {
+    afterPriceChoice(markPrompted(index));
   };
 
   const handleSaveAsCustomerPrice = async () => {
     if (priceConfirmIndex === null) return;
-    const riga = righeOrdine[priceConfirmIndex];
+    const index = priceConfirmIndex;
+    const riga = righeOrdine[index];
     if (!riga || !formData.cliente_id || !formData.azienda_id) {
-      closePriceConfirm(priceConfirmIndex);
+      closePriceConfirm(index);
       return;
     }
     await upsertCustomPrice.mutateAsync({
@@ -357,7 +384,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
       product_id: riga.prodotto_id,
       custom_price: parseDecimalInput(riga.prezzo_unitario),
     });
-    closePriceConfirm(priceConfirmIndex);
+    closePriceConfirm(index);
   };
 
   const addOmaggioFromRiga = (index: number) => {
@@ -457,11 +484,27 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     toast.success(`${products.length} prodotti caricati da ${productHistory.totalOrders} ordini precedenti!`);
   };
 
+  // Se l'utente ha modificato un prezzo e ha toccato direttamente "Crea Ordine"
+  // (senza che il blur facesse in tempo a mostrare il pannello), la domanda
+  // viene posta qui prima di salvare.
   const handleSubmit = async () => {
     if (righeOrdine.length === 0) return;
+    const dirtyIndex = righeOrdine.findIndex((r) => isPrezzoDirty(r));
+    if (dirtyIndex >= 0) {
+      setPendingSubmit(true);
+      setPriceConfirmIndex(dirtyIndex);
+      return;
+    }
+    await doSubmit(righeOrdine);
+  };
+
+  const doSubmit = async (righe: RigaOrdine[]) => {
+    if (righe.length === 0) return;
 
     const totale = calcolaTotale();
     const prodottiCount = calcolaProdottiTotali();
+
+
 
     const ordine = await createOrdine.mutateAsync({
       cliente_id: formData.cliente_id || undefined,
@@ -476,7 +519,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     });
 
     await createRigheBatch.mutateAsync(
-      righeOrdine.map((riga) => ({
+      righe.map((riga) => ({
         ordine_id: ordine.id,
         prodotto_id: riga.prodotto_id,
         quantita_pezzi: riga.quantita_pezzi,
@@ -515,7 +558,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
       sconto_merce: parseDecimalInput(formData.sconto_merce),
       totale,
       note: formData.note || undefined,
-      righe: righeOrdine.map((riga) => {
+      righe: righe.map((riga) => {
         const promoForProduct = promozioniRilevanti.find((promo) =>
           promo.canvass_prodotti?.some((cp) => cp.prodotto_id === riga.prodotto_id)
         );
@@ -546,6 +589,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   const isSubmitting = createOrdine.isPending || createRigheBatch.isPending;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden p-0">
         <DialogHeader className="border-b border-border px-4 py-4 sm:px-6">
@@ -757,6 +801,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
           </DialogFooter>
         </div>
       </DialogContent>
+    </Dialog>
 
       <AlertDialog open={priceConfirmIndex !== null} onOpenChange={(v) => !v && priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
         <AlertDialogContent>
@@ -782,6 +827,6 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Dialog>
+    </>
   );
 }

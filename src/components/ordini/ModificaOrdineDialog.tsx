@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -95,6 +95,8 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
   const [editRighe, setEditRighe] = useState<EditRiga[]>([]);
   const [selectedProdotto, setSelectedProdotto] = useState("");
   const [priceConfirmIndex, setPriceConfirmIndex] = useState<number | null>(null);
+  // true quando la conferma prezzo è stata aperta dal salvataggio.
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
@@ -139,8 +141,18 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
     }
   }, [ordine, open]);
 
+  // Carica le righe una sola volta per ordine: un refetch in background non
+  // deve sovrascrivere prezzi/quantità che l'utente sta modificando.
+  const loadedOrdineIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (righeForEdit && open) {
+    if (!open) {
+      loadedOrdineIdRef.current = null;
+      setPendingSubmit(false);
+      setPriceConfirmIndex(null);
+      return;
+    }
+    if (righeForEdit && ordine && loadedOrdineIdRef.current !== ordine.id) {
+      loadedOrdineIdRef.current = ordine.id;
       setEditRighe(
         righeForEdit.map((r) => ({
           id: r.id,
@@ -157,7 +169,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
         }))
       );
     }
-  }, [righeForEdit, open]);
+  }, [righeForEdit, open, ordine]);
 
   const updateEditRiga = (index: number, field: keyof EditRiga, value: number | string) => {
     const updated = [...editRighe];
@@ -222,25 +234,46 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
     setSelectedProdotto("");
   };
 
+  const isPrezzoDirty = (riga?: EditRiga) =>
+    !!riga &&
+    !riga.prezzo_dirty_prompted &&
+    parseDecimalInput(riga.prezzo_unitario) !== parseDecimalInput(riga.prezzo_baseline);
+
   const handlePrezzoBlur = (index: number) => {
-    const riga = editRighe[index];
-    if (!riga || riga.prezzo_dirty_prompted) return;
-    if (parseDecimalInput(riga.prezzo_unitario) === parseDecimalInput(riga.prezzo_baseline)) return;
+    if (!isPrezzoDirty(editRighe[index])) return;
     setPriceConfirmIndex(index);
   };
 
-  const closePriceConfirm = (index: number) => {
-    const updated = [...editRighe];
-    if (updated[index]) updated[index] = { ...updated[index], prezzo_dirty_prompted: true };
+  const markPrompted = (index: number) => {
+    const updated = editRighe.map((r, i) => (i === index ? { ...r, prezzo_dirty_prompted: true } : r));
     setEditRighe(updated);
     setPriceConfirmIndex(null);
+    return updated;
+  };
+
+  // Dopo la scelta: chiede in sequenza le altre righe con prezzo modificato e,
+  // se la domanda era partita dal salvataggio, prosegue con il salvataggio.
+  const afterPriceChoice = (updated: EditRiga[]) => {
+    if (!pendingSubmit) return;
+    const next = updated.findIndex((r) => isPrezzoDirty(r));
+    if (next >= 0) {
+      setPriceConfirmIndex(next);
+      return;
+    }
+    setPendingSubmit(false);
+    void doSaveEdit(updated);
+  };
+
+  const closePriceConfirm = (index: number) => {
+    afterPriceChoice(markPrompted(index));
   };
 
   const handleSaveAsCustomerPrice = async () => {
     if (priceConfirmIndex === null) return;
-    const riga = editRighe[priceConfirmIndex];
+    const index = priceConfirmIndex;
+    const riga = editRighe[index];
     if (!riga || !editFormData.cliente_id || !editFormData.azienda_id) {
-      closePriceConfirm(priceConfirmIndex);
+      closePriceConfirm(index);
       return;
     }
     await upsertCustomPrice.mutateAsync({
@@ -249,7 +282,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
       product_id: riga.prodotto_id,
       custom_price: parseDecimalInput(riga.prezzo_unitario),
     });
-    closePriceConfirm(priceConfirmIndex);
+    closePriceConfirm(index);
   };
 
   const rigaSubtotale = (riga: EditRiga): number => {
@@ -273,11 +306,24 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
   const calcolaEditProdottiTotali = () =>
     editRighe.reduce((sum, riga) => sum + riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone, 0);
 
+  // Se il prezzo è stato modificato e si tocca subito "Salva Modifiche", la
+  // domanda viene posta qui prima di scrivere sull'ordine.
   const handleSaveEdit = async () => {
+    if (!ordine) return;
+    const dirtyIndex = editRighe.findIndex((r) => isPrezzoDirty(r));
+    if (dirtyIndex >= 0) {
+      setPendingSubmit(true);
+      setPriceConfirmIndex(dirtyIndex);
+      return;
+    }
+    await doSaveEdit(editRighe);
+  };
+
+  const doSaveEdit = async (righe: EditRiga[]) => {
     if (!ordine) return;
 
     try {
-      for (const riga of editRighe) {
+      for (const riga of righe) {
         if (riga.isNew) {
           await createRigaMutation.mutateAsync({
             ordine_id: ordine.id,
@@ -325,6 +371,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
   const isSubmitting = updateRigaMutation.isPending || createRigaMutation.isPending || updateOrdine.isPending;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden p-0">
         <DialogHeader className="border-b border-border px-4 py-4 sm:px-6">
@@ -515,6 +562,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
           </DialogFooter>
         </div>
       </DialogContent>
+    </Dialog>
 
       <AlertDialog open={priceConfirmIndex !== null} onOpenChange={(v) => !v && priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
         <AlertDialogContent>
@@ -539,6 +587,6 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Dialog>
+    </>
   );
 }
