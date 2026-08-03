@@ -499,6 +499,10 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   const doSubmit = async (righe: RigaOrdine[]) => {
     if (righe.length === 0) return;
 
+    const totale = calcolaTotale();
+    const prodottiCount = calcolaProdottiTotali();
+
+
 
     const ordine = await createOrdine.mutateAsync({
       cliente_id: formData.cliente_id || undefined,
