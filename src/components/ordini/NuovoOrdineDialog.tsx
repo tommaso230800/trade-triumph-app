@@ -482,11 +482,23 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     toast.success(`${products.length} prodotti caricati da ${productHistory.totalOrders} ordini precedenti!`);
   };
 
+  // Se l'utente ha modificato un prezzo e ha toccato direttamente "Crea Ordine"
+  // (senza che il blur facesse in tempo a mostrare il pannello), la domanda
+  // viene posta qui prima di salvare.
   const handleSubmit = async () => {
     if (righeOrdine.length === 0) return;
+    const dirtyIndex = righeOrdine.findIndex((r) => isPrezzoDirty(r));
+    if (dirtyIndex >= 0) {
+      setPendingSubmit(true);
+      setPriceConfirmIndex(dirtyIndex);
+      return;
+    }
+    await doSubmit(righeOrdine);
+  };
 
-    const totale = calcolaTotale();
-    const prodottiCount = calcolaProdottiTotali();
+  const doSubmit = async (righe: RigaOrdine[]) => {
+    if (righe.length === 0) return;
+
 
     const ordine = await createOrdine.mutateAsync({
       cliente_id: formData.cliente_id || undefined,
