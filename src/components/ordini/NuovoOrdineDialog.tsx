@@ -96,6 +96,9 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   const [selectedProdotto, setSelectedProdotto] = useState("");
   const [appliedPromos, setAppliedPromos] = useState<string[]>([]);
   const [priceConfirmIndex, setPriceConfirmIndex] = useState<number | null>(null);
+  // true quando la conferma prezzo è stata aperta dal salvataggio: dopo la
+  // scelta l'ordine prosegue automaticamente.
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
