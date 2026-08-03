@@ -517,7 +517,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     });
 
     await createRigheBatch.mutateAsync(
-      righeOrdine.map((riga) => ({
+      righe.map((riga) => ({
         ordine_id: ordine.id,
         prodotto_id: riga.prodotto_id,
         quantita_pezzi: riga.quantita_pezzi,
@@ -556,7 +556,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
       sconto_merce: parseDecimalInput(formData.sconto_merce),
       totale,
       note: formData.note || undefined,
-      righe: righeOrdine.map((riga) => {
+      righe: righe.map((riga) => {
         const promoForProduct = promozioniRilevanti.find((promo) =>
           promo.canvass_prodotti?.some((cp) => cp.prodotto_id === riga.prodotto_id)
         );
@@ -587,6 +587,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   const isSubmitting = createOrdine.isPending || createRigheBatch.isPending;
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden p-0">
         <DialogHeader className="border-b border-border px-4 py-4 sm:px-6">
