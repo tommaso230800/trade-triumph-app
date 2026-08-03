@@ -799,6 +799,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
           </DialogFooter>
         </div>
       </DialogContent>
+    </Dialog>
 
       <AlertDialog open={priceConfirmIndex !== null} onOpenChange={(v) => !v && priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
         <AlertDialogContent>
@@ -824,6 +825,6 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Dialog>
+    </>
   );
 }
