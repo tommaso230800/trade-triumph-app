@@ -2507,6 +2507,42 @@ export type Database = {
           },
         ]
       }
+      prodotti_merge_log: {
+        Row: {
+          azienda_id: string | null
+          created_at: string
+          id: string
+          merged_prodotti: Json
+          note: string | null
+          primary_prodotto_id: string
+          primary_prodotto_nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          created_at?: string
+          id?: string
+          merged_prodotti?: Json
+          note?: string | null
+          primary_prodotto_id: string
+          primary_prodotto_nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string | null
+          created_at?: string
+          id?: string
+          merged_prodotti?: Json
+          note?: string | null
+          primary_prodotto_id?: string
+          primary_prodotto_nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -3803,6 +3839,14 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      merge_prodotti: {
+        Args: {
+          p_duplicate_ids: string[]
+          p_note?: string
+          p_primary_id: string
+        }
+        Returns: undefined
+      }
       purge_cestino_expired: { Args: never; Returns: undefined }
       trova_condizione_provvigione: {
         Args: {
