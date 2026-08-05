@@ -60,7 +60,8 @@ const App = () => (
                 <Route path="/clienti/:id" element={<ClienteDettaglio />} />
                 <Route path="/clienti/consorzio/:slug" element={<ConsorzioDettaglio />} />
                 <Route path="/ordini" element={<Ordini />} />
-                <Route path="/kpi" element={<KPI />} />
+                <Route path="/email-ordini" element={<EmailOrdini />} />
+               <Route path="/kpi" element={<KPI />} />
                 <Route path="/provvigioni" element={<Provvigioni />} />
                 <Route path="/canvass" element={<Canvass />} />
                 <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
