@@ -1274,6 +1274,131 @@ export type Database = {
         }
         Relationships: []
       }
+      email_allegati: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          documento_id: string | null
+          email_id: string
+          errore_testo: string | null
+          file_name: string
+          file_size: number | null
+          id: string
+          parsed_data: Json | null
+          stato: string
+          storage_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          documento_id?: string | null
+          email_id: string
+          errore_testo?: string | null
+          file_name: string
+          file_size?: number | null
+          id?: string
+          parsed_data?: Json | null
+          stato?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          documento_id?: string | null
+          email_id?: string
+          errore_testo?: string | null
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          parsed_data?: Json | null
+          stato?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_allegati_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_allegati_email_id_fkey"
+            columns: ["email_id"]
+            isOneToOne: false
+            referencedRelation: "email_ingest"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_ingest: {
+        Row: {
+          body_text: string | null
+          created_at: string
+          errore_testo: string | null
+          from_email: string | null
+          from_name: string | null
+          id: string
+          match_motivo: string | null
+          match_score: number | null
+          message_id: string
+          ordine_id: string | null
+          received_at: string
+          stato: string
+          subject: string | null
+          to_email: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          body_text?: string | null
+          created_at?: string
+          errore_testo?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          id?: string
+          match_motivo?: string | null
+          match_score?: number | null
+          message_id: string
+          ordine_id?: string | null
+          received_at?: string
+          stato?: string
+          subject?: string | null
+          to_email?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          body_text?: string | null
+          created_at?: string
+          errore_testo?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          id?: string
+          match_motivo?: string | null
+          match_score?: number | null
+          message_id?: string
+          ordine_id?: string | null
+          received_at?: string
+          stato?: string
+          subject?: string | null
+          to_email?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_ingest_ordine_id_fkey"
+            columns: ["ordine_id"]
+            isOneToOne: false
+            referencedRelation: "ordini"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       error_log: {
         Row: {
           created_at: string
