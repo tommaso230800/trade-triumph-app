@@ -34,12 +34,18 @@ export type RigaLike = {
   id?: string;
   prodotto_id?: string | null;
   quantita_pezzi?: number | string | null;
+  quantita_cartoni?: number | string | null;
   prezzo_unitario?: number | string | null;
   sc1?: number | string | null;
   sc2?: number | string | null;
   sc3?: number | string | null;
   is_omaggio?: boolean | null;
-  prodotti?: { id?: string; nome?: string; brand_id?: string | null } | null;
+  prodotti?: {
+    id?: string;
+    nome?: string;
+    brand_id?: string | null;
+    pezzi_per_cartone?: number | string | null;
+  } | null;
 };
 
 // Stati esclusi dagli aggregati economici.
