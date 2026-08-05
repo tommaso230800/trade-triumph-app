@@ -74,9 +74,13 @@ export const isCounted = (o: OrdineLike): boolean => {
 /** Fatturato ordine — Opzione A: sempre `ordini.totale`. */
 export const orderRevenue = (o: OrdineLike): number => num(o.totale);
 
+/** Pezzi totali di una riga: pezzi sfusi + cartoni convertiti in pezzi. */
+const rigaPezziTotali = (r: RigaLike): number =>
+  num(r.quantita_pezzi) + num(r.quantita_cartoni) * (num(r.prodotti?.pezzi_per_cartone) || 1);
+
 /** Subtotale lordo di una riga (senza sconti applicati). Usato solo come peso. */
 const rigaSubtotaleLordo = (r: RigaLike): number =>
-  num(r.quantita_pezzi) * num(r.prezzo_unitario);
+  rigaPezziTotali(r) * num(r.prezzo_unitario);
 
 /** Subtotale netto riga (dopo sconti a cascata). Peso preferito per l'allocazione. */
 const rigaSubtotaleNetto = (r: RigaLike): number => {
