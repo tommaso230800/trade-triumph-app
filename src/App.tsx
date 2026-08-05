@@ -23,6 +23,7 @@ const Clienti = lazy(() => import("./pages/Clienti"));
 const ClienteDettaglio = lazy(() => import("./pages/ClienteDettaglio"));
 const ConsorzioDettaglio = lazy(() => import("./pages/ConsorzioDettaglio"));
 const Ordini = lazy(() => import("./pages/Ordini"));
+const EmailOrdini = lazy(() => import("./pages/EmailOrdini"));
 const KPI = lazy(() => import("./pages/KPI"));
 const Provvigioni = lazy(() => import("./pages/Provvigioni"));
 const Canvass = lazy(() => import("./pages/Canvass"));
