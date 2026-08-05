@@ -208,7 +208,7 @@ export default function EmailOrdini() {
           )}
         </div>
       </main>
-      <BottomNav onMenuClick={() => setMobileMenuOpen(true)} />
+      <BottomNav onOpenMore={() => setMobileMenuOpen(true)} moreActive={mobileMenuOpen} />
     </div>
   );
 }
