@@ -34,12 +34,18 @@ export type RigaLike = {
   id?: string;
   prodotto_id?: string | null;
   quantita_pezzi?: number | string | null;
+  quantita_cartoni?: number | string | null;
   prezzo_unitario?: number | string | null;
   sc1?: number | string | null;
   sc2?: number | string | null;
   sc3?: number | string | null;
   is_omaggio?: boolean | null;
-  prodotti?: { id?: string; nome?: string; brand_id?: string | null } | null;
+  prodotti?: {
+    id?: string;
+    nome?: string;
+    brand_id?: string | null;
+    pezzi_per_cartone?: number | string | null;
+  } | null;
 };
 
 // Stati esclusi dagli aggregati economici.
@@ -68,9 +74,13 @@ export const isCounted = (o: OrdineLike): boolean => {
 /** Fatturato ordine — Opzione A: sempre `ordini.totale`. */
 export const orderRevenue = (o: OrdineLike): number => num(o.totale);
 
+/** Pezzi totali di una riga: pezzi sfusi + cartoni convertiti in pezzi. */
+const rigaPezziTotali = (r: RigaLike): number =>
+  num(r.quantita_pezzi) + num(r.quantita_cartoni) * (num(r.prodotti?.pezzi_per_cartone) || 1);
+
 /** Subtotale lordo di una riga (senza sconti applicati). Usato solo come peso. */
 const rigaSubtotaleLordo = (r: RigaLike): number =>
-  num(r.quantita_pezzi) * num(r.prezzo_unitario);
+  rigaPezziTotali(r) * num(r.prezzo_unitario);
 
 /** Subtotale netto riga (dopo sconti a cascata). Peso preferito per l'allocazione. */
 const rigaSubtotaleNetto = (r: RigaLike): number => {
