@@ -41,6 +41,12 @@ function deltaPct(curr: number, prev: number): number | null {
   return ((curr - prev) / prev) * 100;
 }
 
+// Sfondo tenue derivato dal colore identità azienda: gli hex si possono
+// sfumare con l'alpha, i fallback in CSS var restano su un grigio neutro.
+function softBg(color: string) {
+  return color.startsWith("#") ? `${color}1f` : "hsl(var(--scatto-ink) / 0.06)";
+}
+
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -375,7 +381,7 @@ const Index = () => {
                         >
                           <span
                             className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-bold"
-                            style={{ backgroundColor: `${color}1f`, color }}
+                            style={{ backgroundColor: softBg(color), color }}
                           >
                             {az?.logo_url ? (
                               <img src={az.logo_url} alt={az.nome} className="h-full w-full object-cover" />
@@ -440,7 +446,7 @@ const Index = () => {
                         <Link to="/ordini" className="flex min-h-[56px] items-center gap-3 py-2.5">
                           <span
                             className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-bold"
-                            style={{ backgroundColor: `${color}1f`, color }}
+                            style={{ backgroundColor: softBg(color), color }}
                           >
                             {o.aziende?.logo_url ? (
                               <img src={o.aziende.logo_url} alt={o.aziende?.nome || ""} className="h-full w-full object-cover" />
