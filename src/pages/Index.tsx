@@ -1,5 +1,5 @@
 // Dashboard principale — redesign "professional light"
-import { useMemo, useState } from "react";
+import { useMemo, useState, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -8,20 +8,35 @@ import { DashRevenueChart } from "@/components/dashboard/DashRevenueChart";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
 import { useAziende } from "@/hooks/useAziende";
-import { useOrdini } from "@/hooks/useOrdini";
+import { useOrdini, type Ordine } from "@/hooks/useOrdini";
+import { useOrdiniRighe } from "@/hooks/useOrdiniRighe";
+import { useClienti } from "@/hooks/useClienti";
+import { useBrands } from "@/hooks/useBrands";
 import { useAuth } from "@/hooks/useAuth";
 import { aziendaColorValue, buildAziendaColorMap } from "@/lib/aziendaColor";
 import { periodStart, periodEnd, type DashboardPeriod } from "@/lib/periodRange";
+import { supabase } from "@/integrations/supabase/client";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { Drawer, DrawerContent, DrawerClose } from "@/components/ui/drawer";
+import type { ProformaData } from "@/components/ordini/ProformaDialog";
 import { ChevronRight, Download } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
+
+// html2canvas + jsPDF pesano ~590kB: caricati solo al primo "Apri proforma",
+// non nel bundle iniziale della dashboard (pagina più visitata dell'app).
+const ProformaDialog = lazy(() =>
+  import("@/components/ordini/ProformaDialog").then((m) => ({ default: m.ProformaDialog }))
+);
 
 const formatNumberIT = (value: number) =>
   Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 const formatCurrency = (value: number) => `${formatNumberIT(value)} €`;
 const formatCompact = (value: number) =>
   Math.abs(value) >= 10000 ? `${formatNumberIT(value / 1000)}k €` : formatCurrency(value);
+/** Con centesimi, per righe/totale ordine — dove la precisione conta. */
+const formatCurrencyPrecise = (value: number) =>
+  `${value.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
 
 type Period = DashboardPeriod;
 
@@ -68,6 +83,22 @@ function relativeTime(iso: string | null) {
 function daysAgo(iso: string | null | undefined) {
   if (!iso) return null;
   return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+}
+
+const statusLabels: Record<Ordine["status"], string> = {
+  completato: "Completato",
+  in_attesa: "In attesa",
+  spedito: "Spedito",
+  annullato: "Annullato",
+  stand_by: "Stand-by",
+};
+
+/** Subtotale di una riga ordine: stessa formula di ModificaOrdineDialog (pezzi × prezzo, sconti a cascata). */
+function rigaSubtotale(riga: { quantita_pezzi: number; quantita_cartoni: number; prezzo_unitario: number; sc1: number; sc2: number; sc3: number; pezziPerCartone: number }): number {
+  const pezziTotali = riga.quantita_pezzi + riga.quantita_cartoni * riga.pezziPerCartone;
+  const prezzoBase = pezziTotali * riga.prezzo_unitario;
+  const scontoTotale = 1 - (1 - riga.sc1 / 100) * (1 - riga.sc2 / 100) * (1 - riga.sc3 / 100);
+  return prezzoBase * (1 - scontoTotale);
 }
 
 /** Percorso SVG di uno sparkline da una serie di valori, normalizzato al viewBox 300x56. */
@@ -142,6 +173,13 @@ const Index = () => {
   const { data: forecastData, isLoading: forecastLoading } = useReorderForecast();
   const { data: aziendeList, isLoading: aziendeLoading } = useAziende();
   const { data: ordini, isLoading: ordiniLoading } = useOrdini();
+  const { data: clienti } = useClienti();
+  const { data: brands } = useBrands();
+
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const { data: selectedOrderRighe } = useOrdiniRighe(selectedOrderId ?? undefined);
+  const [isProformaOpen, setIsProformaOpen] = useState(false);
+  const [proformaData, setProformaData] = useState<ProformaData | null>(null);
 
   const aziendaColorMap = useMemo(() => buildAziendaColorMap(aziendeList || []), [aziendeList]);
   const aziendaMap = useMemo(
@@ -195,6 +233,24 @@ const Index = () => {
     }`;
   })();
 
+  // Obiettivo mensile: media del fatturato negli ultimi 12 mesi (stessa logica
+  // già usata in KPI/Provvigioni) — nessun target reale impostabile esiste
+  // oggi, è una stima automatica.
+  const obiettivoMensile = useMemo(() => {
+    if (!yoy) return null;
+    const rolling: number[] = [];
+    for (let k = 1; k <= 12; k++) {
+      const raw = currentMonthIndex - k;
+      const idx = ((raw % 12) + 12) % 12;
+      rolling.push(raw >= 0 ? yoy.monthlyComparison[idx].curr : yoy.monthlyComparison[idx].prev);
+    }
+    const obiettivo = rolling.some((v) => v > 0) ? rolling.reduce((a, b) => a + b, 0) / 12 : 0;
+    const fatturatoMese = yoy.monthlyComparison[currentMonthIndex]?.curr ?? 0;
+    return { obiettivo, fatturatoMese };
+  }, [yoy, currentMonthIndex]);
+  const giorniNelMese = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const giorniRimanenti = Math.max(0, giorniNelMese - now.getDate());
+
   const fornitori = useMemo(() => {
     if (!yoy) return [];
     return Array.from(yoy.aziendeYoY.values())
@@ -238,6 +294,58 @@ const Index = () => {
       )
       .slice(0, 6);
   }, [ordini]);
+
+  const selectedOrder = selectedOrderId ? attivitaRecente.find((o) => o.id === selectedOrderId) ?? null : null;
+  const selectedOrderTotale = selectedOrder ? Number(selectedOrder.totale) : 0;
+
+  // Apre la proforma dell'ordine selezionato: stessa costruzione dati di
+  // handleShowProforma in pagina Ordini, righe recuperate al volo (codice e
+  // brand non servono altrove in dashboard quindi non sono nell'hook condiviso).
+  const handleApriProforma = async (order: Ordine) => {
+    const cliente = clienti?.find((c) => c.id === order.cliente_id);
+    const azienda = aziendeList?.find((a) => a.id === order.azienda_id);
+
+    const { data: righeData } = await supabase
+      .from("ordini_righe")
+      .select(`*, prodotti (nome, codice, pezzi_per_cartone, brand_id)`)
+      .eq("ordine_id", order.id);
+
+    setProformaData({
+      codice: order.codice || `ORD-${order.id.slice(0, 8)}`,
+      created_at: order.created_at,
+      cliente_nome: cliente?.nome || order.clienti?.nome || "N/A",
+      cliente_indirizzo: cliente?.indirizzo || undefined,
+      cliente_citta: cliente?.citta || undefined,
+      cliente_cap: cliente?.cap || undefined,
+      cliente_piva: cliente?.partita_iva || undefined,
+      azienda_nome: azienda?.nome || order.aziende?.nome || "N/A",
+      azienda_indirizzo: azienda?.indirizzo || undefined,
+      azienda_citta: azienda?.citta || undefined,
+      tipo_pagamento: order.tipo_pagamento || "Contanti",
+      sconto: Number(order.sconto) || 0,
+      sconto_merce: Number(order.sconto_merce) || 0,
+      totale: Number(order.totale),
+      note: order.note || undefined,
+      righe: (righeData || []).map((r: any) => {
+        const brandName = brands?.find((b) => b.id === r.prodotti?.brand_id)?.name;
+        return {
+          prodotto_codice: r.prodotti?.codice || undefined,
+          prodotto_nome: r.prodotti?.nome || "Prodotto",
+          prodotto_brand: brandName,
+          prezzo_unitario: Number(r.prezzo_unitario),
+          quantita_pezzi: r.quantita_pezzi,
+          quantita_cartoni: r.quantita_cartoni,
+          pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
+          sc1: Number(r.sc1) || 0,
+          sc2: Number(r.sc2) || 0,
+          sc3: Number(r.sc3) || 0,
+          is_omaggio: !!r.is_omaggio,
+        };
+      }),
+    });
+    setSelectedOrderId(null);
+    setIsProformaOpen(true);
+  };
 
   const handleExport = () => {
     const rows: string[][] = [
@@ -347,28 +455,53 @@ const Index = () => {
                 </svg>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 lg:grid-rows-3">
-                <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
-                  <p className="text-[11px] font-semibold text-scatto-muted">Ordini</p>
-                  <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
-                    {formatNumberIT(ordiniCount)}
-                  </p>
-                  <div className="mt-2"><DeltaBadge deltaPct={ordiniDelta} /></div>
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
+                    <p className="text-[11px] font-semibold text-scatto-muted">Ordini</p>
+                    <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
+                      {formatNumberIT(ordiniCount)}
+                    </p>
+                    <div className="mt-2"><DeltaBadge deltaPct={ordiniDelta} /></div>
+                  </div>
+                  <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
+                    <p className="text-[11px] font-semibold text-scatto-muted">Clienti attivi</p>
+                    <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
+                      {clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"}
+                    </p>
+                    <div className="mt-2"><DeltaBadge deltaPct={clientiDelta} /></div>
+                  </div>
+                  <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
+                    <p className="text-[11px] font-semibold text-scatto-muted">Scontrino medio</p>
+                    <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
+                      {ticket === null ? "N/D" : formatCurrency(ticket)}
+                    </p>
+                    <div className="mt-2"><DeltaBadge deltaPct={ticketDelta} /></div>
+                  </div>
                 </div>
-                <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
-                  <p className="text-[11px] font-semibold text-scatto-muted">Clienti attivi</p>
-                  <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
-                    {clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"}
-                  </p>
-                  <div className="mt-2"><DeltaBadge deltaPct={clientiDelta} /></div>
-                </div>
-                <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
-                  <p className="text-[11px] font-semibold text-scatto-muted">Scontrino medio</p>
-                  <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
-                    {ticket === null ? "N/D" : formatCurrency(ticket)}
-                  </p>
-                  <div className="mt-2"><DeltaBadge deltaPct={ticketDelta} /></div>
-                </div>
+
+                {obiettivoMensile && obiettivoMensile.obiettivo > 0 && (
+                  <div className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
+                    <div className="flex items-baseline gap-2">
+                      <h3 className="font-display text-sm font-bold tracking-tight text-scatto-ink">
+                        Obiettivo di {format(now, "MMMM", { locale: it })}
+                      </h3>
+                      <span className="ml-auto text-sm font-bold tabular-nums text-scatto-ink">
+                        {Math.round(Math.min((obiettivoMensile.fatturatoMese / obiettivoMensile.obiettivo) * 100, 100))}%
+                      </span>
+                    </div>
+                    <div className="my-3 h-2 w-full overflow-hidden rounded-full bg-scatto-ink/5">
+                      <div
+                        className="h-full rounded-full bg-scatto-ink"
+                        style={{ width: `${Math.min((obiettivoMensile.fatturatoMese / obiettivoMensile.obiettivo) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[11px] font-semibold text-scatto-muted">
+                      <span>{formatCurrency(obiettivoMensile.fatturatoMese)} su {formatCurrency(obiettivoMensile.obiettivo)}</span>
+                      <span>{giorniRimanenti > 0 ? `restano ${giorniRimanenti} giorni` : "ultimo giorno"}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -563,10 +696,10 @@ const Index = () => {
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-scatto-ink">
                   <i className="inline-block h-4 w-1 rounded-full bg-scatto-success" />
-                  Attività recente
+                  Ultimi ordini
                 </h2>
                 <Link to="/ordini" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
-                  Vedi tutti <ChevronRight className="h-3.5 w-3.5" />
+                  Tutti <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
 
@@ -585,7 +718,11 @@ const Index = () => {
                     const nomeCliente = o.clienti?.nome || "N/D";
                     return (
                       <li key={o.id}>
-                        <Link to="/ordini" className="flex min-h-[56px] items-center gap-3 py-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrderId(o.id)}
+                          className="flex min-h-[56px] w-full items-center gap-3 rounded-lg py-2.5 text-left transition-colors hover:bg-scatto-ink/[0.03] touch-target"
+                        >
                           <span
                             className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-bold"
                             style={{ backgroundColor: softBg(color), color }}
@@ -603,7 +740,8 @@ const Index = () => {
                           <span className="flex-shrink-0 font-display text-sm font-bold tabular-nums text-scatto-ink">
                             {o.totale ? formatCompact(Number(o.totale)) : "N/D"}
                           </span>
-                        </Link>
+                          <ChevronRight className="h-4 w-4 flex-shrink-0 text-scatto-muted" />
+                        </button>
                       </li>
                     );
                   })}
@@ -613,6 +751,105 @@ const Index = () => {
           </div>
         </div>
       </div>
+
+      {/* Scheda ordine: righe + totale, resta in dashboard (non naviga a /ordini) */}
+      <Drawer open={!!selectedOrderId} onOpenChange={(open) => { if (!open) setSelectedOrderId(null); }}>
+        <DrawerContent className="max-h-[86vh] rounded-t-[22px] bg-scatto-surface">
+          {selectedOrder && (
+            <>
+              <div
+                className="flex items-center gap-2 px-4 py-3 text-sm font-bold text-white"
+                style={{ backgroundColor: aziendaColorValue(selectedOrder.azienda_id, aziendaColorMap) }}
+              >
+                <span className="truncate">{selectedOrder.aziende?.nome || "N/D"}</span>
+                <span className="ml-auto flex-shrink-0 rounded-full bg-white/[0.24] px-2.5 py-0.5 text-[11px] font-bold">
+                  {statusLabels[selectedOrder.status]}
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 pt-4">
+                <div className="mb-3.5 flex items-center gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[17px] font-bold tracking-tight text-scatto-ink">
+                      {selectedOrder.clienti?.nome || "N/D"}
+                    </p>
+                    <p className="text-xs text-scatto-muted">
+                      {selectedOrder.codice} · {relativeTime(selectedOrder.created_at)}
+                    </p>
+                  </div>
+                  <div className="ml-auto flex-shrink-0 text-right">
+                    <p className="text-lg font-bold tabular-nums text-scatto-ink">
+                      {formatCurrencyPrecise(selectedOrderTotale)}
+                    </p>
+                    <p className="text-xs text-scatto-muted">
+                      {selectedOrderRighe?.length ?? 0} {(selectedOrderRighe?.length ?? 0) === 1 ? "riga" : "righe"}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mb-0.5 mt-4 text-[10.5px] font-bold uppercase tracking-[0.11em] text-scatto-muted">
+                  Righe
+                </p>
+                {!selectedOrderRighe ? (
+                  <div className="space-y-2 py-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-6 w-full" />
+                    ))}
+                  </div>
+                ) : (
+                  selectedOrderRighe.map((r) => {
+                    const qty = r.quantita_cartoni > 0 ? `${r.quantita_cartoni}ct` : `${r.quantita_pezzi}×`;
+                    const importo = rigaSubtotale({
+                      quantita_pezzi: r.quantita_pezzi,
+                      quantita_cartoni: r.quantita_cartoni,
+                      prezzo_unitario: Number(r.prezzo_unitario),
+                      sc1: Number(r.sc1) || 0,
+                      sc2: Number(r.sc2) || 0,
+                      sc3: Number(r.sc3) || 0,
+                      pezziPerCartone: r.prodotti?.pezzi_per_cartone || 1,
+                    });
+                    return (
+                      <div key={r.id} className="flex items-baseline gap-2.5 border-b border-scatto-line py-2 text-sm last:border-0">
+                        <span className="min-w-[34px] flex-shrink-0 font-bold tabular-nums text-scatto-muted">{qty}</span>
+                        <span className="flex-1 truncate font-medium text-scatto-ink">{r.prodotti?.nome || "Prodotto"}</span>
+                        <span className="flex-shrink-0 font-bold tabular-nums text-scatto-ink">{formatCurrencyPrecise(importo)}</span>
+                      </div>
+                    );
+                  })
+                )}
+
+                <div className="mt-1.5 flex items-baseline border-t-2 border-scatto-ink pt-3 font-bold text-scatto-ink">
+                  <span className="text-sm">Totale imponibile</span>
+                  <span className="ml-auto text-base tabular-nums">{formatCurrencyPrecise(selectedOrderTotale)}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2.5 px-4 py-4 safe-bottom">
+                <DrawerClose asChild>
+                  <button
+                    type="button"
+                    className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-scatto-muted shadow-[inset_0_0_0_1px_hsl(var(--scatto-line))] touch-target"
+                  >
+                    Chiudi
+                  </button>
+                </DrawerClose>
+                <button
+                  type="button"
+                  onClick={() => selectedOrder && handleApriProforma(selectedOrder)}
+                  className="flex-1 rounded-xl bg-scatto-ink px-4 py-3 text-sm font-semibold text-white touch-target"
+                >
+                  Apri proforma
+                </button>
+              </div>
+            </>
+          )}
+        </DrawerContent>
+      </Drawer>
+
+      {isProformaOpen && (
+        <Suspense fallback={null}>
+          <ProformaDialog open={isProformaOpen} onOpenChange={setIsProformaOpen} data={proformaData} />
+        </Suspense>
+      )}
     </MainLayout>
   );
 };
