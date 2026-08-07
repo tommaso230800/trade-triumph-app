@@ -26,11 +26,14 @@ export const parseLocalDate = (value: string | null | undefined): Date | null =>
 
 export type DashboardPeriod = "mese" | "trimestre" | "anno";
 
-/** Inizio periodo: 1° del mese / 1° del trimestre solare / 1° gennaio. */
+/**
+ * Inizio periodo: 1° del mese / 1° del mese di 3 mesi fa / 1° gennaio.
+ * "trimestre" = ULTIMI 3 MESI (rolling), identico alla pagina KPI:
+ * il trimestre solare dava numeri diversi tra Dashboard e KPI.
+ */
 export function periodStart(period: DashboardPeriod, now: Date): Date {
   if (period === "mese") return new Date(now.getFullYear(), now.getMonth(), 1);
-  if (period === "trimestre")
-    return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+  if (period === "trimestre") return new Date(now.getFullYear(), now.getMonth() - 2, 1);
   return new Date(now.getFullYear(), 0, 1);
 }
 
