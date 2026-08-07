@@ -34,9 +34,8 @@ export function DashRevenueChart({ data, currentMonthIndex, yearCurr, yearPrev }
       <ComposedChart data={chartData} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
         <defs>
           <linearGradient id="dashRevenueFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(var(--scatto-info))" stopOpacity={0.55} />
-            <stop offset="55%" stopColor="hsl(var(--scatto-info))" stopOpacity={0.18} />
-            <stop offset="100%" stopColor="hsl(var(--scatto-info))" stopOpacity={0.02} />
+            <stop offset="0%" stopColor="hsl(var(--scatto-ink))" stopOpacity={0.16} />
+            <stop offset="100%" stopColor="hsl(var(--scatto-ink))" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--scatto-line))" vertical={false} />
@@ -70,24 +69,23 @@ export function DashRevenueChart({ data, currentMonthIndex, yearCurr, yearPrev }
         <Line
           type="monotone"
           dataKey="prev"
-          stroke="hsl(var(--scatto-muted))"
+          stroke="hsl(var(--scatto-danger))"
           strokeWidth={2}
-          strokeDasharray="4 4"
           dot={false}
           activeDot={false}
         />
         <Area
           type="monotone"
           dataKey="curr"
-          stroke="hsl(var(--scatto-info))"
-          strokeWidth={3.5}
+          stroke="hsl(var(--scatto-ink))"
+          strokeWidth={2.6}
           fill="url(#dashRevenueFill)"
           dot={false}
           activeDot={{
             r: 5,
-            fill: "hsl(var(--scatto-info))",
+            fill: "hsl(var(--scatto-ink))",
             strokeWidth: 6,
-            stroke: "hsl(var(--scatto-info) / 0.25)",
+            stroke: "hsl(var(--scatto-ink) / 0.2)",
           }}
           connectNulls={false}
         />

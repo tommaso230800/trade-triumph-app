@@ -26,7 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { format, startOfMonth, endOfMonth, subMonths, startOfYear } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths, subDays, startOfYear } from "date-fns";
 import { it } from "date-fns/locale";
 import {
   Select,
@@ -69,7 +69,7 @@ const KPI = () => {
       case "mese":
         return { start: startOfMonth(now), end: endOfMonth(now) };
       case "trimestre":
-        return { start: startOfMonth(subMonths(now, 2)), end: endOfMonth(now) };
+        return { start: subDays(now, 89), end: now };
       case "semestre":
         return { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) };
       case "anno":
@@ -211,7 +211,7 @@ const KPI = () => {
     const fmt = (d?: Date | null) => (d ? format(d, "dd/MM/yyyy", { locale: it }) : "—");
     const labels: Record<PeriodPreset, string> = {
       mese: "Questo Mese",
-      trimestre: "Ultimi 3 Mesi",
+      trimestre: "Ultimi 90 Giorni",
       semestre: "Ultimi 6 Mesi",
       anno: "Anno in Corso",
       custom: `${fmt(dateRange.start)} → ${fmt(dateRange.end)}`,
@@ -321,7 +321,7 @@ const KPI = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="mese">Questo mese</SelectItem>
-              <SelectItem value="trimestre">Ultimi 3 mesi</SelectItem>
+              <SelectItem value="trimestre">Ultimi 90 giorni</SelectItem>
               <SelectItem value="semestre">Ultimi 6 mesi</SelectItem>
               <SelectItem value="anno">Anno in corso</SelectItem>
               <SelectItem value="custom">Personalizzato</SelectItem>

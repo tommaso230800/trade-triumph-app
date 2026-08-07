@@ -57,7 +57,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     <div className="relative min-h-screen min-h-[100dvh] bg-background safe-top overflow-hidden">
       <Sidebar mobileOpen={mobileMenuOpen} onMobileOpenChange={setMobileMenuOpen} />
       <main
-        className="lg:pl-64 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden text-foreground"
+        className="lg:pl-80 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden text-foreground"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <div className="p-4 pt-6 pb-24 lg:pt-6 lg:p-8 lg:pb-8">{children}</div>

@@ -27,6 +27,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type NavChild = {
   name: string;
@@ -205,71 +206,66 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
     );
   };
 
-  const SidebarContent = () => (
-    <>
-      {/* Logo */}
-      <div className="flex h-16 sm:h-20 items-center gap-3 px-3 sm:px-4 border-b border-sidebar-border">
-        <div className="flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-white shadow-sm overflow-hidden flex-shrink-0">
-          <img src={agencyLogo} alt="AMG Logo" className="w-full h-full object-contain p-1" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h1 className="font-display text-sm sm:text-base font-bold text-sidebar-foreground truncate">AMG HO.RE.CA</h1>
-          <p className="text-xs sm:text-body-sm text-muted-foreground truncate">Business & Strategy</p>
-        </div>
-        {/* Mobile close button */}
-        <button
-          className="lg:hidden text-sidebar-foreground h-9 w-9 flex items-center justify-center rounded-lg hover:bg-sidebar-accent"
-          onClick={closeMobile}
-          aria-label="Chiudi menu"
-        >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
+  /** Voce compatta del binario desktop: solo icona, nome in tooltip al passaggio del mouse. */
+  const NavRailItem = ({ item }: { item: NavItem }) => {
+    const isActive = location.pathname === item.href || isChildActive(item);
+    return (
+      <Tooltip delayDuration={200}>
+        <TooltipTrigger asChild>
+          <Link
+            to={item.href}
+            aria-label={item.name}
+            className={cn(
+              "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
+              isActive
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                : "text-sidebar-rail-foreground hover:bg-white/10 hover:text-white"
+            )}
+          >
+            <item.icon className="h-[18px] w-[18px]" />
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right">{item.name}</TooltipContent>
+      </Tooltip>
+    );
+  };
 
-      {/* Navigation - touch friendly */}
-      <nav className="flex-1 space-y-1 px-2 sm:px-3 py-3 sm:py-4 overflow-y-auto">
-        {navigation.map((item) => (
-          <NavItemComponent key={item.name} item={item} />
-        ))}
-      </nav>
-
-      {/* Bottom Actions - touch friendly */}
-      <div className="border-t border-sidebar-border p-2 sm:p-3 space-y-1 safe-bottom">
-        <Link
-          to="/impostazioni"
-          onClick={closeMobile}
-          className={cn(
-            "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
-            location.pathname === "/impostazioni"
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          )}
-        >
-          <Settings className="h-5 w-5 flex-shrink-0" />
-          <span className="truncate text-sm sm:text-base">Impostazioni</span>
-        </Link>
-        <Link
-          to="/diagnostica"
-          onClick={closeMobile}
-          className={cn(
-            "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
-            location.pathname === "/diagnostica"
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          )}
-        >
-          <Activity className="h-5 w-5 flex-shrink-0" />
-          <span className="truncate text-sm sm:text-base">Diagnostica</span>
-        </Link>
-        <button
-          onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium text-destructive hover:bg-destructive/10 transition-colors duration-150 touch-target"
-        >
-          <LogOut className="h-5 w-5 flex-shrink-0" />
-          <span className="truncate text-sm sm:text-base">Esci</span>
-        </button>
-      </div>
-    </>
+  const BottomActionsSection = () => (
+    <div className="border-t border-sidebar-border p-2 sm:p-3 space-y-1 safe-bottom">
+      <Link
+        to="/impostazioni"
+        onClick={closeMobile}
+        className={cn(
+          "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
+          location.pathname === "/impostazioni"
+            ? "bg-sidebar-primary text-sidebar-primary-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        )}
+      >
+        <Settings className="h-5 w-5 flex-shrink-0" />
+        <span className="truncate text-sm sm:text-base">Impostazioni</span>
+      </Link>
+      <Link
+        to="/diagnostica"
+        onClick={closeMobile}
+        className={cn(
+          "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
+          location.pathname === "/diagnostica"
+            ? "bg-sidebar-primary text-sidebar-primary-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        )}
+      >
+        <Activity className="h-5 w-5 flex-shrink-0" />
+        <span className="truncate text-sm sm:text-base">Diagnostica</span>
+      </Link>
+      <button
+        onClick={handleSignOut}
+        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium text-destructive hover:bg-destructive/10 transition-colors duration-150 touch-target"
+      >
+        <LogOut className="h-5 w-5 flex-shrink-0" />
+        <span className="truncate text-sm sm:text-base">Esci</span>
+      </button>
+    </div>
   );
 
   return (
@@ -283,12 +279,24 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         />
       )}
 
-      {/* Desktop sidebar */}
-      <aside
-        className="hidden lg:flex fixed inset-y-0 left-0 z-50 w-64 border-r border-sidebar-border flex-col"
-        style={{ backgroundColor: "hsl(var(--sidebar-background))" }}
-      >
-        <SidebarContent />
+      {/* Desktop sidebar: binario icone (sempre visibile) + pannello con le etichette */}
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-50">
+        <div className="flex h-full w-16 flex-col items-center gap-1 overflow-y-auto bg-sidebar-rail py-3">
+          <div className="mb-2 flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
+            <img src={agencyLogo} alt="AMG Logo" className="w-full h-full object-contain p-1" />
+          </div>
+          {navigation.map((item) => (
+            <NavRailItem key={item.name} item={item} />
+          ))}
+        </div>
+        <div className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar">
+          <nav className="flex-1 space-y-1 px-2 sm:px-3 py-3 sm:py-4 overflow-y-auto">
+            {navigation.map((item) => (
+              <NavItemComponent key={item.name} item={item} />
+            ))}
+          </nav>
+          <BottomActionsSection />
+        </div>
       </aside>
 
       {/* Mobile sidebar - with safe areas */}
@@ -299,7 +307,32 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         )}
         style={{ backgroundColor: "hsl(var(--sidebar-background))" }}
       >
-        <SidebarContent />
+        {/* Logo */}
+        <div className="flex h-16 sm:h-20 items-center gap-3 px-3 sm:px-4 border-b border-sidebar-border">
+          <div className="flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-xl bg-white shadow-sm overflow-hidden flex-shrink-0">
+            <img src={agencyLogo} alt="AMG Logo" className="w-full h-full object-contain p-1" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-display text-sm sm:text-base font-bold text-sidebar-foreground truncate">AMG HO.RE.CA</h1>
+            <p className="text-xs sm:text-body-sm text-muted-foreground truncate">Business & Strategy</p>
+          </div>
+          <button
+            className="text-sidebar-foreground h-9 w-9 flex items-center justify-center rounded-lg hover:bg-sidebar-accent"
+            onClick={closeMobile}
+            aria-label="Chiudi menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Navigation - touch friendly */}
+        <nav className="flex-1 space-y-1 px-2 sm:px-3 py-3 sm:py-4 overflow-y-auto">
+          {navigation.map((item) => (
+            <NavItemComponent key={item.name} item={item} />
+          ))}
+        </nav>
+
+        <BottomActionsSection />
       </aside>
     </>
   );

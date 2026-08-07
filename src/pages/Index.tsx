@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { DashKpiCard } from "@/components/dashboard/DashKpiCard";
 import { DashRevenueChart } from "@/components/dashboard/DashRevenueChart";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
@@ -15,7 +14,7 @@ import { aziendaColorValue, buildAziendaColorMap } from "@/lib/aziendaColor";
 import { periodStart, periodEnd, type DashboardPeriod } from "@/lib/periodRange";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight, Download, Euro, Receipt, ShoppingCart, Users } from "lucide-react";
+import { ChevronRight, Download } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
 
 const formatNumberIT = (value: number) =>
@@ -27,8 +26,8 @@ const formatCompact = (value: number) =>
 type Period = DashboardPeriod;
 
 const periodLabels: Record<Period, string> = {
-  mese: "Questo mese",
-  trimestre: "Ultimi 3 mesi",
+  mese: "Mese",
+  trimestre: "90 giorni",
   anno: "Anno",
 };
 
@@ -69,6 +68,58 @@ function relativeTime(iso: string | null) {
 function daysAgo(iso: string | null | undefined) {
   if (!iso) return null;
   return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+}
+
+/** Percorso SVG di uno sparkline da una serie di valori, normalizzato al viewBox 300x56. */
+function buildSparkPath(values: number[]): string {
+  if (values.length === 0) return "";
+  if (values.length === 1) return `M0 28 L300 28`;
+  const width = 300;
+  const height = 56;
+  const pad = 3;
+  const max = Math.max(...values);
+  const min = Math.min(...values, 0);
+  const range = max - min || 1;
+  const stepX = (width - pad * 2) / (values.length - 1);
+  return values
+    .map((v, i) => {
+      const x = pad + i * stepX;
+      const y = height - pad - ((v - min) / range) * (height - pad * 2);
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(" ");
+}
+
+/** Pillola compatta per una riga fornitore: "nuovo" se assente l'anno prima, altrimenti su/giù. */
+function FornitorePill({ curr, prev }: { curr: number; prev: number }) {
+  if (prev <= 0) {
+    return (
+      <span className="inline-flex items-center rounded-full bg-scatto-ink/5 px-2 py-0.5 text-[11px] font-semibold text-scatto-muted">
+        nuovo
+      </span>
+    );
+  }
+  const d = ((curr - prev) / prev) * 100;
+  return <DeltaBadge deltaPct={d} />;
+}
+
+function DeltaBadge({ deltaPct, size = "sm" }: { deltaPct: number | null; size?: "sm" | "md" }) {
+  const positive = deltaPct !== null && deltaPct >= 0;
+  return (
+    <span
+      className={`inline-flex items-center rounded-full font-semibold tabular-nums ${
+        size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-[11px]"
+      } ${
+        deltaPct === null
+          ? "bg-scatto-ink/5 text-scatto-muted"
+          : positive
+          ? "bg-scatto-success/[0.14] text-scatto-success"
+          : "bg-scatto-danger/[0.14] text-scatto-danger"
+      }`}
+    >
+      {deltaPct === null ? "N/D" : `${positive ? "↑" : "↓"} ${Math.abs(deltaPct).toFixed(1)}%`}
+    </span>
+  );
 }
 
 const Index = () => {
@@ -119,6 +170,22 @@ const Index = () => {
   const ticketPrev = yoy && yoy.prev.ordiniCount > 0 ? yoy.prev.fatturato / yoy.prev.ordiniCount : 0;
   const ticketDelta = ticket !== null ? deltaPct(ticket, ticketPrev) : null;
 
+  const yearPrev = yoy?.yearPrev ?? now.getFullYear() - 1;
+  const heroPeriodText: Record<Period, string> = {
+    mese: format(now, "MMMM yyyy", { locale: it }),
+    trimestre: "ultimi 90 giorni",
+    anno: String(now.getFullYear()),
+  };
+  const heroConfrontoText: Record<Period, string> = {
+    mese: `vs ${format(now, "MMMM", { locale: it })} ${yearPrev}`,
+    trimestre: `vs stesso periodo ${yearPrev}`,
+    anno: `vs ${yearPrev}`,
+  };
+  const sparkValues = (yoy?.monthlyComparison || [])
+    .slice(0, currentMonthIndex + 1)
+    .map((m) => m.curr);
+  const sparkPath = buildSparkPath(sparkValues.length > 0 ? sparkValues : [0]);
+
   const meseCorrente = yoy?.monthlyComparison[currentMonthIndex];
   const insight = (() => {
     if (!meseCorrente || meseCorrente.prev <= 0) return "Nessun confronto disponibile per questo mese.";
@@ -134,8 +201,10 @@ const Index = () => {
       .filter((a) => a.curr > 0)
       .map((a) => ({ ...a, nome: aziendaMap.get(a.id)?.nome || "N/D" }))
       .sort((a, b) => b.curr - a.curr)
-      .slice(0, 8);
+      .slice(0, 10);
   }, [yoy, aziendaMap]);
+  const [fornitoriEspanso, setFornitoriEspanso] = useState(false);
+  const fornitoriVisibili = fornitoriEspanso ? fornitori : fornitori.slice(0, 5);
   const fornitoreMax = Math.max(1, ...fornitori.map((f) => f.curr));
 
   // Da ricontattare: un cliente per riga (prodotto più in ritardo), ordinato
@@ -224,16 +293,16 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex rounded-xl bg-scatto-ink/[0.05] p-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-1 rounded-xl bg-scatto-ink/[0.06] p-1 sm:flex-initial">
                 {(Object.keys(periodLabels) as Period[]).map((p) => (
                   <button
                     key={p}
                     onClick={() => setPeriod(p)}
-                    className={`min-h-[36px] rounded-lg px-3 text-xs font-semibold transition-colors ${
+                    className={`min-h-[36px] flex-1 rounded-lg px-3 text-xs font-semibold transition-colors sm:flex-initial ${
                       period === p
-                        ? "bg-scatto-surface text-scatto-ink shadow-[0_4px_12px_-8px_hsl(225_18%_9%/0.5)]"
-                        : "text-scatto-muted"
+                        ? "bg-scatto-ink text-white shadow-[0_2px_6px_-2px_hsl(225_18%_9%/0.4)]"
+                        : "text-scatto-muted hover:text-scatto-ink"
                     }`}
                   >
                     {periodLabels[p]}
@@ -250,19 +319,57 @@ const Index = () => {
             </div>
           </header>
 
-          {/* 2 — KPI */}
+          {/* 2 — KPI: fatturato protagonista + supporto in mini-grid */}
           {isLoading ? (
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-[132px] rounded-[20px]" />
-              ))}
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.35fr,1fr] lg:gap-4">
+              <Skeleton className="h-[220px] rounded-[20px]" />
+              <div className="grid grid-cols-3 gap-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-[220px] rounded-[20px] lg:h-full" />
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
-              <DashKpiCard label="Fatturato" value={formatCompact(fatturato)} icon={Euro} deltaPct={fatturatoDelta} tone="blu" />
-              <DashKpiCard label="Ordini" value={formatNumberIT(ordiniCount)} icon={ShoppingCart} deltaPct={ordiniDelta} tone="viola" />
-              <DashKpiCard label="Clienti attivi" value={clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"} icon={Users} deltaPct={clientiDelta} tone="verde" />
-              <DashKpiCard label="Scontrino medio" value={ticket === null ? "N/D" : formatCurrency(ticket)} icon={Receipt} deltaPct={ticketDelta} tone="ambra" />
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.35fr,1fr] lg:gap-4">
+              <div className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:p-6">
+                <p className="text-xs font-semibold text-scatto-muted">
+                  Fatturato · <span className="capitalize">{heroPeriodText[period]}</span>
+                </p>
+                <p className="mt-2 text-3xl font-bold tracking-tight tabular-nums text-scatto-ink sm:text-4xl">
+                  {formatCurrency(fatturato)}
+                </p>
+                <div className="mt-2.5 flex items-center gap-2">
+                  <DeltaBadge deltaPct={fatturatoDelta} size="md" />
+                  <span className="text-xs text-scatto-muted">{heroConfrontoText[period]}</span>
+                </div>
+                <svg viewBox="0 0 300 56" preserveAspectRatio="none" className="mt-4 h-14 w-full" aria-hidden="true">
+                  <path d={sparkPath} fill="none" stroke="hsl(var(--scatto-ink))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 lg:grid-rows-3">
+                <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
+                  <p className="text-[11px] font-semibold text-scatto-muted">Ordini</p>
+                  <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
+                    {formatNumberIT(ordiniCount)}
+                  </p>
+                  <div className="mt-2"><DeltaBadge deltaPct={ordiniDelta} /></div>
+                </div>
+                <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
+                  <p className="text-[11px] font-semibold text-scatto-muted">Clienti attivi</p>
+                  <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
+                    {clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"}
+                  </p>
+                  <div className="mt-2"><DeltaBadge deltaPct={clientiDelta} /></div>
+                </div>
+                <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
+                  <p className="text-[11px] font-semibold text-scatto-muted">Scontrino medio</p>
+                  <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
+                    {ticket === null ? "N/D" : formatCurrency(ticket)}
+                  </p>
+                  <div className="mt-2"><DeltaBadge deltaPct={ticketDelta} /></div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -272,16 +379,16 @@ const Index = () => {
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
                   <h2 className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-scatto-ink">
-                    <i className="inline-block h-4 w-1 rounded-full bg-scatto-info" />
+                    <i className="inline-block h-4 w-1 rounded-full bg-scatto-ink" />
                     Andamento fatturato
                   </h2>
                   <div className="mt-1.5 flex items-center gap-3 text-[11px] font-medium text-scatto-muted">
                     <span className="flex items-center gap-1.5">
-                      <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-info" />
+                      <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-ink" />
                       {yoy?.yearCurr ?? now.getFullYear()}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-muted" />
+                      <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-danger" />
                       {yoy?.yearPrev ?? now.getFullYear() - 1}
                     </span>
                   </div>
@@ -324,42 +431,54 @@ const Index = () => {
               ) : fornitori.length === 0 ? (
                 <p className="py-8 text-center text-sm text-scatto-muted">N/D</p>
               ) : (
-                <div className="space-y-3">
-                  {fornitori.map((f) => {
-                    const color = aziendaColorValue(f.id, aziendaColorMap);
-                    return (
-                      <div key={f.id}>
-                        <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                          <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-scatto-ink">
-                            <i
-                              className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
-                              style={{ backgroundColor: color }}
-                            />
-                            <span className="truncate">{f.nome}</span>
-                          </span>
-                          <span
-                            className="flex-shrink-0 font-display text-sm font-semibold tabular-nums"
-                            style={{ color }}
-                          >
-                            {formatCompact(f.curr)}
-                          </span>
-                        </div>
-                        <div
-                          className="h-2.5 w-full overflow-hidden rounded-full"
-                          style={{ backgroundColor: softBg(color) }}
-                        >
+                <>
+                  <div className="space-y-3">
+                    {fornitoriVisibili.map((f) => {
+                      const color = aziendaColorValue(f.id, aziendaColorMap);
+                      return (
+                        <div key={f.id}>
+                          <div className="mb-1.5 flex items-center gap-2">
+                            <span className="flex min-w-0 flex-1 items-center gap-2 text-sm font-semibold text-scatto-ink">
+                              <i
+                                className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                                style={{ backgroundColor: color }}
+                              />
+                              <span className="truncate">{f.nome}</span>
+                            </span>
+                            <FornitorePill curr={f.curr} prev={f.prev} />
+                            <span
+                              className="flex-shrink-0 font-display text-sm font-semibold tabular-nums"
+                              style={{ color }}
+                            >
+                              {formatCompact(f.curr)}
+                            </span>
+                          </div>
                           <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${Math.max(4, (f.curr / fornitoreMax) * 100)}%`,
-                              backgroundColor: color,
-                            }}
-                          />
+                            className="h-2.5 w-full overflow-hidden rounded-full"
+                            style={{ backgroundColor: softBg(color) }}
+                          >
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${Math.max(4, (f.curr / fornitoreMax) * 100)}%`,
+                                backgroundColor: color,
+                              }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                  {fornitori.length > 5 && (
+                    <button
+                      onClick={() => setFornitoriEspanso((v) => !v)}
+                      className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-scatto-muted touch-target"
+                    >
+                      {fornitoriEspanso ? "Mostra solo i primi 5" : `Mostra tutti e ${fornitori.length}`}
+                      <ChevronRight className={`h-3.5 w-3.5 transition-transform ${fornitoriEspanso ? "rotate-90" : ""}`} />
+                    </button>
+                  )}
+                </>
               )}
             </section>
           </div>
