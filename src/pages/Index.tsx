@@ -22,7 +22,7 @@ const formatCurrency = (value: number) => `${formatNumberIT(value)} €`;
 const formatCompact = (value: number) =>
   Math.abs(value) >= 10000 ? `${formatNumberIT(value / 1000)}k €` : formatCurrency(value);
 
-type Period = "mese" | "trimestre" | "anno";
+type Period = DashboardPeriod;
 
 const periodLabels: Record<Period, string> = {
   mese: "Questo mese",
@@ -30,11 +30,6 @@ const periodLabels: Record<Period, string> = {
   anno: "Anno",
 };
 
-function periodStart(period: Period, now: Date) {
-  if (period === "mese") return new Date(now.getFullYear(), now.getMonth(), 1);
-  if (period === "trimestre") return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-  return new Date(now.getFullYear(), 0, 1);
-}
 
 function deltaPct(curr: number, prev: number): number | null {
   if (!prev) return null;
