@@ -122,7 +122,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
                   : childActive
                     ? "text-sidebar-foreground bg-sidebar-accent/50"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               <span
@@ -165,7 +165,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
                         "flex items-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors duration-150",
                         isChildItemActive
                           ? "bg-sidebar-primary/80 text-sidebar-primary-foreground"
-                          : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                     >
                       <span className="truncate">{child.name}</span>
@@ -187,7 +187,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
           "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
           isActive
             ? "bg-sidebar-primary text-sidebar-primary-foreground"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
         <span
@@ -214,7 +214,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         </div>
         <div className="flex-1 min-w-0">
           <h1 className="font-display text-sm sm:text-base font-bold text-sidebar-foreground truncate">AMG HO.RE.CA</h1>
-          <p className="text-xs sm:text-body-sm text-sidebar-foreground/60 truncate">Business & Strategy</p>
+          <p className="text-xs sm:text-body-sm text-muted-foreground truncate">Business & Strategy</p>
         </div>
         {/* Mobile close button */}
         <button
@@ -242,7 +242,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
             "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
             location.pathname === "/impostazioni"
               ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >
           <Settings className="h-5 w-5 flex-shrink-0" />
@@ -255,7 +255,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
             "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
             location.pathname === "/diagnostica"
               ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >
           <Activity className="h-5 w-5 flex-shrink-0" />
@@ -277,22 +277,27 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 z-40 lg:hidden"
+          style={{ backgroundColor: "hsl(225 18% 9% / 0.45)" }}
           onClick={closeMobile}
         />
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border flex-col">
+      <aside
+        className="hidden lg:flex fixed inset-y-0 left-0 z-50 w-64 border-r border-sidebar-border flex-col"
+        style={{ backgroundColor: "hsl(var(--sidebar-background))" }}
+      >
         <SidebarContent />
       </aside>
 
       {/* Mobile sidebar - with safe areas */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-[280px] sm:w-72 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-out lg:hidden safe-top safe-bottom",
+          "fixed inset-y-0 left-0 z-50 w-[280px] sm:w-72 border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-out lg:hidden safe-top safe-bottom",
           mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
+        style={{ backgroundColor: "hsl(var(--sidebar-background))" }}
       >
         <SidebarContent />
       </aside>
