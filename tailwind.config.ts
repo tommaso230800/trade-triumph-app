@@ -133,6 +133,7 @@ export default {
           warning: "hsl(var(--scatto-warning))",
           danger: "hsl(var(--scatto-danger))",
           info: "hsl(var(--scatto-info))",
+          violet: "hsl(var(--scatto-violet))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

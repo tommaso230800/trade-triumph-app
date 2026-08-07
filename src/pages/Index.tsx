@@ -259,10 +259,10 @@ const Index = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
-              <DashKpiCard label="Fatturato" value={formatCompact(fatturato)} icon={Euro} deltaPct={fatturatoDelta} />
-              <DashKpiCard label="Ordini" value={formatNumberIT(ordiniCount)} icon={ShoppingCart} deltaPct={ordiniDelta} />
-              <DashKpiCard label="Clienti attivi" value={clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"} icon={Users} deltaPct={clientiDelta} />
-              <DashKpiCard label="Scontrino medio" value={ticket === null ? "N/D" : formatCurrency(ticket)} icon={Receipt} deltaPct={ticketDelta} />
+              <DashKpiCard label="Fatturato" value={formatCompact(fatturato)} icon={Euro} deltaPct={fatturatoDelta} tone="blu" />
+              <DashKpiCard label="Ordini" value={formatNumberIT(ordiniCount)} icon={ShoppingCart} deltaPct={ordiniDelta} tone="viola" />
+              <DashKpiCard label="Clienti attivi" value={clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"} icon={Users} deltaPct={clientiDelta} tone="verde" />
+              <DashKpiCard label="Scontrino medio" value={ticket === null ? "N/D" : formatCurrency(ticket)} icon={Receipt} deltaPct={ticketDelta} tone="ambra" />
             </div>
           )}
 
@@ -271,7 +271,8 @@ const Index = () => {
             <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:col-span-2 lg:p-6">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">
+                  <h2 className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-scatto-ink">
+                    <i className="inline-block h-4 w-1 rounded-full bg-scatto-info" />
                     Andamento fatturato
                   </h2>
                   <div className="mt-1.5 flex items-center gap-3 text-[11px] font-medium text-scatto-muted">
@@ -310,7 +311,8 @@ const Index = () => {
             </section>
 
             <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:p-6">
-              <h2 className="mb-4 font-display text-base font-semibold tracking-tight text-scatto-ink">
+              <h2 className="mb-4 flex items-center gap-2 font-display text-base font-semibold tracking-tight text-scatto-ink">
+                <i className="inline-block h-4 w-1 rounded-full bg-scatto-violet" />
                 Fatturato per fornitore
               </h2>
               {isLoading ? (
@@ -323,25 +325,40 @@ const Index = () => {
                 <p className="py-8 text-center text-sm text-scatto-muted">N/D</p>
               ) : (
                 <div className="space-y-3">
-                  {fornitori.map((f) => (
-                    <div key={f.id}>
-                      <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                        <span className="truncate text-sm font-semibold text-scatto-ink">{f.nome}</span>
-                        <span className="flex-shrink-0 font-display text-sm font-semibold tabular-nums text-scatto-ink">
-                          {formatCompact(f.curr)}
-                        </span>
-                      </div>
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-scatto-ink/[0.06]">
+                  {fornitori.map((f) => {
+                    const color = aziendaColorValue(f.id, aziendaColorMap);
+                    return (
+                      <div key={f.id}>
+                        <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                          <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-scatto-ink">
+                            <i
+                              className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                            <span className="truncate">{f.nome}</span>
+                          </span>
+                          <span
+                            className="flex-shrink-0 font-display text-sm font-semibold tabular-nums"
+                            style={{ color }}
+                          >
+                            {formatCompact(f.curr)}
+                          </span>
+                        </div>
                         <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${Math.max(4, (f.curr / fornitoreMax) * 100)}%`,
-                            backgroundColor: aziendaColorValue(f.id, aziendaColorMap),
-                          }}
-                        />
+                          className="h-2.5 w-full overflow-hidden rounded-full"
+                          style={{ backgroundColor: softBg(color) }}
+                        >
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${Math.max(4, (f.curr / fornitoreMax) * 100)}%`,
+                              backgroundColor: color,
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>
@@ -351,7 +368,8 @@ const Index = () => {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start lg:gap-5">
             <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:col-span-2 lg:p-6">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="font-display text-lg font-bold tracking-tight text-scatto-ink">
+                <h2 className="flex items-center gap-2 font-display text-lg font-bold tracking-tight text-scatto-ink">
+                  <i className="inline-block h-5 w-1 rounded-full bg-scatto-warning" />
                   Da ricontattare
                 </h2>
                 <Link to="/riordino" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
@@ -424,7 +442,8 @@ const Index = () => {
 
             <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:p-6">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">
+                <h2 className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-scatto-ink">
+                  <i className="inline-block h-4 w-1 rounded-full bg-scatto-success" />
                   Attività recente
                 </h2>
                 <Link to="/ordini" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
