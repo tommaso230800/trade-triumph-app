@@ -277,22 +277,27 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 z-40 lg:hidden"
+          style={{ backgroundColor: "hsl(225 18% 9% / 0.45)" }}
           onClick={closeMobile}
         />
       )}
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border flex-col">
+      <aside
+        className="hidden lg:flex fixed inset-y-0 left-0 z-50 w-64 border-r border-sidebar-border flex-col"
+        style={{ backgroundColor: "hsl(var(--sidebar-background))" }}
+      >
         <SidebarContent />
       </aside>
 
       {/* Mobile sidebar - with safe areas */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-[280px] sm:w-72 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-out lg:hidden safe-top safe-bottom",
+          "fixed inset-y-0 left-0 z-50 w-[280px] sm:w-72 border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-out lg:hidden safe-top safe-bottom",
           mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
+        style={{ backgroundColor: "hsl(var(--sidebar-background))" }}
       >
         <SidebarContent />
       </aside>
