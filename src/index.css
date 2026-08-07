@@ -128,8 +128,10 @@
     --sidebar-accent-foreground: 225 18% 9%;
     --sidebar-border: 220 14% 91%;
     --sidebar-ring: 214 68% 54%;
-    --sidebar-rail-background: 222 18% 14%;
+    --sidebar-rail-background: 222 11% 18%;
     --sidebar-rail-foreground: 220 12% 68%;
+    --sidebar-item-foreground: 217 9% 28%;
+    --sidebar-item-icon: 217 7% 46%;
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(220 95% 62%) 0%, hsl(258 90% 66%) 100%);

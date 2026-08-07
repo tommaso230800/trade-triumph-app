@@ -146,6 +146,8 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
           rail: "hsl(var(--sidebar-rail-background))",
           "rail-foreground": "hsl(var(--sidebar-rail-foreground))",
+          item: "hsl(var(--sidebar-item-foreground))",
+          "item-icon": "hsl(var(--sidebar-item-icon))",
         },
       },
       borderRadius: {

@@ -38,25 +38,22 @@ type NavItem = {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Colore identità della sezione: pastiglia icona tenue, icona piena. */
-  tint: string;
   children?: NavChild[];
 };
 
 const navigation: NavItem[] = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard, tint: "214 68% 54%" },
-  { name: "Ordini", href: "/ordini", icon: ShoppingCart, tint: "258 74% 58%" },
-  { name: "KPI", href: "/kpi", icon: BarChart3, tint: "161 84% 32%" },
-  { name: "Provvigioni", href: "/provvigioni", icon: Wallet, tint: "38 92% 48%" },
-  { name: "Canvass/PFA", href: "/canvass", icon: Tag, tint: "336 74% 56%" },
-  { name: "Riordino", href: "/riordino", icon: Repeat, tint: "20 85% 52%" },
-  { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge, tint: "191 78% 40%" },
-  { name: "Aziende", href: "/aziende", icon: Building2, tint: "222 30% 40%" },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Ordini", href: "/ordini", icon: ShoppingCart },
+  { name: "KPI", href: "/kpi", icon: BarChart3 },
+  { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
+  { name: "Canvass/PFA", href: "/canvass", icon: Tag },
+  { name: "Riordino", href: "/riordino", icon: Repeat },
+  { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge },
+  { name: "Aziende", href: "/aziende", icon: Building2 },
   {
     name: "Clienti",
     href: "/clienti",
     icon: Users,
-    tint: "292 62% 50%",
     children: [
       { name: "ADAT", href: "/clienti/consorzio/adat" },
       { name: "CBF", href: "/clienti/consorzio/cbf" },
@@ -68,8 +65,8 @@ const navigation: NavItem[] = [
       { name: "INDIPENDENTE", href: "/clienti/consorzio/indipendente" },
     ]
   },
-  { name: "Prepara Visita", href: "/prepara-visita", icon: Brain, tint: "84 60% 38%" },
-  { name: "AI Commerciale", href: "/ai-commerciale", icon: Bot, tint: "245 70% 58%" },
+  { name: "Prepara Visita", href: "/prepara-visita", icon: Brain },
+  { name: "AI Commerciale", href: "/ai-commerciale", icon: Bot },
 ];
 
 interface SidebarProps {
@@ -118,24 +115,17 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
               to={item.href}
               onClick={closeMobile}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
+                "flex items-center gap-3 rounded-xl px-4 py-2 text-body-md font-[550] transition-colors duration-150 touch-target",
                 isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  ? "bg-sidebar-rail text-white"
                   : childActive
-                    ? "text-sidebar-foreground bg-sidebar-accent/50"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    ? "text-sidebar-item bg-sidebar-accent/50"
+                    : "text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
-              <span
-                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
-                style={
-                  isActive
-                    ? { backgroundColor: "hsl(0 0% 100% / 0.2)", color: "hsl(0 0% 100%)" }
-                    : { backgroundColor: `hsl(${item.tint} / 0.12)`, color: `hsl(${item.tint})` }
-                }
-              >
-                <item.icon className="h-[18px] w-[18px]" />
-              </span>
+              <item.icon
+                className={cn("h-[18px] w-[18px] flex-shrink-0", isActive ? "text-white" : "text-sidebar-item-icon")}
+              />
               <span className="truncate flex-1 text-sm sm:text-base">{item.name}</span>
               <CollapsibleTrigger asChild>
                 <button
@@ -165,8 +155,8 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
                       className={cn(
                         "flex items-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm font-medium transition-colors duration-150",
                         isChildItemActive
-                          ? "bg-sidebar-primary/80 text-sidebar-primary-foreground"
-                          : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          ? "bg-sidebar-rail text-white"
+                          : "text-sidebar-item/90 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                     >
                       <span className="truncate">{child.name}</span>
@@ -185,22 +175,15 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         to={item.href}
         onClick={closeMobile}
         className={cn(
-          "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
+          "flex items-center gap-3 rounded-xl px-4 py-2 text-body-md font-[550] transition-colors duration-150 touch-target",
           isActive
-            ? "bg-sidebar-primary text-sidebar-primary-foreground"
-            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            ? "bg-sidebar-rail text-white"
+            : "text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
-        <span
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
-          style={
-            isActive
-              ? { backgroundColor: "hsl(0 0% 100% / 0.2)", color: "hsl(0 0% 100%)" }
-              : { backgroundColor: `hsl(${item.tint} / 0.12)`, color: `hsl(${item.tint})` }
-          }
-        >
-          <item.icon className="h-[18px] w-[18px]" />
-        </span>
+        <item.icon
+          className={cn("h-[18px] w-[18px] flex-shrink-0", isActive ? "text-white" : "text-sidebar-item-icon")}
+        />
         <span className="truncate text-sm sm:text-base">{item.name}</span>
       </Link>
     );
@@ -218,7 +201,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
             className={cn(
               "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
               isActive
-                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                ? "bg-white/[0.16] text-white"
                 : "text-sidebar-rail-foreground hover:bg-white/10 hover:text-white"
             )}
           >
@@ -236,10 +219,10 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         to="/impostazioni"
         onClick={closeMobile}
         className={cn(
-          "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
+          "flex items-center gap-3 rounded-xl px-4 py-2 text-body-md font-[550] transition-colors duration-150 touch-target",
           location.pathname === "/impostazioni"
-            ? "bg-sidebar-primary text-sidebar-primary-foreground"
-            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            ? "bg-sidebar-rail text-white"
+            : "text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
         <Settings className="h-5 w-5 flex-shrink-0" />
@@ -249,10 +232,10 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         to="/diagnostica"
         onClick={closeMobile}
         className={cn(
-          "flex items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium transition-colors duration-150 touch-target",
+          "flex items-center gap-3 rounded-xl px-4 py-2 text-body-md font-[550] transition-colors duration-150 touch-target",
           location.pathname === "/diagnostica"
-            ? "bg-sidebar-primary text-sidebar-primary-foreground"
-            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            ? "bg-sidebar-rail text-white"
+            : "text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
         <Activity className="h-5 w-5 flex-shrink-0" />
@@ -260,7 +243,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
       </Link>
       <button
         onClick={handleSignOut}
-        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 sm:py-3.5 text-body-md font-medium text-destructive hover:bg-destructive/10 transition-colors duration-150 touch-target"
+        className="flex w-full items-center gap-3 rounded-xl px-4 py-2 text-body-md font-[550] text-destructive hover:bg-destructive/10 transition-colors duration-150 touch-target"
       >
         <LogOut className="h-5 w-5 flex-shrink-0" />
         <span className="truncate text-sm sm:text-base">Esci</span>
