@@ -62,8 +62,9 @@ async function fetchAggregates(start: Date, end: Date, filters: KPIYoYFilters) {
   ordini.forEach((o: any) => {
     const tot = Number(o.totale) || 0;
     fatturato += tot;
-    const d = new Date(o.data_ordine);
-    monthly[monthsIT[d.getMonth()]] += tot;
+    const d = parseLocalDate(o.data_ordine);
+    if (d) monthly[monthsIT[d.getMonth()]] += tot;
+
 
     if (o.cliente_id) perCliente.set(o.cliente_id, (perCliente.get(o.cliente_id) || 0) + tot);
     if (o.azienda_id) perAzienda.set(o.azienda_id, (perAzienda.get(o.azienda_id) || 0) + tot);
