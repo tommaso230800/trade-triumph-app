@@ -80,12 +80,18 @@ export function DashRevenueChart({ data, currentMonthIndex, yearCurr, yearPrev }
           type="monotone"
           dataKey="curr"
           stroke="hsl(var(--scatto-info))"
-          strokeWidth={2.5}
+          strokeWidth={3.5}
           fill="url(#dashRevenueFill)"
           dot={false}
-          activeDot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--scatto-surface))" }}
+          activeDot={{
+            r: 5,
+            fill: "hsl(var(--scatto-info))",
+            strokeWidth: 6,
+            stroke: "hsl(var(--scatto-info) / 0.25)",
+          }}
           connectNulls={false}
         />
+
       </ComposedChart>
     </ResponsiveContainer>
   );
