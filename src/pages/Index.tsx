@@ -78,14 +78,16 @@ const Index = () => {
   const { user } = useAuth();
 
   const start = useMemo(() => periodStart(period, now), [period, now]);
+  const end = useMemo(() => periodEnd(now), [now]);
 
   const { data: yoy, isLoading: yoyLoading } = useKPIYoY({
     clienteIds: [],
     aziendaIds: [],
     brandIds: [],
     startDate: start,
-    endDate: now,
+    endDate: end,
   });
+
   const { data: forecastData, isLoading: forecastLoading } = useReorderForecast();
   const { data: aziendeList, isLoading: aziendeLoading } = useAziende();
   const { data: ordini, isLoading: ordiniLoading } = useOrdini();
