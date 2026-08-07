@@ -325,25 +325,40 @@ const Index = () => {
                 <p className="py-8 text-center text-sm text-scatto-muted">N/D</p>
               ) : (
                 <div className="space-y-3">
-                  {fornitori.map((f) => (
-                    <div key={f.id}>
-                      <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                        <span className="truncate text-sm font-semibold text-scatto-ink">{f.nome}</span>
-                        <span className="flex-shrink-0 font-display text-sm font-semibold tabular-nums text-scatto-ink">
-                          {formatCompact(f.curr)}
-                        </span>
-                      </div>
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-scatto-ink/[0.06]">
+                  {fornitori.map((f) => {
+                    const color = aziendaColorValue(f.id, aziendaColorMap);
+                    return (
+                      <div key={f.id}>
+                        <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                          <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-scatto-ink">
+                            <i
+                              className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                            <span className="truncate">{f.nome}</span>
+                          </span>
+                          <span
+                            className="flex-shrink-0 font-display text-sm font-semibold tabular-nums"
+                            style={{ color }}
+                          >
+                            {formatCompact(f.curr)}
+                          </span>
+                        </div>
                         <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${Math.max(4, (f.curr / fornitoreMax) * 100)}%`,
-                            backgroundColor: aziendaColorValue(f.id, aziendaColorMap),
-                          }}
-                        />
+                          className="h-2.5 w-full overflow-hidden rounded-full"
+                          style={{ backgroundColor: softBg(color) }}
+                        >
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${Math.max(4, (f.curr / fornitoreMax) * 100)}%`,
+                              backgroundColor: color,
+                            }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>
