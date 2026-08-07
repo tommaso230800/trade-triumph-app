@@ -37,22 +37,25 @@ type NavItem = {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Colore identità della sezione: pastiglia icona tenue, icona piena. */
+  tint: string;
   children?: NavChild[];
 };
 
 const navigation: NavItem[] = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Ordini", href: "/ordini", icon: ShoppingCart },
-  { name: "KPI", href: "/kpi", icon: BarChart3 },
-  { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
-  { name: "Canvass/PFA", href: "/canvass", icon: Tag },
-  { name: "Riordino", href: "/riordino", icon: Repeat },
-  { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge },
-  { name: "Aziende", href: "/aziende", icon: Building2 },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard, tint: "214 68% 54%" },
+  { name: "Ordini", href: "/ordini", icon: ShoppingCart, tint: "258 74% 58%" },
+  { name: "KPI", href: "/kpi", icon: BarChart3, tint: "161 84% 32%" },
+  { name: "Provvigioni", href: "/provvigioni", icon: Wallet, tint: "38 92% 48%" },
+  { name: "Canvass/PFA", href: "/canvass", icon: Tag, tint: "336 74% 56%" },
+  { name: "Riordino", href: "/riordino", icon: Repeat, tint: "20 85% 52%" },
+  { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge, tint: "191 78% 40%" },
+  { name: "Aziende", href: "/aziende", icon: Building2, tint: "222 30% 40%" },
   {
     name: "Clienti",
     href: "/clienti",
     icon: Users,
+    tint: "292 62% 50%",
     children: [
       { name: "ADAT", href: "/clienti/consorzio/adat" },
       { name: "CBF", href: "/clienti/consorzio/cbf" },
@@ -64,8 +67,8 @@ const navigation: NavItem[] = [
       { name: "INDIPENDENTE", href: "/clienti/consorzio/indipendente" },
     ]
   },
-  { name: "Prepara Visita", href: "/prepara-visita", icon: Brain },
-  { name: "AI Commerciale", href: "/ai-commerciale", icon: Bot },
+  { name: "Prepara Visita", href: "/prepara-visita", icon: Brain, tint: "84 60% 38%" },
+  { name: "AI Commerciale", href: "/ai-commerciale", icon: Bot, tint: "245 70% 58%" },
 ];
 
 interface SidebarProps {
@@ -122,7 +125,16 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
+              <span
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+                style={
+                  isActive
+                    ? { backgroundColor: "hsl(0 0% 100% / 0.2)", color: "hsl(0 0% 100%)" }
+                    : { backgroundColor: `hsl(${item.tint} / 0.12)`, color: `hsl(${item.tint})` }
+                }
+              >
+                <item.icon className="h-[18px] w-[18px]" />
+              </span>
               <span className="truncate flex-1 text-sm sm:text-base">{item.name}</span>
               <CollapsibleTrigger asChild>
                 <button
@@ -178,7 +190,16 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
-        <item.icon className="h-5 w-5 flex-shrink-0" />
+        <span
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+          style={
+            isActive
+              ? { backgroundColor: "hsl(0 0% 100% / 0.2)", color: "hsl(0 0% 100%)" }
+              : { backgroundColor: `hsl(${item.tint} / 0.12)`, color: `hsl(${item.tint})` }
+          }
+        >
+          <item.icon className="h-[18px] w-[18px]" />
+        </span>
         <span className="truncate text-sm sm:text-base">{item.name}</span>
       </Link>
     );
