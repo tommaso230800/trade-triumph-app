@@ -259,10 +259,10 @@ const Index = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">
-              <DashKpiCard label="Fatturato" value={formatCompact(fatturato)} icon={Euro} deltaPct={fatturatoDelta} />
-              <DashKpiCard label="Ordini" value={formatNumberIT(ordiniCount)} icon={ShoppingCart} deltaPct={ordiniDelta} />
-              <DashKpiCard label="Clienti attivi" value={clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"} icon={Users} deltaPct={clientiDelta} />
-              <DashKpiCard label="Scontrino medio" value={ticket === null ? "N/D" : formatCurrency(ticket)} icon={Receipt} deltaPct={ticketDelta} />
+              <DashKpiCard label="Fatturato" value={formatCompact(fatturato)} icon={Euro} deltaPct={fatturatoDelta} tone="blu" />
+              <DashKpiCard label="Ordini" value={formatNumberIT(ordiniCount)} icon={ShoppingCart} deltaPct={ordiniDelta} tone="viola" />
+              <DashKpiCard label="Clienti attivi" value={clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"} icon={Users} deltaPct={clientiDelta} tone="verde" />
+              <DashKpiCard label="Scontrino medio" value={ticket === null ? "N/D" : formatCurrency(ticket)} icon={Receipt} deltaPct={ticketDelta} tone="ambra" />
             </div>
           )}
 
