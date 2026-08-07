@@ -16,7 +16,6 @@ import {
   Repeat,
   Gauge,
   Activity,
-  Mail,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
