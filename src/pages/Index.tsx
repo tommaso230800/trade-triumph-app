@@ -28,7 +28,7 @@ type Period = DashboardPeriod;
 
 const periodLabels: Record<Period, string> = {
   mese: "Questo mese",
-  trimestre: "Trimestre",
+  trimestre: "Ultimi 3 mesi",
   anno: "Anno",
 };
 
