@@ -120,9 +120,11 @@ export function useKPIYoY(filters: KPIYoYFilters) {
       const monthlyOrdiniPrev: Record<string, number> = {};
       monthsIT.forEach(m => { monthlyCurr[m] = 0; monthlyPrev[m] = 0; monthlyOrdiniCurr[m] = 0; monthlyOrdiniPrev[m] = 0; });
       (yearOrdini || []).forEach((o: any) => {
-        const d = new Date(o.data_ordine);
+        const d = parseLocalDate(o.data_ordine);
+        if (!d) return;
         const m = monthsIT[d.getMonth()];
         const y = d.getFullYear();
+
         if (y === yearCurr) { monthlyCurr[m] += Number(o.totale) || 0; monthlyOrdiniCurr[m] += 1; }
         else if (y === yearPrev) { monthlyPrev[m] += Number(o.totale) || 0; monthlyOrdiniPrev[m] += 1; }
       });
