@@ -190,7 +190,16 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
-        <item.icon className="h-5 w-5 flex-shrink-0" />
+        <span
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+          style={
+            isActive
+              ? { backgroundColor: "hsl(0 0% 100% / 0.2)", color: "hsl(0 0% 100%)" }
+              : { backgroundColor: `hsl(${item.tint} / 0.12)`, color: `hsl(${item.tint})` }
+          }
+        >
+          <item.icon className="h-[18px] w-[18px]" />
+        </span>
         <span className="truncate text-sm sm:text-base">{item.name}</span>
       </Link>
     );
