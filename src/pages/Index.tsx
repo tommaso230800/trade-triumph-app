@@ -311,7 +311,8 @@ const Index = () => {
             </section>
 
             <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:p-6">
-              <h2 className="mb-4 font-display text-base font-semibold tracking-tight text-scatto-ink">
+              <h2 className="mb-4 flex items-center gap-2 font-display text-base font-semibold tracking-tight text-scatto-ink">
+                <i className="inline-block h-4 w-1 rounded-full bg-scatto-violet" />
                 Fatturato per fornitore
               </h2>
               {isLoading ? (
