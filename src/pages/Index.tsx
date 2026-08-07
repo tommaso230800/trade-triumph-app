@@ -271,7 +271,8 @@ const Index = () => {
             <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:col-span-2 lg:p-6">
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">
+                  <h2 className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-scatto-ink">
+                    <i className="inline-block h-4 w-1 rounded-full bg-scatto-info" />
                     Andamento fatturato
                   </h2>
                   <div className="mt-1.5 flex items-center gap-3 text-[11px] font-medium text-scatto-muted">
