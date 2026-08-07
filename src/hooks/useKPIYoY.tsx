@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toLocalISODate, parseLocalDate } from "@/lib/periodRange";
 
 export type KPIYoYFilters = {
   clienteIds: string[];
@@ -17,9 +18,12 @@ export type DimensionYoY = {
   deltaPct: number;
 };
 
-const toISO = (d: Date) => d.toISOString().split("T")[0];
+// Confini di periodo nel fuso locale: usare toISOString() farebbe rientrare
+// gli ordini dell'ultimo giorno del mese precedente.
+const toISO = (d: Date) => toLocalISODate(d);
 
 const monthsIT = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+
 
 async function fetchAggregates(start: Date, end: Date, filters: KPIYoYFilters) {
   let q = supabase
@@ -58,8 +62,9 @@ async function fetchAggregates(start: Date, end: Date, filters: KPIYoYFilters) {
   ordini.forEach((o: any) => {
     const tot = Number(o.totale) || 0;
     fatturato += tot;
-    const d = new Date(o.data_ordine);
-    monthly[monthsIT[d.getMonth()]] += tot;
+    const d = parseLocalDate(o.data_ordine);
+    if (d) monthly[monthsIT[d.getMonth()]] += tot;
+
 
     if (o.cliente_id) perCliente.set(o.cliente_id, (perCliente.get(o.cliente_id) || 0) + tot);
     if (o.azienda_id) perAzienda.set(o.azienda_id, (perAzienda.get(o.azienda_id) || 0) + tot);
@@ -115,9 +120,11 @@ export function useKPIYoY(filters: KPIYoYFilters) {
       const monthlyOrdiniPrev: Record<string, number> = {};
       monthsIT.forEach(m => { monthlyCurr[m] = 0; monthlyPrev[m] = 0; monthlyOrdiniCurr[m] = 0; monthlyOrdiniPrev[m] = 0; });
       (yearOrdini || []).forEach((o: any) => {
-        const d = new Date(o.data_ordine);
+        const d = parseLocalDate(o.data_ordine);
+        if (!d) return;
         const m = monthsIT[d.getMonth()];
         const y = d.getFullYear();
+
         if (y === yearCurr) { monthlyCurr[m] += Number(o.totale) || 0; monthlyOrdiniCurr[m] += 1; }
         else if (y === yearPrev) { monthlyPrev[m] += Number(o.totale) || 0; monthlyOrdiniPrev[m] += 1; }
       });

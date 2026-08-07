@@ -12,6 +12,8 @@ import { useAziende } from "@/hooks/useAziende";
 import { useOrdini } from "@/hooks/useOrdini";
 import { useAuth } from "@/hooks/useAuth";
 import { aziendaColorValue, buildAziendaColorMap } from "@/lib/aziendaColor";
+import { periodStart, periodEnd, type DashboardPeriod } from "@/lib/periodRange";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, Download, Euro, Receipt, ShoppingCart, Users } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
@@ -22,7 +24,7 @@ const formatCurrency = (value: number) => `${formatNumberIT(value)} €`;
 const formatCompact = (value: number) =>
   Math.abs(value) >= 10000 ? `${formatNumberIT(value / 1000)}k €` : formatCurrency(value);
 
-type Period = "mese" | "trimestre" | "anno";
+type Period = DashboardPeriod;
 
 const periodLabels: Record<Period, string> = {
   mese: "Questo mese",
@@ -30,11 +32,6 @@ const periodLabels: Record<Period, string> = {
   anno: "Anno",
 };
 
-function periodStart(period: Period, now: Date) {
-  if (period === "mese") return new Date(now.getFullYear(), now.getMonth(), 1);
-  if (period === "trimestre") return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-  return new Date(now.getFullYear(), 0, 1);
-}
 
 function deltaPct(curr: number, prev: number): number | null {
   if (!prev) return null;
@@ -81,14 +78,16 @@ const Index = () => {
   const { user } = useAuth();
 
   const start = useMemo(() => periodStart(period, now), [period, now]);
+  const end = useMemo(() => periodEnd(now), [now]);
 
   const { data: yoy, isLoading: yoyLoading } = useKPIYoY({
     clienteIds: [],
     aziendaIds: [],
     brandIds: [],
     startDate: start,
-    endDate: now,
+    endDate: end,
   });
+
   const { data: forecastData, isLoading: forecastLoading } = useReorderForecast();
   const { data: aziendeList, isLoading: aziendeLoading } = useAziende();
   const { data: ordini, isLoading: ordiniLoading } = useOrdini();
