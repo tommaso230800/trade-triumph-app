@@ -12,6 +12,8 @@ import { useAziende } from "@/hooks/useAziende";
 import { useOrdini } from "@/hooks/useOrdini";
 import { useAuth } from "@/hooks/useAuth";
 import { aziendaColorValue, buildAziendaColorMap } from "@/lib/aziendaColor";
+import { periodStart, periodEnd, type DashboardPeriod } from "@/lib/periodRange";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight, Download, Euro, Receipt, ShoppingCart, Users } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
