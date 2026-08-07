@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toLocalISODate, parseLocalDate } from "@/lib/periodRange";
 
 export type KPIYoYFilters = {
   clienteIds: string[];
@@ -17,9 +18,12 @@ export type DimensionYoY = {
   deltaPct: number;
 };
 
-const toISO = (d: Date) => d.toISOString().split("T")[0];
+// Confini di periodo nel fuso locale: usare toISOString() farebbe rientrare
+// gli ordini dell'ultimo giorno del mese precedente.
+const toISO = (d: Date) => toLocalISODate(d);
 
 const monthsIT = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+
 
 async function fetchAggregates(start: Date, end: Date, filters: KPIYoYFilters) {
   let q = supabase
