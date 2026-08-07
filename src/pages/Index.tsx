@@ -160,9 +160,14 @@ const Index = () => {
   }, [forecastData, yoy]);
 
   const attivitaRecente = useMemo(() => {
+    // Stessa regola di KPI/Ordini: esclusi annullato e stand_by, data_ordine come riferimento
     return [...(ordini || [])]
-      .filter((o) => o.status !== "annullato")
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .filter((o) => o.status !== "annullato" && o.status !== "stand_by")
+      .sort(
+        (a, b) =>
+          new Date(b.data_ordine || b.created_at).getTime() -
+          new Date(a.data_ordine || a.created_at).getTime()
+      )
       .slice(0, 6);
   }, [ordini]);
 

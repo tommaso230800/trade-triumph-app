@@ -138,13 +138,14 @@ export function useOrdiniValoreMoM() {
         supabase
           .from("ordini")
           .select("totale")
-          .neq("status", "annullato")
+          // Stessa esclusione usata da Dashboard e KPI: annullato + stand_by
+          .not("status", "in", "(annullato,stand_by)")
           .gte("data_ordine", inizioMeseCorrente)
           .lt("data_ordine", inizioMeseProssimo),
         supabase
           .from("ordini")
           .select("totale")
-          .neq("status", "annullato")
+          .not("status", "in", "(annullato,stand_by)")
           .gte("data_ordine", inizioMeseScorso)
           .lt("data_ordine", inizioMeseCorrente),
       ]);
