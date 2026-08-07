@@ -353,7 +353,8 @@ const Index = () => {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start lg:gap-5">
             <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:col-span-2 lg:p-6">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="font-display text-lg font-bold tracking-tight text-scatto-ink">
+                <h2 className="flex items-center gap-2 font-display text-lg font-bold tracking-tight text-scatto-ink">
+                  <i className="inline-block h-5 w-1 rounded-full bg-scatto-warning" />
                   Da ricontattare
                 </h2>
                 <Link to="/riordino" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
