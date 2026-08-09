@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   DropdownMenu,
@@ -39,9 +40,22 @@ interface OrdineCardProps {
     pending?: boolean;
   };
   giorniInStandBy?: number;
+  /** Modalità selezione multipla: il tocco sulla card seleziona invece di aprirla. */
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }
 
-export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStandBy }: OrdineCardProps) {
+export function OrdineCard({
+  ordine,
+  muted,
+  actions,
+  primaryAction,
+  giorniInStandBy,
+  selectionMode,
+  selected,
+  onToggleSelect,
+}: OrdineCardProps) {
   const [open, setOpen] = useState(false);
   const verificato = Boolean(ordine.verificato_conferma);
   const aziendaNome = ordine.aziende?.nome;
@@ -60,7 +74,9 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
         verificato
           ? "border-[2.5px] border-scatto-success shadow-[0_4px_16px_rgba(5,150,105,0.16)]"
           : "border border-scatto-line shadow-[0_2px_10px_rgba(18,20,26,0.05)]"
-      } ${muted ? "opacity-60" : ""}`}
+      } ${muted ? "opacity-60" : ""} ${
+        selected ? "ring-2 ring-scatto-accent ring-offset-2 ring-offset-scatto-bg" : ""
+      }`}
     >
       {/* Fascia col colore identità dell'azienda fornitrice: logo/iniziali + nome a sinistra, stato a destra */}
       <div
@@ -97,26 +113,52 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
         )}
       </div>
 
-      <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger asChild>
-          <button type="button" className="group flex w-full items-center gap-3 p-3.5 text-left touch-target">
-            <div className="min-w-0 flex-1">
-              <p className={`truncate text-[15px] font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
-                {ordine.clienti?.nome || "—"}
-              </p>
-              <p className="mt-0.5 truncate text-xs">
-                <span className="font-semibold text-scatto-accent">{format(dataOrdine, "d MMMM", { locale: it })}</span>
-                <span className="text-scatto-muted"> · {oraOrdine}</span>
-              </p>
-            </div>
-            <p className={`flex-shrink-0 text-base font-bold tabular-nums tracking-tight ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
-              {formatCurrency(Number(ordine.totale))}
+      {selectionMode ? (
+        <button
+          type="button"
+          onClick={onToggleSelect}
+          className="flex w-full items-center gap-3 p-3.5 text-left touch-target"
+        >
+          <Checkbox
+            checked={!!selected}
+            onCheckedChange={onToggleSelect}
+            onClick={(e) => e.stopPropagation()}
+            className="h-5 w-5 flex-shrink-0 border-scatto-line data-[state=checked]:border-scatto-accent data-[state=checked]:bg-scatto-accent"
+          />
+          <div className="min-w-0 flex-1">
+            <p className={`truncate text-[15px] font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
+              {ordine.clienti?.nome || "—"}
             </p>
-            <ChevronDown className="h-4 w-4 flex-shrink-0 text-scatto-muted transition-transform group-data-[state=open]:rotate-180" />
-          </button>
-        </CollapsibleTrigger>
+            <p className="mt-0.5 truncate text-xs">
+              <span className="font-semibold text-scatto-accent">{format(dataOrdine, "d MMMM", { locale: it })}</span>
+              <span className="text-scatto-muted"> · {oraOrdine}</span>
+            </p>
+          </div>
+          <p className={`flex-shrink-0 text-base font-bold tabular-nums tracking-tight ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
+            {formatCurrency(Number(ordine.totale))}
+          </p>
+        </button>
+      ) : (
+        <Collapsible open={open} onOpenChange={setOpen}>
+          <CollapsibleTrigger asChild>
+            <button type="button" className="group flex w-full items-center gap-3 p-3.5 text-left touch-target">
+              <div className="min-w-0 flex-1">
+                <p className={`truncate text-[15px] font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
+                  {ordine.clienti?.nome || "—"}
+                </p>
+                <p className="mt-0.5 truncate text-xs">
+                  <span className="font-semibold text-scatto-accent">{format(dataOrdine, "d MMMM", { locale: it })}</span>
+                  <span className="text-scatto-muted"> · {oraOrdine}</span>
+                </p>
+              </div>
+              <p className={`flex-shrink-0 text-base font-bold tabular-nums tracking-tight ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
+                {formatCurrency(Number(ordine.totale))}
+              </p>
+              <ChevronDown className="h-4 w-4 flex-shrink-0 text-scatto-muted transition-transform group-data-[state=open]:rotate-180" />
+            </button>
+          </CollapsibleTrigger>
 
-        <CollapsibleContent>
+          <CollapsibleContent>
           <div className="space-y-4 border-t border-scatto-line px-5 pb-5 pt-4">
             <div className="grid grid-cols-2 gap-y-2 text-sm">
               <span className="text-scatto-muted">Ordine</span>
@@ -203,8 +245,9 @@ export function OrdineCard({ ordine, muted, actions, primaryAction, giorniInStan
               </DropdownMenu>
             </div>
           </div>
-        </CollapsibleContent>
-      </Collapsible>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
     </div>
   );
 }

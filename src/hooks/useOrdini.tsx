@@ -279,6 +279,63 @@ export function useConfermaOrdineDaStandBy() {
   });
 }
 
+// Verifica massiva: un'unica UPDATE...IN, non una mutation per ordine (su
+// 200 ordini una per riga ci metterebbe troppo). Esclude gli Annullati anche
+// lato query (oltre al filtro già fatto dal chiamante) come rete di sicurezza.
+// .select("id") sulla stessa query dice esattamente quali id sono stati
+// aggiornati davvero: la differenza con gli id richiesti sono i "falliti"
+// (tipicamente RLS che filtra righe non di proprietà dell'utente), senza
+// dover indovinare il motivo.
+export function useBulkSetVerificatoConferma() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (ids.length === 0) return { updatedCount: 0, failedIds: [] as string[] };
+      const { data, error } = await supabase
+        .from("ordini")
+        .update({ verificato_conferma: true, verificato_conferma_at: new Date().toISOString() })
+        .in("id", ids)
+        .neq("status", "annullato")
+        .select("id");
+      if (error) throw error;
+      const updatedIds = new Set((data || []).map((r: any) => r.id as string));
+      const failedIds = ids.filter((id) => !updatedIds.has(id));
+      return { updatedCount: updatedIds.size, failedIds };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
+    },
+    onError: (error) => toast.error("Errore: " + error.message),
+  });
+}
+
+// Stessa logica "una sola query" per Metti in attesa / Annulla in massa.
+export function useBulkUpdateOrdiniStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: Ordine["status"] }) => {
+      if (ids.length === 0) return { updatedCount: 0, failedIds: [] as string[] };
+      const { data, error } = await supabase
+        .from("ordini")
+        .update({ status })
+        .in("id", ids)
+        .select("id");
+      if (error) throw error;
+      const updatedIds = new Set((data || []).map((r: any) => r.id as string));
+      const failedIds = ids.filter((id) => !updatedIds.has(id));
+      return { updatedCount: updatedIds.size, failedIds };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["stats"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
+      queryClient.invalidateQueries({ queryKey: ["kpi_yoy"] });
+    },
+    onError: (error) => toast.error("Errore: " + error.message),
+  });
+}
+
 export function useUpdateProvvigionePagata() {
   const queryClient = useQueryClient();
 

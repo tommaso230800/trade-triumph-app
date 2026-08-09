@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, type LucideIcon } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { it } from "date-fns/locale";
@@ -33,12 +34,28 @@ interface OrdiniListProps {
   isError?: boolean;
   onRetry?: () => void;
   emptyState?: OrdiniListEmptyState;
+  /** Modalità selezione multipla: ogni card mostra una casella, il tocco seleziona. */
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
+  /** Seleziona/deseleziona in blocco tutti gli ordini di un giorno. */
+  onToggleDay?: (ids: string[], select: boolean) => void;
 }
 
 // Un'unica lista di card ad ogni larghezza (niente tabella desktop separata):
 // da 375px a 1440px è lo stesso design, solo le card si ridispongono in più
 // colonne quando c'è spazio.
-export function OrdiniList({ rows, isLoading, isError, onRetry, emptyState }: OrdiniListProps) {
+export function OrdiniList({
+  rows,
+  isLoading,
+  isError,
+  onRetry,
+  emptyState,
+  selectionMode,
+  selectedIds,
+  onToggleSelect,
+  onToggleDay,
+}: OrdiniListProps) {
   // Righe già ordinate per data_ordine DESC dalla query: giorni uguali sono
   // sempre contigui, quindi un raggruppamento in un solo passaggio basta.
   const groups = useMemo(() => {
@@ -106,31 +123,46 @@ export function OrdiniList({ rows, isLoading, isError, onRetry, emptyState }: Or
 
   return (
     <div className="space-y-4">
-      {groups.map((group) => (
-        <div key={dayKey(group.date)} className="space-y-2">
-          <div className="flex items-center gap-2.5 px-1">
-            <h3 className="flex-shrink-0 whitespace-nowrap text-xs font-bold uppercase tracking-wide text-scatto-ink/70">
-              {groupLabel(group.date)}
-            </h3>
-            <span className="h-px flex-1 bg-scatto-line" />
-            <span className="flex-shrink-0 text-xs font-semibold text-scatto-muted">
-              {group.rows.length} {group.rows.length === 1 ? "ordine" : "ordini"}
-            </span>
+      {groups.map((group) => {
+        const groupIds = group.rows.map((r) => r.ordine.id);
+        const allSelected = selectionMode && groupIds.every((id) => selectedIds?.has(id));
+        const someSelected = selectionMode && !allSelected && groupIds.some((id) => selectedIds?.has(id));
+        return (
+          <div key={dayKey(group.date)} className="space-y-2">
+            <div className="flex items-center gap-2.5 px-1">
+              {selectionMode && (
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={() => onToggleDay?.(groupIds, !allSelected)}
+                  className="h-4 w-4 flex-shrink-0 border-scatto-line data-[state=checked]:border-scatto-accent data-[state=checked]:bg-scatto-accent"
+                />
+              )}
+              <h3 className="flex-shrink-0 whitespace-nowrap text-xs font-bold uppercase tracking-wide text-scatto-ink/70">
+                {groupLabel(group.date)}
+              </h3>
+              <span className="h-px flex-1 bg-scatto-line" />
+              <span className="flex-shrink-0 text-xs font-semibold text-scatto-muted">
+                {group.rows.length} {group.rows.length === 1 ? "ordine" : "ordini"}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {group.rows.map(({ ordine, muted, actions, primaryAction, giorniInStandBy }) => (
+                <OrdineCard
+                  key={ordine.id}
+                  ordine={ordine}
+                  muted={muted}
+                  actions={actions}
+                  primaryAction={primaryAction}
+                  giorniInStandBy={giorniInStandBy}
+                  selectionMode={selectionMode}
+                  selected={selectedIds?.has(ordine.id)}
+                  onToggleSelect={() => onToggleSelect?.(ordine.id)}
+                />
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            {group.rows.map(({ ordine, muted, actions, primaryAction, giorniInStandBy }) => (
-              <OrdineCard
-                key={ordine.id}
-                ordine={ordine}
-                muted={muted}
-                actions={actions}
-                primaryAction={primaryAction}
-                giorniInStandBy={giorniInStandBy}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

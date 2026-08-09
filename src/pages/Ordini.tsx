@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +33,8 @@ import {
   ShoppingCart,
   SearchX,
   Clock,
+  ListChecks,
+  X,
 } from "lucide-react";
 import {
   useOrdini,
@@ -29,6 +42,8 @@ import {
   useCreateOrdine,
   useUpdateOrdineStatus,
   useConfermaOrdineDaStandBy,
+  useBulkSetVerificatoConferma,
+  useBulkUpdateOrdiniStatus,
   type Ordine,
 } from "@/hooks/useOrdini";
 import { useCreateOrdineRigheBatch } from "@/hooks/useOrdiniRighe";
@@ -40,6 +55,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OrdiniStatsRow } from "@/components/ordini/OrdiniStatsRow";
 import { OrdiniFilters } from "@/components/ordini/OrdiniFilters";
 import { OrdiniList } from "@/components/ordini/OrdiniList";
+import { OrdiniSelectionBar } from "@/components/ordini/OrdiniSelectionBar";
 import type { OrdiniTableRow } from "@/components/ordini/ordiniShared";
 import type { OrdineCardAction } from "@/components/ordini/OrdineCard";
 import { NuovoOrdineDialog } from "@/components/ordini/NuovoOrdineDialog";
@@ -50,6 +66,7 @@ import { MultiFileImportDialog } from "@/components/ordini/MultiFileImportDialog
 import { StandByDialog } from "@/components/ordini/StandByDialog";
 import { ConfermaOrdineDialog } from "@/components/ordini/ConfermaOrdineDialog";
 import { formatCurrency } from "@/components/ordini/ordiniShared";
+import { exportOrdiniToCSV } from "@/lib/exportOrdiniCsv";
 
 const Ordini = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,6 +82,11 @@ const Ordini = () => {
   const [isMultiImportOpen, setIsMultiImportOpen] = useState(false);
   const [standByTarget, setStandByTarget] = useState<{ id: string; codice?: string } | null>(null);
   const [confermaTarget, setConfermaTarget] = useState<{ id: string; codice?: string } | null>(null);
+
+  // Selezione multipla
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmAction, setConfirmAction] = useState<null | "verifica" | "annulla">(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -89,6 +111,8 @@ const Ordini = () => {
   const createRigheBatch = useCreateOrdineRigheBatch();
   const updateStatus = useUpdateOrdineStatus();
   const confermaStandBy = useConfermaOrdineDaStandBy();
+  const bulkSetVerificato = useBulkSetVerificatoConferma();
+  const bulkUpdateStatus = useBulkUpdateOrdiniStatus();
 
   const openEditDialog = (ordine: Ordine) => {
     setEditingOrdine(ordine);
@@ -258,13 +282,81 @@ const Ordini = () => {
     setMonthFilters([]);
   };
 
+  // Selezione multipla: "visibili" = tutti gli ordini che passano i filtri
+  // correnti (attivi + stand-by + annullati insieme, stessa fonte filtrata).
+  const totalVisibile = ordini?.length || 0;
+  const selectedOrdini = useMemo(
+    () => (ordini || []).filter((o) => selectedIds.has(o.id)),
+    [ordini, selectedIds]
+  );
+  const excludedAnnullatiCount = selectedOrdini.filter((o) => o.status === "annullato").length;
+  const idsDaVerificare = selectedOrdini.filter((o) => o.status !== "annullato").map((o) => o.id);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const toggleDay = (ids: string[], select: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => (select ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  };
+  const selectAllVisible = () => setSelectedIds(new Set((ordini || []).map((o) => o.id)));
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const executeVerify = async () => {
+    setConfirmAction(null);
+    const result = await bulkSetVerificato.mutateAsync(idsDaVerificare);
+    if (result.failedIds.length > 0) {
+      toast.error(
+        `${result.updatedCount} ordini segnati come verificati, ma ${result.failedIds.length} non sono stati aggiornati (permessi insufficienti o ordine non più presente).`
+      );
+    } else {
+      toast.success(
+        `${result.updatedCount} ordini segnati come verificati` +
+          (excludedAnnullatiCount > 0 ? ` · ${excludedAnnullatiCount} annullati esclusi` : "")
+      );
+    }
+    exitSelectionMode();
+  };
+
+  const executeCancelSelected = async () => {
+    setConfirmAction(null);
+    const result = await bulkUpdateStatus.mutateAsync({ ids: Array.from(selectedIds), status: "annullato" });
+    if (result.failedIds.length > 0) {
+      toast.error(`${result.updatedCount} ordini annullati, ${result.failedIds.length} non aggiornati.`);
+    } else {
+      toast.success(`${result.updatedCount} ordini annullati.`);
+    }
+    exitSelectionMode();
+  };
+
+  const executeWaitSelected = async () => {
+    const result = await bulkUpdateStatus.mutateAsync({ ids: Array.from(selectedIds), status: "in_attesa" });
+    if (result.failedIds.length > 0) {
+      toast.error(`${result.updatedCount} ordini messi in attesa, ${result.failedIds.length} non aggiornati.`);
+    } else {
+      toast.success(`${result.updatedCount} ordini messi in attesa.`);
+    }
+    exitSelectionMode();
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6 animate-fade-in">
 
         {/* Direzione "Scatto": pannello con scope proprio (token --scatto-*,
             non tocca il tema globale dell'app). */}
-        <div className="space-y-6 rounded-2xl bg-scatto-bg p-4 lg:p-6">
+        <div className={`space-y-6 rounded-2xl bg-scatto-bg p-4 lg:p-6 ${selectionMode ? "pb-40 lg:pb-32" : ""}`}>
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
@@ -307,19 +399,35 @@ const Ordini = () => {
 
           <OrdiniStatsRow stats={stats} mom={mom} isLoading={isLoading} />
 
-          <OrdiniFilters
-            searchTerm={searchTerm}
-            onSearchTermChange={setSearchTerm}
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            monthFilters={monthFilters}
-            onMonthFiltersChange={setMonthFilters}
-          />
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+            <div className="flex-1">
+              <OrdiniFilters
+                searchTerm={searchTerm}
+                onSearchTermChange={setSearchTerm}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                monthFilters={monthFilters}
+                onMonthFiltersChange={setMonthFilters}
+              />
+            </div>
+            <Button
+              variant="outline"
+              className="touch-target flex-shrink-0 gap-2 rounded-xl border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
+              onClick={() => (selectionMode ? exitSelectionMode() : setSelectionMode(true))}
+            >
+              {selectionMode ? <X className="h-4 w-4" /> : <ListChecks className="h-4 w-4" />}
+              {selectionMode ? "Esci da selezione" : "Seleziona"}
+            </Button>
+          </div>
 
           <OrdiniList
             rows={attiviRows}
             isLoading={isLoading}
             isError={isError}
+            selectionMode={selectionMode}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onToggleDay={toggleDay}
             onRetry={() => refetch()}
             emptyState={
               hasActiveFilters
@@ -349,7 +457,13 @@ const Ordini = () => {
                   Valore sospeso (non in KPI): {formatCurrency(stats.valoreStandBy)}
                 </span>
               </div>
-              <OrdiniList rows={standByRows} />
+              <OrdiniList
+                rows={standByRows}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                onToggleDay={toggleDay}
+              />
             </div>
           )}
 
@@ -360,7 +474,13 @@ const Ordini = () => {
                 <h2 className="text-base font-bold text-scatto-ink">Ordini Annullati ({ordiniAnnullati.length})</h2>
                 <span className="text-sm text-scatto-muted">Valore perso: {formatCurrency(stats.valoreAnnullato)}</span>
               </div>
-              <OrdiniList rows={annullatiRows} />
+              <OrdiniList
+                rows={annullatiRows}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={toggleSelect}
+                onToggleDay={toggleDay}
+              />
             </div>
           )}
         </div>
@@ -475,6 +595,62 @@ const Ordini = () => {
           ordineId={confermaTarget?.id || null}
           ordineCodice={confermaTarget?.codice}
         />
+
+        {selectionMode && (
+          <OrdiniSelectionBar
+            count={selectedIds.size}
+            totalVisible={totalVisibile}
+            allSelected={selectedIds.size > 0 && selectedIds.size === totalVisibile}
+            onSelectAll={selectAllVisible}
+            onCancel={exitSelectionMode}
+            onVerify={() => setConfirmAction("verifica")}
+            onWait={executeWaitSelected}
+            onCancelOrders={() => setConfirmAction("annulla")}
+            onExportCSV={() => exportOrdiniToCSV(selectedOrdini)}
+            onExportPDF={async () => {
+              const { exportOrdiniToPDF } = await import("@/lib/exportOrdiniPdf");
+              exportOrdiniToPDF(selectedOrdini);
+            }}
+            pending={bulkSetVerificato.isPending || bulkUpdateStatus.isPending}
+          />
+        )}
+
+        <AlertDialog open={confirmAction === "verifica"} onOpenChange={(v) => !v && setConfirmAction(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Segnare {idsDaVerificare.length} ordini come verificati?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {excludedAnnullatiCount > 0
+                  ? `${idsDaVerificare.length} ordini diventeranno verificati. ${excludedAnnullatiCount} ordini annullati tra quelli selezionati vengono esclusi automaticamente.`
+                  : `${idsDaVerificare.length} ordini selezionati diventeranno verificati.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annulla</AlertDialogCancel>
+              <AlertDialogAction onClick={executeVerify}>Conferma</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={confirmAction === "annulla"} onOpenChange={(v) => !v && setConfirmAction(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Annullare {selectedIds.size} ordini?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Gli ordini selezionati passeranno allo stato Annullato. Puoi riattivarli singolarmente in seguito.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Indietro</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={executeCancelSelected}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Annulla ordini
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );
