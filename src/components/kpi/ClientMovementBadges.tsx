@@ -1,3 +1,5 @@
+import { SectionCard } from "@/components/dashboard/SectionCard";
+
 interface ClientMovementBadgesProps {
   crescita: number;
   stabili: number;
@@ -6,16 +8,13 @@ interface ClientMovementBadgesProps {
 
 export function ClientMovementBadges({ crescita, stabili, calo }: ClientMovementBadgesProps) {
   const items = [
-    { n: crescita, label: "in crescita", className: "bg-success/10 text-success" },
-    { n: stabili, label: "stabili", className: "bg-muted text-muted-foreground" },
-    { n: calo, label: "in calo", className: "bg-destructive/10 text-destructive" },
+    { n: crescita, label: "in crescita", className: "bg-scatto-success/10 text-scatto-success" },
+    { n: stabili, label: "stabili", className: "bg-scatto-ink/[0.05] text-scatto-muted" },
+    { n: calo, label: "in calo", className: "bg-scatto-danger/10 text-scatto-danger" },
   ];
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
-      <h2 className="mb-3 font-display text-sm font-semibold tracking-tight text-foreground">
-        Movimento clienti · vs anno precedente
-      </h2>
+    <SectionCard title="Movimento clienti · vs anno precedente">
       <div className="flex gap-2.5">
         {items.map((it) => (
           <div key={it.label} className={`flex-1 rounded-xl py-3 text-center ${it.className}`}>
@@ -24,6 +23,6 @@ export function ClientMovementBadges({ crescita, stabili, calo }: ClientMovement
           </div>
         ))}
       </div>
-    </div>
+    </SectionCard>
   );
 }

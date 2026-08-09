@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { TrendingUp, TrendingDown, AlertCircle, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SectionCard } from "@/components/dashboard/SectionCard";
 import { cn } from "@/lib/utils";
 import type { DimensionYoY } from "@/hooks/useKPIYoY";
 
@@ -53,31 +54,31 @@ export function YoYDimensionPanel({ title, data, names, yearCurr, yearPrev, topN
     items: DimensionYoY[];
     mode: "delta" | "lost" | "new";
   }) => (
-    <div className="rounded-lg bg-muted/30 p-3 space-y-2">
+    <div className="rounded-lg bg-scatto-ink/[0.03] p-3 space-y-2">
       <div className="flex items-center gap-2">
         <Icon className={cn("h-4 w-4", iconClass)} />
-        <h4 className="text-sm font-semibold">{heading}</h4>
+        <h4 className="text-sm font-semibold text-scatto-ink">{heading}</h4>
       </div>
       {items.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-2">Nessun dato</p>
+        <p className="text-xs text-scatto-muted py-2">Nessun dato</p>
       ) : (
         <div className="space-y-1.5">
           {items.map((it) => (
             <div key={it.id} className="flex items-center justify-between gap-2 text-xs">
-              <span className="truncate flex-1" title={nameOf(it.id)}>
+              <span className="truncate flex-1 text-scatto-ink" title={nameOf(it.id)}>
                 {nameOf(it.id)}
               </span>
               {mode === "delta" && (
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-muted-foreground">
+                  <span className="text-scatto-muted">
                     {fmtEUR(it.prev)} → {fmtEUR(it.curr)}
                   </span>
                   <Badge
                     className={cn(
                       "shrink-0",
                       it.delta >= 0
-                        ? "bg-success/15 text-success hover:bg-success/25"
-                        : "bg-destructive/15 text-destructive hover:bg-destructive/25"
+                        ? "bg-scatto-success/15 text-scatto-success hover:bg-scatto-success/25"
+                        : "bg-scatto-danger/15 text-scatto-danger hover:bg-scatto-danger/25"
                     )}
                   >
                     {it.delta >= 0 ? "+" : ""}
@@ -86,12 +87,12 @@ export function YoYDimensionPanel({ title, data, names, yearCurr, yearPrev, topN
                 </div>
               )}
               {mode === "lost" && (
-                <Badge variant="outline" className="shrink-0 text-destructive border-destructive/40">
+                <Badge variant="outline" className="shrink-0 text-scatto-danger border-scatto-danger/40">
                   -{fmtEUR(it.prev)}
                 </Badge>
               )}
               {mode === "new" && (
-                <Badge variant="outline" className="shrink-0 text-success border-success/40">
+                <Badge variant="outline" className="shrink-0 text-scatto-success border-scatto-success/40">
                   +{fmtEUR(it.curr)}
                 </Badge>
               )}
@@ -103,19 +104,19 @@ export function YoYDimensionPanel({ title, data, names, yearCurr, yearPrev, topN
   );
 
   return (
-    <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card space-y-4">
+    <SectionCard>
       <div>
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-xs text-muted-foreground">
+        <h3 className="text-lg font-semibold text-scatto-ink">{title}</h3>
+        <p className="text-xs text-scatto-muted">
           Confronto {yearCurr} vs {yearPrev}
         </p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Section icon={TrendingUp} iconClass="text-success" heading="Top in crescita" items={growers} mode="delta" />
-        <Section icon={TrendingDown} iconClass="text-destructive" heading="Top in calo" items={decliners} mode="delta" />
-        <Section icon={AlertCircle} iconClass="text-warning" heading="Persi (no ordini)" items={lost} mode="lost" />
-        <Section icon={Sparkles} iconClass="text-primary" heading="Nuovi / Riattivati" items={newOnes} mode="new" />
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Section icon={TrendingUp} iconClass="text-scatto-success" heading="Top in crescita" items={growers} mode="delta" />
+        <Section icon={TrendingDown} iconClass="text-scatto-danger" heading="Top in calo" items={decliners} mode="delta" />
+        <Section icon={AlertCircle} iconClass="text-scatto-warning" heading="Persi (no ordini)" items={lost} mode="lost" />
+        <Section icon={Sparkles} iconClass="text-scatto-info" heading="Nuovi / Riattivati" items={newOnes} mode="new" />
       </div>
-    </div>
+    </SectionCard>
   );
 }

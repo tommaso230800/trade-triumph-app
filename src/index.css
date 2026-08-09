@@ -107,7 +107,7 @@
        Ordini (pilota del redesign). Non tocca --background/--card ecc. usati
        dal resto dell'app: nessun'altra pagina la referenzia.
        Bianco pulito (#fbfbfc) al posto del precedente beige/crema. */
-    --scatto-bg: 240 14% 99%;
+    --scatto-bg: 220 20% 97%;
     --scatto-surface: 0 0% 100%;
     --scatto-ink: 225 18% 9%;
     --scatto-muted: 219 9% 64%;

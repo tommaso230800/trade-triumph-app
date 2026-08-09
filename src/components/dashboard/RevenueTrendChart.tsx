@@ -22,6 +22,8 @@ const formatNumberIT = (value: number) =>
   Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 const formatCurrency = (value: number) => `${formatNumberIT(value)} €`;
 
+// Stessa palette/ricetta di DashRevenueChart (Dashboard) — anno corrente in
+// grafite piena, anno precedente in rosso, coerenti con la direzione "Scatto".
 export function RevenueTrendChart({ data, currentMonthIndex, yearCurr, yearPrev }: RevenueTrendChartProps) {
   // Il fatturato dell'anno corrente esiste solo fino al mese in corso: i mesi
   // futuri restano null (non zero) così la linea si interrompe invece di
@@ -33,13 +35,13 @@ export function RevenueTrendChart({ data, currentMonthIndex, yearCurr, yearPrev 
 
   return (
     <div>
-      <div className="mb-2 flex items-center gap-4 px-1 text-[11px] font-medium text-muted-foreground">
+      <div className="mb-2 flex items-center gap-4 px-1 text-[11px] font-medium text-scatto-muted">
         <span className="flex items-center gap-1.5">
-          <i className="inline-block h-[3px] w-3 rounded-full bg-primary" />
+          <i className="inline-block h-[3px] w-3 rounded-full bg-scatto-ink" />
           {yearCurr}
         </span>
         <span className="flex items-center gap-1.5">
-          <i className="inline-block h-[3px] w-3 rounded-full bg-muted-foreground/40" />
+          <i className="inline-block h-[3px] w-3 rounded-full bg-scatto-danger" />
           {yearPrev}
         </span>
       </div>
@@ -47,14 +49,14 @@ export function RevenueTrendChart({ data, currentMonthIndex, yearCurr, yearPrev 
         <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
           <defs>
             <linearGradient id="revenueTrendFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.22} />
-              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+              <stop offset="5%" stopColor="hsl(var(--scatto-ink))" stopOpacity={0.16} />
+              <stop offset="95%" stopColor="hsl(var(--scatto-ink))" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--scatto-line))" vertical={false} />
           <XAxis
             dataKey="mese"
-            stroke="hsl(var(--muted-foreground))"
+            stroke="hsl(var(--scatto-muted))"
             fontSize={10}
             tickLine={false}
             axisLine={false}
@@ -64,12 +66,12 @@ export function RevenueTrendChart({ data, currentMonthIndex, yearCurr, yearPrev 
           <YAxis hide domain={[0, (max: number) => max * 1.15]} />
           <Tooltip
             contentStyle={{
-              backgroundColor: "hsl(var(--card))",
-              border: "1px solid hsl(var(--border))",
+              backgroundColor: "hsl(var(--scatto-surface))",
+              border: "1px solid hsl(var(--scatto-line))",
               borderRadius: "10px",
-              boxShadow: "var(--shadow-md)",
+              boxShadow: "0 12px 32px -16px hsl(225 18% 9% / 0.35)",
             }}
-            labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+            labelStyle={{ color: "hsl(var(--scatto-ink))", fontWeight: 600 }}
             formatter={(value: number, name: string) => [
               formatCurrency(value),
               name === "curr" ? String(yearCurr) : String(yearPrev),
@@ -78,7 +80,7 @@ export function RevenueTrendChart({ data, currentMonthIndex, yearCurr, yearPrev 
           <Line
             type="monotone"
             dataKey="prev"
-            stroke="hsl(var(--muted-foreground) / 0.45)"
+            stroke="hsl(var(--scatto-danger))"
             strokeWidth={2}
             dot={false}
             activeDot={false}
@@ -86,12 +88,12 @@ export function RevenueTrendChart({ data, currentMonthIndex, yearCurr, yearPrev 
           <Area
             type="monotone"
             dataKey="curr"
-            stroke="hsl(var(--primary))"
+            stroke="hsl(var(--scatto-ink))"
             strokeWidth={2.5}
             fillOpacity={1}
             fill="url(#revenueTrendFill)"
             dot={false}
-            activeDot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
+            activeDot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--scatto-surface))" }}
             connectNulls={false}
           />
         </ComposedChart>

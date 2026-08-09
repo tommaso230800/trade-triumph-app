@@ -1,3 +1,4 @@
+import { SectionCard } from "@/components/dashboard/SectionCard";
 import { aziendaColorValue, type AziendaColorMap } from "@/lib/aziendaColor";
 import { formatCurrency } from "./kpiShared";
 import type { ClienteKPI } from "@/hooks/useAdvancedKPIStats";
@@ -13,11 +14,7 @@ interface ClientRevenueCardsProps {
 // identità delle aziende fornitrici, invece di colonne fisse.
 export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap }: ClientRevenueCardsProps) {
   if (clienti.length === 0) {
-    return (
-      <div className="rounded-xl bg-card p-8 text-center text-muted-foreground shadow-card">
-        Nessun cliente trovato
-      </div>
-    );
+    return <SectionCard className="p-8 text-center text-scatto-muted">Nessun cliente trovato</SectionCard>;
   }
 
   return (
@@ -28,19 +25,19 @@ export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap }: Clien
         const totaleSegmenti = cliente.perAzienda.reduce((s, a) => s + a.fatturato, 0) || 1;
 
         return (
-          <div key={cliente.id} className="rounded-xl bg-card p-4 shadow-card">
+          <SectionCard key={cliente.id} className="p-4">
             <div className="flex items-baseline justify-between gap-3">
-              <p className="truncate text-[15px] font-semibold text-foreground">{cliente.nome}</p>
-              <p className="flex-shrink-0 font-display text-base font-bold tabular-nums tracking-tight text-foreground">
+              <p className="truncate text-[15px] font-semibold text-scatto-ink">{cliente.nome}</p>
+              <p className="flex-shrink-0 font-display text-base font-bold tabular-nums tracking-tight text-scatto-ink">
                 {formatCurrency(cliente.fatturato)}
               </p>
             </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">
+            <p className="mt-0.5 text-xs text-scatto-muted">
               {cliente.ordini_count} {cliente.ordini_count === 1 ? "ordine" : "ordini"}
               {variazione !== null && (
                 <>
                   {" · "}
-                  <span className={variazione >= 0 ? "font-semibold text-success" : "font-semibold text-destructive"}>
+                  <span className={variazione >= 0 ? "font-semibold text-scatto-success" : "font-semibold text-scatto-danger"}>
                     {variazione >= 0 ? "+" : ""}
                     {variazione.toFixed(0)}% vs {yearPrev ?? "anno prec."}
                   </span>
@@ -50,7 +47,7 @@ export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap }: Clien
 
             {cliente.perAzienda.length > 0 && (
               <>
-                <div className="mt-3 flex h-3.5 overflow-hidden rounded-full bg-muted">
+                <div className="mt-3 flex h-3.5 overflow-hidden rounded-full bg-scatto-ink/[0.06]">
                   {cliente.perAzienda.map((a) => (
                     <span
                       key={a.aziendaId}
@@ -61,20 +58,20 @@ export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap }: Clien
                     />
                   ))}
                 </div>
-                <div className="mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 text-xs text-muted-foreground">
+                <div className="mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 text-xs text-scatto-muted">
                   {cliente.perAzienda.map((a) => (
                     <span key={a.aziendaId} className="inline-flex items-center gap-1.5">
                       <span
                         className="h-2 w-2 flex-shrink-0 rounded-sm"
                         style={{ backgroundColor: aziendaColorValue(a.aziendaId, aziendaColorMap) }}
                       />
-                      {a.aziendaNome} <b className="font-display font-semibold text-foreground">{formatCurrency(a.fatturato)}</b>
+                      {a.aziendaNome} <b className="font-display font-semibold text-scatto-ink">{formatCurrency(a.fatturato)}</b>
                     </span>
                   ))}
                 </div>
               </>
             )}
-          </div>
+          </SectionCard>
         );
       })}
     </div>
