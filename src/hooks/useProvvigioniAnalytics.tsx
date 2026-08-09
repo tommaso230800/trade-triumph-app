@@ -565,41 +565,6 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
     });
   }, [allRows, filters.aziendaId]);
 
-  // AI Insights deterministici
-  const insights = useMemo(() => {
-    const out: { tipo: "positivo" | "attenzione" | "info"; testo: string }[] = [];
-    if (kpi.growthYoY > 5) out.push({ tipo: "positivo", testo: `Mese in anticipo del ${kpi.growthYoY.toFixed(0)}% rispetto allo scorso anno.` });
-    if (kpi.growthYoY < -5) out.push({ tipo: "attenzione", testo: `Mese in calo del ${Math.abs(kpi.growthYoY).toFixed(0)}% vs stesso mese anno scorso.` });
-    if (kpi.growthMoM > 10) out.push({ tipo: "positivo", testo: `+${kpi.growthMoM.toFixed(0)}% di provvigioni vs mese scorso.` });
-
-    // Top azienda in crescita/calo YoY
-    perAzienda.slice(0, 5).forEach((a) => {
-      const currY = new Date().getFullYear();
-      const prevY = currY - 1;
-      const currTot = allRows.filter((r) => r.aziendaId === a.id && new Date(r.data).getFullYear() === currY).reduce((s, r) => s + r.provvigioneMaturata, 0);
-      const prevTot = allRows.filter((r) => r.aziendaId === a.id && new Date(r.data).getFullYear() === prevY).reduce((s, r) => s + r.provvigioneMaturata, 0);
-      if (prevTot > 100) {
-        const delta = ((currTot - prevTot) / prevTot) * 100;
-        if (delta > 15) out.push({ tipo: "positivo", testo: `La mandante ${a.nome} è cresciuta del ${delta.toFixed(0)}% YTD.` });
-        else if (delta < -15) out.push({ tipo: "attenzione", testo: `Attenzione: provvigioni ${a.nome} in calo del ${Math.abs(delta).toFixed(0)}% YTD.` });
-      }
-    });
-
-    // Cliente in calo
-    perCliente.slice(0, 20).forEach((c) => {
-      if (c.giorniInattivo > 90 && c.fatturato > 500) {
-        out.push({ tipo: "attenzione", testo: `${c.nome} non ordina da ${c.giorniInattivo} giorni.` });
-      }
-    });
-
-    // Previsione fine mese
-    if (contoEconomico.previsioneFineMese > 0) {
-      out.push({ tipo: "info", testo: `Prevedi di chiudere il mese con circa €${contoEconomico.previsioneFineMese.toFixed(0)} di provvigioni.` });
-    }
-
-    return out.slice(0, 8);
-  }, [kpi, perAzienda, perCliente, allRows, contoEconomico]);
-
   return {
     allRows,
     filteredRows,
@@ -611,7 +576,6 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
     heatmap,
     getMonthlyDetail,
     seriaGiornaliera,
-    insights,
     aziende,
     clienti,
     perTrimestrePagamento,

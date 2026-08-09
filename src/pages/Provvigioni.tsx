@@ -60,8 +60,7 @@ import {
   Legend,
   Line,
   LineChart,
-  Pie,
-  PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -89,7 +88,6 @@ import {
   Wallet,
   CalendarClock,
   LineChart as LineChartIcon,
-  Calculator,
   Trophy,
   ArrowUpRight,
   ArrowDownRight,
@@ -97,14 +95,13 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { useAziendaColorMap, aziendaColorValue } from "@/lib/aziendaColor";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 const fmtEur = (v: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
-const fmtEur2 = (v: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
 
 const STATO_CONFIG: Record<StatoProvvigione, { label: string; color: string; rowBg?: string; icon: any; iconColor: string }> = {
   pagata: { label: "Pagata", color: "status-prov-paid", icon: CheckCircle2, iconColor: "text-success" },
@@ -113,17 +110,6 @@ const STATO_CONFIG: Record<StatoProvvigione, { label: string; color: string; row
   parziale: { label: "Parzialmente pagata", color: "status-prov-partial", icon: CircleDot, iconColor: "text-primary" },
   contestazione: { label: "In contestazione", color: "status-prov-contested", icon: Ban, iconColor: "text-commission-contested" },
 };
-
-const CHART_COLORS = [
-  "hsl(var(--primary))",
-  "hsl(var(--success))",
-  "hsl(var(--warning))",
-  "hsl(var(--destructive))",
-  "hsl(217 91% 60%)",
-  "hsl(280 65% 60%)",
-  "hsl(35 90% 55%)",
-  "hsl(160 60% 45%)",
-];
 
 type SortKey = keyof ProvvigioneRow;
 
@@ -144,18 +130,35 @@ const Provvigioni = () => {
   const [payDialog, setPayDialog] = useState<{ open: boolean; fattura: ProvvigioneDialogItem | null; initialStato?: StatoProvvigione }>({ open: false, fattura: null });
   const [meseDetail, setMeseDetail] = useState<{ open: boolean; detail: any | null }>({ open: false, detail: null });
 
-  // Simulatore
-  const [simFatturato, setSimFatturato] = useState("50000");
-  const [simPct, setSimPct] = useState("4");
-  const [simBonus, setSimBonus] = useState("0");
-  const [simPremi, setSimPremi] = useState("0");
-
   const { data: aziende } = useAziende();
   const { data: clienti } = useClienti();
   const { fattureIncassate, fattureScadute, aggiornaStatoProvvigione, aggiornaTrimestrePagamento, aggiornaBulkPagate } = useScadenziario();
+  const aziendaColorMap = useAziendaColorMap();
 
   const filters: ProvvigioniFilters = { aziendaId, clienteId, periodo, search };
   const analytics = useProvvigioniAnalytics(filters);
+
+  // Serie mensile senza i mesi vuoti iniziali: la finestra resta di 24 mesi,
+  // ma se i dati partono più avanti la curva non spreca spazio su mesi a 0.
+  const serieMensileVisibile = useMemo(() => {
+    const idx = analytics.serieMensile.findIndex((m) => m.fatturato > 0 || m.provvigioni > 0);
+    return idx >= 0 ? analytics.serieMensile.slice(idx) : analytics.serieMensile;
+  }, [analytics.serieMensile]);
+
+  // Aziende con lo stesso nome ma id diversi: quasi sempre un'anagrafica
+  // duplicata a database, non un caso reale di due fornitori omonimi — lo
+  // segnaliamo (sola lettura) invece di provare a unificarle qui.
+  const aziendeDuplicate = useMemo(() => {
+    const byName = new Map<string, { nome: string; ids: Set<string> }>();
+    analytics.perAzienda.forEach((a) => {
+      const key = a.nome.trim().toLowerCase();
+      if (!byName.has(key)) byName.set(key, { nome: a.nome, ids: new Set() });
+      byName.get(key)!.ids.add(a.id);
+    });
+    return Array.from(byName.values())
+      .filter((g) => g.ids.size > 1)
+      .map((g) => g.nome);
+  }, [analytics.perAzienda]);
 
   // Riepiloghi per stato: coerenti con filtri, badge, grafici e KPI della pagina.
   const riepiloghi = useMemo(() => {
@@ -325,9 +328,6 @@ const Provvigioni = () => {
   };
 
 
-
-  const simTotale = (Number(simFatturato) * Number(simPct)) / 100 + Number(simBonus) + Number(simPremi);
-
   return (
     <MainLayout>
       <div className="space-y-6 animate-rise-in pb-8">
@@ -429,9 +429,6 @@ const Provvigioni = () => {
             <TabsTrigger value="provvigioni" className="gap-2"><Euro className="h-4 w-4" />Provvigioni</TabsTrigger>
             <TabsTrigger value="aziende" className="gap-2"><Building2 className="h-4 w-4" />Aziende</TabsTrigger>
             <TabsTrigger value="clienti" className="gap-2"><Users className="h-4 w-4" />Clienti</TabsTrigger>
-            <TabsTrigger value="ai" className="gap-2"><Sparkles className="h-4 w-4" />AI Insights</TabsTrigger>
-            <TabsTrigger value="calendario" className="gap-2"><CalendarClock className="h-4 w-4" />Calendario</TabsTrigger>
-            <TabsTrigger value="simulatore" className="gap-2"><Calculator className="h-4 w-4" />Simulatore</TabsTrigger>
             <TabsTrigger value="bonus" className="gap-2"><Trophy className="h-4 w-4" />Bonus</TabsTrigger>
             <TabsTrigger value="scadenziario" className="gap-2"><Receipt className="h-4 w-4" />Scadenziario</TabsTrigger>
             <TabsTrigger value="riconciliazione" className="gap-2"><Sparkles className="h-4 w-4" />Riconciliazione</TabsTrigger>
@@ -440,63 +437,185 @@ const Provvigioni = () => {
 
           {/* OVERVIEW */}
           <TabsContent value="overview" className="space-y-5">
+            {aziendeDuplicate.length > 0 && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <p>
+                  <b className="font-semibold">Da sistemare nei dati:</b>{" "}
+                  {aziendeDuplicate.length === 1
+                    ? `l'azienda "${aziendeDuplicate[0]}" compare più volte a database con anagrafiche diverse`
+                    : `${aziendeDuplicate.length} aziende compaiono più volte a database con anagrafiche diverse (${aziendeDuplicate.join(", ")})`}
+                  {" "}— le percentuali qui sotto sono spezzate tra le due schede finché non vengono unificate.
+                </p>
+              </div>
+            )}
+
             <div className="grid gap-4 lg:grid-cols-2">
-              <ChartCard title="Andamento provvigioni · 24 mesi" icon={<LineChartIcon className="h-4 w-4" />}>
-                <ResponsiveContainer width="100%" height={260}>
-                  <AreaChart data={analytics.serieMensile}>
-                    <defs>
-                      <linearGradient id="colorP" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="mese" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
-                    <Area type="monotone" dataKey="provvigioni" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#colorP)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <ChartCard title="Andamento provvigioni" icon={<LineChartIcon className="h-4 w-4" />}>
+                {(() => {
+                  const data = serieMensileVisibile;
+                  const n = data.length;
+                  const chartData = data.map((d, i) => ({
+                    ...d,
+                    provvSolid: i < n - 1 ? d.provvigioni : null,
+                    provvInCorso: i >= n - 2 ? d.provvigioni : null,
+                  }));
+                  const completati = data.slice(0, Math.max(0, n - 1));
+                  const media = completati.length ? completati.reduce((s, d) => s + d.provvigioni, 0) / completati.length : 0;
+                  return (
+                    <>
+                      <ResponsiveContainer width="100%" height={260}>
+                        <ComposedChart data={chartData}>
+                          <defs>
+                            <linearGradient id="colorP" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="hsl(var(--scatto-info))" stopOpacity={0.35} />
+                              <stop offset="100%" stopColor="hsl(var(--scatto-info))" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--scatto-line))" />
+                          <XAxis dataKey="mese" stroke="hsl(var(--scatto-muted))" fontSize={11} />
+                          <YAxis stroke="hsl(var(--scatto-muted))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                          <Tooltip
+                            contentStyle={{ background: "hsl(var(--scatto-surface))", border: "1px solid hsl(var(--scatto-line))", borderRadius: 8 }}
+                            formatter={(v: number) => [fmtEur(v), "Provvigioni"]}
+                            labelFormatter={(label) => (data[n - 1]?.mese === label ? `${label} · in corso` : label)}
+                          />
+                          {media > 0 && (
+                            <ReferenceLine
+                              y={media}
+                              stroke="hsl(var(--scatto-muted))"
+                              strokeDasharray="5 4"
+                              label={{ value: `media ${fmtEur(Math.round(media))}`, position: "insideTopRight", fill: "hsl(var(--scatto-muted))", fontSize: 11 }}
+                            />
+                          )}
+                          <Area type="monotone" dataKey="provvSolid" stroke="hsl(var(--scatto-info))" strokeWidth={2.2} fill="url(#colorP)" connectNulls={false} dot={false} />
+                          <Line type="monotone" dataKey="provvInCorso" stroke="hsl(var(--scatto-info) / 0.55)" strokeWidth={2.2} strokeDasharray="4 3" dot={{ r: 3 }} connectNulls activeDot={{ r: 4 }} legendType="none" />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                      <p className="mt-1 text-[11px] text-scatto-muted">
+                        Il tratto tratteggiato è il mese in corso, ancora incompleto.
+                      </p>
+                    </>
+                  );
+                })()}
               </ChartCard>
 
-              <ChartCard title="Fatturato vs Provvigioni" icon={<TrendingUp className="h-4 w-4" />}>
-                <ResponsiveContainer width="100%" height={260}>
-                  <ComposedChart data={analytics.serieMensile}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="mese" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                    <YAxis yAxisId="left" stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
-                    <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
-                    <Legend />
-                    <Bar yAxisId="left" dataKey="fatturato" fill="hsl(var(--muted-foreground) / 0.3)" name="Fatturato" />
-                    <Line yAxisId="right" type="monotone" dataKey="provvigioni" stroke="hsl(var(--primary))" strokeWidth={2.5} name="Provvigioni" />
-                  </ComposedChart>
-                </ResponsiveContainer>
+              <ChartCard title="Fatturato e incidenza provvigioni" icon={<TrendingUp className="h-4 w-4" />}>
+                {(() => {
+                  const data = serieMensileVisibile.map((d) => ({
+                    ...d,
+                    incidenza: d.fatturato > 0 ? (d.provvigioni / d.fatturato) * 100 : null,
+                  }));
+                  const conDati = data.filter((d): d is typeof d & { incidenza: number } => d.incidenza !== null);
+                  const mediaIncidenza = conDati.length ? conDati.reduce((s, d) => s + d.incidenza, 0) / conDati.length : 0;
+                  return (
+                    <>
+                      <ResponsiveContainer width="100%" height={260}>
+                        <ComposedChart data={data}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--scatto-line))" />
+                          <XAxis dataKey="mese" stroke="hsl(var(--scatto-muted))" fontSize={11} />
+                          <YAxis yAxisId="left" stroke="hsl(var(--scatto-muted))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                          <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--scatto-success))" fontSize={11} tickFormatter={(v) => `${v.toFixed(1)}%`} domain={["dataMin - 1", "dataMax + 1"]} />
+                          <Tooltip
+                            contentStyle={{ background: "hsl(var(--scatto-surface))", border: "1px solid hsl(var(--scatto-line))", borderRadius: 8 }}
+                            formatter={(v: number, name: string) => (name === "fatturato" ? [fmtEur(v), "Fatturato"] : [`${v.toFixed(1)}%`, "Provvigione effettiva"])}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 11 }} formatter={(value) => (value === "fatturato" ? "Fatturato" : "Provvigione effettiva %")} />
+                          {mediaIncidenza > 0 && (
+                            <ReferenceLine
+                              yAxisId="right"
+                              y={mediaIncidenza}
+                              stroke="hsl(var(--scatto-success))"
+                              strokeDasharray="5 4"
+                              label={{ value: `media ${mediaIncidenza.toFixed(1)}%`, position: "insideBottomRight", fill: "hsl(var(--scatto-success))", fontSize: 11 }}
+                            />
+                          )}
+                          <Bar yAxisId="left" dataKey="fatturato" fill="hsl(var(--scatto-info) / 0.22)" radius={[3, 3, 0, 0]} name="fatturato" />
+                          <Line yAxisId="right" type="monotone" dataKey="incidenza" stroke="hsl(var(--scatto-success))" strokeWidth={2.2} dot={{ r: 2.5 }} connectNulls name="incidenza" />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                      <p className="mt-1 text-[11px] text-scatto-muted">
+                        La linea è la provvigione realmente incassata sul fatturato: un mese sotto la media va controllato.
+                      </p>
+                    </>
+                  );
+                })()}
               </ChartCard>
 
               <ChartCard title="Ripartizione per azienda" icon={<Building2 className="h-4 w-4" />}>
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie data={analytics.perAzienda.slice(0, 8)} dataKey="provvigioni" nameKey="nome" cx="50%" cy="50%" outerRadius={90} innerRadius={45} paddingAngle={2}>
-                      {analytics.perAzienda.slice(0, 8).map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
-                    <Legend wrapperStyle={{ fontSize: 11 }} />
-                  </PieChart>
-                </ResponsiveContainer>
+                {(() => {
+                  const top = analytics.perAzienda.slice(0, 8);
+                  if (top.length === 0) return <p className="py-8 text-center text-sm text-scatto-muted">Nessun dato</p>;
+                  const totale = top.reduce((s, a) => s + a.provvigioni, 0) || 1;
+                  const max = top[0]?.provvigioni || 1;
+                  return (
+                    <div className="space-y-3">
+                      {top.map((a) => {
+                        const color = aziendaColorValue(a.id, aziendaColorMap);
+                        return (
+                          <div key={a.id}>
+                            <div className="mb-1.5 flex items-center gap-2">
+                              <span className="h-2.5 w-2.5 flex-shrink-0 rounded-sm" style={{ backgroundColor: color }} />
+                              <span className="min-w-0 flex-1 truncate text-sm font-medium text-scatto-ink">{a.nome}</span>
+                              <span className="flex-shrink-0 text-sm font-semibold tabular-nums text-scatto-ink">{fmtEur(a.provvigioni)}</span>
+                              <span className="w-12 flex-shrink-0 text-right text-xs tabular-nums text-scatto-muted">
+                                {((a.provvigioni / totale) * 100).toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-scatto-ink/[0.06]">
+                              <div
+                                className="h-full rounded-full"
+                                style={{ width: `${Math.max(4, (a.provvigioni / max) * 100)}%`, backgroundColor: color }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
               </ChartCard>
 
-              <ChartCard title={`Mese corrente · Andamento giornaliero`} icon={<CalendarClock className="h-4 w-4" />}>
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={analytics.seriaGiornaliera}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="giorno" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
-                    <Line type="monotone" dataKey="cumulato" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="Cumulato" />
-                    <Line type="monotone" dataKey="valore" stroke="hsl(var(--success))" strokeWidth={1.5} dot={{ r: 2 }} name="Giornaliero" />
-                  </LineChart>
-                </ResponsiveContainer>
+              <ChartCard title="Mese corrente · andamento giornaliero" icon={<CalendarClock className="h-4 w-4" />}>
+                {(() => {
+                  const data = analytics.seriaGiornaliera;
+                  const obiettivo = analytics.kpi.obiettivoMensile;
+                  const ultimoConDati = [...data].reverse().find((d) => d.cumulato !== null);
+                  const cumFinale = ultimoConDati?.cumulato || 0;
+                  const maxAsse = Math.max(obiettivo, cumFinale, ...data.map((d) => d.valore || 0), 1) * 1.15;
+                  const step = maxAsse / 4;
+                  const ticks = [0, step, step * 2, step * 3, step * 4];
+                  return (
+                    <>
+                      <ResponsiveContainer width="100%" height={260}>
+                        <ComposedChart data={data}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--scatto-line))" />
+                          <XAxis dataKey="giorno" stroke="hsl(var(--scatto-muted))" fontSize={10} />
+                          <YAxis stroke="hsl(var(--scatto-muted))" fontSize={10} ticks={ticks} domain={[0, maxAsse]} tickFormatter={(v) => fmtEur(Math.round(v))} />
+                          <Tooltip
+                            contentStyle={{ background: "hsl(var(--scatto-surface))", border: "1px solid hsl(var(--scatto-line))", borderRadius: 8 }}
+                            formatter={(v: number, name: string) => [fmtEur(v), name === "cumulato" ? "Progressivo" : "Giornaliera"]}
+                            labelFormatter={(l) => `Giorno ${l}`}
+                          />
+                          {obiettivo > 0 && (
+                            <ReferenceLine
+                              y={obiettivo}
+                              stroke="hsl(var(--scatto-warning))"
+                              strokeDasharray="5 4"
+                              label={{ value: `obiettivo ${fmtEur(obiettivo)}`, position: "insideTopRight", fill: "hsl(var(--scatto-warning))", fontSize: 11 }}
+                            />
+                          )}
+                          <Bar dataKey="valore" fill="hsl(var(--scatto-info) / 0.35)" radius={[2, 2, 0, 0]} name="valore" />
+                          <Line type="monotone" dataKey="cumulato" stroke="hsl(var(--scatto-info))" strokeWidth={2.4} dot={false} connectNulls name="cumulato" />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                      <p className="mt-1 text-[11px] text-scatto-muted">
+                        Progressivo del mese: <b className="font-semibold text-scatto-ink">{fmtEur(cumFinale)}</b>
+                        {obiettivo > 0 && <> · {Math.round((cumFinale / obiettivo) * 100)}% dell'obiettivo</>}
+                      </p>
+                    </>
+                  );
+                })()}
               </ChartCard>
             </div>
 
@@ -784,95 +903,6 @@ const Provvigioni = () => {
               <ClientiList title="Top clienti" icon={<Trophy className="h-4 w-4 text-primary" />} clienti={analytics.perCliente.slice(0, 10)} badge="top" />
               <ClientiList title="In calo / Inattivi" icon={<TrendingDown className="h-4 w-4 text-destructive" />} clienti={analytics.perCliente.filter((c) => c.giorniInattivo > 60).slice(0, 10)} badge="inattivi" />
               <ClientiList title="In crescita" icon={<TrendingUp className="h-4 w-4 text-success" />} clienti={analytics.perCliente.filter((c) => c.giorniInattivo < 30).slice(0, 10)} badge="crescita" />
-            </div>
-          </TabsContent>
-
-          {/* AI INSIGHTS */}
-          <TabsContent value="ai" className="space-y-3">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" />Insights automatici</CardTitle>
-                <CardDescription>Analisi generate in tempo reale sui tuoi dati</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {analytics.insights.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-6">Nessun insight rilevante al momento.</p>
-                ) : (
-                  analytics.insights.map((ins, i) => {
-                    const colorMap = {
-                      positivo: "border-success/30 bg-success/5 text-success",
-                      attenzione: "border-destructive/30 bg-destructive/5 text-destructive",
-                      info: "border-primary/30 bg-primary/5 text-primary",
-                    };
-                    const IconMap = { positivo: TrendingUp, attenzione: AlertTriangle, info: Sparkles };
-                    const Icon = IconMap[ins.tipo];
-                    return (
-                      <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${colorMap[ins.tipo]}`}>
-                        <Icon className="h-4 w-4 mt-0.5 shrink-0" />
-                        <p className="text-sm text-foreground">{ins.testo}</p>
-                      </div>
-                    );
-                  })
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* CALENDARIO */}
-          <TabsContent value="calendario">
-            <div className="grid gap-4 md:grid-cols-3">
-              <TimelineColumn title="In arrivo" icon={<Clock className="h-4 w-4 text-warning" />} items={analytics.filteredRows.filter((r) => r.statoProvvigione === "da_pagare" && r.dataPrevistaPagamento).slice(0, 20)} tone="warning" />
-              <TimelineColumn title="Scaduti" icon={<AlertTriangle className="h-4 w-4 text-destructive" />} items={analytics.filteredRows.filter((r) => r.statoProvvigione === "da_pagare" && r.giorniRitardo > 0).slice(0, 20)} tone="destructive" />
-              <TimelineColumn title="Ricevuti" icon={<CheckCircle2 className="h-4 w-4 text-success" />} items={analytics.filteredRows.filter((r) => r.statoProvvigione === "pagata").slice(0, 20)} tone="success" />
-            </div>
-          </TabsContent>
-
-          {/* SIMULATORE */}
-          <TabsContent value="simulatore">
-            <div className="grid gap-4 lg:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Calculator className="h-5 w-5" />Simulatore guadagno</CardTitle>
-                  <CardDescription>Inserisci previsioni per stimare la provvigione totale</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Fatturato previsto (€)</Label>
-                    <Input type="number" value={simFatturato} onChange={(e) => setSimFatturato(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Percentuale provvigione (%)</Label>
-                    <Input type="number" step="0.1" value={simPct} onChange={(e) => setSimPct(e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>Bonus (€)</Label>
-                      <Input type="number" value={simBonus} onChange={(e) => setSimBonus(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Premi (€)</Label>
-                      <Input type="number" value={simPremi} onChange={(e) => setSimPremi(e.target.value)} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-primary/40 bg-gradient-to-br from-primary/10 to-card">
-                <CardHeader>
-                  <CardTitle>Risultato</CardTitle>
-                  <CardDescription>Stima totale del guadagno</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-center py-6">
-                    <p className="text-sm text-muted-foreground mb-2">Guadagno stimato</p>
-                    <p className="text-5xl font-bold text-primary">{fmtEur2(simTotale)}</p>
-                  </div>
-                  <div className="space-y-1 text-sm border-t pt-4">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Provvigione base:</span><span>{fmtEur2((Number(simFatturato) * Number(simPct)) / 100)}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Bonus:</span><span>{fmtEur2(Number(simBonus))}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Premi:</span><span>{fmtEur2(Number(simPremi))}</span></div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </TabsContent>
 
@@ -1245,40 +1275,6 @@ function ClientiList({ title, icon, clienti, badge }: { title: string; icon: Rea
                 <p className="text-sm font-semibold">{fmtEur(c.fatturato)}</p>
                 <p className="text-xs text-primary">{fmtEur(c.provvigioni)}</p>
               </div>
-            </div>
-          ))
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function TimelineColumn({ title, icon, items, tone }: { title: string; icon: React.ReactNode; items: ProvvigioneRow[]; tone: "warning" | "destructive" | "success" }) {
-  const borderMap = { warning: "border-l-warning", destructive: "border-l-destructive", success: "border-l-success" };
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">{icon}{title} <Badge variant="outline">{items.length}</Badge></CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 max-h-[500px] overflow-y-auto">
-        {items.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">Nessun elemento</p>
-        ) : (
-          items.map((r) => (
-            <div key={r.id} className={`p-3 rounded border-l-2 ${borderMap[tone]} bg-muted/20`}>
-              <div className="flex justify-between items-start gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{r.aziendaNome}</p>
-                  <p className="text-xs text-muted-foreground truncate">{r.clienteNome} · {r.numero}</p>
-                </div>
-                <p className="text-sm font-semibold text-primary shrink-0">{fmtEur(r.provvigioneMaturata)}</p>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {r.dataEffettivaPagamento ? `Pagato ${format(new Date(r.dataEffettivaPagamento), "dd/MM/yy")}` :
-                 r.dataPrevistaPagamento ? `Scadenza ${format(new Date(r.dataPrevistaPagamento), "dd/MM/yy")}` :
-                 format(new Date(r.data), "dd/MM/yy")}
-                {r.giorniRitardo > 0 && <span className="text-destructive ml-2">+{r.giorniRitardo}gg</span>}
-              </p>
             </div>
           ))
         )}
