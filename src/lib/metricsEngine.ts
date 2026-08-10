@@ -6,8 +6,10 @@
  *
  * Regole (decise con l'utente):
  *  - Opzione A: `ordini.totale` è la fonte del fatturato ordine.
- *  - Data di riferimento: `data_conferma` se presente, altrimenti `data_ordine`,
- *    fallback finale `created_at`. Mai `created_at` prima di `data_ordine`.
+ *  - Data di riferimento: `data_ordine` se presente, altrimenti `data_conferma`,
+ *    fallback finale `created_at` — stessa regola di useKPIYoY, così un ordine
+ *    finisce sempre nello stesso mese in tutta l'app. Mai `created_at` prima
+ *    di `data_ordine`.
  *  - Stati esclusi dagli aggregati economici: 'bozza', 'da_confermare',
  *    'stand_by', 'annullato'. Contano: 'confermato', 'evaso' (+ eventuali
  *    stati custom non riconosciuti — trattati come contati per retro-compatibilità).

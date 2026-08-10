@@ -97,7 +97,11 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
           id: `ord-${o.id}`,
           ordineId: o.id,
           source: "ordine" as const,
-          data: o.data_ordine || o.created_at,
+          // Stessa catena di fallback di metricsEngine.orderDate: data_ordine,
+          // poi data_conferma, infine created_at. Prima mancava data_conferma:
+          // un ordine con data_ordine nullo finiva nel mese sbagliato rispetto
+          // a come lo bucketizzano KPI/Dashboard.
+          data: o.data_ordine || o.data_conferma || o.created_at,
           numero: o.codice,
           aziendaId: o.azienda_id,
           aziendaNome: azienda?.nome || "—",
