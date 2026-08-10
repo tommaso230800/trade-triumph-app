@@ -107,12 +107,32 @@ export function useKPIYoY(filters: KPIYoYFilters) {
       const yearCurr = end.getFullYear();
       const yearPrev = yearCurr - 1;
 
-      const { data: yearOrdini } = await supabase
-        .from("ordini")
-        .select("totale, data_ordine")
-        .not("status","in","(annullato,stand_by)")
-        .gte("data_ordine", `${yearPrev}-01-01`)
-        .lte("data_ordine", `${yearCurr}-12-31`);
+      // Due anni interi, senza filtro cliente/azienda/brand: può facilmente
+      // superare le 1000 righe che Supabase restituisce di default per
+      // risposta. Senza ORDER BY + paginazione, l'ordinamento di ritorno non
+      // è garantito: la risposta troncata poteva escludere ordini reali
+      // recenti in modo silenzioso, nessun errore, nessun avviso. Si pagina
+      // finché non arrivano meno righe di quelle richieste.
+      let yearOrdini: { totale: number; data_ordine: string }[] = [];
+      {
+        const pageSize = 1000;
+        let from = 0;
+        while (true) {
+          const { data, error } = await supabase
+            .from("ordini")
+            .select("totale, data_ordine")
+            .not("status","in","(annullato,stand_by)")
+            .gte("data_ordine", `${yearPrev}-01-01`)
+            .lte("data_ordine", `${yearCurr}-12-31`)
+            .order("data_ordine", { ascending: true })
+            .range(from, from + pageSize - 1);
+          if (error) throw error;
+          if (!data || data.length === 0) break;
+          yearOrdini = yearOrdini.concat(data);
+          if (data.length < pageSize) break;
+          from += pageSize;
+        }
+      }
 
       const monthlyCurr: Record<string, number> = {};
       const monthlyPrev: Record<string, number> = {};
