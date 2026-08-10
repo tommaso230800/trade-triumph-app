@@ -22,11 +22,16 @@ const formatNumberIT = (value: number) =>
 /**
  * Andamento fatturato anno corrente (area morbida) vs anno precedente (linea).
  * I mesi futuri restano null così la linea si interrompe invece di crollare a 0.
+ * Il mese in corso (parziale, non ancora chiuso) è staccato dal resto della
+ * serie: tratto tratteggiato più chiaro, per non farlo sembrare un mese
+ * completo al pari degli altri — stessa convenzione già usata nei grafici
+ * Provvigioni e KPI.
  */
 export function DashRevenueChart({ data, currentMonthIndex, yearCurr, yearPrev }: DashRevenueChartProps) {
   const chartData = data.map((d, i) => ({
     ...d,
-    curr: i <= currentMonthIndex ? d.curr : null,
+    currChiuso: i < currentMonthIndex ? d.curr : null,
+    currInCorso: i === currentMonthIndex - 1 || i === currentMonthIndex ? d.curr : null,
   }));
 
   return (
@@ -60,10 +65,14 @@ export function DashRevenueChart({ data, currentMonthIndex, yearCurr, yearPrev }
             fontSize: 12,
           }}
           labelStyle={{ color: "hsl(var(--scatto-ink))", fontWeight: 700 }}
-          formatter={(value: number, name: string) => [
-            `${name === "curr" ? yearCurr : yearPrev}: ${formatNumberIT(value)} €`,
-            "",
-          ]}
+          labelFormatter={(label, payload) => {
+            const isCurrent = payload?.[0]?.payload && chartData[currentMonthIndex]?.mese === label;
+            return isCurrent ? `${label} · in corso` : label;
+          }}
+          formatter={(value: number, name: string) => {
+            if (name === "prev") return [`${yearPrev}: ${formatNumberIT(value)} €`, ""];
+            return [`${yearCurr}: ${formatNumberIT(value)} €`, ""];
+          }}
           separator=""
         />
         <Line
@@ -76,20 +85,30 @@ export function DashRevenueChart({ data, currentMonthIndex, yearCurr, yearPrev }
         />
         <Area
           type="monotone"
-          dataKey="curr"
+          dataKey="currChiuso"
           stroke="hsl(var(--scatto-ink))"
           strokeWidth={2.6}
           fill="url(#dashRevenueFill)"
           dot={false}
+          connectNulls={false}
           activeDot={{
             r: 5,
             fill: "hsl(var(--scatto-ink))",
             strokeWidth: 6,
             stroke: "hsl(var(--scatto-ink) / 0.2)",
           }}
-          connectNulls={false}
         />
-
+        <Line
+          type="monotone"
+          dataKey="currInCorso"
+          stroke="hsl(var(--scatto-ink) / 0.5)"
+          strokeWidth={2.6}
+          strokeDasharray="5 4"
+          dot={{ r: 3.5, fill: "hsl(var(--scatto-surface))", stroke: "hsl(var(--scatto-ink) / 0.6)", strokeWidth: 2 }}
+          connectNulls
+          activeDot={{ r: 5, fill: "hsl(var(--scatto-ink))", strokeWidth: 0 }}
+          legendType="none"
+        />
       </ComposedChart>
     </ResponsiveContainer>
   );

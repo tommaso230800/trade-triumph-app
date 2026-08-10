@@ -14,7 +14,7 @@ import { useClienti } from "@/hooks/useClienti";
 import { useBrands } from "@/hooks/useBrands";
 import { useAuth } from "@/hooks/useAuth";
 import { aziendaColorValue, buildAziendaColorMap } from "@/lib/aziendaColor";
-import { periodStart, periodEnd, type DashboardPeriod } from "@/lib/periodRange";
+import { closedPeriodStart, closedPeriodEnd, type DashboardPeriod } from "@/lib/periodRange";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -159,8 +159,10 @@ const Index = () => {
   const [period, setPeriod] = useState<Period>("mese");
   const { user } = useAuth();
 
-  const start = useMemo(() => periodStart(period, now), [period, now]);
-  const end = useMemo(() => periodEnd(now), [now]);
+  // Confini "chiusi": il mese in corso è sempre parziale, non entra mai nel
+  // confronto anno su anno (vedi lib/periodRange.ts).
+  const start = useMemo(() => closedPeriodStart(period, now), [period, now]);
+  const end = useMemo(() => closedPeriodEnd(period, now), [period, now]);
 
   const { data: yoy, isLoading: yoyLoading } = useKPIYoY({
     clienteIds: [],
@@ -208,29 +210,47 @@ const Index = () => {
   const ticketPrev = yoy && yoy.prev.ordiniCount > 0 ? yoy.prev.fatturato / yoy.prev.ordiniCount : 0;
   const ticketDelta = ticket !== null ? deltaPct(ticket, ticketPrev) : null;
 
+  // Confronto sui soli mesi CHIUSI dell'anno (mai il mese in corso, che è
+  // parziale): stessa fonte dati del grafico sotto (yoy.monthlyComparison),
+  // così il badge e la linea del grafico non possono più raccontare due
+  // storie diverse — unica funzione di calcolo condivisa (deltaPct sopra).
+  const chartClosedComparison = useMemo(() => {
+    if (!yoy) return null;
+    const closedMonths = yoy.monthlyComparison.slice(0, currentMonthIndex);
+    if (closedMonths.length === 0) return null;
+    const curr = closedMonths.reduce((s, m) => s + m.curr, 0);
+    const prev = closedMonths.reduce((s, m) => s + m.prev, 0);
+    return {
+      curr,
+      prev,
+      deltaPct: deltaPct(curr, prev),
+      monthsIncluded: closedMonths.length,
+      lastMonthLabel: closedMonths[closedMonths.length - 1]?.mese,
+    };
+  }, [yoy, currentMonthIndex]);
+
   const yearPrev = yoy?.yearPrev ?? now.getFullYear() - 1;
   const heroPeriodText: Record<Period, string> = {
-    mese: format(now, "MMMM yyyy", { locale: it }),
+    mese: format(start, "MMMM yyyy", { locale: it }),
     trimestre: "ultimi 90 giorni",
-    anno: String(now.getFullYear()),
+    anno: `Gen–${format(end, "MMM yyyy", { locale: it })}`,
   };
   const heroConfrontoText: Record<Period, string> = {
-    mese: `vs ${format(now, "MMMM", { locale: it })} ${yearPrev}`,
+    mese: `vs ${format(start, "MMMM", { locale: it })} ${yearPrev}`,
     trimestre: `vs stesso periodo ${yearPrev}`,
-    anno: `vs ${yearPrev}`,
+    anno: `vs stesso periodo ${yearPrev} (mesi chiusi)`,
   };
   const sparkValues = (yoy?.monthlyComparison || [])
     .slice(0, currentMonthIndex + 1)
     .map((m) => m.curr);
   const sparkPath = buildSparkPath(sparkValues.length > 0 ? sparkValues : [0]);
 
-  const meseCorrente = yoy?.monthlyComparison[currentMonthIndex];
   const insight = (() => {
-    if (!meseCorrente || meseCorrente.prev <= 0) return "Nessun confronto disponibile per questo mese.";
-    const p = meseCorrente.deltaPct;
-    return `Questo mese sei ${p >= 0 ? "+" : "−"}${Math.abs(p).toFixed(1)}% sul ${
-      (yoy?.yearPrev ?? now.getFullYear() - 1)
-    }`;
+    if (!chartClosedComparison || chartClosedComparison.prev <= 0 || chartClosedComparison.deltaPct === null) {
+      return "Nessun confronto disponibile sui mesi chiusi di quest'anno.";
+    }
+    const p = chartClosedComparison.deltaPct;
+    return `Nei mesi chiusi (Gen–${chartClosedComparison.lastMonthLabel}) sei ${p >= 0 ? "+" : "−"}${Math.abs(p).toFixed(1)}% sul ${yearPrev}`;
   })();
 
   // Obiettivo mensile: media del fatturato negli ultimi 12 mesi (stessa logica
@@ -526,17 +546,26 @@ const Index = () => {
                     </span>
                   </div>
                 </div>
-                <span
-                  className={`text-sm font-semibold tabular-nums ${
-                    fatturatoDelta === null
-                      ? "text-scatto-muted"
-                      : fatturatoDelta >= 0
-                      ? "text-scatto-success"
-                      : "text-scatto-danger"
-                  }`}
-                >
-                  {fatturatoDelta === null ? "N/D" : `${fatturatoDelta >= 0 ? "+" : "−"}${Math.abs(fatturatoDelta).toFixed(1)}%`}
-                </span>
+                <div className="text-right">
+                  <span
+                    className={`text-sm font-semibold tabular-nums ${
+                      chartClosedComparison?.deltaPct == null
+                        ? "text-scatto-muted"
+                        : chartClosedComparison.deltaPct >= 0
+                        ? "text-scatto-success"
+                        : "text-scatto-danger"
+                    }`}
+                  >
+                    {chartClosedComparison?.deltaPct == null
+                      ? "N/D"
+                      : `${chartClosedComparison.deltaPct >= 0 ? "+" : "−"}${Math.abs(chartClosedComparison.deltaPct).toFixed(1)}%`}
+                  </span>
+                  <p className="mt-0.5 text-[10px] text-scatto-muted">
+                    {chartClosedComparison
+                      ? `Gen–${chartClosedComparison.lastMonthLabel} · mesi chiusi`
+                      : "nessun mese chiuso"}
+                  </p>
+                </div>
               </div>
               {isLoading ? (
                 <Skeleton className="h-[220px] w-full rounded-xl" />

@@ -88,6 +88,7 @@ Usa sempre i token in index.css e tailwind.config.ts. Mai colori o misure scritt
 - Non installare dipendenze non necessarie
 - Verifica sempre con `npm run build` prima di dire che hai finito
 - Se una modifica rischia di rompere qualcosa, segnalalo invece di procedere
+- **Nessun dato inventato, mai, per nessun motivo — ordini, importi, clienti, prodotti, storico.** Se manca un dato reale, chiedilo all'utente o lascialo N/D: non generarlo, non stimarlo spacciandolo per reale, non creare record "di comodo" per far tornare un grafico o un totale. (Causa nota: nell'agosto 2026 furono creati ordini 2025 inventati per Cantine Quattro Valli per simulare uno storico fatturato, mai richiesti come ordini — il dato voluto era un totale, non ordini finti. Hanno rotto il confronto anno su anno in Dashboard/Provvigioni ed è servita un'intera sessione di audit per isolarli.)
 
 ═══ CRITERIO FINALE ═══
 Prima di considerare fatta una pagina, chiediti:

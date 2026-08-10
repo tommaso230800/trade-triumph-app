@@ -44,3 +44,28 @@ export function periodStart(period: DashboardPeriod, now: Date): Date {
 export function periodEnd(now: Date): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
+
+/**
+ * Variante "chiusa" di periodStart/periodEnd: non include MAI il mese in
+ * corso, che è per definizione parziale. Usata per i confronti anno su anno,
+ * così un mese ancora in corso non viene mai messo a confronto con un mese
+ * completo dell'anno precedente (falsava le percentuali: un 1° al 10 agosto
+ * confrontato con un agosto intero dell'anno prima).
+ * - "mese": l'ultimo mese solare completo (il mese scorso).
+ * - "trimestre": resta invariato — è già una finestra rolling di giorni
+ *   realmente trascorsi, non ha un "mese in corso" da escludere.
+ * - "anno": dal 1° gennaio fino all'ultimo giorno dell'ultimo mese completo.
+ */
+export function closedPeriodStart(period: DashboardPeriod, now: Date): Date {
+  if (period === "trimestre") return periodStart("trimestre", now);
+  const lastClosedMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+  if (period === "mese") {
+    return new Date(lastClosedMonthEnd.getFullYear(), lastClosedMonthEnd.getMonth(), 1);
+  }
+  return new Date(now.getFullYear(), 0, 1);
+}
+
+export function closedPeriodEnd(period: DashboardPeriod, now: Date): Date {
+  if (period === "trimestre") return periodEnd(now);
+  return new Date(now.getFullYear(), now.getMonth(), 0);
+}
