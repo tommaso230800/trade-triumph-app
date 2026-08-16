@@ -113,11 +113,12 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
 
       // Apply date filters
       if (filters.startDate) {
-        ordiniQuery = ordiniQuery.gte("data_ordine", filters.startDate.toISOString().split("T")[0]);
+        ordiniQuery = ordiniQuery.gte("data_ordine", toLocalISODate(filters.startDate));
       }
       if (filters.endDate) {
-        ordiniQuery = ordiniQuery.lte("data_ordine", filters.endDate.toISOString().split("T")[0]);
+        ordiniQuery = ordiniQuery.lte("data_ordine", toLocalISODate(filters.endDate));
       }
+
 
       // Apply client filter
       if (filters.clienteIds.length > 0) {
