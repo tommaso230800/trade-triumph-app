@@ -203,7 +203,7 @@ const Index = () => {
     [aziendeList]
   );
 
-  const isLoading = yoyLoading || forecastLoading || aziendeLoading || ordiniLoading;
+  const isLoading = yoyLoading || statsLoading || forecastLoading || aziendeLoading || ordiniLoading;
 
   const firstName =
     (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
@@ -212,17 +212,21 @@ const Index = () => {
   const hour = now.getHours();
   const greeting = hour < 13 ? "Buongiorno" : hour < 18 ? "Buon pomeriggio" : "Buonasera";
 
-  // KPI del periodo selezionato (dati reali, confronto con stesso periodo anno prima)
-  const fatturato = yoy?.curr.fatturato ?? 0;
+  // KPI del periodo selezionato: stessa fonte della pagina KPI
+  // (useAdvancedKPIStats con gli stessi filtri) — i numeri devono coincidere.
+  const fatturato = stats?.fatturatoTotale ?? 0;
   const fatturatoDelta = deltaPct(fatturato, yoy?.prev.fatturato ?? 0);
-  const ordiniCount = yoy?.curr.ordiniCount ?? 0;
+  const ordiniCount = stats?.ordiniTotali ?? 0;
   const ordiniDelta = deltaPct(ordiniCount, yoy?.prev.ordiniCount ?? 0);
-  const clientiAttivi = yoy ? Array.from(yoy.clientiYoY.values()).filter((c) => c.curr > 0).length : 0;
+  const clientiAttivi = stats ? stats.clientiKPI.filter((c) => c.fatturato > 0).length : 0;
   const clientiPrev = yoy ? Array.from(yoy.clientiYoY.values()).filter((c) => c.prev > 0).length : 0;
   const clientiDelta = deltaPct(clientiAttivi, clientiPrev);
-  const ticket = ordiniCount > 0 ? fatturato / ordiniCount : null;
+  const ticket = ordiniCount > 0 ? (stats?.scontrinoMedio ?? fatturato / ordiniCount) : null;
   const ticketPrev = yoy && yoy.prev.ordiniCount > 0 ? yoy.prev.fatturato / yoy.prev.ordiniCount : 0;
   const ticketDelta = ticket !== null ? deltaPct(ticket, ticketPrev) : null;
+  const cartoniTotali = stats?.cartoniTotali ?? 0;
+  const pezziTotali = stats?.pezziTotali ?? 0;
+  const marginePct = stats?.marginePercentuale ?? null;
 
   // Confronto sui soli mesi CHIUSI dell'anno (mai il mese in corso, che è
   // parziale): stessa fonte dati del grafico sotto (yoy.monthlyComparison),
