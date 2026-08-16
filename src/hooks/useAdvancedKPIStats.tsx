@@ -201,6 +201,13 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         ordiniPerMeseMap[mese].fatturato += totaleOrdine;
         ordiniPerMeseMap[mese].ordini += 1;
 
+        // Fatturato mese × azienda (barre impilate per fornitore nel grafico KPI)
+        if (ordine.azienda_id) {
+          const perAzMese = mensilePerAziendaMap[meseIndex];
+          perAzMese[ordine.azienda_id] = (perAzMese[ordine.azienda_id] || 0) + totaleOrdine;
+        }
+
+
         // Distribuzione stato: verificato ha priorità, poi in_attesa, poi altri
         // (completato/spedito non ancora verificati). annullato/stand_by sono
         // già esclusi dalla query.
