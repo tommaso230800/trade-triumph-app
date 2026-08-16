@@ -7,6 +7,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { DashRevenueChart } from "@/components/dashboard/DashRevenueChart";
 import { DashCard } from "@/components/dashboard/modern/DashCard";
 import { StatTile } from "@/components/dashboard/modern/StatTile";
+import { ModernTopStrip } from "@/components/dashboard/modern/ModernTopStrip";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { useAdvancedKPIStats, type AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
