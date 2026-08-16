@@ -19,8 +19,9 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAziende } from "@/hooks/useAziende";
 import agencyLogo from "@/assets/agency-logo.jpg";
 import {
   Collapsible,
@@ -111,8 +112,10 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
 
   const isChildActive = (item: NavItem) => {
     if (!item.children) return false;
-    return item.children.some(child => location.pathname === child.href) ||
-           location.pathname.startsWith('/clienti/consorzio/');
+    if (item.children.some(child => location.pathname === child.href)) return true;
+    if (item.href === "/clienti") return location.pathname.startsWith('/clienti/consorzio/');
+    if (item.href === "/analytics") return location.pathname.startsWith('/analytics/azienda/');
+    return false;
   };
 
   const NavItemComponent = ({ item }: { item: NavItem }) => {
