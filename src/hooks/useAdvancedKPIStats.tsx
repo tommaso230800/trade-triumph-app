@@ -180,6 +180,10 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       // Intensità riordini cliente×mese (top clienti per fatturato)
       const clienteMonthlyMap = new Map<string, number[]>();
 
+      // Fatturato mese × azienda: alimenta le barre impilate della panoramica KPI.
+      const mensilePerAziendaMap: Record<string, number>[] = Array.from({ length: 12 }, () => ({}));
+
+
       // Fatturato cliente diviso per azienda fornitrice (barra a segmenti
       // nella lista clienti): stessa riga ordine già letta, nessuna query in più.
       const clienteAziendaMap = new Map<string, Map<string, number>>();
@@ -200,6 +204,13 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         const mese = mesiNomi[meseIndex];
         ordiniPerMeseMap[mese].fatturato += totaleOrdine;
         ordiniPerMeseMap[mese].ordini += 1;
+
+        // Fatturato mese × azienda (barre impilate per fornitore nel grafico KPI)
+        if (ordine.azienda_id) {
+          const perAzMese = mensilePerAziendaMap[meseIndex];
+          perAzMese[ordine.azienda_id] = (perAzMese[ordine.azienda_id] || 0) + totaleOrdine;
+        }
+
 
         // Distribuzione stato: verificato ha priorità, poi in_attesa, poi altri
         // (completato/spedito non ancora verificati). annullato/stand_by sono
@@ -501,6 +512,8 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         topGrowers,
         topDecliners,
         ordiniPerMese,
+        mensilePerAzienda: mensilePerAziendaMap,
+
         statusDistribuzione,
         reorderHeatmap,
         // Options for filters

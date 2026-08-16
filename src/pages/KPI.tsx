@@ -9,6 +9,9 @@ import { SectionCard } from "@/components/dashboard/SectionCard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SectionKicker } from "@/components/dashboard/SectionKicker";
 import { InsightsPanel, type Insight } from "@/components/kpi/InsightsPanel";
+import { SalesOverviewPanel } from "@/components/kpi/SalesOverviewPanel";
+import { QuickStatTiles } from "@/components/kpi/QuickStatTiles";
+
 import { MonthlyGoalCard } from "@/components/kpi/MonthlyGoalCard";
 import { RevenueMarginChart } from "@/components/kpi/RevenueMarginChart";
 import { OrdersMonthlyChart } from "@/components/kpi/OrdersMonthlyChart";
@@ -412,14 +415,51 @@ const KPI = () => {
             </div>
           )}
 
-          {/* Riga KPI principale */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
-            <StatCard icon={Euro} label="Fatturato totale" value={formatCompact(stats?.fatturatoTotale || 0)} tone="info" />
-            <StatCard icon={Percent} label="Margine" value={`${(stats?.marginePercentuale || 0).toFixed(1)}%`} tone="violet" />
-            <StatCard icon={ShoppingCart} label="Ordini" value={formatNumberIT(stats?.ordiniTotali || 0)} tone="info" />
-            <StatCard icon={Users} label="Clienti attivi" value={formatNumberIT(stats?.clientiKPI?.length || 0)} tone="success" />
-            <StatCard icon={TrendingUp} label="Scontrino medio" value={formatCurrency(stats?.scontrinoMedio || 0)} tone="warning" />
-          </div>
+          {/* Panoramica vendite (andamento per fornitore + ripartizione) */}
+          <SalesOverviewPanel
+            fatturatoTotale={stats?.fatturatoTotale || 0}
+            deltaPct={hasYoyData ? yoyValue : null}
+            deltaLabel={hasYoyData ? "vs stesso periodo anno prec." : "nessun dato anno prec."}
+            periodoLabel={getPeriodoLabel()}
+            mensilePerAzienda={stats?.mensilePerAzienda || []}
+            aziende={(stats?.aziendeKPI || []).map((a) => ({
+              id: a.id,
+              nome: a.nome,
+              fatturato_totale: a.fatturato_totale,
+            }))}
+            colorMap={aziendaColorMap}
+          />
+
+          {/* Tessere sintetiche */}
+          <QuickStatTiles
+            stats={[
+              {
+                label: "Ordini",
+                value: formatNumberIT(stats?.ordiniTotali || 0),
+                caption: `${formatNumberIT(stats?.cartoniTotali || 0)} cartoni`,
+                icon: ShoppingCart,
+              },
+              {
+                label: "Clienti attivi",
+                value: formatNumberIT(stats?.clientiKPI?.length || 0),
+                caption: "con almeno un ordine nel periodo",
+                icon: Users,
+              },
+              {
+                label: "Scontrino medio",
+                value: formatCurrency(stats?.scontrinoMedio || 0),
+                caption: "per ordine",
+                icon: TrendingUp,
+              },
+              {
+                label: "Margine",
+                value: `${(stats?.marginePercentuale || 0).toFixed(1)}%`,
+                caption: `utile lordo ${formatCurrency(stats?.utileLordo || 0)}`,
+                icon: Percent,
+              },
+            ]}
+          />
+
 
           {/* Altri indicatori: confronti e sconti */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
