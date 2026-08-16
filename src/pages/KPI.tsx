@@ -9,6 +9,9 @@ import { SectionCard } from "@/components/dashboard/SectionCard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SectionKicker } from "@/components/dashboard/SectionKicker";
 import { InsightsPanel, type Insight } from "@/components/kpi/InsightsPanel";
+import { SalesOverviewPanel } from "@/components/kpi/SalesOverviewPanel";
+import { QuickStatTiles } from "@/components/kpi/QuickStatTiles";
+
 import { MonthlyGoalCard } from "@/components/kpi/MonthlyGoalCard";
 import { RevenueMarginChart } from "@/components/kpi/RevenueMarginChart";
 import { OrdersMonthlyChart } from "@/components/kpi/OrdersMonthlyChart";
