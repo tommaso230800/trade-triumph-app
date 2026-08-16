@@ -494,6 +494,36 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
             ]}
           />
 
+          {/* Quadrante ripartizione fatturato (stile analytics dashboard) */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <RevenueDistributionDial
+              totale={stats?.fatturatoTotale || 0}
+              totaleLabel={`Fatturato · ${getPeriodoLabel()}`}
+              slices={(stats?.aziendeKPI || []).map((a) => {
+                const prev = yoy?.aziendeYoY?.get(a.id)?.prev ?? 0;
+                return {
+                  id: a.id,
+                  nome: a.nome,
+                  valore: a.fatturato_totale,
+                  deltaPct: prev > 0 ? ((a.fatturato_totale - prev) / prev) * 100 : null,
+                };
+              })}
+              colorMap={aziendaColorMap}
+            />
+            <RevenueDistributionDial
+              titolo="Ripartizione per marchio"
+              totaleLabel="Fatturato marchi"
+              totale={(stats?.brandsKPI || []).reduce((s, b) => s + b.fatturato_totale, 0)}
+              slices={(stats?.brandsKPI || []).map((b) => ({
+                id: b.id,
+                nome: b.name,
+                valore: b.fatturato_totale,
+                deltaPct: null,
+              }))}
+              colorMap={aziendaColorMap}
+            />
+          </div>
+
 
           {/* Altri indicatori: confronti e sconti */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
