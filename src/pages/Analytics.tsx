@@ -763,4 +763,4 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
   );
 };
 
-export default KPI;
+export default Analytics;
