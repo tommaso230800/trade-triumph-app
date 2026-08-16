@@ -11,6 +11,8 @@ import { SectionKicker } from "@/components/dashboard/SectionKicker";
 import { InsightsPanel, type Insight } from "@/components/kpi/InsightsPanel";
 import { SalesOverviewPanel } from "@/components/kpi/SalesOverviewPanel";
 import { QuickStatTiles } from "@/components/kpi/QuickStatTiles";
+import { PeriodRangeTabs, type RangePreset } from "@/components/kpi/PeriodRangeTabs";
+import { RevenueDistributionDial } from "@/components/kpi/RevenueDistributionDial";
 
 import { MonthlyGoalCard } from "@/components/kpi/MonthlyGoalCard";
 import { RevenueMarginChart } from "@/components/kpi/RevenueMarginChart";
