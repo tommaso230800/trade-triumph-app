@@ -512,6 +512,8 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         topGrowers,
         topDecliners,
         ordiniPerMese,
+        mensilePerAzienda: mensilePerAziendaMap,
+
         statusDistribuzione,
         reorderHeatmap,
         // Options for filters
