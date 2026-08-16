@@ -465,6 +465,45 @@ const Index = () => {
             </div>
           </header>
 
+          {/* Striscia sintesi (dati reali dell'agente: nessuna metrica e-commerce) */}
+          {!isLoading && (
+            <ModernTopStrip
+              cells={[
+                {
+                  label: "Fatturato",
+                  sub: heroPeriodText[period],
+                  value: formatCurrency(fatturato),
+                  deltaPct: fatturatoDelta,
+                  deltaLabel: `vs ${yearPrev}`,
+                  series: sparkValues.length > 0 ? sparkValues : [0],
+                  chart: "line",
+                },
+                {
+                  label: "Mese in corso",
+                  sub: format(now, "MMMM yyyy", { locale: it }),
+                  value: formatCurrency(yoy?.monthlyComparison[currentMonthIndex]?.curr ?? 0),
+                  deltaPct: deltaPct(
+                    yoy?.monthlyComparison[currentMonthIndex]?.curr ?? 0,
+                    yoy?.monthlyComparison[currentMonthIndex]?.prev ?? 0
+                  ),
+                  deltaLabel: `vs ${format(now, "MMMM", { locale: it })} ${yearPrev}`,
+                  series: (yoy?.monthlyComparison || []).map((m) => m.curr),
+                  chart: "bars",
+                },
+                {
+                  label: "Clienti serviti",
+                  sub: "nel periodo",
+                  value: clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D",
+                  deltaPct: clientiDelta,
+                  deltaLabel: `vs ${yearPrev}`,
+                  series: (yoy?.monthlyComparison || []).map((m) => m.curr),
+                  chart: "bars",
+                },
+              ]}
+            />
+          )}
+
+
           {/* 2 — KPI: fatturato protagonista + tessere di supporto */}
           {isLoading ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr,1fr]">
