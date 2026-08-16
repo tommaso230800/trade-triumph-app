@@ -236,8 +236,11 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
   const getPeriodoLabel = () => {
     const fmt = (d?: Date | null) => (d ? format(d, "dd/MM/yyyy", { locale: it }) : "—");
     const labels: Record<PeriodPreset, string> = {
+      "7d": "Ultimi 7 giorni",
+      "30d": "Ultimi 30 giorni",
+      "90d": "Ultimi 90 giorni",
+      "1y": "Ultimi 12 mesi",
       mese: "Questo Mese",
-      trimestre: "Ultimi 90 Giorni",
       semestre: "Ultimi 6 Mesi",
       anno: "Anno in Corso",
       custom: `${fmt(dateRange.start)} → ${fmt(dateRange.end)}`,
