@@ -173,18 +173,18 @@ const Index = () => {
   const [period, setPeriod] = useState<Period>("mese");
   const { user } = useAuth();
 
-  // Confini "chiusi": il mese in corso è sempre parziale, non entra mai nel
-  // confronto anno su anno (vedi lib/periodRange.ts).
-  const start = useMemo(() => closedPeriodStart(period, now), [period, now]);
-  const end = useMemo(() => closedPeriodEnd(period, now), [period, now]);
+  // Stessi confini della pagina KPI (periodo aperto, mese in corso incluso):
+  // dashboard e KPI devono leggere esattamente gli stessi ordini.
+  const start = useMemo(() => periodStart(period, now), [period, now]);
+  const end = useMemo(() => periodEnd(now), [now]);
 
-  const { data: yoy, isLoading: yoyLoading } = useKPIYoY({
-    clienteIds: [],
-    aziendaIds: [],
-    brandIds: [],
-    startDate: start,
-    endDate: end,
-  });
+  const kpiFilters: AdvancedKPIFilters = useMemo(
+    () => ({ clienteIds: [], aziendaIds: [], brandIds: [], startDate: start, endDate: end }),
+    [start, end]
+  );
+
+  const { data: yoy, isLoading: yoyLoading } = useKPIYoY(kpiFilters);
+  const { data: stats, isLoading: statsLoading } = useAdvancedKPIStats(kpiFilters);
 
   const { data: forecastData, isLoading: forecastLoading } = useReorderForecast();
   const { data: aziendeList, isLoading: aziendeLoading } = useAziende();
