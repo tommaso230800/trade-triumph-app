@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { allocateRevenueByRiga, orderDate, isCounted, type OrdineLike } from "@/lib/metricsEngine";
+import { toLocalISODate } from "@/lib/periodRange";
+
 
 export type AdvancedKPIFilters = {
   clienteIds: string[];
@@ -113,11 +115,12 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
 
       // Apply date filters
       if (filters.startDate) {
-        ordiniQuery = ordiniQuery.gte("data_ordine", filters.startDate.toISOString().split("T")[0]);
+        ordiniQuery = ordiniQuery.gte("data_ordine", toLocalISODate(filters.startDate));
       }
       if (filters.endDate) {
-        ordiniQuery = ordiniQuery.lte("data_ordine", filters.endDate.toISOString().split("T")[0]);
+        ordiniQuery = ordiniQuery.lte("data_ordine", toLocalISODate(filters.endDate));
       }
+
 
       // Apply client filter
       if (filters.clienteIds.length > 0) {
