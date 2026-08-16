@@ -7,6 +7,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { DashRevenueChart } from "@/components/dashboard/DashRevenueChart";
 import { DashCard } from "@/components/dashboard/modern/DashCard";
 import { StatTile } from "@/components/dashboard/modern/StatTile";
+import { ModernTopStrip } from "@/components/dashboard/modern/ModernTopStrip";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { useAdvancedKPIStats, type AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
@@ -464,6 +465,45 @@ const Index = () => {
               </button>
             </div>
           </header>
+
+          {/* Striscia sintesi (dati reali dell'agente: nessuna metrica e-commerce) */}
+          {!isLoading && (
+            <ModernTopStrip
+              cells={[
+                {
+                  label: "Fatturato",
+                  sub: heroPeriodText[period],
+                  value: formatCurrency(fatturato),
+                  deltaPct: fatturatoDelta,
+                  deltaLabel: `vs ${yearPrev}`,
+                  series: sparkValues.length > 0 ? sparkValues : [0],
+                  chart: "line",
+                },
+                {
+                  label: "Mese in corso",
+                  sub: format(now, "MMMM yyyy", { locale: it }),
+                  value: formatCurrency(yoy?.monthlyComparison[currentMonthIndex]?.curr ?? 0),
+                  deltaPct: deltaPct(
+                    yoy?.monthlyComparison[currentMonthIndex]?.curr ?? 0,
+                    yoy?.monthlyComparison[currentMonthIndex]?.prev ?? 0
+                  ),
+                  deltaLabel: `vs ${format(now, "MMMM", { locale: it })} ${yearPrev}`,
+                  series: (yoy?.monthlyComparison || []).map((m) => m.curr),
+                  chart: "bars",
+                },
+                {
+                  label: "Clienti serviti",
+                  sub: "nel periodo",
+                  value: clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D",
+                  deltaPct: clientiDelta,
+                  deltaLabel: `vs ${yearPrev}`,
+                  series: (yoy?.monthlyComparison || []).map((m) => m.curr),
+                  chart: "bars",
+                },
+              ]}
+            />
+          )}
+
 
           {/* 2 — KPI: fatturato protagonista + tessere di supporto */}
           {isLoading ? (
