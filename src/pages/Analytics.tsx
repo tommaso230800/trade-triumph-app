@@ -308,8 +308,8 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
       <div className="-m-4 -mt-6 min-h-[100dvh] bg-scatto-bg p-4 pt-6 lg:-m-8 lg:p-8">
         <div className="space-y-6">
           <PageHeader
-            title="Analisi KPI"
-            description="Performance per cliente, azienda, marchio e periodo"
+            title={title || "Analytics"}
+            description={description || "Performance per cliente, azienda, marchio e periodo"}
             actions={
               <>
                 {hasActiveFilters && (
