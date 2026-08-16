@@ -19,8 +19,9 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAziende } from "@/hooks/useAziende";
 import agencyLogo from "@/assets/agency-logo.jpg";
 import {
   Collapsible,
@@ -41,10 +42,10 @@ type NavItem = {
   children?: NavChild[];
 };
 
-const navigation: NavItem[] = [
+const baseNavigation: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
-  { name: "KPI", href: "/kpi", icon: BarChart3 },
+  { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
   { name: "Riordino", href: "/riordino", icon: Repeat },
@@ -79,6 +80,20 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState<string[]>([]);
+  const { data: aziende } = useAziende();
+
+  // Analytics ha una sottopagina per ogni azienda: l'elenco è generato dal
+  // database, quindi ogni nuova azienda compare qui automaticamente.
+  const navigation = useMemo<NavItem[]>(() => {
+    const children = (aziende || [])
+      .slice()
+      .sort((a, b) => a.nome.localeCompare(b.nome))
+      .map((a) => ({ name: a.nome, href: `/analytics/azienda/${a.id}` }));
+    return baseNavigation.map((item) =>
+      item.href === "/analytics" && children.length > 0 ? { ...item, children } : item
+    );
+  }, [aziende]);
+
 
   const closeMobile = () => onMobileOpenChange(false);
 
@@ -97,8 +112,10 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
 
   const isChildActive = (item: NavItem) => {
     if (!item.children) return false;
-    return item.children.some(child => location.pathname === child.href) ||
-           location.pathname.startsWith('/clienti/consorzio/');
+    if (item.children.some(child => location.pathname === child.href)) return true;
+    if (item.href === "/clienti") return location.pathname.startsWith('/clienti/consorzio/');
+    if (item.href === "/analytics") return location.pathname.startsWith('/analytics/azienda/');
+    return false;
   };
 
   const NavItemComponent = ({ item }: { item: NavItem }) => {

@@ -263,6 +263,9 @@ const Index = () => {
     .slice(0, currentMonthIndex + 1)
     .map((m) => m.curr);
   const sparkPath = buildSparkPath(sparkValues.length > 0 ? sparkValues : [0]);
+  // Fatturato dell'anno in corso: 1° gennaio → oggi (somma dei mesi già
+  // trascorsi + mese corrente), indipendente dal periodo selezionato sopra.
+  const fatturatoYTD = sparkValues.reduce((s, v) => s + v, 0);
 
   const insight = (() => {
     if (!chartClosedComparison || chartClosedComparison.prev <= 0 || chartClosedComparison.deltaPct === null) {
@@ -471,11 +474,11 @@ const Index = () => {
             <ModernTopStrip
               cells={[
                 {
-                  label: "Fatturato",
-                  sub: heroPeriodText[period],
-                  value: formatCurrency(fatturato),
-                  deltaPct: fatturatoDelta,
-                  deltaLabel: `vs ${yearPrev}`,
+                  label: "Fatturato anno in corso",
+                  sub: `1 gen – ${format(now, "d MMM yyyy", { locale: it })}`,
+                  value: formatCurrency(fatturatoYTD),
+                  deltaPct: chartClosedComparison?.deltaPct ?? null,
+                  deltaLabel: `mesi chiusi vs ${yearPrev}`,
                   series: sparkValues.length > 0 ? sparkValues : [0],
                   chart: "line",
                 },
@@ -597,7 +600,7 @@ const Index = () => {
                   value={ticket === null ? "N/D" : formatCurrency(ticket)}
                   deltaPct={ticketDelta}
                   icon={<Receipt className="h-5 w-5" />}
-                  href="/kpi"
+                  href="/analytics"
                 />
                 <DashCard bodyClassName="grid grid-cols-2 gap-4">
                   <div>

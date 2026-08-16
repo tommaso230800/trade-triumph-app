@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { queryClient, persister } from "@/lib/queryClient";
@@ -23,7 +23,8 @@ const Clienti = lazy(() => import("./pages/Clienti"));
 const ClienteDettaglio = lazy(() => import("./pages/ClienteDettaglio"));
 const ConsorzioDettaglio = lazy(() => import("./pages/ConsorzioDettaglio"));
 const Ordini = lazy(() => import("./pages/Ordini"));
-const KPI = lazy(() => import("./pages/KPI"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const AnalyticsAzienda = lazy(() => import("./pages/AnalyticsAzienda"));
 const Provvigioni = lazy(() => import("./pages/Provvigioni"));
 const Canvass = lazy(() => import("./pages/Canvass"));
 const AssistenteAICommerciale = lazy(() => import("./pages/AssistenteAICommerciale"));
@@ -60,7 +61,10 @@ const App = () => (
                 <Route path="/clienti/:id" element={<ClienteDettaglio />} />
                 <Route path="/clienti/consorzio/:slug" element={<ConsorzioDettaglio />} />
                 <Route path="/ordini" element={<Ordini />} />
-               <Route path="/kpi" element={<KPI />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/analytics/azienda/:id" element={<AnalyticsAzienda />} />
+                {/* Vecchio percorso KPI: reindirizza ad Analytics */}
+                <Route path="/kpi" element={<Navigate to="/analytics" replace />} />
                 <Route path="/provvigioni" element={<Provvigioni />} />
                 <Route path="/canvass" element={<Canvass />} />
                 <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
