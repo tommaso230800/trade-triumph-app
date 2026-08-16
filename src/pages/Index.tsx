@@ -447,63 +447,52 @@ const Index = () => {
             </div>
           </header>
 
-          {/* 2 — KPI: fatturato protagonista + supporto in mini-grid */}
+          {/* 2 — KPI: fatturato protagonista + tessere di supporto */}
           {isLoading ? (
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.35fr,1fr] lg:gap-4">
-              <Skeleton className="h-[220px] rounded-[20px]" />
-              <div className="grid grid-cols-3 gap-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-[220px] rounded-[20px] lg:h-full" />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr,1fr]">
+              <Skeleton className="h-[260px] rounded-xl" />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-[120px] rounded-xl" />
                 ))}
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1.35fr,1fr] lg:gap-4">
-              <div className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:p-6">
-                <p className="text-xs font-semibold text-scatto-muted">
-                  Fatturato · <span className="capitalize">{heroPeriodText[period]}</span>
-                </p>
-                <p className="mt-2 text-3xl font-bold tracking-tight tabular-nums text-scatto-ink sm:text-4xl">
-                  {formatCurrency(fatturato)}
-                </p>
-                <div className="mt-2.5 flex items-center gap-2">
-                  <DeltaBadge deltaPct={fatturatoDelta} size="md" />
-                  <span className="text-xs text-scatto-muted">{heroConfrontoText[period]}</span>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr,1fr]">
+              <DashCard bodyClassName="flex flex-col gap-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-scatto-muted">
+                      Fatturato · <span className="capitalize">{heroPeriodText[period]}</span>
+                    </p>
+                    <p className="mt-1 font-display text-3xl font-bold tracking-tight tabular-nums text-scatto-ink sm:text-4xl">
+                      {formatCurrency(fatturato)}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <DeltaBadge deltaPct={fatturatoDelta} size="md" />
+                      <span className="text-xs text-scatto-muted">{heroConfrontoText[period]}</span>
+                    </div>
+                  </div>
+                  <span className="flex-shrink-0 rounded-lg border border-scatto-line p-2.5 text-scatto-muted">
+                    <Euro className="h-5 w-5" />
+                  </span>
                 </div>
-                <svg viewBox="0 0 300 56" preserveAspectRatio="none" className="mt-4 h-14 w-full" aria-hidden="true">
-                  <path d={sparkPath} fill="none" stroke="hsl(var(--scatto-ink))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
 
-              <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
-                    <p className="text-[11px] font-semibold text-scatto-muted">Ordini</p>
-                    <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
-                      {formatNumberIT(ordiniCount)}
-                    </p>
-                    <div className="mt-2"><DeltaBadge deltaPct={ordiniDelta} /></div>
-                  </div>
-                  <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
-                    <p className="text-[11px] font-semibold text-scatto-muted">Clienti attivi</p>
-                    <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
-                      {clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"}
-                    </p>
-                    <div className="mt-2"><DeltaBadge deltaPct={clientiDelta} /></div>
-                  </div>
-                  <div className="rounded-[20px] bg-scatto-surface p-3.5 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
-                    <p className="text-[11px] font-semibold text-scatto-muted">Scontrino medio</p>
-                    <p className="mt-1.5 text-xl font-bold tracking-tight tabular-nums text-scatto-ink">
-                      {ticket === null ? "N/D" : formatCurrency(ticket)}
-                    </p>
-                    <div className="mt-2"><DeltaBadge deltaPct={ticketDelta} /></div>
-                  </div>
-                </div>
+                <svg viewBox="0 0 300 56" preserveAspectRatio="none" className="h-14 w-full" aria-hidden="true">
+                  <path
+                    d={sparkPath}
+                    fill="none"
+                    stroke="hsl(var(--scatto-ink))"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
 
                 {obiettivoMensile && obiettivoMensile.obiettivo > 0 && (
-                  <div className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)]">
+                  <div className="border-t border-scatto-line pt-4">
                     <div className="flex items-baseline gap-2">
-                      <h3 className="font-display text-sm font-bold tracking-tight text-scatto-ink">
+                      <h3 className="text-sm font-semibold text-scatto-ink">
                         Obiettivo di {format(now, "MMMM", { locale: it })}
                       </h3>
                       <span className="ml-auto text-sm font-bold tabular-nums text-scatto-ink">
@@ -513,39 +502,82 @@ const Index = () => {
                     <div className="my-3 h-2 w-full overflow-hidden rounded-full bg-scatto-ink/5">
                       <div
                         className="h-full rounded-full bg-scatto-ink"
-                        style={{ width: `${Math.min((obiettivoMensile.fatturatoMese / obiettivoMensile.obiettivo) * 100, 100)}%` }}
+                        style={{
+                          width: `${Math.min((obiettivoMensile.fatturatoMese / obiettivoMensile.obiettivo) * 100, 100)}%`,
+                        }}
                       />
                     </div>
-                    <div className="flex justify-between text-[11px] font-semibold text-scatto-muted">
-                      <span>{formatCurrency(obiettivoMensile.fatturatoMese)} su {formatCurrency(obiettivoMensile.obiettivo)}</span>
+                    <div className="flex justify-between text-xs text-scatto-muted">
+                      <span>
+                        {formatCurrency(obiettivoMensile.fatturatoMese)} su {formatCurrency(obiettivoMensile.obiettivo)}
+                      </span>
                       <span>{giorniRimanenti > 0 ? `restano ${giorniRimanenti} giorni` : "ultimo giorno"}</span>
                     </div>
                   </div>
                 )}
+              </DashCard>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <StatTile
+                  label="Ordini"
+                  value={formatNumberIT(ordiniCount)}
+                  deltaPct={ordiniDelta}
+                  icon={<ShoppingCart className="h-5 w-5" />}
+                  href="/ordini"
+                  hrefLabel="Vedi ordini"
+                />
+                <StatTile
+                  label="Clienti attivi"
+                  value={clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"}
+                  deltaPct={clientiDelta}
+                  icon={<Users className="h-5 w-5" />}
+                  href="/clienti"
+                  hrefLabel="Vedi clienti"
+                />
+                <StatTile
+                  label="Scontrino medio"
+                  value={ticket === null ? "N/D" : formatCurrency(ticket)}
+                  deltaPct={ticketDelta}
+                  icon={<Receipt className="h-5 w-5" />}
+                  href="/kpi"
+                />
+                <DashCard bodyClassName="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-scatto-muted">Cartoni</p>
+                    <p className="mt-1 font-display text-xl font-bold tabular-nums text-scatto-ink">
+                      {formatNumberIT(cartoniTotali)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-scatto-muted">Pezzi</p>
+                    <p className="mt-1 font-display text-xl font-bold tabular-nums text-scatto-ink">
+                      {formatNumberIT(pezziTotali)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-scatto-muted">Margine</p>
+                    <p className="mt-1 font-display text-xl font-bold tabular-nums text-scatto-ink">
+                      {marginePct === null ? "N/D" : `${marginePct.toFixed(1)}%`}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-scatto-muted">Fornitori</p>
+                    <p className="mt-1 font-display text-xl font-bold tabular-nums text-scatto-ink">
+                      {formatNumberIT(fornitori.length)}
+                    </p>
+                  </div>
+                </DashCard>
               </div>
             </div>
           )}
 
           {/* 3 — GRAFICI */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:gap-5">
-            <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:col-span-2 lg:p-6">
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-scatto-ink">
-                    <i className="inline-block h-4 w-1 rounded-full bg-scatto-ink" />
-                    Andamento fatturato
-                  </h2>
-                  <div className="mt-1.5 flex items-center gap-3 text-[11px] font-medium text-scatto-muted">
-                    <span className="flex items-center gap-1.5">
-                      <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-ink" />
-                      {yoy?.yearCurr ?? now.getFullYear()}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-danger" />
-                      {yoy?.yearPrev ?? now.getFullYear() - 1}
-                    </span>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <DashCard
+              className="lg:col-span-2"
+              title="Andamento fatturato"
+              icon={<TrendingUp className="h-4 w-4" />}
+              action={
                 <div className="text-right">
                   <span
                     className={`text-sm font-semibold tabular-nums ${
@@ -560,12 +592,23 @@ const Index = () => {
                       ? "N/D"
                       : `${chartClosedComparison.deltaPct >= 0 ? "+" : "−"}${Math.abs(chartClosedComparison.deltaPct).toFixed(1)}%`}
                   </span>
-                  <p className="mt-0.5 text-[10px] text-scatto-muted">
+                  <p className="mt-0.5 text-xs text-scatto-muted">
                     {chartClosedComparison
                       ? `Gen–${chartClosedComparison.lastMonthLabel} · mesi chiusi`
                       : "nessun mese chiuso"}
                   </p>
                 </div>
+              }
+            >
+              <div className="mb-4 flex items-center gap-3 text-xs text-scatto-muted">
+                <span className="flex items-center gap-1.5">
+                  <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-ink" />
+                  {yoy?.yearCurr ?? now.getFullYear()}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-danger" />
+                  {yoy?.yearPrev ?? now.getFullYear() - 1}
+                </span>
               </div>
               {isLoading ? (
                 <Skeleton className="h-[220px] w-full rounded-xl" />
@@ -577,13 +620,9 @@ const Index = () => {
                   yearPrev={yoy?.yearPrev ?? now.getFullYear() - 1}
                 />
               )}
-            </section>
+            </DashCard>
 
-            <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:p-6">
-              <h2 className="mb-4 flex items-center gap-2 font-display text-base font-semibold tracking-tight text-scatto-ink">
-                <i className="inline-block h-4 w-1 rounded-full bg-scatto-violet" />
-                Fatturato per fornitore
-              </h2>
+            <DashCard title="Fatturato per fornitore" icon={<Building2 className="h-4 w-4" />}>
               {isLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -642,26 +681,26 @@ const Index = () => {
                   )}
                 </>
               )}
-            </section>
+            </DashCard>
           </div>
 
-          {/* 4 + 5 — DA RICONTATTARE (protagonista) + ATTIVITÀ RECENTE */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start lg:gap-5">
-            <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:col-span-2 lg:p-6">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="flex items-center gap-2 font-display text-lg font-bold tracking-tight text-scatto-ink">
-                  <i className="inline-block h-5 w-1 rounded-full bg-scatto-warning" />
-                  Da ricontattare
-                </h2>
+          {/* 4 + 5 — DA RICONTATTARE (protagonista) + ULTIMI ORDINI */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
+            <DashCard
+              className="lg:col-span-2"
+              title="Da ricontattare"
+              icon={<AlertTriangle className="h-4 w-4" />}
+              action={
                 <Link to="/riordino" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
                   Vedi tutti <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
-              </div>
-
+              }
+              bodyClassName="p-0 sm:p-0"
+            >
               {isLoading ? (
-                <div className="space-y-2">
+                <div className="space-y-2 p-4 sm:p-5">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+                    <Skeleton key={i} className="h-16 w-full rounded-xl" />
                   ))}
                 </div>
               ) : daRicontattare.length === 0 ? (
@@ -680,7 +719,7 @@ const Index = () => {
                       <li key={c.cliente_id}>
                         <Link
                           to={`/clienti/${c.cliente_id}`}
-                          className="flex min-h-[64px] items-center gap-3 py-3 transition-colors hover:bg-scatto-ink/[0.02]"
+                          className="flex min-h-[64px] items-center gap-3 px-4 py-3 transition-colors hover:bg-scatto-ink/[0.02] sm:px-5"
                         >
                           <span
                             className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-bold"
@@ -719,21 +758,20 @@ const Index = () => {
                   })}
                 </ul>
               )}
-            </section>
+            </DashCard>
 
-            <section className="rounded-[20px] bg-scatto-surface p-4 shadow-[0_6px_24px_-12px_hsl(225_18%_9%/0.18)] lg:p-6">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="flex items-center gap-2 font-display text-base font-semibold tracking-tight text-scatto-ink">
-                  <i className="inline-block h-4 w-1 rounded-full bg-scatto-success" />
-                  Ultimi ordini
-                </h2>
+            <DashCard
+              title="Ultimi ordini"
+              icon={<Package className="h-4 w-4" />}
+              action={
                 <Link to="/ordini" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
                   Tutti <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
-              </div>
-
+              }
+              bodyClassName="p-0 sm:p-0"
+            >
               {isLoading ? (
-                <div className="space-y-2">
+                <div className="space-y-2 p-4 sm:p-5">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Skeleton key={i} className="h-12 w-full rounded-xl" />
                   ))}
@@ -750,7 +788,7 @@ const Index = () => {
                         <button
                           type="button"
                           onClick={() => setSelectedOrderId(o.id)}
-                          className="flex min-h-[56px] w-full items-center gap-3 rounded-lg py-2.5 text-left transition-colors hover:bg-scatto-ink/[0.03] touch-target"
+                          className="flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-scatto-ink/[0.03] sm:px-5 touch-target"
                         >
                           <span
                             className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-bold"
@@ -776,7 +814,7 @@ const Index = () => {
                   })}
                 </ul>
               )}
-            </section>
+            </DashCard>
           </div>
         </div>
       </div>
