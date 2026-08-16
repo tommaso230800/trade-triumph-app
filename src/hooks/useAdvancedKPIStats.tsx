@@ -180,6 +180,10 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       // Intensità riordini cliente×mese (top clienti per fatturato)
       const clienteMonthlyMap = new Map<string, number[]>();
 
+      // Fatturato mese × azienda: alimenta le barre impilate della panoramica KPI.
+      const mensilePerAziendaMap: Record<string, number>[] = Array.from({ length: 12 }, () => ({}));
+
+
       // Fatturato cliente diviso per azienda fornitrice (barra a segmenti
       // nella lista clienti): stessa riga ordine già letta, nessuna query in più.
       const clienteAziendaMap = new Map<string, Map<string, number>>();
