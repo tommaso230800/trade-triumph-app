@@ -263,6 +263,9 @@ const Index = () => {
     .slice(0, currentMonthIndex + 1)
     .map((m) => m.curr);
   const sparkPath = buildSparkPath(sparkValues.length > 0 ? sparkValues : [0]);
+  // Fatturato dell'anno in corso: 1° gennaio → oggi (somma dei mesi già
+  // trascorsi + mese corrente), indipendente dal periodo selezionato sopra.
+  const fatturatoYTD = sparkValues.reduce((s, v) => s + v, 0);
 
   const insight = (() => {
     if (!chartClosedComparison || chartClosedComparison.prev <= 0 || chartClosedComparison.deltaPct === null) {
