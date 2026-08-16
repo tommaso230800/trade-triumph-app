@@ -59,9 +59,17 @@ import {
 } from "lucide-react";
 import { exportKPIToPDF, exportKPIToCSV } from "@/lib/exportKPI";
 
-type PeriodPreset = "mese" | "trimestre" | "semestre" | "anno" | "custom";
+type PeriodPreset = "7d" | "30d" | "90d" | "1y" | "mese" | "semestre" | "anno" | "custom";
 
-const KPI = () => {
+interface AnalyticsProps {
+  /** Se valorizzato, la pagina mostra SOLO i dati di questa azienda. */
+  lockedAziendaId?: string;
+  /** Titolo/descrizione della testata (sottopagina azienda). */
+  title?: string;
+  description?: string;
+}
+
+const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {}) => {
   const [periodPreset, setPeriodPreset] = useState<PeriodPreset>("anno");
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
@@ -75,10 +83,16 @@ const KPI = () => {
   const dateRange = useMemo(() => {
     const now = new Date();
     switch (periodPreset) {
+      case "7d":
+        return { start: subDays(now, 6), end: now };
+      case "30d":
+        return { start: subDays(now, 29), end: now };
+      case "90d":
+        return { start: subDays(now, 89), end: now };
+      case "1y":
+        return { start: subDays(now, 364), end: now };
       case "mese":
         return { start: startOfMonth(now), end: endOfMonth(now) };
-      case "trimestre":
-        return { start: subDays(now, 89), end: now };
       case "semestre":
         return { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) };
       case "anno":
@@ -90,9 +104,12 @@ const KPI = () => {
     }
   }, [periodPreset, customStartDate, customEndDate]);
 
+  // Sottopagina azienda: il filtro fornitore è bloccato e non modificabile.
+  const aziendaIds = lockedAziendaId ? [lockedAziendaId] : selectedAziende;
+
   const filters: AdvancedKPIFilters = {
     clienteIds: selectedClienti,
-    aziendaIds: selectedAziende,
+    aziendaIds,
     brandIds: selectedBrands,
     startDate: dateRange.start,
     endDate: dateRange.end,
