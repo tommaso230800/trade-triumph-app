@@ -41,10 +41,10 @@ type NavItem = {
   children?: NavChild[];
 };
 
-const navigation: NavItem[] = [
+const baseNavigation: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
-  { name: "KPI", href: "/kpi", icon: BarChart3 },
+  { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
   { name: "Riordino", href: "/riordino", icon: Repeat },
