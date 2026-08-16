@@ -5,7 +5,10 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DashRevenueChart } from "@/components/dashboard/DashRevenueChart";
+import { DashCard } from "@/components/dashboard/modern/DashCard";
+import { StatTile } from "@/components/dashboard/modern/StatTile";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
+import { useAdvancedKPIStats, type AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
 import { useAziende } from "@/hooks/useAziende";
 import { useOrdini, type Ordine } from "@/hooks/useOrdini";
@@ -14,13 +17,24 @@ import { useClienti } from "@/hooks/useClienti";
 import { useBrands } from "@/hooks/useBrands";
 import { useAuth } from "@/hooks/useAuth";
 import { aziendaColorValue, buildAziendaColorMap } from "@/lib/aziendaColor";
-import { closedPeriodStart, closedPeriodEnd, type DashboardPeriod } from "@/lib/periodRange";
+import { periodStart, periodEnd, type DashboardPeriod } from "@/lib/periodRange";
 import { supabase } from "@/integrations/supabase/client";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Drawer, DrawerContent, DrawerClose } from "@/components/ui/drawer";
 import type { ProformaData } from "@/components/ordini/ProformaDialog";
-import { ChevronRight, Download } from "lucide-react";
+import {
+  ChevronRight,
+  Download,
+  Euro,
+  ShoppingCart,
+  Users,
+  Receipt,
+  TrendingUp,
+  Building2,
+  AlertTriangle,
+  Package,
+} from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
 
 // html2canvas + jsPDF pesano ~590kB: caricati solo al primo "Apri proforma",
