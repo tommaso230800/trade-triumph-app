@@ -79,6 +79,20 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState<string[]>([]);
+  const { data: aziende } = useAziende();
+
+  // Analytics ha una sottopagina per ogni azienda: l'elenco è generato dal
+  // database, quindi ogni nuova azienda compare qui automaticamente.
+  const navigation = useMemo<NavItem[]>(() => {
+    const children = (aziende || [])
+      .slice()
+      .sort((a, b) => a.nome.localeCompare(b.nome))
+      .map((a) => ({ name: a.nome, href: `/analytics/azienda/${a.id}` }));
+    return baseNavigation.map((item) =>
+      item.href === "/analytics" && children.length > 0 ? { ...item, children } : item
+    );
+  }, [aziende]);
+
 
   const closeMobile = () => onMobileOpenChange(false);
 
