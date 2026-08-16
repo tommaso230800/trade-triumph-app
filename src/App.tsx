@@ -61,7 +61,10 @@ const App = () => (
                 <Route path="/clienti/:id" element={<ClienteDettaglio />} />
                 <Route path="/clienti/consorzio/:slug" element={<ConsorzioDettaglio />} />
                 <Route path="/ordini" element={<Ordini />} />
-               <Route path="/kpi" element={<KPI />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/analytics/azienda/:id" element={<AnalyticsAzienda />} />
+                {/* Vecchio percorso KPI: reindirizza ad Analytics */}
+                <Route path="/kpi" element={<Navigate to="/analytics" replace />} />
                 <Route path="/provvigioni" element={<Provvigioni />} />
                 <Route path="/canvass" element={<Canvass />} />
                 <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
