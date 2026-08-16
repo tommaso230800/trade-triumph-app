@@ -348,14 +348,23 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
 
           {/* Filtri a pillole */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Finestre rolling rapide: chiudono sempre sul giorno corrente */}
+            <PeriodRangeTabs
+              value={(["7d", "30d", "90d", "1y"] as const).includes(periodPreset as any) ? (periodPreset as RangePreset) : null}
+              onChange={(r) => setPeriodPreset(r)}
+            />
+
             <Select value={periodPreset} onValueChange={(v) => setPeriodPreset(v as PeriodPreset)}>
               <SelectTrigger className="h-auto w-auto gap-1.5 rounded-full border border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm [&>svg]:text-scatto-muted">
                 <CalendarIcon className="h-3.5 w-3.5 text-scatto-muted" />
                 <SelectValue placeholder="Periodo" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="7d">Ultimi 7 giorni</SelectItem>
+                <SelectItem value="30d">Ultimi 30 giorni</SelectItem>
+                <SelectItem value="90d">Ultimi 90 giorni</SelectItem>
+                <SelectItem value="1y">Ultimi 12 mesi</SelectItem>
                 <SelectItem value="mese">Questo mese</SelectItem>
-                <SelectItem value="trimestre">Ultimi 90 giorni</SelectItem>
                 <SelectItem value="semestre">Ultimi 6 mesi</SelectItem>
                 <SelectItem value="anno">Anno in corso</SelectItem>
                 <SelectItem value="custom">Personalizzato</SelectItem>
@@ -369,13 +378,15 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
               placeholder="Tutti i clienti"
               className="h-auto w-auto min-h-0 rounded-full border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm"
             />
-            <MultiSelect
-              options={aziendeOptions}
-              values={selectedAziende}
-              onValuesChange={setSelectedAziende}
-              placeholder="Tutte le aziende"
-              className="h-auto w-auto min-h-0 rounded-full border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm"
-            />
+            {!lockedAziendaId && (
+              <MultiSelect
+                options={aziendeOptions}
+                values={selectedAziende}
+                onValuesChange={setSelectedAziende}
+                placeholder="Tutte le aziende"
+                className="h-auto w-auto min-h-0 rounded-full border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm"
+              />
+            )}
             <MultiSelect
               options={brandsOptions}
               values={selectedBrands}
@@ -383,6 +394,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
               placeholder="Tutti i marchi"
               className="h-auto w-auto min-h-0 rounded-full border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm"
             />
+
 
             {hasActiveFilters && (
               <button
