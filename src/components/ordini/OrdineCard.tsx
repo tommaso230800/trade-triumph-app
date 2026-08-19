@@ -70,10 +70,8 @@ export function OrdineCard({
 
   return (
     <div
-      className={`overflow-hidden rounded-2xl bg-scatto-surface ${
-        verificato
-          ? "border-[2.5px] border-scatto-success shadow-[0_4px_16px_rgba(5,150,105,0.16)]"
-          : "border border-scatto-line shadow-[0_2px_10px_rgba(18,20,26,0.05)]"
+      className={`overflow-hidden rounded-xl bg-scatto-surface shadow-[0_1px_2px_hsl(225_18%_9%/0.05)] ${
+        verificato ? "border border-scatto-success/50" : "border border-scatto-line"
       } ${muted ? "opacity-60" : ""} ${
         selected ? "ring-2 ring-scatto-accent ring-offset-2 ring-offset-scatto-bg" : ""
       }`}
