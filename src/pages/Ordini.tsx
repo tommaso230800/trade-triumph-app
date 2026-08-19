@@ -55,6 +55,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { OrdiniStatsRow } from "@/components/ordini/OrdiniStatsRow";
 import { OrdiniFilters } from "@/components/ordini/OrdiniFilters";
 import { OrdiniList } from "@/components/ordini/OrdiniList";
+import { DashCard } from "@/components/dashboard/modern/DashCard";
 import { OrdiniSelectionBar } from "@/components/ordini/OrdiniSelectionBar";
 import type { OrdiniTableRow } from "@/components/ordini/ordiniShared";
 import type { OrdineCardAction } from "@/components/ordini/OrdineCard";
@@ -360,13 +361,13 @@ const Ordini = () => {
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
-              <h1 className="text-2xl font-extrabold tracking-tight text-scatto-ink">Ordini</h1>
+              <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink">Ordini</h1>
               <p className="text-sm text-scatto-muted">Crea e gestisci gli ordini dei tuoi clienti</p>
             </div>
             <div className="flex gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2 rounded-xl border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg">
+                  <Button variant="outline" className="gap-2 rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg">
                     <Upload className="h-4 w-4" />
                     <span className="hidden sm:inline">Importa</span>
                   </Button>
@@ -387,7 +388,7 @@ const Ordini = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
-                className="gap-2 rounded-xl bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90"
+                className="gap-2 rounded-lg bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90"
                 onClick={() => setIsDialogOpen(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -412,7 +413,7 @@ const Ordini = () => {
             </div>
             <Button
               variant="outline"
-              className="touch-target flex-shrink-0 gap-2 rounded-xl border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
+              className="touch-target flex-shrink-0 gap-2 rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
               onClick={() => (selectionMode ? exitSelectionMode() : setSelectionMode(true))}
             >
               {selectionMode ? <X className="h-4 w-4" /> : <ListChecks className="h-4 w-4" />}
@@ -420,6 +421,7 @@ const Ordini = () => {
             </Button>
           </div>
 
+          <DashCard title="Ordini attivi" icon={<ShoppingCart className="h-4 w-4" />} bodyClassName="p-3 sm:p-4">
           <OrdiniList
             rows={attiviRows}
             isLoading={isLoading}
@@ -447,16 +449,17 @@ const Ordini = () => {
                   }
             }
           />
+          </DashCard>
 
           {ordiniStandBy.length > 0 && (
-            <div className="space-y-3 border-t border-scatto-line pt-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <PauseCircle className="h-5 w-5 text-scatto-warning" />
-                <h2 className="text-base font-bold text-scatto-ink">Ordini in Stand-by ({ordiniStandBy.length})</h2>
-                <span className="text-sm text-scatto-muted">
-                  Valore sospeso (non in KPI): {formatCurrency(stats.valoreStandBy)}
-                </span>
-              </div>
+            <DashCard
+              title={`Ordini in Stand-by (${ordiniStandBy.length})`}
+              icon={<PauseCircle className="h-4 w-4" />}
+              bodyClassName="space-y-3 p-3 sm:p-4"
+            >
+              <p className="text-xs text-scatto-muted">
+                Valore sospeso (non in KPI): {formatCurrency(stats.valoreStandBy)}
+              </p>
               <OrdiniList
                 rows={standByRows}
                 selectionMode={selectionMode}
@@ -464,16 +467,16 @@ const Ordini = () => {
                 onToggleSelect={toggleSelect}
                 onToggleDay={toggleDay}
               />
-            </div>
+            </DashCard>
           )}
 
           {ordiniAnnullati.length > 0 && (
-            <div className="space-y-3 border-t border-scatto-line pt-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <Ban className="h-5 w-5 text-scatto-danger" />
-                <h2 className="text-base font-bold text-scatto-ink">Ordini Annullati ({ordiniAnnullati.length})</h2>
-                <span className="text-sm text-scatto-muted">Valore perso: {formatCurrency(stats.valoreAnnullato)}</span>
-              </div>
+            <DashCard
+              title={`Ordini annullati (${ordiniAnnullati.length})`}
+              icon={<Ban className="h-4 w-4" />}
+              bodyClassName="space-y-3 p-3 sm:p-4"
+            >
+              <p className="text-xs text-scatto-muted">Valore perso: {formatCurrency(stats.valoreAnnullato)}</p>
               <OrdiniList
                 rows={annullatiRows}
                 selectionMode={selectionMode}
@@ -481,7 +484,7 @@ const Ordini = () => {
                 onToggleSelect={toggleSelect}
                 onToggleDay={toggleDay}
               />
-            </div>
+            </DashCard>
           )}
         </div>
 

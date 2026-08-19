@@ -72,16 +72,16 @@ export function OrdiniList({
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <Skeleton className="h-24 w-full rounded-2xl bg-scatto-surface" />
-        <Skeleton className="h-24 w-full rounded-2xl bg-scatto-surface" />
-        <Skeleton className="h-24 w-full rounded-2xl bg-scatto-surface" />
+        <Skeleton className="h-24 w-full rounded-xl bg-scatto-surface" />
+        <Skeleton className="h-24 w-full rounded-xl bg-scatto-surface" />
+        <Skeleton className="h-24 w-full rounded-xl bg-scatto-surface" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-scatto-line bg-scatto-surface py-12 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-scatto-line bg-scatto-surface py-12 text-center">
         <AlertCircle className="h-8 w-8 text-scatto-danger" />
         <div>
           <p className="text-sm font-bold text-scatto-ink">Non è stato possibile caricare gli ordini</p>
@@ -104,7 +104,7 @@ export function OrdiniList({
   if (rows.length === 0 && emptyState) {
     const Icon = emptyState.icon;
     return (
-      <div className="flex flex-col items-center gap-2 rounded-2xl border border-scatto-line bg-scatto-surface py-12 text-center">
+      <div className="flex flex-col items-center gap-2 rounded-xl border border-scatto-line bg-scatto-surface py-12 text-center">
         <Icon className="h-8 w-8 text-scatto-muted" />
         <p className="text-sm font-bold text-scatto-ink">{emptyState.title}</p>
         {emptyState.description && <p className="text-xs text-scatto-muted">{emptyState.description}</p>}
