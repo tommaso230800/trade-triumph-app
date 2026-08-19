@@ -93,7 +93,7 @@ export function OrdineCard({
         </div>
 
         {verificato ? (
-          <span className="flex flex-shrink-0 items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[10px] font-bold text-scatto-success">
+          <span className="flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-scatto-success px-2.5 py-0.5 text-[10px] font-bold text-white">
             <CheckCircle2 className="h-3 w-3" />
             Verificato
           </span>
