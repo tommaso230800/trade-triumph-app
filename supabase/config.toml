@@ -26,3 +26,9 @@ verify_jwt = false
 
 [functions.sync-email-orders]
 verify_jwt = false
+
+[functions.maps-geocode]
+verify_jwt = false
+
+[functions.maps-route]
+verify_jwt = false

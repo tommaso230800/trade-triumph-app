@@ -16,6 +16,7 @@ import {
   Repeat,
   Gauge,
   Activity,
+  Map as MapIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -66,6 +67,7 @@ const baseNavigation: NavItem[] = [
       { name: "INDIPENDENTE", href: "/clienti/consorzio/indipendente" },
     ]
   },
+  { name: "Mappa Clienti", href: "/mappa", icon: MapIcon },
   { name: "Prepara Visita", href: "/prepara-visita", icon: Brain },
   { name: "AI Commerciale", href: "/ai-commerciale", icon: Bot },
 ];

@@ -33,6 +33,7 @@ const IntelligenzaCommerciale = lazy(() => import("./pages/IntelligenzaCommercia
 const Diagnostica = lazy(() => import("./pages/Diagnostica"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 const PreparaVisita = lazy(() => import("./pages/PreparaVisita"));
+const MappaClienti = lazy(() => import("./pages/MappaClienti"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const App = () => (
@@ -73,6 +74,7 @@ const App = () => (
                 <Route path="/impostazioni" element={<Impostazioni />} />
                 <Route path="/diagnostica" element={<Diagnostica />} />
                 <Route path="/prepara-visita" element={<PreparaVisita />} />
+                <Route path="/mappa" element={<MappaClienti />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
