@@ -1,96 +1,178 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
-import { toast } from "sonner";
 
-export type ClienteMap = {
+export type StatoCommerciale = "attivo" | "a_rischio" | "inattivo" | "senza_ordini";
+
+export type ClienteMappa = {
   id: string;
   nome: string;
   indirizzo: string | null;
+  cap: string | null;
   citta: string | null;
-  latitudine: number | null;
-  longitudine: number | null;
-  zona: string | null;
-  priorita: string | null;
-  fatturato: number | null;
+  provincia: string | null;
+  telefono: string | null;
+  consorzio: string | null;
+  lat: number;
+  lng: number;
+  fatturato: number;
+  ordiniCount: number;
+  ultimoOrdine: string | null;
+  giorniUltimoOrdine: number | null;
+  ultimaVisita: string | null;
+  giorniUltimaVisita: number | null;
+  aziende: string[];
+  aziendeIds: string[];
+  insoluto: number;
+  stato: StatoCommerciale;
 };
 
-export function useClientiMappa() {
+const ESCLUSI = ["annullato", "stand_by"];
+
+function giorniDa(data: string | null): number | null {
+  if (!data) return null;
+  const d = new Date(data);
+  if (Number.isNaN(d.getTime())) return null;
+  return Math.floor((Date.now() - d.getTime()) / 86_400_000);
+}
+
+/** Dati geografici + intelligence commerciale per la mappa clienti. */
+export function useMappaClienti() {
   const { user } = useAuth();
-  return useQuery({
-    queryKey: ["clienti-mappa", user?.id],
+
+  const query = useQuery({
+    queryKey: ["mappa-clienti", user?.id],
     enabled: !!user,
-    queryFn: async (): Promise<ClienteMap[]> => {
-      const { data, error } = await (supabase as any)
-        .from("clienti")
-        .select("id, nome, indirizzo, citta, latitudine, longitudine, zona, priorita, fatturato, deleted_at")
-        .is("deleted_at", null);
-      if (error) throw error;
-      return (data ?? []) as ClienteMap[];
+    staleTime: 60_000,
+    queryFn: async () => {
+      const [clientiRes, ordiniRes, aziendeRes, visiteRes, scadenzeRes] = await Promise.all([
+        supabase
+          .from("clienti")
+          .select(
+            "id, nome, indirizzo, cap, citta, provincia, telefono, consorzio, latitudine, longitudine, fatturato, ordini_count",
+          )
+          .is("deleted_at", null),
+        supabase
+          .from("ordini")
+          .select("cliente_id, azienda_id, data_ordine, totale, status")
+          .is("deleted_at", null),
+        supabase.from("aziende").select("id, nome").is("deleted_at", null),
+        supabase.from("client_visits").select("client_id, data_visita"),
+        supabase
+          .from("scadenziario_fatture")
+          .select("cliente_id, importo, data_scadenza, stato"),
+      ]);
+
+      const err =
+        clientiRes.error || ordiniRes.error || aziendeRes.error || visiteRes.error || scadenzeRes.error;
+      if (err) throw new Error(err.message);
+
+      return {
+        clienti: clientiRes.data ?? [],
+        ordini: (ordiniRes.data ?? []).filter((o) => !ESCLUSI.includes(String(o.status))),
+        aziende: aziendeRes.data ?? [],
+        visite: visiteRes.data ?? [],
+        scadenze: scadenzeRes.data ?? [],
+      };
     },
   });
-}
 
-// Geocoding via Nominatim (OpenStreetMap) — no key required, use responsibly
-export async function geocodeAddress(query: string): Promise<{ lat: number; lon: number } | null> {
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
-    const r = await fetch(url, { headers: { "Accept-Language": "it" } });
-    if (!r.ok) return null;
-    const arr = await r.json();
-    if (!Array.isArray(arr) || arr.length === 0) return null;
-    return { lat: parseFloat(arr[0].lat), lon: parseFloat(arr[0].lon) };
-  } catch {
-    return null;
-  }
-}
+  const clienti = useMemo<ClienteMappa[]>(() => {
+    const d = query.data;
+    if (!d) return [];
 
-export function useGeocodeMissing() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (clienti: ClienteMap[]) => {
-      const missing = clienti.filter((c) => (c.indirizzo || c.citta) && (c.latitudine === null || c.longitudine === null));
-      let done = 0;
-      for (const c of missing.slice(0, 20)) {
-        const q = [c.indirizzo, c.citta, "Italia"].filter(Boolean).join(", ");
-        const res = await geocodeAddress(q);
-        if (res) {
-          await (supabase as any).from("clienti")
-            .update({ latitudine: res.lat, longitudine: res.lon, geocoded_at: new Date().toISOString() })
-            .eq("id", c.id);
-          done++;
-        }
-        await new Promise((r) => setTimeout(r, 1100)); // rispetta rate limit Nominatim
+    const nomeAzienda = new Map(d.aziende.map((a) => [a.id, a.nome]));
+    const perCliente = new Map<
+      string,
+      { ultimo: string | null; aziende: Set<string>; aziendeIds: Set<string>; count: number }
+    >();
+
+    for (const o of d.ordini) {
+      if (!o.cliente_id) continue;
+      const cur =
+        perCliente.get(o.cliente_id) ??
+        { ultimo: null as string | null, aziende: new Set<string>(), aziendeIds: new Set<string>(), count: 0 };
+      cur.count += 1;
+      if (o.data_ordine && (!cur.ultimo || o.data_ordine > cur.ultimo)) cur.ultimo = o.data_ordine;
+      if (o.azienda_id) {
+        cur.aziendeIds.add(o.azienda_id);
+        const n = nomeAzienda.get(o.azienda_id);
+        if (n) cur.aziende.add(n);
       }
-      return done;
-    },
-    onSuccess: (n) => {
-      toast.success(`Geocodificati ${n} clienti`);
-      qc.invalidateQueries({ queryKey: ["clienti-mappa"] });
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
+      perCliente.set(o.cliente_id, cur);
+    }
+
+    const ultimaVisita = new Map<string, string>();
+    for (const v of d.visite) {
+      if (!v.client_id || !v.data_visita) continue;
+      const cur = ultimaVisita.get(v.client_id);
+      if (!cur || v.data_visita > cur) ultimaVisita.set(v.client_id, v.data_visita);
+    }
+
+    const oggi = new Date().toISOString().slice(0, 10);
+    const insoluti = new Map<string, number>();
+    for (const s of d.scadenze) {
+      if (!s.cliente_id) continue;
+      const incassata = String(s.stato ?? "").toLowerCase().includes("incass");
+      if (incassata) continue;
+      if (!s.data_scadenza || s.data_scadenza >= oggi) continue;
+      insoluti.set(s.cliente_id, (insoluti.get(s.cliente_id) ?? 0) + Number(s.importo ?? 0));
+    }
+
+    return d.clienti
+      .filter((c) => c.latitudine !== null && c.longitudine !== null)
+      .map((c) => {
+        const agg = perCliente.get(c.id);
+        const giorni = giorniDa(agg?.ultimo ?? null);
+        const visita = ultimaVisita.get(c.id) ?? null;
+        let stato: StatoCommerciale = "senza_ordini";
+        if (giorni !== null) {
+          stato = giorni > 180 ? "inattivo" : giorni > 90 ? "a_rischio" : "attivo";
+        }
+        return {
+          id: c.id,
+          nome: c.nome,
+          indirizzo: c.indirizzo,
+          cap: c.cap,
+          citta: c.citta,
+          provincia: c.provincia,
+          telefono: c.telefono,
+          consorzio: c.consorzio,
+          lat: Number(c.latitudine),
+          lng: Number(c.longitudine),
+          fatturato: Number(c.fatturato ?? 0),
+          ordiniCount: agg?.count ?? Number(c.ordini_count ?? 0),
+          ultimoOrdine: agg?.ultimo ?? null,
+          giorniUltimoOrdine: giorni,
+          ultimaVisita: visita,
+          giorniUltimaVisita: giorniDa(visita),
+          aziende: agg ? Array.from(agg.aziende).sort() : [],
+          aziendeIds: agg ? Array.from(agg.aziendeIds) : [],
+          insoluto: insoluti.get(c.id) ?? 0,
+          stato,
+        };
+      });
+  }, [query.data]);
+
+  const senzaCoordinate = useMemo(() => {
+    const d = query.data;
+    if (!d) return 0;
+    return d.clienti.filter(
+      (c) => (c.latitudine === null || c.longitudine === null) && (c.indirizzo || c.citta),
+    ).length;
+  }, [query.data]);
+
+  return { ...query, clienti, senzaCoordinate };
 }
 
-// Nearest-neighbor route optimization
-export function optimizeRoute(points: ClienteMap[], startLat: number, startLon: number): ClienteMap[] {
-  const remaining = points.filter((p) => p.latitudine !== null && p.longitudine !== null);
-  const route: ClienteMap[] = [];
-  let curLat = startLat;
-  let curLon = startLon;
-  while (remaining.length) {
-    let best = 0;
-    let bestD = Infinity;
-    for (let i = 0; i < remaining.length; i++) {
-      const dLat = remaining[i].latitudine! - curLat;
-      const dLon = remaining[i].longitudine! - curLon;
-      const d = dLat * dLat + dLon * dLon;
-      if (d < bestD) { bestD = d; best = i; }
-    }
-    const next = remaining.splice(best, 1)[0];
-    route.push(next);
-    curLat = next.latitudine!;
-    curLon = next.longitudine!;
-  }
-  return route;
+/** Distanza in km fra due coordinate (formula dell'emisenoverso). */
+export function distanzaKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6371;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((aLat * Math.PI) / 180) * Math.cos((bLat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
 }
