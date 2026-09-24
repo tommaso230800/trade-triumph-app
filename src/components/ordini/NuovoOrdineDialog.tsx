@@ -29,7 +29,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Loader2, RefreshCw, Gift } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  RefreshCw,
+  Gift,
+  UserRound,
+  PackagePlus,
+  ReceiptText,
+  ChevronLeft,
+  ChevronRight,
+  ShoppingBag,
+  CalendarDays,
+} from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useClienti } from "@/hooks/useClienti";
@@ -96,6 +108,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   const [selectedProdotto, setSelectedProdotto] = useState("");
   const [appliedPromos, setAppliedPromos] = useState<string[]>([]);
   const [priceConfirmIndex, setPriceConfirmIndex] = useState<number | null>(null);
+  const [currentStep, setCurrentStep] = useState(0);
   // true quando la conferma prezzo è stata aperta dal salvataggio: dopo la
   // scelta l'ordine prosegue automaticamente.
   const [pendingSubmit, setPendingSubmit] = useState(false);
@@ -133,6 +146,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     setAppliedPromos([]);
     setPendingSubmit(false);
     setPriceConfirmIndex(null);
+    setCurrentStep(0);
   };
 
   const handleOpenChange = (v: boolean) => {
@@ -587,217 +601,203 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   };
 
   const isSubmitting = createOrdine.isPending || createRigheBatch.isPending;
+  const selectedClienteName = clienti?.find((c) => c.id === formData.cliente_id)?.nome;
+  const selectedAziendaName = aziende?.find((a) => a.id === formData.azienda_id)?.nome;
+  const steps = [
+    { label: "Cliente", icon: UserRound },
+    { label: "Prodotti", icon: PackagePlus },
+    { label: "Conferma", icon: ReceiptText },
+  ];
 
   return (
     <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden p-0">
-        <DialogHeader className="border-b border-border px-4 py-4 sm:px-6">
-          <DialogTitle>Crea Nuovo Ordine</DialogTitle>
-          <DialogDescription>Seleziona cliente, azienda e aggiungi i prodotti</DialogDescription>
+      <DialogContent className="inset-0 left-0 top-0 flex h-[100dvh] max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[92dvh] sm:w-[calc(100vw-2rem)] sm:max-w-5xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border xl:max-w-6xl">
+        <DialogHeader className="shrink-0 border-b border-border bg-card px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-6 sm:py-4">
+          <div className="pr-10">
+            <DialogTitle className="text-xl font-bold sm:text-2xl">Nuovo ordine</DialogTitle>
+            <DialogDescription className="mt-1 text-xs sm:text-sm">
+              {currentStep === 0 && "Scegli cliente, azienda e data"}
+              {currentStep === 1 && "Aggiungi prodotti, quantità e condizioni"}
+              {currentStep === 2 && "Completa i dettagli e controlla il totale"}
+            </DialogDescription>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2" aria-label="Avanzamento ordine">
+            {steps.map((step, index) => {
+              const StepIcon = step.icon;
+              const active = index === currentStep;
+              const complete = index < currentStep;
+              return (
+                <Button
+                  key={step.label}
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    if (index === 0 || (index === 1 && formData.azienda_id) || (index === 2 && righeOrdine.length > 0)) {
+                      setCurrentStep(index);
+                    }
+                  }}
+                  className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border px-2 text-xs font-semibold transition-colors duration-200 sm:text-sm ${
+                    active
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : complete
+                        ? "border-primary/30 bg-primary/10 text-primary"
+                        : "border-border bg-background text-muted-foreground"
+                  }`}
+                  aria-current={active ? "step" : undefined}
+                >
+                  <StepIcon className="h-4 w-4 shrink-0" />
+                  <span>{step.label}</span>
+                </Button>
+              );
+            })}
+          </div>
         </DialogHeader>
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4 sm:px-6">
-          {/* Cliente, azienda, data */}
-          <section className="space-y-3">
-            <h4 className="text-sm font-semibold">Cliente e azienda</h4>
-            <div className="space-y-1.5">
-              <Label className="text-sm">Data Ordine</Label>
-              <Input
-                type="date"
-                value={formData.data_ordine}
-                onChange={(e) => setFormData({ ...formData, data_ordine: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label className="text-sm">Cliente</Label>
-                <SearchableSelect
-                  options={clientiOptions}
-                  value={formData.cliente_id}
-                  onValueChange={(v) => setFormData({ ...formData, cliente_id: v })}
-                  placeholder="Seleziona cliente"
-                  searchPlaceholder="Cerca cliente..."
-                  emptyMessage="Nessun cliente trovato"
-                />
+        <div className="min-h-0 flex-1 overflow-hidden bg-muted/30 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="h-full overflow-y-auto px-4 py-4 sm:px-6 sm:py-6" style={{ WebkitOverflowScrolling: "touch" }}>
+            <section className={currentStep === 0 ? "space-y-6" : "hidden"}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <UserRound className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold">Destinatario dell’ordine</h3>
+                  <p className="text-xs text-muted-foreground">Le scelte determinano listini, storico e prodotti.</p>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">Azienda Fornitrice *</Label>
-                <SearchableSelect
-                  options={aziendeOptions}
-                  value={formData.azienda_id}
-                  onValueChange={(v) => {
-                    setFormData({ ...formData, azienda_id: v });
-                    setRigheOrdine([]);
-                    setSelectedProdotto("");
-                  }}
-                  placeholder="Seleziona azienda"
-                  searchPlaceholder="Cerca azienda..."
-                  emptyMessage="Nessuna azienda trovata"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Promozioni attive */}
-          {formData.azienda_id && promozioniRilevanti.length > 0 && (
-            <PromozioniAttiveAlert
-              promozioni={promozioniRilevanti}
-              appliedPromos={appliedPromos}
-              onApply={handleApplyPromo}
-            />
-          )}
-
-          {/* Prodotti */}
-          {formData.azienda_id && (
-            <section className="space-y-3 border-t border-border pt-4">
-              <h4 className="text-sm font-semibold">Prodotti</h4>
-
-              {formData.cliente_id && productHistory && productHistory.products.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full gap-2 border-primary/50 text-primary hover:bg-primary/10"
-                  onClick={handleRiassortimento}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Riassortimento ({productHistory.products.length} prodotti da {productHistory.totalOrders} ordini)
-                </Button>
-              )}
-
-              <div className="flex gap-2">
-                <div className="flex-1">
+              <div className="grid gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-2 sm:p-6">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Cliente</Label>
+                  <SearchableSelect options={clientiOptions} value={formData.cliente_id} onValueChange={(v) => setFormData({ ...formData, cliente_id: v })} placeholder="Seleziona cliente" searchPlaceholder="Cerca cliente..." emptyMessage="Nessun cliente trovato" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Azienda fornitrice *</Label>
                   <SearchableSelect
-                    options={prodottiOptions}
-                    value={selectedProdotto}
-                    onValueChange={setSelectedProdotto}
-                    placeholder="Cerca prodotto..."
-                    searchPlaceholder="Cerca per nome, codice, brand..."
-                    emptyMessage="Nessun prodotto trovato"
+                    options={aziendeOptions}
+                    value={formData.azienda_id}
+                    onValueChange={(v) => {
+                      setFormData({ ...formData, azienda_id: v });
+                      setRigheOrdine([]);
+                      setSelectedProdotto("");
+                    }}
+                    placeholder="Seleziona azienda"
+                    searchPlaceholder="Cerca azienda..."
+                    emptyMessage="Nessuna azienda trovata"
                   />
                 </div>
-                <Button onClick={addProdottoToOrder} disabled={!selectedProdotto}>
-                  <Plus className="h-4 w-4" />
-                </Button>
+                <div className="space-y-2">
+                  <Label>Data ordine</Label>
+                  <div className="relative">
+                    <CalendarDays className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Input type="date" className="pl-10" value={formData.data_ordine} onChange={(e) => setFormData({ ...formData, data_ordine: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className={currentStep === 1 ? "space-y-4" : "hidden"}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><PackagePlus className="h-5 w-5" /></div>
+                <div>
+                  <h3 className="text-base font-semibold">Composizione ordine</h3>
+                  <p className="text-xs text-muted-foreground">Cerca un prodotto e inserisci quantità e condizioni.</p>
+                </div>
               </div>
 
-              {prodottiAzienda.length === 0 && (
-                <p className="text-sm text-muted-foreground">Nessun prodotto disponibile per questa azienda</p>
-              )}
+              {promozioniRilevanti.length > 0 && <PromozioniAttiveAlert promozioni={promozioniRilevanti} appliedPromos={appliedPromos} onApply={handleApplyPromo} />}
 
-              {righeOrdine.length > 0 && (
+              <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
+                {formData.cliente_id && productHistory && productHistory.products.length > 0 && (
+                  <Button type="button" variant="outline" className="h-auto min-h-11 w-full whitespace-normal border-primary/40 px-3 text-primary" onClick={handleRiassortimento}>
+                    <RefreshCw className="h-4 w-4 shrink-0" />
+                    Riassortimento · {productHistory.products.length} prodotti
+                  </Button>
+                )}
+                <div className="flex gap-2">
+                  <SearchableSelect className="min-w-0 flex-1 justify-between" options={prodottiOptions} value={selectedProdotto} onValueChange={setSelectedProdotto} placeholder="Cerca prodotto..." searchPlaceholder="Nome, codice o brand..." emptyMessage="Nessun prodotto trovato" />
+                  <Button type="button" size="icon" onClick={addProdottoToOrder} disabled={!selectedProdotto} aria-label="Aggiungi prodotto"><Plus className="h-5 w-5" /></Button>
+                </div>
+                {prodottiAzienda.length === 0 && <p className="text-sm text-muted-foreground">Nessun prodotto disponibile per questa azienda.</p>}
+              </div>
+
+              {righeOrdine.length === 0 ? (
+                <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-6 text-center">
+                  <ShoppingBag className="mb-3 h-6 w-6 text-muted-foreground" />
+                  <p className="text-sm font-semibold">L’ordine è ancora vuoto</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Seleziona un prodotto dal campo qui sopra.</p>
+                </div>
+              ) : (
                 <div className="space-y-3">
                   {righeOrdine.map((riga, index) => (
                     <OrdineRigaEditor
-                      key={index}
-                      prodottoNome={riga.prodotto_nome}
-                      formato={riga.formato}
-                      pezziPerCartone={riga.pezzi_per_cartone}
-                      strati={riga.strati}
-                      cartoniPerStrato={riga.cartoni_per_strato}
-                      isOmaggio={riga.is_omaggio}
-                      prezzoUnitario={riga.prezzo_unitario}
-                      quantitaPezzi={riga.quantita_pezzi}
-                      quantitaCartoni={riga.quantita_cartoni}
-                      sc1={riga.sc1}
-                      sc2={riga.sc2}
-                      sc3={riga.sc3}
-                      subtotale={rigaSubtotale(riga)}
-                      prezzoSourceLabel={riga.is_omaggio ? undefined : PRICE_SOURCE_LABELS[riga.prezzo_source]}
-                      prezzoSourceInfo={riga.prezzo_source_info}
-                      onBlurPrezzo={() => handlePrezzoBlur(index)}
-                      onChangePrezzo={(v) => updateRiga(index, "prezzo_unitario", v)}
-                      onChangeQuantitaPezzi={(v) => updateRiga(index, "quantita_pezzi", v)}
-                      onChangeQuantitaCartoni={(v) => updateRiga(index, "quantita_cartoni", v)}
-                      onChangeSc1={(v) => updateRiga(index, "sc1", v)}
-                      onChangeSc2={(v) => updateRiga(index, "sc2", v)}
-                      onChangeSc3={(v) => updateRiga(index, "sc3", v)}
-                      onRemove={() => removeRiga(index)}
-                      onAddOmaggio={riga.is_omaggio ? undefined : () => addOmaggioFromRiga(index)}
+                      key={`${riga.prodotto_id}-${index}`}
+                      prodottoNome={riga.prodotto_nome} formato={riga.formato} pezziPerCartone={riga.pezzi_per_cartone}
+                      strati={riga.strati} cartoniPerStrato={riga.cartoni_per_strato} isOmaggio={riga.is_omaggio}
+                      prezzoUnitario={riga.prezzo_unitario} quantitaPezzi={riga.quantita_pezzi} quantitaCartoni={riga.quantita_cartoni}
+                      sc1={riga.sc1} sc2={riga.sc2} sc3={riga.sc3} subtotale={rigaSubtotale(riga)}
+                      prezzoSourceLabel={riga.is_omaggio ? undefined : PRICE_SOURCE_LABELS[riga.prezzo_source]} prezzoSourceInfo={riga.prezzo_source_info}
+                      onBlurPrezzo={() => handlePrezzoBlur(index)} onChangePrezzo={(v) => updateRiga(index, "prezzo_unitario", v)}
+                      onChangeQuantitaPezzi={(v) => updateRiga(index, "quantita_pezzi", v)} onChangeQuantitaCartoni={(v) => updateRiga(index, "quantita_cartoni", v)}
+                      onChangeSc1={(v) => updateRiga(index, "sc1", v)} onChangeSc2={(v) => updateRiga(index, "sc2", v)} onChangeSc3={(v) => updateRiga(index, "sc3", v)}
+                      onRemove={() => removeRiga(index)} onAddOmaggio={riga.is_omaggio ? undefined : () => addOmaggioFromRiga(index)}
                     />
                   ))}
                 </div>
               )}
             </section>
-          )}
 
-          {/* Pagamento e sconti */}
-          <section className="space-y-3 border-t border-border pt-4">
-            <h4 className="text-sm font-semibold">Pagamento e sconti</h4>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="space-y-1.5">
-                <Label className="text-sm">Tipo Pagamento</Label>
-                <Select
-                  value={formData.tipo_pagamento}
-                  onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIPI_PAGAMENTO.map((tipo) => (
-                      <SelectItem key={tipo} value={tipo}>
-                        {tipo}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <section className={currentStep === 2 ? "space-y-4" : "hidden"}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><ReceiptText className="h-5 w-5" /></div>
+                <div>
+                  <h3 className="text-base font-semibold">Dettagli e conferma</h3>
+                  <p className="text-xs text-muted-foreground">Controlla pagamento, sconti e note.</p>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">Sconto (%)</Label>
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  value={formData.sconto}
-                  onChange={(e) => setFormData({ ...formData, sconto: e.target.value })}
-                  placeholder="es. 10"
-                />
+              <div className="grid gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-3 sm:p-6">
+                <div className="space-y-2 sm:col-span-3"><Label>Tipo pagamento</Label><Select value={formData.tipo_pagamento} onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{TIPI_PAGAMENTO.map((tipo) => <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>)}</SelectContent></Select></div>
+                <div className="space-y-2"><Label>Sconto %</Label><Input type="text" inputMode="decimal" value={formData.sconto} onChange={(e) => setFormData({ ...formData, sconto: e.target.value })} placeholder="0" /></div>
+                <div className="space-y-2 sm:col-span-2"><Label>Sconto merce €</Label><Input type="text" inputMode="decimal" value={formData.sconto_merce} onChange={(e) => setFormData({ ...formData, sconto_merce: e.target.value })} placeholder="0,00" /></div>
+                <div className="space-y-2 sm:col-span-3"><Label>Note</Label><Textarea className="min-h-24" value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Aggiungi indicazioni utili all’ordine..." /></div>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">Sconto Merce (€)</Label>
-                <Input
-                  type="text"
-                  inputMode="decimal"
-                  value={formData.sconto_merce}
-                  onChange={(e) => setFormData({ ...formData, sconto_merce: e.target.value })}
-                  placeholder="es. 50"
-                />
+            </section>
+          </div>
+
+          <aside className="hidden border-l border-border bg-card p-6 xl:flex xl:flex-col">
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Riepilogo</p>
+            <div className="mt-4 space-y-4 text-sm">
+              <div><p className="text-xs text-muted-foreground">Cliente</p><p className="mt-1 font-semibold">{selectedClienteName || "Non selezionato"}</p></div>
+              <div><p className="text-xs text-muted-foreground">Azienda</p><p className="mt-1 font-semibold">{selectedAziendaName || "Non selezionata"}</p></div>
+              <div className="grid grid-cols-2 gap-3 border-y border-border py-4">
+                <div><p className="text-xs text-muted-foreground">Righe</p><p className="mt-1 text-xl font-bold tabular-nums">{righeOrdine.length}</p></div>
+                <div className="text-right"><p className="text-xs text-muted-foreground">Pezzi</p><p className="mt-1 text-xl font-bold tabular-nums">{calcolaProdottiTotali()}</p></div>
               </div>
             </div>
-          </section>
-
-          {/* Note */}
-          <section className="space-y-2">
-            <Label>Note</Label>
-            <Textarea
-              value={formData.note}
-              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-              placeholder="Note aggiuntive..."
-            />
-          </section>
+            <div className="mt-auto border-t border-border pt-6">
+              <p className="text-xs text-muted-foreground">Totale ordine</p>
+              <p className="mt-1 text-right text-3xl font-bold tabular-nums text-primary">{formatCurrency(calcolaTotale())}</p>
+            </div>
+          </aside>
         </div>
 
-        {/* Footer sticky: totale sempre visibile */}
-        <div className="border-t border-border bg-card px-4 py-3 sm:px-6">
-          <div className="mb-3 flex items-end justify-between gap-2">
-            <div className="text-xs text-muted-foreground">
-              <p>{calcolaProdottiTotali()} pezzi</p>
-              {(parseDecimalInput(formData.sconto) > 0 || parseDecimalInput(formData.sconto_merce) > 0) && (
-                <p>
-                  Sconto: {formData.sconto}% + {formatCurrency(parseDecimalInput(formData.sconto_merce))}
-                </p>
-              )}
-            </div>
-            <p className="text-xl font-bold tabular-nums">{formatCurrency(calcolaTotale())}</p>
+        <div className="shrink-0 border-t border-border bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-4">
+          <div className="mb-3 flex items-end justify-between xl:hidden">
+            <div className="text-xs text-muted-foreground"><p>{righeOrdine.length} righe · {calcolaProdottiTotali()} pezzi</p></div>
+            <div className="text-right"><p className="text-xs text-muted-foreground">Totale</p><p className="text-xl font-bold tabular-nums text-primary">{formatCurrency(calcolaTotale())}</p></div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>
-              Annulla
-            </Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting || righeOrdine.length === 0}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Crea Ordine
-            </Button>
+          <DialogFooter className="grid grid-cols-2 gap-2 sm:flex sm:justify-between sm:space-x-0">
+            {currentStep === 0 ? (
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>Annulla</Button>
+            ) : (
+              <Button variant="outline" onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}><ChevronLeft className="h-4 w-4" />Indietro</Button>
+            )}
+            {currentStep < 2 ? (
+              <Button onClick={() => setCurrentStep((step) => Math.min(2, step + 1))} disabled={currentStep === 0 ? !formData.azienda_id : righeOrdine.length === 0}>Continua<ChevronRight className="h-4 w-4" /></Button>
+            ) : (
+              <Button onClick={handleSubmit} disabled={isSubmitting || righeOrdine.length === 0}>{isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}Crea ordine</Button>
+            )}
           </DialogFooter>
         </div>
       </DialogContent>
