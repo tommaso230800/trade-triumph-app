@@ -9,6 +9,7 @@ import { Printer, X, Download, Loader2, Gift } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { parseLocalDate } from "@/lib/periodRange";
 
 export type ProformaRigaOrdine = {
   prodotto_codice?: string;
@@ -36,6 +37,7 @@ export type PromoApplicata = {
 export type ProformaData = {
   codice: string;
   created_at: string;
+  data_ordine?: string | null;
   cliente_nome: string;
   cliente_indirizzo?: string;
   cliente_citta?: string;
@@ -67,6 +69,8 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
   const [isExporting, setIsExporting] = useState(false);
 
   if (!data) return null;
+
+  const dataOrdine = parseLocalDate(data.data_ordine) ?? new Date(data.created_at);
 
   const handlePrint = () => {
     window.print();
@@ -175,7 +179,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
               <h2 className="text-lg font-semibold text-blue-600">PROFORMA</h2>
               <p className="text-sm font-mono text-gray-700">{data.codice}</p>
               <p className="text-sm text-gray-600">
-                {format(new Date(data.created_at), "dd MMMM yyyy", { locale: it })}
+                {format(dataOrdine, "dd MMMM yyyy", { locale: it })}
               </p>
             </div>
           </div>

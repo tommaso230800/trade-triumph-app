@@ -8,8 +8,9 @@ import { it } from "date-fns/locale";
 import type { Ordine } from "@/hooks/useOrdini";
 import { OrdineCard } from "./OrdineCard";
 import type { OrdiniTableRow } from "./ordiniShared";
+import { parseLocalDate } from "@/lib/periodRange";
 
-const getOrderDate = (ordine: Ordine) => new Date(ordine.data_ordine || ordine.created_at);
+const getOrderDate = (ordine: Ordine) => parseLocalDate(ordine.data_ordine) ?? new Date(ordine.created_at);
 const dayKey = (date: Date) => format(date, "yyyy-MM-dd");
 
 // "Oggi 7 agosto" / "Ieri 6 agosto" / "mar 4 agosto" per i giorni più vecchi.

@@ -559,6 +559,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     onOrderCreated({
       codice: ordine.codice || `ORD-${ordine.id.slice(0, 8)}`,
       created_at: ordine.created_at,
+      data_ordine: formData.data_ordine,
       cliente_nome: cliente?.nome || "N/A",
       cliente_indirizzo: cliente?.indirizzo || undefined,
       cliente_citta: cliente?.citta || undefined,
