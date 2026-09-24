@@ -41,6 +41,8 @@ import {
   ChevronRight,
   ShoppingBag,
   CalendarDays,
+  Check,
+  Store,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -604,6 +606,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   const isSubmitting = createOrdine.isPending || createRigheBatch.isPending;
   const selectedClienteName = clienti?.find((c) => c.id === formData.cliente_id)?.nome;
   const selectedAziendaName = aziende?.find((a) => a.id === formData.azienda_id)?.nome;
+  const selectedCliente = clienti?.find((c) => c.id === formData.cliente_id);
+  const clienteStatusLabel = selectedCliente?.status === "premium" ? "Premium" : selectedCliente?.status === "nuovo" ? "Nuovo" : "Standard";
   const steps = [
     { label: "Cliente", icon: UserRound },
     { label: "Prodotti", icon: PackagePlus },
@@ -613,18 +617,29 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
   return (
     <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="inset-0 left-0 top-0 flex h-[100dvh] max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[92dvh] sm:w-[calc(100vw-2rem)] sm:max-w-5xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border xl:max-w-6xl">
-        <DialogHeader className="shrink-0 border-b border-border bg-card px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-6 sm:py-4">
+      <DialogContent className="inset-0 left-0 top-0 flex h-[100dvh] max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 bg-order-paper p-0 text-order-ink sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[92dvh] sm:w-[calc(100vw-2rem)] sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-order-line lg:max-w-4xl">
+        <DialogHeader className="shrink-0 border-b border-order-line bg-order-paper px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-8 sm:py-6">
           <div className="pr-10">
-            <DialogTitle className="text-xl font-bold sm:text-2xl">Nuovo ordine</DialogTitle>
-            <DialogDescription className="mt-1 text-xs sm:text-sm">
-              {currentStep === 0 && "Scegli cliente, azienda e data"}
-              {currentStep === 1 && "Aggiungi prodotti, quantità e condizioni"}
-              {currentStep === 2 && "Completa i dettagli e controlla il totale"}
+            <DialogDescription className="mb-1 text-xs font-semibold uppercase text-order-muted">
+              Passaggio {currentStep + 1} di 3
             </DialogDescription>
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <DialogTitle className="text-2xl font-bold text-order-ink">Nuovo ordine</DialogTitle>
+                <p className="mt-1 text-sm text-order-muted">
+                  {currentStep === 0 && "Cliente e condizioni iniziali"}
+                  {currentStep === 1 && "Prodotti e quantità"}
+                  {currentStep === 2 && "Controllo economico"}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-order-muted">Totale</p>
+                <p className="text-2xl font-bold tabular-nums text-order-blue">{formatCurrency(calcolaTotale())}</p>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2" aria-label="Avanzamento ordine">
+          <div className="mt-5 grid grid-cols-3 gap-2" aria-label="Avanzamento ordine">
             {steps.map((step, index) => {
               const StepIcon = step.icon;
               const active = index === currentStep;
@@ -641,10 +656,10 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
                   }}
                   className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border px-2 text-xs font-semibold transition-colors duration-200 sm:text-sm ${
                     active
-                      ? "border-primary bg-primary text-primary-foreground"
+                      ? "border-order-blue bg-order-blue text-primary-foreground"
                       : complete
-                        ? "border-primary/30 bg-primary/10 text-primary"
-                        : "border-border bg-background text-muted-foreground"
+                        ? "border-order-blue/30 bg-order-blue/10 text-order-blue"
+                        : "border-order-line bg-order-surface/60 text-order-muted"
                   }`}
                   aria-current={active ? "step" : undefined}
                 >
@@ -656,19 +671,19 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
           </div>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-hidden bg-muted/30 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="h-full overflow-y-auto px-4 py-4 sm:px-6 sm:py-6" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="min-h-0 flex-1 overflow-hidden bg-order-paper">
+          <div className="mx-auto h-full max-w-3xl overflow-y-auto px-4 py-5 sm:px-8 sm:py-8" style={{ WebkitOverflowScrolling: "touch" }}>
             <section className={currentStep === 0 ? "space-y-6" : "hidden"}>
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-order-blue/10 text-order-blue">
                   <UserRound className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="text-base font-semibold">Destinatario dell’ordine</h3>
-                  <p className="text-xs text-muted-foreground">Le scelte determinano listini, storico e prodotti.</p>
+                   <p className="text-xs text-order-muted">Le scelte determinano listini, storico e prodotti.</p>
                 </div>
               </div>
-              <div className="grid gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-2 sm:p-6">
+              <div className="grid gap-4 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:grid-cols-2 sm:p-6">
                 <div className="space-y-2 sm:col-span-2">
                   <Label>Cliente</Label>
                   <SearchableSelect options={clientiOptions} value={formData.cliente_id} onValueChange={(v) => setFormData({ ...formData, cliente_id: v })} placeholder="Seleziona cliente" searchPlaceholder="Cerca cliente..." emptyMessage="Nessun cliente trovato" />
@@ -696,20 +711,41 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
                   </div>
                 </div>
               </div>
+              {selectedCliente && (
+                <div className="rounded-xl border border-order-blue/20 bg-order-surface p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-semibold">{selectedCliente.nome}</p>
+                      <p className="mt-1 truncate text-xs text-order-muted">
+                        {[selectedCliente.indirizzo, selectedCliente.citta, selectedCliente.provincia].filter(Boolean).join(" · ") || "Indirizzo N/D"}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-order-blue/10 px-3 py-1 text-xs font-semibold text-order-blue">{clienteStatusLabel}</span>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="rounded-full border border-order-line bg-order-paper px-3 py-1 text-xs font-medium tabular-nums text-order-muted">
+                      Storico · {selectedCliente.ordini_count ?? 0} ordini
+                    </span>
+                    {selectedCliente.partita_iva && (
+                      <span className="rounded-full border border-order-line bg-order-paper px-3 py-1 text-xs font-medium text-order-muted">P.IVA {selectedCliente.partita_iva}</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
 
             <section className={currentStep === 1 ? "space-y-4" : "hidden"}>
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><PackagePlus className="h-5 w-5" /></div>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-order-blue/10 text-order-blue"><PackagePlus className="h-5 w-5" /></div>
                 <div>
                   <h3 className="text-base font-semibold">Composizione ordine</h3>
-                  <p className="text-xs text-muted-foreground">Cerca un prodotto e inserisci quantità e condizioni.</p>
+                  <p className="text-xs text-order-muted">Cerca un prodotto e inserisci quantità e condizioni.</p>
                 </div>
               </div>
 
               {promozioniRilevanti.length > 0 && <PromozioniAttiveAlert promozioni={promozioniRilevanti} appliedPromos={appliedPromos} onApply={handleApplyPromo} />}
 
-              <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
+              <div className="space-y-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:p-6">
                 {formData.cliente_id && productHistory && productHistory.products.length > 0 && (
                   <Button type="button" variant="outline" className="h-auto min-h-11 w-full whitespace-normal border-primary/40 px-3 text-primary" onClick={handleRiassortimento}>
                     <RefreshCw className="h-4 w-4 shrink-0" />
@@ -724,7 +760,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
               </div>
 
               {righeOrdine.length === 0 ? (
-                <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card p-6 text-center">
+                <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-order-line bg-order-surface p-6 text-center">
                   <ShoppingBag className="mb-3 h-6 w-6 text-muted-foreground" />
                   <p className="text-sm font-semibold">L’ordine è ancora vuoto</p>
                   <p className="mt-1 text-xs text-muted-foreground">Seleziona un prodotto dal campo qui sopra.</p>
@@ -751,13 +787,13 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
 
             <section className={currentStep === 2 ? "space-y-4" : "hidden"}>
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><ReceiptText className="h-5 w-5" /></div>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-order-blue/10 text-order-blue"><ReceiptText className="h-5 w-5" /></div>
                 <div>
                   <h3 className="text-base font-semibold">Dettagli e conferma</h3>
-                  <p className="text-xs text-muted-foreground">Controlla pagamento, sconti e note.</p>
+                  <p className="text-xs text-order-muted">Controlla pagamento, sconti e note.</p>
                 </div>
               </div>
-              <div className="grid gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:grid-cols-3 sm:p-6">
+              <div className="grid gap-4 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:grid-cols-3 sm:p-6">
                 <div className="space-y-2 sm:col-span-3"><Label>Tipo pagamento</Label><Select value={formData.tipo_pagamento} onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{TIPI_PAGAMENTO.map((tipo) => <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>)}</SelectContent></Select></div>
                 <div className="space-y-2"><Label>Sconto %</Label><Input type="text" inputMode="decimal" value={formData.sconto} onChange={(e) => setFormData({ ...formData, sconto: e.target.value })} placeholder="0" /></div>
                 <div className="space-y-2 sm:col-span-2"><Label>Sconto merce €</Label><Input type="text" inputMode="decimal" value={formData.sconto_merce} onChange={(e) => setFormData({ ...formData, sconto_merce: e.target.value })} placeholder="0,00" /></div>
@@ -766,38 +802,25 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
             </section>
           </div>
 
-          <aside className="hidden border-l border-border bg-card p-6 xl:flex xl:flex-col">
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Riepilogo</p>
-            <div className="mt-4 space-y-4 text-sm">
-              <div><p className="text-xs text-muted-foreground">Cliente</p><p className="mt-1 font-semibold">{selectedClienteName || "Non selezionato"}</p></div>
-              <div><p className="text-xs text-muted-foreground">Azienda</p><p className="mt-1 font-semibold">{selectedAziendaName || "Non selezionata"}</p></div>
-              <div className="grid grid-cols-2 gap-3 border-y border-border py-4">
-                <div><p className="text-xs text-muted-foreground">Righe</p><p className="mt-1 text-xl font-bold tabular-nums">{righeOrdine.length}</p></div>
-                <div className="text-right"><p className="text-xs text-muted-foreground">Pezzi</p><p className="mt-1 text-xl font-bold tabular-nums">{calcolaProdottiTotali()}</p></div>
-              </div>
-            </div>
-            <div className="mt-auto border-t border-border pt-6">
-              <p className="text-xs text-muted-foreground">Totale ordine</p>
-              <p className="mt-1 text-right text-3xl font-bold tabular-nums text-primary">{formatCurrency(calcolaTotale())}</p>
-            </div>
-          </aside>
         </div>
 
-        <div className="shrink-0 border-t border-border bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-4">
-          <div className="mb-3 flex items-end justify-between xl:hidden">
-            <div className="text-xs text-muted-foreground"><p>{righeOrdine.length} righe · {calcolaProdottiTotali()} pezzi</p></div>
-            <div className="text-right"><p className="text-xs text-muted-foreground">Totale</p><p className="text-xl font-bold tabular-nums text-primary">{formatCurrency(calcolaTotale())}</p></div>
+        <div className="shrink-0 border-t border-order-line bg-order-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-sm sm:px-8 sm:pb-5 sm:pt-4">
+          <div className="mx-auto mb-3 flex max-w-3xl items-end justify-between">
+            <div className="text-xs text-order-muted"><p>{righeOrdine.length} righe · {calcolaProdottiTotali()} pezzi</p></div>
+            <div className="flex items-center gap-2 text-xs text-order-muted">
+              {selectedAziendaName && <><Store className="h-3.5 w-3.5" /><span className="max-w-36 truncate">{selectedAziendaName}</span></>}
+            </div>
           </div>
-          <DialogFooter className="grid grid-cols-2 gap-2 sm:flex sm:justify-between sm:space-x-0">
+          <DialogFooter className="mx-auto grid max-w-3xl grid-cols-2 gap-2 sm:flex sm:justify-between sm:space-x-0">
             {currentStep === 0 ? (
               <Button variant="outline" onClick={() => handleOpenChange(false)}>Annulla</Button>
             ) : (
               <Button variant="outline" onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}><ChevronLeft className="h-4 w-4" />Indietro</Button>
             )}
             {currentStep < 2 ? (
-              <Button onClick={() => setCurrentStep((step) => Math.min(2, step + 1))} disabled={currentStep === 0 ? !formData.azienda_id : righeOrdine.length === 0}>Continua<ChevronRight className="h-4 w-4" /></Button>
+              <Button className="bg-order-ink text-primary-foreground hover:bg-order-ink/90" onClick={() => setCurrentStep((step) => Math.min(2, step + 1))} disabled={currentStep === 0 ? !formData.azienda_id : righeOrdine.length === 0}>Continua<ChevronRight className="h-4 w-4" /></Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={isSubmitting || righeOrdine.length === 0}>{isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}Crea ordine</Button>
+              <Button className="bg-order-blue text-primary-foreground hover:bg-order-blue/90" onClick={handleSubmit} disabled={isSubmitting || righeOrdine.length === 0}>{isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Crea ordine</Button>
             )}
           </DialogFooter>
         </div>

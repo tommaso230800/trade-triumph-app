@@ -119,6 +119,16 @@
     --scatto-info: 214 68% 54%;
     --scatto-violet: 258 74% 58%;
 
+    /* Modulo ordine — direzione "Carta tecnica". Ambito locale ai componenti
+       di creazione ordine: carta calda, grafite e blu operativo. */
+    --order-paper: 43 26% 95%;
+    --order-paper-deep: 41 20% 89%;
+    --order-ink: 0 0% 18%;
+    --order-blue: 217 91% 53%;
+    --order-surface: 0 0% 100%;
+    --order-line: 38 12% 82%;
+    --order-muted: 30 5% 44%;
+
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 225 18% 9%;
