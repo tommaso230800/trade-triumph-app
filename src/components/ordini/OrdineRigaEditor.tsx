@@ -6,6 +6,7 @@ import { Gift, Trash2, Boxes, Info } from "lucide-react";
 import { format } from "date-fns";
 import { formatCurrency } from "./ordiniShared";
 import type { LastOrderPriceInfo } from "@/lib/priceResolver";
+import { parseLocalDate } from "@/lib/periodRange";
 
 interface OrdineRigaEditorProps {
   prodottoNome: string;
@@ -61,12 +62,12 @@ export function OrdineRigaEditor({
   onAddOmaggio,
 }: OrdineRigaEditorProps) {
   return (
-    <div className={`space-y-4 rounded-xl border p-4 shadow-sm ${isOmaggio ? "border-success/40 bg-success/10" : "border-border bg-card"}`}>
+    <div className={`space-y-4 rounded-xl border p-4 shadow-sm ${isOmaggio ? "border-success/40 bg-success/10" : "border-order-line bg-order-surface"}`}>
       {/* Intestazione prodotto */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="break-words text-sm font-medium">{prodottoNome}</p>
+            <p className="break-words text-sm font-semibold text-order-ink">{prodottoNome}</p>
             {isOmaggio && (
               <span className="inline-flex items-center gap-1 rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-success">
                 <Gift className="h-3 w-3" /> Omaggio
@@ -136,7 +137,7 @@ export function OrdineRigaEditor({
                 <PopoverContent className="w-64 text-xs" align="start">
                   <p className="font-semibold">Ultimo acquisto</p>
                   <p className="mt-1 text-muted-foreground">
-                    {format(new Date(prezzoSourceInfo.date), "dd/MM/yyyy")}
+                    {format(parseLocalDate(prezzoSourceInfo.date) ?? new Date(prezzoSourceInfo.date), "dd/MM/yyyy")}
                     {prezzoSourceInfo.orderCode && ` · ordine ${prezzoSourceInfo.orderCode}`}
                   </p>
                   <p className="mt-1 tabular-nums">

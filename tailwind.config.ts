@@ -135,6 +135,15 @@ export default {
           info: "hsl(var(--scatto-info))",
           violet: "hsl(var(--scatto-violet))",
         },
+        order: {
+          paper: "hsl(var(--order-paper))",
+          "paper-deep": "hsl(var(--order-paper-deep))",
+          ink: "hsl(var(--order-ink))",
+          blue: "hsl(var(--order-blue))",
+          surface: "hsl(var(--order-surface))",
+          line: "hsl(var(--order-line))",
+          muted: "hsl(var(--order-muted))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
