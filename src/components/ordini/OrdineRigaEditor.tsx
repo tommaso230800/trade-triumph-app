@@ -61,7 +61,7 @@ export function OrdineRigaEditor({
   onAddOmaggio,
 }: OrdineRigaEditorProps) {
   return (
-    <div className={`space-y-3 rounded-xl p-3 ${isOmaggio ? "border border-success/40 bg-success/10" : "bg-muted/50"}`}>
+    <div className={`space-y-4 rounded-xl border p-4 shadow-sm ${isOmaggio ? "border-success/40 bg-success/10" : "border-border bg-card"}`}>
       {/* Intestazione prodotto */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
@@ -119,7 +119,7 @@ export function OrdineRigaEditor({
       </div>
 
       {/* Prezzo / Pezzi / Cartoni */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="space-y-1">
           <div className="flex items-center gap-1">
             <Label className="text-xs text-muted-foreground">Prezzo</Label>
@@ -152,7 +152,7 @@ export function OrdineRigaEditor({
           <Input
             type="text"
             inputMode="decimal"
-            className="h-10 px-2 text-sm"
+            className="h-11 px-3 text-sm"
             value={isOmaggio ? "0" : prezzoUnitario}
             disabled={isOmaggio}
             onChange={(e) => onChangePrezzo(e.target.value)}
@@ -166,7 +166,7 @@ export function OrdineRigaEditor({
             type="number"
             inputMode="numeric"
             min="0"
-            className="h-10 px-2 text-sm"
+            className="h-11 px-3 text-sm"
             value={quantitaPezzi}
             onChange={(e) => onChangeQuantitaPezzi(parseInt(e.target.value) || 0)}
           />
@@ -177,7 +177,7 @@ export function OrdineRigaEditor({
             type="number"
             inputMode="numeric"
             min="0"
-            className="h-10 px-2 text-sm"
+            className="h-11 px-3 text-sm"
             value={quantitaCartoni}
             onChange={(e) => onChangeQuantitaCartoni(parseInt(e.target.value) || 0)}
           />
@@ -186,13 +186,13 @@ export function OrdineRigaEditor({
 
       {/* Sconti (nascosti per omaggio) */}
       {!isOmaggio && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Sc1 %</Label>
             <Input
               type="text"
               inputMode="decimal"
-              className="h-10 px-2 text-sm"
+              className="h-11 px-3 text-sm"
               value={sc1}
               onChange={(e) => onChangeSc1(e.target.value)}
               placeholder="0"
@@ -203,7 +203,7 @@ export function OrdineRigaEditor({
             <Input
               type="text"
               inputMode="decimal"
-              className="h-10 px-2 text-sm"
+              className="h-11 px-3 text-sm"
               value={sc2}
               onChange={(e) => onChangeSc2(e.target.value)}
               placeholder="0"
@@ -214,7 +214,7 @@ export function OrdineRigaEditor({
             <Input
               type="text"
               inputMode="decimal"
-              className="h-10 px-2 text-sm"
+              className="h-11 px-3 text-sm"
               value={sc3}
               onChange={(e) => onChangeSc3(e.target.value)}
               placeholder="0"
@@ -224,7 +224,8 @@ export function OrdineRigaEditor({
       )}
 
       {/* Subtotale */}
-      <div className="flex justify-end border-t border-border/50 pt-1">
+      <div className="flex items-center justify-between border-t border-border pt-3">
+        <span className="text-xs text-muted-foreground">Subtotale</span>
         <p className="text-sm font-semibold tabular-nums">
           {isOmaggio ? <span className="text-success">Omaggio (0,00 €)</span> : formatCurrency(subtotale)}
         </p>
