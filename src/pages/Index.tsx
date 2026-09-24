@@ -355,6 +355,7 @@ const Index = () => {
     setProformaData({
       codice: order.codice || `ORD-${order.id.slice(0, 8)}`,
       created_at: order.created_at,
+      data_ordine: order.data_ordine,
       cliente_nome: cliente?.nome || order.clienti?.nome || "N/A",
       cliente_indirizzo: cliente?.indirizzo || undefined,
       cliente_citta: cliente?.citta || undefined,

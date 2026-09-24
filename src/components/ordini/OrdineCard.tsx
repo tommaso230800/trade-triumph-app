@@ -21,6 +21,7 @@ import {
   scattoStatusBadge,
 } from "./ordiniShared";
 import { aziendaColorValue, readableTextColor, useAziendaColorMap } from "@/lib/aziendaColor";
+import { parseLocalDate } from "@/lib/periodRange";
 
 export interface OrdineCardAction {
   label: string;
@@ -65,7 +66,7 @@ export function OrdineCard({
   const aziendaColor = aziendaColorValue(ordine.azienda_id, aziendaColorMap);
   const fasciaTextColor = readableTextColor(aziendaColor);
   const fasciaIsDark = fasciaTextColor === "#12141a";
-  const dataOrdine = new Date(ordine.data_ordine || ordine.created_at);
+  const dataOrdine = parseLocalDate(ordine.data_ordine) ?? new Date(ordine.created_at);
   const oraOrdine = format(new Date(ordine.created_at), "HH:mm");
 
   return (
@@ -187,7 +188,7 @@ export function OrdineCard({
                 <>
                   <span className="text-scatto-muted">Data prevista</span>
                   <span className="text-right text-scatto-ink">
-                    {format(new Date(ordine.stand_by_data_prevista), "dd/MM/yyyy")}
+                    {format(parseLocalDate(ordine.stand_by_data_prevista) ?? new Date(ordine.stand_by_data_prevista), "dd/MM/yyyy")}
                   </span>
                 </>
               )}
