@@ -629,15 +629,16 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
               const active = index === currentStep;
               const complete = index < currentStep;
               return (
-                <button
+                <Button
                   key={step.label}
                   type="button"
+                  variant="ghost"
                   onClick={() => {
                     if (index === 0 || (index === 1 && formData.azienda_id) || (index === 2 && righeOrdine.length > 0)) {
                       setCurrentStep(index);
                     }
                   }}
-                  className={`flex min-h-11 items-center justify-center gap-2 rounded-lg border px-2 text-xs font-semibold transition-colors duration-200 sm:text-sm ${
+                  className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border px-2 text-xs font-semibold transition-colors duration-200 sm:text-sm ${
                     active
                       ? "border-primary bg-primary text-primary-foreground"
                       : complete
@@ -648,7 +649,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
                 >
                   <StepIcon className="h-4 w-4 shrink-0" />
                   <span>{step.label}</span>
-                </button>
+                </Button>
               );
             })}
           </div>
