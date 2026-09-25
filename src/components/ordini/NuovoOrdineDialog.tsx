@@ -703,11 +703,11 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
                     emptyMessage="Nessuna azienda trovata"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   <Label>Data ordine</Label>
-                  <div className="relative">
+                  <div className="relative min-w-0 max-w-full overflow-hidden rounded-xl">
                     <CalendarDays className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                    <Input type="date" className="pl-10" value={formData.data_ordine} onChange={(e) => setFormData({ ...formData, data_ordine: e.target.value })} />
+                    <Input type="date" className="min-w-0 max-w-full appearance-none pl-10" value={formData.data_ordine} onChange={(e) => setFormData({ ...formData, data_ordine: e.target.value })} />
                   </div>
                 </div>
               </div>

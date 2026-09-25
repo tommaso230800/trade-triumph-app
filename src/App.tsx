@@ -42,7 +42,7 @@ const App = () => (
     persistOptions={{
       persister: persister!,
       maxAge: 1000 * 60 * 60 * 24,
-      buster: "v2",
+      buster: "v3",
     }}
   >
     <AuthProvider>
