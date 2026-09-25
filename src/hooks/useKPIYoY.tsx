@@ -18,6 +18,37 @@ export type DimensionYoY = {
   deltaPct: number;
 };
 
+type KPIYoYResult = {
+  curr: Awaited<ReturnType<typeof fetchAggregates>>;
+  prev: Awaited<ReturnType<typeof fetchAggregates>>;
+  delta: number;
+  deltaPct: number;
+  yearCurr: number;
+  yearPrev: number;
+  monthlyComparison: Array<{
+    mese: string;
+    curr: number;
+    prev: number;
+    delta: number;
+    deltaPct: number;
+    ordiniCurr: number;
+    ordiniPrev: number;
+  }>;
+  clientiYoY: Map<string, DimensionYoY>;
+  aziendeYoY: Map<string, DimensionYoY>;
+  brandsYoY: Map<string, DimensionYoY>;
+  prodottiYoY: Map<string, DimensionYoY>;
+};
+
+function restoreDimensionMap(value: unknown): Map<string, DimensionYoY> {
+  if (value instanceof Map) return value;
+  if (Array.isArray(value)) return new Map(value as Array<[string, DimensionYoY]>);
+  if (value && typeof value === "object") {
+    return new Map(Object.entries(value as Record<string, DimensionYoY>));
+  }
+  return new Map();
+}
+
 // Confini di periodo nel fuso locale: usare toISOString() farebbe rientrare
 // gli ordini dell'ultimo giorno del mese precedente.
 const toISO = (d: Date) => toLocalISODate(d);
@@ -89,7 +120,7 @@ async function fetchAggregates(start: Date, end: Date, filters: KPIYoYFilters) {
 }
 
 export function useKPIYoY(filters: KPIYoYFilters) {
-  return useQuery({
+  return useQuery<KPIYoYResult, Error, KPIYoYResult>({
     queryKey: ["kpi_yoy", filters],
     enabled: !!filters.startDate && !!filters.endDate,
     queryFn: async () => {
@@ -198,5 +229,14 @@ export function useKPIYoY(filters: KPIYoYFilters) {
         ),
       };
     },
+    // Le Map diventano oggetti quando React Query ripristina la cache JSON.
+    // Le ricostruiamo sempre prima di consegnare i dati alle schermate.
+    select: (data) => ({
+      ...data,
+      clientiYoY: restoreDimensionMap(data.clientiYoY),
+      aziendeYoY: restoreDimensionMap(data.aziendeYoY),
+      brandsYoY: restoreDimensionMap(data.brandsYoY),
+      prodottiYoY: restoreDimensionMap(data.prodottiYoY),
+    }),
   });
 }
