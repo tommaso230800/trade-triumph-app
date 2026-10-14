@@ -110,7 +110,7 @@ export function RevenueDistributionDial({
                   className="h-4 w-1.5 flex-shrink-0 rounded-full"
                   style={{ backgroundColor: aziendaColorValue(s.id, colorMap) }}
                 />
-                <span className="min-w-0 flex-1 truncate text-sm text-scatto-ink">{s.nome}</span>
+                <span className="min-w-0 flex-1 break-words text-sm text-scatto-ink">{s.nome}</span>
                 <span className="font-display text-sm font-semibold tabular-nums text-scatto-ink">
                   {formatCurrency(s.valore)}
                 </span>

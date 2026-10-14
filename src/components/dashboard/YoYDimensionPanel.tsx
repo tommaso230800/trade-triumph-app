@@ -64,13 +64,13 @@ export function YoYDimensionPanel({ title, data, names, yearCurr, yearPrev, topN
       ) : (
         <div className="space-y-1.5">
           {items.map((it) => (
-            <div key={it.id} className="flex items-center justify-between gap-2 text-xs">
-              <span className="truncate flex-1 text-scatto-ink" title={nameOf(it.id)}>
+            <div key={it.id} className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1 text-xs">
+              <span className="min-w-0 flex-1 basis-32 break-words text-scatto-ink" title={nameOf(it.id)}>
                 {nameOf(it.id)}
               </span>
               {mode === "delta" && (
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-scatto-muted">
+                <div className="ml-auto flex items-center gap-2">
+                  <span className="tabular-nums text-scatto-muted">
                     {fmtEUR(it.prev)} → {fmtEUR(it.curr)}
                   </span>
                   <Badge

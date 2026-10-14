@@ -40,7 +40,7 @@ export function MonthlyComparisonCards({ data, yearCurr, yearPrev }: MonthlyComp
           key={r.mese}
           className="grid grid-cols-[1fr_1.2fr_1.2fr_1.2fr] gap-1 border-t border-scatto-line px-3 py-2 text-[11px] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
         >
-          <span className="truncate font-medium text-scatto-ink">{r.mese}</span>
+          <span className="min-w-0 truncate font-medium text-scatto-ink">{r.mese}</span>
           <span className="text-right tabular-nums text-scatto-muted">
             {r.prev > 0 ? formatCurrency(r.prev) : "N/D"}
           </span>

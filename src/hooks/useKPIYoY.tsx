@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toLocalISODate, parseLocalDate } from "@/lib/periodRange";
+import { allocateRevenueByRiga, type OrdineLike } from "@/lib/metricsEngine";
+import { applyOrdiniFilters, filterOrdiniByBrand, filteredOrderRevenue, rigaMatchesBrand, RIGHE_SELECT } from "@/lib/analyticsFilters";
 
 export type KPIYoYFilters = {
   clienteIds: string[];
@@ -57,28 +59,16 @@ const monthsIT = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","n
 
 
 async function fetchAggregates(start: Date, end: Date, filters: KPIYoYFilters) {
-  let q = supabase
-    .from("ordini")
-    .select(`
-      id, totale, data_ordine, cliente_id, azienda_id,
-      ordini_righe ( prodotto_id, quantita_pezzi, quantita_cartoni, prezzo_unitario,
-        prodotti ( id, pezzi_per_cartone, brand_id, azienda_id ) )
-    `)
-    .not("status","in","(annullato,stand_by)")
-    .gte("data_ordine", toISO(start))
-    .lte("data_ordine", toISO(end));
-
-  if (filters.clienteIds.length > 0) q = q.in("cliente_id", filters.clienteIds);
-  if (filters.aziendaIds.length > 0) q = q.in("azienda_id", filters.aziendaIds);
-
+  const q = applyOrdiniFilters(
+    supabase
+      .from("ordini")
+      .select(`id, totale, data_ordine, cliente_id, azienda_id, ${RIGHE_SELECT}`)
+      .not("status", "in", "(annullato,stand_by)"),
+    filters, start, end
+  );
   const { data, error } = await q;
   if (error) throw error;
-  let ordini = data || [];
-  if (filters.brandIds.length > 0) {
-    ordini = ordini.filter((o: any) =>
-      o.ordini_righe?.some((r: any) => filters.brandIds.includes(r.prodotti?.brand_id))
-    );
-  }
+  const ordini = filterOrdiniByBrand((data || []) as any[], filters.brandIds);
 
   let fatturato = 0;
   let pezzi = 0;
@@ -91,8 +81,9 @@ async function fetchAggregates(start: Date, end: Date, filters: KPIYoYFilters) {
   monthsIT.forEach(m => monthly[m] = 0);
 
   ordini.forEach((o: any) => {
-    const tot = Number(o.totale) || 0;
+    const tot = filteredOrderRevenue(o, filters.brandIds);
     fatturato += tot;
+    const alloc = allocateRevenueByRiga(o as OrdineLike);
     const d = parseLocalDate(o.data_ordine);
     if (d) monthly[monthsIT[d.getMonth()]] += tot;
 
@@ -100,12 +91,12 @@ async function fetchAggregates(start: Date, end: Date, filters: KPIYoYFilters) {
     if (o.cliente_id) perCliente.set(o.cliente_id, (perCliente.get(o.cliente_id) || 0) + tot);
     if (o.azienda_id) perAzienda.set(o.azienda_id, (perAzienda.get(o.azienda_id) || 0) + tot);
 
-    o.ordini_righe?.forEach((r: any) => {
+    o.ordini_righe?.forEach((r: any, idx: number) => {
       if (!r.prodotti) return;
-      if (filters.brandIds.length > 0 && !filters.brandIds.includes(r.prodotti.brand_id)) return;
+      if (!rigaMatchesBrand(r, filters.brandIds)) return;
       const cart = r.quantita_cartoni || 0;
       const pz = (r.quantita_pezzi || 0) + cart * (r.prodotti.pezzi_per_cartone || 1);
-      const rf = pz * Number(r.prezzo_unitario);
+      const rf = alloc[idx] || 0;
       pezzi += pz;
       if (r.prodotti.brand_id) {
         perBrand.set(r.prodotti.brand_id, (perBrand.get(r.prodotti.brand_id) || 0) + rf);
@@ -144,17 +135,20 @@ export function useKPIYoY(filters: KPIYoYFilters) {
       // è garantito: la risposta troncata poteva escludere ordini reali
       // recenti in modo silenzioso, nessun errore, nessun avviso. Si pagina
       // finché non arrivano meno righe di quelle richieste.
-      let yearOrdini: { totale: number; data_ordine: string }[] = [];
+      let yearOrdini: any[] = [];
       {
         const pageSize = 1000;
         let from = 0;
         while (true) {
-          const { data, error } = await supabase
-            .from("ordini")
-            .select("totale, data_ordine")
-            .not("status","in","(annullato,stand_by)")
-            .gte("data_ordine", `${yearPrev}-01-01`)
-            .lte("data_ordine", `${yearCurr}-12-31`)
+          const { data, error } = await applyOrdiniFilters(
+            supabase
+              .from("ordini")
+              .select(`id, totale, data_ordine, ${RIGHE_SELECT}`)
+              .not("status", "in", "(annullato,stand_by)"),
+            filters,
+            new Date(yearPrev, 0, 1),
+            new Date(yearCurr, 11, 31)
+          )
             .order("data_ordine", { ascending: true })
             .range(from, from + pageSize - 1);
           if (error) throw error;
@@ -170,14 +164,15 @@ export function useKPIYoY(filters: KPIYoYFilters) {
       const monthlyOrdiniCurr: Record<string, number> = {};
       const monthlyOrdiniPrev: Record<string, number> = {};
       monthsIT.forEach(m => { monthlyCurr[m] = 0; monthlyPrev[m] = 0; monthlyOrdiniCurr[m] = 0; monthlyOrdiniPrev[m] = 0; });
-      (yearOrdini || []).forEach((o: any) => {
+      filterOrdiniByBrand(yearOrdini, filters.brandIds).forEach((o: any) => {
+        const tot = filteredOrderRevenue(o, filters.brandIds);
         const d = parseLocalDate(o.data_ordine);
         if (!d) return;
         const m = monthsIT[d.getMonth()];
         const y = d.getFullYear();
 
-        if (y === yearCurr) { monthlyCurr[m] += Number(o.totale) || 0; monthlyOrdiniCurr[m] += 1; }
-        else if (y === yearPrev) { monthlyPrev[m] += Number(o.totale) || 0; monthlyOrdiniPrev[m] += 1; }
+        if (y === yearCurr) { monthlyCurr[m] += tot; monthlyOrdiniCurr[m] += 1; }
+        else if (y === yearPrev) { monthlyPrev[m] += tot; monthlyOrdiniPrev[m] += 1; }
       });
 
       const monthlyComparison = monthsIT.map(m => ({

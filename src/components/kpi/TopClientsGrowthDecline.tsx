@@ -16,16 +16,16 @@ interface TopClientsGrowthDeclineProps {
 
 function ClientRow({ rank, c, positive }: { rank: number; c: ClienteVariazione; positive: boolean }) {
   return (
-    <div className="flex items-center gap-2.5 border-b border-scatto-line py-2.5 last:border-b-0">
+    <div className="flex items-start gap-2 border-b border-scatto-line py-2.5 last:border-b-0">
       <span className="w-4 flex-shrink-0 font-display text-xs font-bold text-scatto-muted">{rank}</span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-scatto-ink">{c.nome}</p>
-        <p className="mt-0.5 truncate text-[11px] text-scatto-muted">
+        <p className="break-words text-sm font-semibold text-scatto-ink">{c.nome}</p>
+        <p className="mt-0.5 text-xs tabular-nums text-scatto-muted">
           {formatCurrency(c.fatturato)} vs {formatCurrency(c.fatturato_2025 || 0)}
         </p>
       </div>
       <span
-        className={`flex-shrink-0 rounded-md px-2 py-0.5 font-display text-xs font-bold ${
+        className={`flex-shrink-0 rounded-md px-2 py-0.5 font-display text-xs font-bold tabular-nums ${
           positive ? "bg-scatto-success/10 text-scatto-success" : "bg-scatto-danger/10 text-scatto-danger"
         }`}
       >

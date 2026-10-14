@@ -16,7 +16,7 @@ export function RipartizioniHighlights({ aziendaTop, prodottoTop, fatturatoTotal
         <p className="text-[11px] font-semibold uppercase tracking-wide text-scatto-muted">Azienda top</p>
         {aziendaTop ? (
           <>
-            <p className="mt-1.5 truncate font-display text-base font-bold text-scatto-ink">{aziendaTop.nome}</p>
+            <p className="mt-1.5 break-words font-display text-base font-bold text-scatto-ink">{aziendaTop.nome}</p>
             <p className="mt-2 font-display text-2xl font-bold tabular-nums tracking-tight text-scatto-info">
               {formatCurrency(aziendaTop.fatturato_totale)}
             </p>
@@ -31,7 +31,7 @@ export function RipartizioniHighlights({ aziendaTop, prodottoTop, fatturatoTotal
         <p className="text-[11px] font-semibold uppercase tracking-wide text-scatto-muted">Prodotto top</p>
         {prodottoTop ? (
           <>
-            <p className="mt-1.5 truncate font-display text-base font-bold text-scatto-ink">{prodottoTop.nome}</p>
+            <p className="mt-1.5 break-words font-display text-base font-bold text-scatto-ink">{prodottoTop.nome}</p>
             <p className="mt-2 font-display text-2xl font-bold tabular-nums tracking-tight text-scatto-violet">
               {formatCurrency(prodottoTop.fatturato_totale)}
             </p>

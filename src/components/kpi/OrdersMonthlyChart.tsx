@@ -22,7 +22,8 @@ export function OrdersMonthlyChart({ data }: OrdersMonthlyChartProps) {
               boxShadow: "0 12px 32px -16px hsl(225 18% 9% / 0.35)",
             }}
             labelStyle={{ color: "hsl(var(--scatto-ink))", fontWeight: 600 }}
-            formatter={(value: number) => [`${value} ordini`, ""]}
+            formatter={(value: number) => [value, "Ordini"]}
+            wrapperStyle={{ zIndex: 20 }}
           />
           <Bar dataKey="ordini" radius={[4, 4, 0, 0]} maxBarSize={36}>
             {data.map((m) => (

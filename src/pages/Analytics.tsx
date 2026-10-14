@@ -148,17 +148,21 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
   // Movimento clienti vs anno precedente: stessa soglia ±5% già usata in
   // ClientGrowthWidget, per restare coerenti col resto dell'app.
   const clientiClassificati = useMemo(() => {
+    // Storico per cliente calcolato sugli stessi filtri e sullo stesso periodo
+    // dell'anno precedente (mai il totale annuo generale del cliente).
     const conConfronto = (stats?.clientiKPI || [])
-      .filter((c) => (c.fatturato_2025 || 0) > 0)
-      .map((c) => ({
+      .map((c) => ({ c, prev: yoy?.clientiYoY?.get(c.id)?.prev ?? 0 }))
+      .filter(({ prev }) => prev > 0)
+      .map(({ c, prev }) => ({
         ...c,
-        variazionePct: ((c.fatturato - (c.fatturato_2025 || 0)) / (c.fatturato_2025 || 1)) * 100,
+        fatturato_2025: prev,
+        variazionePct: ((c.fatturato - prev) / prev) * 100,
       }));
     const crescita = conConfronto.filter((c) => c.variazionePct > 5).sort((a, b) => b.variazionePct - a.variazionePct);
     const calo = conConfronto.filter((c) => c.variazionePct < -5).sort((a, b) => a.variazionePct - b.variazionePct);
     const stabili = conConfronto.filter((c) => c.variazionePct >= -5 && c.variazionePct <= 5);
     return { crescita, calo, stabili };
-  }, [stats?.clientiKPI]);
+  }, [stats?.clientiKPI, yoy]);
 
   // Obiettivo mensile: media del fatturato negli ultimi 12 mesi (stessa logica
   // già usata in Provvigioni per l'obiettivo mensile) — nessun target reale
@@ -173,7 +177,9 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
       const idx = ((raw % 12) + 12) % 12;
       rolling.push(raw >= 0 ? yoy.monthlyComparison[idx].curr : yoy.monthlyComparison[idx].prev);
     }
-    const obiettivo = rolling.some((v) => v > 0) ? rolling.reduce((a, b) => a + b, 0) / 12 : 0;
+    // Calcolato sulla selezione attiva; senza storico non c'è obiettivo.
+    if (!rolling.some((v) => v > 0)) return null;
+    const obiettivo = rolling.reduce((a, b) => a + b, 0) / 12;
     const fatturatoMese = yoy.monthlyComparison[currentMonthIndex]?.curr ?? 0;
     return { obiettivo, fatturatoMese };
   }, [yoy, currentMonthIndex]);
@@ -302,8 +308,13 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
   }
 
   const momValue = stats?.mom || 0;
-  const yoyValue = stats?.yoy || 0;
-  const hasYoyData = (stats?.yoyPrevFatturato || 0) > 0;
+  // YoY unico per tutta la pagina: stessi filtri, periodo equivalente a/p.
+  const yoyPrevFatturato = yoy?.prev.fatturato ?? 0;
+  const hasYoyData = yoyPrevFatturato > 0;
+  const yoyValue = hasYoyData ? (((stats?.fatturatoTotale || 0) - yoyPrevFatturato) / yoyPrevFatturato) * 100 : 0;
+  const yoyByCliente = new Map<string, number>(
+    Array.from(yoy?.clientiYoY?.entries() || []).map(([id, d]) => [id, d.prev])
+  );
 
   return (
     <MainLayout>
@@ -330,7 +341,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
                   size="sm"
                   className="gap-2 rounded-xl border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
                   disabled={!stats}
-                  onClick={() => stats && exportKPIToCSV({ ...stats, periodoLabel: getPeriodoLabel() } as any)}
+                  onClick={() => stats && exportKPIToCSV({ ...stats, yoy: yoyValue, yoyPrevFatturato, topGrowers: clientiClassificati.crescita.slice(0, 5), topDecliners: clientiClassificati.calo.slice(0, 5), periodoLabel: getPeriodoLabel() } as any)}
                 >
                   <Download className="h-4 w-4" />
                   Esporta CSV
@@ -339,7 +350,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
                   size="sm"
                   className="gap-2 rounded-xl bg-scatto-ink text-white hover:bg-scatto-ink/90"
                   disabled={!stats}
-                  onClick={() => stats && exportKPIToPDF({ ...stats, periodoLabel: getPeriodoLabel() } as any)}
+                  onClick={() => stats && exportKPIToPDF({ ...stats, yoy: yoyValue, yoyPrevFatturato, topGrowers: clientiClassificati.crescita.slice(0, 5), topDecliners: clientiClassificati.calo.slice(0, 5), periodoLabel: getPeriodoLabel() } as any)}
                 >
                   <FileText className="h-4 w-4" />
                   Esporta PDF
@@ -453,7 +464,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
           <SalesOverviewPanel
             fatturatoTotale={stats?.fatturatoTotale || 0}
             deltaPct={hasYoyData ? yoyValue : null}
-            deltaLabel={hasYoyData ? "vs stesso periodo anno prec." : "nessun dato anno prec."}
+            deltaLabel={hasYoyData ? "vs stesso periodo anno prec." : "Storico non disponibile per questa selezione"}
             periodoLabel={getPeriodoLabel()}
             mensilePerAzienda={stats?.mensilePerAzienda || []}
             aziende={(stats?.aziendeKPI || []).map((a) => ({
@@ -512,8 +523,8 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
             />
             <RevenueDistributionDial
               titolo="Ripartizione per marchio"
-              totaleLabel="Fatturato marchi"
-              totale={(stats?.brandsKPI || []).reduce((s, b) => s + b.fatturato_totale, 0)}
+              totaleLabel={`Fatturato · ${getPeriodoLabel()}`}
+              totale={stats?.fatturatoTotale || 0}
               slices={(stats?.brandsKPI || []).map((b) => ({
                 id: b.id,
                 nome: b.name,
@@ -536,28 +547,28 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
             />
             <StatCard
               icon={RotateCcw}
-              label="MoM (vs mese prec.)"
+              label="MoM"
               value={`${momValue >= 0 ? "+" : ""}${momValue.toFixed(1)}%`}
               caption="rispetto al mese precedente"
               tone={momValue >= 0 ? "success" : "danger"}
             />
             <StatCard
               icon={CalendarIcon}
-              label="YoY (stesso periodo a/p)"
+              label="YoY"
               value={hasYoyData ? `${yoyValue >= 0 ? "+" : ""}${yoyValue.toFixed(1)}%` : "N/D"}
-              caption={hasYoyData ? `vs ${formatCurrency(stats?.yoyPrevFatturato || 0)}` : "manca dato anno prec."}
+              caption={hasYoyData ? `vs ${formatCurrency(yoyPrevFatturato)}` : "Storico non disponibile per questa selezione"}
               tone={!hasYoyData ? "info" : yoyValue >= 0 ? "success" : "danger"}
             />
             <StatCard
               icon={Tag}
-              label="Sconto medio applicato"
+              label="Sconto medio"
               value={`${(stats?.scontoCascataMedio || 0).toFixed(1)}%`}
               caption={`+ ${(stats?.scontoMedio || 0).toFixed(1)}% sconto globale`}
               tone="warning"
             />
             <StatCard
               icon={Euro}
-              label="Sconto merce medio / ordine"
+              label="Sconto merce / ordine"
               value={formatCurrency(stats?.scontoMerceMedio || 0)}
               tone="warning"
             />
@@ -602,6 +613,11 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
           <InsightsPanel insights={insights} />
 
           {/* Obiettivo mensile (stima: media ultimi 12 mesi) */}
+          {!obiettivoMensile && yoy && (
+            <SectionCard title={`Obiettivo ${format(now, "MMMM", { locale: it })}`}>
+              <p className="text-sm text-scatto-muted">Obiettivo non disponibile per questa selezione.</p>
+            </SectionCard>
+          )}
           {obiettivoMensile && (
             <MonthlyGoalCard
               meseLabel={format(now, "MMMM", { locale: it })}
@@ -661,7 +677,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
 
           {/* Detailed Tabs */}
           <Tabs defaultValue="clienti" className="space-y-4">
-            <TabsList className="grid w-full max-w-lg grid-cols-4 rounded-xl border border-scatto-line bg-scatto-surface p-1">
+            <TabsList className="grid h-auto w-full max-w-lg grid-cols-4 rounded-xl border border-scatto-line bg-scatto-surface p-1">
               <TabsTrigger value="clienti" className="rounded-lg data-[state=active]:bg-scatto-ink data-[state=active]:text-white">Clienti</TabsTrigger>
               <TabsTrigger value="aziende" className="rounded-lg data-[state=active]:bg-scatto-ink data-[state=active]:text-white">Aziende</TabsTrigger>
               <TabsTrigger value="brands" className="rounded-lg data-[state=active]:bg-scatto-ink data-[state=active]:text-white">Marchi</TabsTrigger>
@@ -689,7 +705,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
                 />
               </div>
 
-              <ClientRevenueCards clienti={filteredClienti} yearPrev={yoy?.yearPrev} aziendaColorMap={aziendaColorMap} />
+              <ClientRevenueCards clienti={filteredClienti} yearPrev={yoy?.yearPrev} aziendaColorMap={aziendaColorMap} prevById={yoyByCliente} />
             </TabsContent>
 
             {/* Aziende Tab */}

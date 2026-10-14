@@ -206,7 +206,7 @@ export function SalesOverviewPanel({
                 <div key={a.id} className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     <span className="h-3 w-1 rounded-full" style={{ backgroundColor: color }} />
-                    <span className="flex-1 truncate text-xs font-medium text-scatto-ink">{a.nome}</span>
+                    <span className="min-w-0 flex-1 break-words text-xs font-medium text-scatto-ink">{a.nome}</span>
                     <span className="font-display text-xs font-semibold tabular-nums text-scatto-ink">
                       {formatCurrency(a.fatturato_totale)}
                     </span>

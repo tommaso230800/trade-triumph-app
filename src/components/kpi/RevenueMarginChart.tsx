@@ -10,7 +10,7 @@ interface RevenueMarginChartProps {
 export function RevenueMarginChart({ data }: RevenueMarginChartProps) {
   return (
     <div>
-      <div className="mb-2 flex items-center gap-4 px-1 text-[11px] font-medium text-scatto-muted">
+      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] font-medium text-scatto-muted">
         <span>Ogni mese ha il suo colore, ripetuto identico nel grafico ordini</span>
         <span className="flex items-center gap-1.5">
           <i className="inline-block h-[3px] w-3 rounded-full bg-scatto-warning" />
@@ -31,7 +31,13 @@ export function RevenueMarginChart({ data }: RevenueMarginChartProps) {
               boxShadow: "0 12px 32px -16px hsl(225 18% 9% / 0.35)",
             }}
             labelStyle={{ color: "hsl(var(--scatto-ink))", fontWeight: 600 }}
-            formatter={(value: number) => [formatCurrency(value), "Fatturato"]}
+            formatter={(value: number, name: string) =>
+              name === "marginePct"
+                ? [`${Number(value).toLocaleString("it-IT", { maximumFractionDigits: 1 })}%`, "Margine"]
+                : [formatCurrency(value), "Fatturato"]
+            }
+            wrapperStyle={{ zIndex: 20 }}
+            allowEscapeViewBox={{ x: false, y: true }}
           />
           <Bar yAxisId="fatturato" dataKey="fatturato" radius={[4, 4, 0, 0]} maxBarSize={36}>
             {data.map((m) => (

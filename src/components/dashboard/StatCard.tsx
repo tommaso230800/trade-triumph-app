@@ -36,9 +36,9 @@ export function StatCard({ icon: Icon, label, value, delta, caption, tone = "inf
         <span className={cn("flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-scatto-ink/[0.05]", toneIconClass[tone])}>
           <Icon className="h-3.5 w-3.5" />
         </span>
-        <p className="truncate text-xs font-medium text-scatto-muted">{label}</p>
+        <p className="break-words text-xs font-medium text-scatto-muted">{label}</p>
       </div>
-      <p className="mt-2.5 truncate font-display text-2xl font-bold tabular-nums tracking-tight text-scatto-ink">
+      <p className="mt-2.5 break-words font-display text-xl sm:text-2xl font-bold tabular-nums tracking-tight text-scatto-ink">
         {value}
       </p>
       {(delta || caption) && (
@@ -48,7 +48,7 @@ export function StatCard({ icon: Icon, label, value, delta, caption, tone = "inf
               {deltaArrow[delta.direction]} {delta.label}
             </span>
           )}
-          {caption && <span className="truncate text-scatto-muted">{caption}</span>}
+          {caption && <span className="break-words text-scatto-muted">{caption}</span>}
         </p>
       )}
     </div>
