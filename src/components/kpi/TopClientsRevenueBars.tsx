@@ -17,7 +17,7 @@ export function TopClientsRevenueBars({ clienti }: TopClientsRevenueBarsProps) {
         {top.map((c, i) => (
           <div key={c.id}>
             <div className="mb-1.5 flex items-baseline justify-between gap-2">
-              <span className="truncate text-sm font-semibold text-scatto-ink">{c.nome}</span>
+              <span className="min-w-0 break-words text-sm font-semibold text-scatto-ink">{c.nome}</span>
               <span className="flex-shrink-0 font-display text-sm font-semibold tabular-nums text-scatto-ink">
                 {formatCurrency(c.fatturato)}
               </span>

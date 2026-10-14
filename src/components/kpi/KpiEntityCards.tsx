@@ -29,7 +29,7 @@ export function KpiEntityCards({ items, emptyLabel }: KpiEntityCardsProps) {
       {items.map((item) => (
         <SectionCard key={item.id} className="p-4">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="truncate text-sm font-semibold text-scatto-ink">{item.nome}</p>
+            <p className="min-w-0 break-words text-sm font-semibold text-scatto-ink">{item.nome}</p>
             <p className="flex-shrink-0 font-display text-base font-bold tabular-nums tracking-tight text-scatto-ink">
               {formatCurrency(item.fatturato)}
             </p>
