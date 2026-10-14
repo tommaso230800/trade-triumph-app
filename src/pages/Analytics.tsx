@@ -613,6 +613,11 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
           <InsightsPanel insights={insights} />
 
           {/* Obiettivo mensile (stima: media ultimi 12 mesi) */}
+          {!obiettivoMensile && yoy && (
+            <SectionCard title={`Obiettivo ${format(now, "MMMM", { locale: it })}`}>
+              <p className="text-sm text-scatto-muted">Obiettivo non disponibile per questa selezione.</p>
+            </SectionCard>
+          )}
           {obiettivoMensile && (
             <MonthlyGoalCard
               meseLabel={format(now, "MMMM", { locale: it })}

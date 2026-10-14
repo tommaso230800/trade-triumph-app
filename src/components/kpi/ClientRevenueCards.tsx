@@ -7,12 +7,14 @@ interface ClientRevenueCardsProps {
   clienti: ClienteKPI[];
   yearPrev?: number;
   aziendaColorMap?: AziendaColorMap;
+  /** Fatturato a/p sugli stessi filtri e periodo equivalente. */
+  prevById?: Map<string, number>;
 }
 
 // Sostituisce la vecchia tabella larga (scroll orizzontale su mobile): una
 // card per cliente con una barra a segmenti che spezza il totale nei colori
 // identità delle aziende fornitrici, invece di colonne fisse.
-export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap }: ClientRevenueCardsProps) {
+export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap, prevById }: ClientRevenueCardsProps) {
   if (clienti.length === 0) {
     return <SectionCard className="p-8 text-center text-scatto-muted">Nessun cliente trovato</SectionCard>;
   }
@@ -20,14 +22,14 @@ export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap }: Clien
   return (
     <div className="space-y-3">
       {clienti.map((cliente) => {
-        const fat2025 = cliente.fatturato_2025 || 0;
+        const fat2025 = prevById ? prevById.get(cliente.id) || 0 : 0;
         const variazione = fat2025 > 0 ? ((cliente.fatturato - fat2025) / fat2025) * 100 : null;
         const totaleSegmenti = cliente.perAzienda.reduce((s, a) => s + a.fatturato, 0) || 1;
 
         return (
           <SectionCard key={cliente.id} className="p-4">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="truncate text-[15px] font-semibold text-scatto-ink">{cliente.nome}</p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="min-w-0 break-words text-sm font-semibold text-scatto-ink">{cliente.nome}</p>
               <p className="flex-shrink-0 font-display text-base font-bold tabular-nums tracking-tight text-scatto-ink">
                 {formatCurrency(cliente.fatturato)}
               </p>
@@ -65,7 +67,7 @@ export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap }: Clien
                         className="h-2 w-2 flex-shrink-0 rounded-sm"
                         style={{ backgroundColor: aziendaColorValue(a.aziendaId, aziendaColorMap) }}
                       />
-                      {a.aziendaNome} <b className="font-display font-semibold text-scatto-ink">{formatCurrency(a.fatturato)}</b>
+                      <span className="break-words">{a.aziendaNome}</span> <b className="font-display font-semibold text-scatto-ink">{formatCurrency(a.fatturato)}</b>
                     </span>
                   ))}
                 </div>
