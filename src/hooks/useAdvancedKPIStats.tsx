@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { allocateRevenueByRiga, orderDate, isCounted, type OrdineLike } from "@/lib/metricsEngine";
 import { toLocalISODate } from "@/lib/periodRange";
+import { applyOrdiniFilters, filterOrdiniByBrand, filteredOrderRevenue, SENZA_MARCHIO_ID, RIGHE_SELECT } from "@/lib/analyticsFilters";
 
 
 export type AdvancedKPIFilters = {
@@ -189,7 +190,8 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       const clienteAziendaMap = new Map<string, Map<string, number>>();
 
       ordini.forEach((ordine) => {
-        const totaleOrdine = Number(ordine.totale);
+        // Con filtro marchio conta solo la quota delle righe di quei marchi.
+        const totaleOrdine = filteredOrderRevenue(ordine, filters.brandIds);
         fatturatoTotale += totaleOrdine;
 
         // Sconto globale ponderato + sconto merce
@@ -293,9 +295,9 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
             });
           }
 
-          // Brand KPIs
-          if (riga.prodotti.brand_id) {
-            const brandId = riga.prodotti.brand_id;
+          // Brand KPIs (le vendite senza marchio finiscono in una voce esplicita)
+          {
+            const brandId = riga.prodotti.brand_id || SENZA_MARCHIO_ID;
             const existingBrand = brandsMap.get(brandId);
             if (existingBrand) {
               existingBrand.fatturato_totale += rigaFatturato;
@@ -305,7 +307,7 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
               const brand = brands.find((b) => b.id === brandId);
               brandsMap.set(brandId, {
                 id: brandId,
-                name: brand?.name || "N/A",
+                name: brandId === SENZA_MARCHIO_ID ? "Senza marchio" : brand?.name || "N/A",
                 azienda_nome: brand?.aziende?.nome || null,
                 fatturato_totale: rigaFatturato,
                 ordini_count: 1,
@@ -450,14 +452,12 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
         const previousEnd = new Date(filters.startDate.getTime() - 1);
         const previousStart = new Date(previousEnd.getTime() - periodLength);
 
-        const { data: previousOrdini } = await supabase
-          .from("ordini")
-          .select("totale")
-          .not("status","in","(annullato,stand_by)")
-          .gte("data_ordine", previousStart.toISOString().split("T")[0])
-          .lte("data_ordine", previousEnd.toISOString().split("T")[0]);
-
-        const previousFatturato = (previousOrdini || []).reduce((sum, o) => sum + Number(o.totale), 0);
+        const { data: previousOrdini } = await applyOrdiniFilters(
+          supabase.from("ordini").select(`id, totale, ${RIGHE_SELECT}`).not("status", "in", "(annullato,stand_by)"),
+          filters, previousStart, previousEnd
+        );
+        const previousFatturato = filterOrdiniByBrand((previousOrdini || []) as any[], filters.brandIds)
+          .reduce((sum, o) => sum + filteredOrderRevenue(o, filters.brandIds), 0);
         if (previousFatturato > 0) {
           trendPercentage = ((fatturatoTotale - previousFatturato) / previousFatturato) * 100;
         }
@@ -477,13 +477,12 @@ export function useAdvancedKPIStats(filters: AdvancedKPIFilters) {
       if (filters.startDate && filters.endDate) {
         const ys = new Date(filters.startDate); ys.setFullYear(ys.getFullYear() - 1);
         const ye = new Date(filters.endDate); ye.setFullYear(ye.getFullYear() - 1);
-        const { data: yoyOrdini } = await supabase
-          .from("ordini")
-          .select("totale")
-          .not("status","in","(annullato,stand_by)")
-          .gte("data_ordine", ys.toISOString().split("T")[0])
-          .lte("data_ordine", ye.toISOString().split("T")[0]);
-        yoyPrevFatturato = (yoyOrdini || []).reduce((s, o) => s + Number(o.totale), 0);
+        const { data: yoyOrdini } = await applyOrdiniFilters(
+          supabase.from("ordini").select(`id, totale, ${RIGHE_SELECT}`).not("status", "in", "(annullato,stand_by)"),
+          filters, ys, ye
+        );
+        yoyPrevFatturato = filterOrdiniByBrand((yoyOrdini || []) as any[], filters.brandIds)
+          .reduce((s, o) => s + filteredOrderRevenue(o, filters.brandIds), 0);
         if (yoyPrevFatturato > 0) {
           yoy = ((fatturatoTotale - yoyPrevFatturato) / yoyPrevFatturato) * 100;
         }
