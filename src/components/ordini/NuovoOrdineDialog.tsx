@@ -94,7 +94,7 @@ const emptyFormData = () => ({
   note: "",
   sconto: "0",
   sconto_merce: "0",
-  tipo_pagamento: "Contanti",
+  tipo_pagamento: "Come precedente ordine",
   data_ordine: format(new Date(), "yyyy-MM-dd"),
 });
 
@@ -460,7 +460,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
       ...prev,
       sconto: String(defaults.sconto || 0).replace(".", ","),
       sconto_merce: String(defaults.sconto_merce || 0).replace(".", ","),
-      tipo_pagamento: defaults.tipo_pagamento || "Contanti",
+      // Nessun recupero del pagamento precedente: resta la dicitura scelta.
+      tipo_pagamento: prev.tipo_pagamento,
     }));
 
     const newRighe: RigaOrdine[] = products.map((p) => {
