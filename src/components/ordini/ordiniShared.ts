@@ -36,7 +36,9 @@ export const scattoStatusBadge: Record<Ordine["status"], { label: string }> = {
   stand_by: { label: "Stand-by" },
 };
 
+export const PAGAMENTO_COME_PRECEDENTE = "Come precedente ordine";
 export const TIPI_PAGAMENTO = [
+  PAGAMENTO_COME_PRECEDENTE,
   "Anticipato",
   "Contanti",
   "Ri.Ba 30gg",
