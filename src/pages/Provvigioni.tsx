@@ -331,29 +331,29 @@ const Provvigioni = () => {
   return (
     <MainLayout>
       <div className="space-y-6 animate-rise-in pb-8">
+        {/* Pannello con scope proprio (token --scatto-*), coerente con Ordini. */}
+        <div className="space-y-6 rounded-2xl bg-scatto-bg p-4 lg:p-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="page-title">Provvigioni</h1>
-            <p className="text-body-md text-muted-foreground">
-              Centro di controllo economico — filtra, analizza, gestisci pagamenti
-            </p>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink">Provvigioni</h1>
+            <p className="text-sm text-scatto-muted">Centro di controllo economico — filtra, analizza, gestisci pagamenti</p>
           </div>
         </div>
 
         {/* STICKY FILTER BAR */}
-        <div className="sticky top-0 z-20 -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-3 bg-background/80 backdrop-blur-xl border-b border-border/60">
+        <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 bg-scatto-bg/90 backdrop-blur-xl border-b border-scatto-line">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 flex-1 min-w-[220px]">
-              <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Building2 className="h-4 w-4 text-scatto-muted shrink-0" />
               <Select value={aziendaId} onValueChange={(v) => setAziendaId(v)}>
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className={provInputCls}>
                   <SelectValue placeholder="Seleziona azienda" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tutte">Tutte le aziende</SelectItem>
+                <SelectContent className="border-scatto-line bg-scatto-surface text-scatto-ink">
+                  <SelectItem value="tutte" className="focus:bg-scatto-bg focus:text-scatto-ink">Tutte le aziende</SelectItem>
                   {aziende?.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>{a.nome}</SelectItem>
+                    <SelectItem key={a.id} value={a.id} className="focus:bg-scatto-bg focus:text-scatto-ink">{a.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -361,52 +361,52 @@ const Provvigioni = () => {
 
             <PeriodoSelector value={periodo} onChange={setPeriodo} />
 
-            <div className="flex items-center gap-2 min-w-[180px]">
-              <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+              <Users className="h-4 w-4 text-scatto-muted shrink-0" />
               <Select value={clienteId} onValueChange={(v) => setClienteId(v)}>
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className={provInputCls}>
                   <SelectValue placeholder="Cliente" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tutti">Tutti i clienti</SelectItem>
+                <SelectContent className="border-scatto-line bg-scatto-surface text-scatto-ink">
+                  <SelectItem value="tutti" className="focus:bg-scatto-bg focus:text-scatto-ink">Tutti i clienti</SelectItem>
                   {clienti?.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                    <SelectItem key={c.id} value={c.id} className="focus:bg-scatto-bg focus:text-scatto-ink">{c.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-scatto-muted" />
               <Input
                 placeholder="Cerca ordine, cliente, azienda..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                className={`pl-9 ${provInputCls}`}
               />
             </div>
           </div>
         </div>
 
-        {/* CONTO ECONOMICO PERSONALE */}
-        <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Wallet className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold">Il tuo Conto Economico</h2>
-              {aziendaId !== "tutte" && (
-                <Badge variant="outline">{aziende?.find((a) => a.id === aziendaId)?.nome}</Badge>
-              )}
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <EconomicoCell label="Oggi" value={analytics.contoEconomico.guadagnoOggi} accent="text-success" />
-              <EconomicoCell label="Questo mese" value={analytics.contoEconomico.guadagnoMese} accent="text-primary" big />
-              <EconomicoCell label="Quest'anno" value={analytics.contoEconomico.guadagnoAnno} />
-              <EconomicoCell label="Media/giorno" value={analytics.contoEconomico.mediaGiornaliera} accent="text-muted-foreground" />
-              <EconomicoCell label={`Previsione ${format(now, "MMM", { locale: it })}`} value={analytics.contoEconomico.previsioneFineMese} accent="text-warning" />
-            </div>
-          </CardContent>
-        </Card>
+        {/* CONTO ECONOMICO PERSONALE: striscia piatta, un dato protagonista */}
+        <section className="overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_hsl(225_18%_9%/0.05)]">
+          <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
+            <Wallet className="h-4 w-4 text-scatto-muted" />
+            <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">Il tuo Conto Economico</h2>
+            {aziendaId !== "tutte" && (
+              <span className="ml-auto rounded-full bg-scatto-accent/10 px-2.5 py-0.5 text-xs font-semibold text-scatto-accent">
+                {aziende?.find((a) => a.id === aziendaId)?.nome}
+              </span>
+            )}
+          </header>
+          <div className="grid grid-cols-2 divide-x divide-y divide-scatto-line md:grid-cols-5 md:divide-y-0">
+            <EconomicoCell label="Oggi" value={analytics.contoEconomico.guadagnoOggi} accent="text-scatto-success" />
+            <EconomicoCell label="Questo mese" value={analytics.contoEconomico.guadagnoMese} accent="text-scatto-accent" big />
+            <EconomicoCell label="Quest'anno" value={analytics.contoEconomico.guadagnoAnno} />
+            <EconomicoCell label="Media/giorno" value={analytics.contoEconomico.mediaGiornaliera} accent="text-scatto-muted" />
+            <EconomicoCell label={`Previsione ${format(now, "MMM", { locale: it })}`} value={analytics.contoEconomico.previsioneFineMese} accent="text-scatto-warning" />
+          </div>
+        </section>
 
         {/* KPI CARDS */}
         <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
