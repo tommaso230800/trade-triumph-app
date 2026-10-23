@@ -102,9 +102,15 @@ const Ordini = () => {
   useEffect(() => {
     if (searchParams.get("ricerca")) {
       setSearchTerm(searchParams.get("ricerca") ?? "");
-      resetPeriodo();
+      const year = Number(searchParams.get("anno"));
+      if (Number.isInteger(year) && year > 1900) setPeriodo({ kind: "year", year });
+      else resetPeriodo();
+      setStatusFilter("tutti");
+      setClienteFilter("tutti");
+      setAziendaFilter("tutti");
       const next = new URLSearchParams(searchParams);
       next.delete("ricerca");
+      next.delete("anno");
       setSearchParams(next, { replace: true });
     }
     if (searchParams.get("nuovo") === "1") {

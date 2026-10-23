@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { integrityReport, orderDate, type OrdineLike } from "@/lib/metricsEngine";
 import { AlertTriangle, CheckCircle2, Download, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { fetchDataPanelOrders } from "@/hooks/useDataPanelOrders";
 
 type Row = ReturnType<typeof integrityReport>["rows"][number] & {
   codice?: string | null;
@@ -29,14 +30,7 @@ export function IntegrityCheckPanel() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("ordini")
-        .select(
-          "id, codice, status, totale, data_ordine, data_conferma, created_at, clienti(nome), ordini_righe(quantita_pezzi, quantita_cartoni, prezzo_unitario, sc1, sc2, sc3, is_omaggio, prodotti(pezzi_per_cartone))"
-        )
-        .order("data_ordine", { ascending: false });
-      if (error) throw error;
-      const ordini = (data ?? []) as any[];
+      const ordini = await fetchDataPanelOrders();
       const rep = integrityReport(ordini as OrdineLike[]);
       const byId = new Map(ordini.map((o) => [o.id, o]));
       const enriched: Row[] = rep.rows.map((r) => {

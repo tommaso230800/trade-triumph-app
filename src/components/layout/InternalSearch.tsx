@@ -30,7 +30,7 @@ export function InternalSearch() {
       const responses = await Promise.all([
         supabase.from("clienti").select("id,nome").ilike("nome", like).limit(15),
         supabase.from("aziende").select("id,nome").ilike("nome", like).limit(15),
-        supabase.from("ordini").select("id,codice,clienti(nome)").ilike("codice", like).limit(15),
+        supabase.from("ordini").select("id,codice,data_ordine,clienti(nome)").ilike("codice", like).limit(15),
         supabase.from("prodotti").select("id,nome,azienda_id").ilike("nome", like).limit(15),
       ]);
       for (const r of responses) if (r.error) throw r.error;
@@ -56,7 +56,7 @@ export function InternalSearch() {
             {debounced.length >= 2 && !results.isFetching && !results.isError && total === 0 && <p className="p-4 text-sm text-muted-foreground">Nessun dato trovato</p>}
             {results.data?.clienti.length ? <CommandGroup heading="Clienti">{results.data.clienti.map(c => <CommandItem key={c.id} onSelect={() => go(`/clienti/${c.id}`)} className="min-h-11 gap-2"><Users className="h-4 w-4 shrink-0" /><span className="break-words">{c.nome}</span></CommandItem>)}</CommandGroup> : null}
             {results.data?.aziende.length ? <CommandGroup heading="Aziende">{results.data.aziende.map(c => <CommandItem key={c.id} onSelect={() => go(`/aziende/${c.id}`)} className="min-h-11 gap-2"><Building2 className="h-4 w-4 shrink-0" /><span className="break-words">{c.nome}</span></CommandItem>)}</CommandGroup> : null}
-            {results.data?.ordini.length ? <CommandGroup heading="Ordini">{results.data.ordini.map(c => <CommandItem key={c.id} onSelect={() => go(`/ordini?ricerca=${encodeURIComponent(c.codice ?? "")}`)} className="min-h-11 gap-2"><ShoppingCart className="h-4 w-4 shrink-0" /><span className="break-words">{c.codice} · {c.clienti?.nome ?? "N/D"}</span></CommandItem>)}</CommandGroup> : null}
+            {results.data?.ordini.length ? <CommandGroup heading="Ordini">{results.data.ordini.map(c => <CommandItem key={c.id} onSelect={() => go(`/ordini?ricerca=${encodeURIComponent(c.codice ?? "")}&anno=${c.data_ordine?.slice(0,4) ?? ""}`)} className="min-h-11 gap-2"><ShoppingCart className="h-4 w-4 shrink-0" /><span className="break-words">{c.codice} · {c.clienti?.nome ?? "N/D"}</span></CommandItem>)}</CommandGroup> : null}
             {results.data?.prodotti.length ? <CommandGroup heading="Prodotti">{results.data.prodotti.map(c => <CommandItem key={c.id} onSelect={() => go(c.azienda_id ? `/aziende/${c.azienda_id}?prodotto=${c.id}` : "/aziende")} className="min-h-11 gap-2"><Package className="h-4 w-4 shrink-0" /><span className="break-words">{c.nome}</span></CommandItem>)}</CommandGroup> : null}
           </CommandList>
         </Command>
