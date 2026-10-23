@@ -1,9 +1,21 @@
 # Roadmap
+
+## Completati in precedenza
 - [x] Analytics: filtri coerenti, YoY filtrato, Senza marchio, tooltip, iPhone
-- [x] Pagamento "Come precedente ordine" (default, salvato, su proforma)
-- [x] Riordino -> Ordina: prefill cliente/azienda/prodotti, prezzi risolti, test end-to-end OK
-- [x] Menu laterale: voce "Mappa Clienti" rimossa dalla navigazione
-- [ ] Restyling pagina Provvigioni (estetica SaaS premium)
-- [ ] Revisione grafica pagina Ordini (tabella, dettagli, stati)
-- [ ] Audit completo coerenza dati tra pagine (doc ottimizzazione)
-- [x] Importazione prodotti PDF in Aziende: blocchi di pagine, ripresa, campi completi, anteprima, verifica completezza
+- [x] Pagamento "Come precedente ordine"
+- [x] Riordino -> Ordina
+- [x] Menu laterale senza "Mappa Clienti"
+- [x] Importazione prodotti PDF in Aziende
+- [x] Filtri Cliente/Azienda in Ordini + fix paginazione ordini
+
+## Doc "Aggiorna le pagine Ordini, Analytics"
+- [x] 1-2. Selettore Periodo unico (anno/mese, auto-generato, default anno corrente, persistenza) su Ordini e Analytics
+- [x] 3. Coerenza filtri su tutti gli elementi + contesto attivo in alto
+- [x] 4. Audit coerenza dati + fix formato valuta (1 € perso per arrotondamento)
+- [x] 5. Pagina Impostazioni -> Problematiche con "Esegui controllo dati"
+- [x] 6. Ridisegno pagina di accesso (desktop split + mobile)
+- [x] 7. Verifica finale: Ordini e Analytics = 102.288,00 € marzo 2026 = database; accesso desktop/mobile OK
+
+## Aperti da doc ottimizzazione precedente
+- [ ] Restyling pagina Provvigioni
+- [ ] Revisione grafica pagina Ordini

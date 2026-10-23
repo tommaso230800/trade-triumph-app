@@ -22,6 +22,13 @@
       "when": 1792740996458,
       "tag": "0002_product_imports_storage_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792743088950,
+      "tag": "0003_create_data_issues",
+      "breakpoints": true
     }
   ]
 }

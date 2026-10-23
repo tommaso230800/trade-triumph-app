@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   getNotificationPermission,
   requestNotificationPermission,
@@ -31,6 +32,7 @@ import {
   Check,
   BellRing,
   Send,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IntegrityCheckPanel } from "@/components/metrics/IntegrityCheckPanel";
@@ -391,6 +393,28 @@ const Impostazioni = () => {
             </Button>
             <Button variant="outline" className="w-full justify-start gap-2 h-11 sm:h-12 text-destructive hover:text-destructive hover:bg-destructive/10">
               Elimina Account
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Problematiche: esiti del controllo dati con stato di lavorazione */}
+        <Card className="shadow-card hover-lift transition-all duration-300">
+          <CardHeader className="pb-4 p-4 sm:p-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <CardTitle className="text-heading-sm">Problematiche</CardTitle>
+                <CardDescription>Incongruenze rilevate dal controllo dati, con stato di lavorazione</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+            <Button asChild variant="outline" className="w-full justify-start gap-2 h-11 sm:h-12">
+              <Link to="/impostazioni/problematiche">
+                Apri la pagina Problematiche
+              </Link>
             </Button>
           </CardContent>
         </Card>
