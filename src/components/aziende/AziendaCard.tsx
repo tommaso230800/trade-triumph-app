@@ -239,11 +239,11 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
       >
         {/* Card Header */}
         <div className="p-5">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
               {/* Logo or Initial */}
               <div 
-                className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-muted overflow-hidden cursor-pointer group/logo"
+                className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-muted overflow-hidden cursor-pointer group/logo"
                 onClick={() => fileInputRef.current?.click()}
               >
                 {azienda.logo_url ? (
@@ -269,8 +269,8 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
                 />
               </div>
               <div className="min-w-0">
-                <h3 className="font-semibold text-card-foreground truncate">{azienda.nome}</h3>
-                <p className="text-sm text-muted-foreground">{azienda.settore || "—"}</p>
+                <h3 className="break-words text-base font-semibold text-card-foreground">{azienda.nome}</h3>
+                <p className="break-words text-sm text-muted-foreground">{azienda.settore || "—"}</p>
                 {azienda.partita_iva && (
                   <p className="text-xs text-muted-foreground">P.IVA: {azienda.partita_iva}</p>
                 )}

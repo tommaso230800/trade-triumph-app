@@ -400,9 +400,9 @@ const Aziende = () => {
                 </Button>
               </div>
             ) : (
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {aziende.map((azienda, idx) => (
-                  <div key={azienda.id} className="animate-fade-in animate-fill-both" style={{ animationDelay: `${idx * 50}ms` }}>
+                  <div key={azienda.id} className="min-w-0">
                     <AziendaCard
                       azienda={azienda}
                       onEdit={openEditDialog}

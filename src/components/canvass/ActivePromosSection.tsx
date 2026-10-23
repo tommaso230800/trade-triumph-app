@@ -58,8 +58,8 @@ export function ActivePromosSection({ promos, onViewDetail }: ActivePromosSectio
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-primary/10">
+    <section className="min-w-0 border-y border-border py-4">
+      <CardHeader className="px-0 pt-0 pb-3">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
@@ -72,9 +72,8 @@ export function ActivePromosSection({ promos, onViewDetail }: ActivePromosSectio
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4">
-        <ScrollArea className="w-full">
-          <div className="flex gap-4 pb-2">
+      <CardContent className="p-0">
+          <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {promos.map((promo) => {
               const TipoIcon = tipoConfig[promo.tipo].icon;
               const endDate = getEndDate(promo);
@@ -84,19 +83,18 @@ export function ActivePromosSection({ promos, onViewDetail }: ActivePromosSectio
               return (
                 <Card 
                   key={promo.id} 
-                  className={`min-w-[280px] flex-shrink-0 overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 ${
-                    isExpiring ? "ring-2 ring-orange-400" : ""
+                  className={`min-w-0 overflow-hidden cursor-pointer ${
+                    isExpiring ? "border-warning" : ""
                   }`}
                   onClick={() => onViewDetail(promo)}
                 >
                   {/* Header with gradient */}
-                  <div className={`h-2 bg-gradient-to-r ${tipoConfig[promo.tipo].color}`} />
                   
                   <CardContent className="p-4 space-y-3">
                     {/* Title and Type */}
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold line-clamp-1">{promo.nome}</h3>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="break-words text-base font-semibold">{promo.nome}</h3>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                           <Building2 className="h-3 w-3" />
                           {promo.azienda?.nome || "N/A"}
@@ -156,9 +154,7 @@ export function ActivePromosSection({ promos, onViewDetail }: ActivePromosSectio
               );
             })}
           </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
       </CardContent>
-    </Card>
+    </section>
   );
 }

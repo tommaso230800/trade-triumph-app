@@ -14,5 +14,5 @@ export async function readPdfText(file: File): Promise<string> {
       pages.push(content.items.map(item => "str" in item ? `${item.str}${item.hasEOL ? "\n" : " "}` : "").join(""));
     }
     return pages.join("\n\n");
-  } finally { await doc.destroy(); }
+  } finally { await task.destroy(); }
 }

@@ -469,3 +469,42 @@
   table { page-break-inside: auto; }
   tr { page-break-inside: avoid; page-break-after: auto; }
 }
+
+/* Every CRM table becomes labelled compact rows on phones, including audit tables. */
+.crm-page { width: 100%; }
+.crm-page .recharts-responsive-container { min-width: 0 !important; }
+.crm-page > *, .crm-page .grid > * { min-width: 0; }
+@media (max-width: 639px) {
+  .crm-page .crm-table-wrapper { overflow: visible; }
+  .crm-page .crm-table-wrapper table,
+  .crm-page .crm-table-wrapper tbody { display: block; width: 100%; }
+  .crm-page .crm-table-wrapper thead { display: none; }
+  .crm-page .crm-table-wrapper tbody > tr {
+    display: block;
+    max-width: 100%;
+    padding: 12px;
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  .crm-page .crm-table-wrapper td:not(.hidden) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .crm-page .crm-table-wrapper td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 12px;
+    color: hsl(var(--muted-foreground));
+    max-width: 40%;
+  }
+  .crm-page .crm-table-wrapper td[data-label=""]::before { display: none; }
+  .crm-page .crm-table-wrapper td > * { min-width: 0; max-width: 100%; }
+  .crm-page .crm-table-wrapper td p { white-space: normal; overflow-wrap: anywhere; }
+  .crm-page .crm-table-wrapper td button { min-width: 44px; min-height: 44px; }
+}

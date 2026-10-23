@@ -1247,12 +1247,12 @@ function ObjectiveCard({ target, current, pct }: { target: number; current: numb
 
 function ChartCard({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className={provCardCls}>
+    <section className={`${provCardCls} min-w-0`}>
       <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
         {icon && <span className="text-scatto-muted">{icon}</span>}
         <h2 className="font-display text-sm font-semibold tracking-tight text-scatto-ink">{title}</h2>
       </header>
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className="min-w-0 p-4 sm:p-5">{children}</div>
     </section>
   );
 }

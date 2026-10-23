@@ -3,11 +3,22 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
-    </div>
-  ),
+  ({ className, ...props }, ref) => {
+    const innerRef = React.useRef<HTMLTableElement | null>(null);
+    React.useLayoutEffect(() => {
+      const table = innerRef.current;
+      if (!table) return;
+      const labels = Array.from(table.querySelectorAll("thead tr:first-child th")).map(th => th.textContent?.trim() ?? "");
+      table.querySelectorAll("tbody tr").forEach(row => {
+        Array.from(row.children).forEach((cell, i) => {
+          if (cell instanceof HTMLTableCellElement) cell.dataset.label = cell.colSpan > 1 ? "" : labels[i] ?? "";
+        });
+      });
+    }, [props.children]);
+    return <div className="crm-table-wrapper relative w-full min-w-0 overflow-auto">
+      <table ref={node => { innerRef.current = node; if (typeof ref === "function") ref(node); else if (ref) ref.current = node; }} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+    </div>;
+  },
 );
 Table.displayName = "Table";
 
