@@ -690,7 +690,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
             <DialogDescription className="mb-1 text-xs font-semibold uppercase text-order-muted">
               Passaggio {currentStep + 1} di 3
             </DialogDescription>
-            <div className="flex items-end justify-between gap-4">
+            <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <DialogTitle className="text-2xl font-bold text-order-ink">Nuovo ordine</DialogTitle>
                 <p className="mt-1 text-sm text-order-muted">

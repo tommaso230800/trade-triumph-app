@@ -1,5 +1,13 @@
 # Roadmap
 
+## Revisione iPhone e dati
+- [x] Logo agenzia nelle icone installabili
+- [x] Audit pagine iPhone e correzioni condivise
+- [x] Ricerca interna
+- [x] Audit dati nella pagina Ordini
+- [x] Pannello dati con periodo e confronto PDF (valori dichiarati inseriti dall'utente)
+- [x] Verifiche con dati reali e test
+
 ## Completati in precedenza
 - [x] Analytics: filtri coerenti, YoY filtrato, Senza marchio, tooltip, iPhone
 - [x] Pagamento "Come precedente ordine"

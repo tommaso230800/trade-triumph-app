@@ -46,6 +46,7 @@ const baseNavigation: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Pannello dati", href: "/pannello-dati", icon: Activity },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
   { name: "Riordino", href: "/riordino", icon: Repeat },

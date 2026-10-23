@@ -70,6 +70,7 @@ import { formatCurrency } from "@/components/ordini/ordiniShared";
 import { exportOrdiniToCSV } from "@/lib/exportOrdiniCsv";
 import { usePeriodoFiltro, usePrimoAnnoOrdini } from "@/hooks/usePeriodoFiltro";
 import { isDefaultPeriodo, periodoLabel } from "@/lib/periodFilter";
+import { OrderAudit } from "@/components/metrics/OrderAudit";
 
 const Ordini = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -99,6 +100,19 @@ const Ordini = () => {
   // Apertura automatica da azione rapida globale (FAB "+" nel layout): arriva
   // come /ordini?nuovo=1, apre la scheda e ripulisce l'URL.
   useEffect(() => {
+    if (searchParams.get("ricerca")) {
+      setSearchTerm(searchParams.get("ricerca") ?? "");
+      const year = Number(searchParams.get("anno"));
+      if (Number.isInteger(year) && year > 1900) setPeriodo({ kind: "year", year });
+      else resetPeriodo();
+      setStatusFilter("tutti");
+      setClienteFilter("");
+      setAziendaFilter("");
+      const next = new URLSearchParams(searchParams);
+      next.delete("ricerca");
+      next.delete("anno");
+      setSearchParams(next, { replace: true });
+    }
     if (searchParams.get("nuovo") === "1") {
       setIsDialogOpen(true);
       const next = new URLSearchParams(searchParams);
@@ -453,6 +467,10 @@ const Ordini = () => {
             </div>
           )}
           <OrdiniStatsRow stats={stats} mom={mom} isLoading={isLoading} />
+          <details className="min-w-0">
+            <summary className="min-h-11 cursor-pointer text-sm font-semibold text-scatto-ink">Audit dati del periodo e dei filtri attivi</summary>
+            <OrderAudit ids={ordiniFiltrati.map(o => o.id)} />
+          </details>
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
             <div className="flex-1">
