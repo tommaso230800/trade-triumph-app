@@ -339,7 +339,7 @@ const Ordini = () => {
       return next;
     });
   };
-  const selectAllVisible = () => setSelectedIds(new Set((ordini || []).map((o) => o.id)));
+  const selectAllVisible = () => setSelectedIds(new Set(ordiniFiltrati.map((o) => o.id)));
   const exitSelectionMode = () => {
     setSelectionMode(false);
     setSelectedIds(new Set());
