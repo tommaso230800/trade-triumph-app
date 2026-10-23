@@ -220,17 +220,29 @@ export default function RiordinoForecast() {
               </CardHeader>
               <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {clientiGroup.map((c) => (
-                  <Link
-                    key={c.id}
-                    to={`/clienti/${c.id}`}
+                  <div
+                    key={c.key}
                     className="rounded-lg border border-border bg-card/50 p-3 transition hover-lift"
                   >
-                    <div className="truncate text-sm font-medium">{c.nome}</div>
+                    <Link to={`/clienti/${c.id}`} className="block truncate text-sm font-medium hover:text-primary">
+                      {c.nome}
+                    </Link>
+                    <div className="truncate text-xs text-muted-foreground">{c.azienda_nome}</div>
                     <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{c.prodotti} prodotti</span>
+                      <span>{c.righe.length} prodotti</span>
                       <span className="text-emerald-500">{fmtEur.format(c.fatturato)}</span>
                     </div>
-                  </Link>
+                    <Button
+                      size="sm"
+                      className="mt-2 w-full gap-1.5"
+                      onClick={() =>
+                        setOrdinaPrefill({ cliente_id: c.id, azienda_id: c.azienda_id, righe: c.righe })
+                      }
+                    >
+                      <ShoppingCart className="h-3.5 w-3.5" />
+                      Ordina
+                    </Button>
+                  </div>
                 ))}
               </CardContent>
             </Card>
@@ -316,9 +328,15 @@ export default function RiordinoForecast() {
                                 {fmtEur.format(f.fatturato_medio)}
                               </td>
                               <td className="p-3">
-                                <Button asChild size="sm" variant="outline">
-                                  <Link to={`/clienti/${f.cliente_id}`}>Apri</Link>
-                                </Button>
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button size="sm" className="gap-1.5" onClick={() => apriOrdina(f)}>
+                                    <ShoppingCart className="h-3.5 w-3.5" />
+                                    Ordina
+                                  </Button>
+                                  <Button asChild size="sm" variant="outline">
+                                    <Link to={`/clienti/${f.cliente_id}`}>Apri</Link>
+                                  </Button>
+                                </div>
                               </td>
                             </tr>
                           );
