@@ -24,8 +24,12 @@ import {
   Sparkles,
   Search,
   Phone,
+  ShoppingCart,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { NuovoOrdineDialog, type OrdinePrefill } from "@/components/ordini/NuovoOrdineDialog";
 
 const urgenzaBadge: Record<EnrichedForecast["urgenza"], { label: string; className: string }> = {
   critica: { label: "In rottura", className: "bg-red-500/15 text-red-500 border-red-500/30" },
@@ -45,6 +49,8 @@ export default function RiordinoForecast() {
   const [search, setSearch] = useState("");
   const [aziendaFilter, setAziendaFilter] = useState<string>("all");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [ordinaPrefill, setOrdinaPrefill] = useState<OrdinePrefill | null>(null);
+  const queryClient = useQueryClient();
 
   const forecasts = data?.forecasts || [];
   const kpi = data?.kpi;
@@ -73,22 +79,47 @@ export default function RiordinoForecast() {
   }, [forecasts, tab, aziendaFilter, search]);
 
   const clientiGroup = useMemo(() => {
-    // top clienti da contattare
-    const map = new Map<string, { nome: string; prodotti: number; fatturato: number; id: string }>();
+    // top clienti da contattare, raggruppati per cliente + azienda: un ordine
+    // ha una sola azienda fornitrice, quindi i prodotti non si mescolano mai.
+    const map = new Map<
+      string,
+      {
+        key: string;
+        id: string;
+        azienda_id: string;
+        azienda_nome: string;
+        nome: string;
+        fatturato: number;
+        righe: Array<{ prodotto_id: string; quantita_cartoni: number }>;
+      }
+    >();
     filtered.forEach((f) => {
       if (f.urgenza !== "critica" && f.urgenza !== "alta") return;
-      const cur = map.get(f.cliente_id) || {
-        nome: f.cliente_nome,
-        prodotti: 0,
-        fatturato: 0,
+      const key = `${f.cliente_id}|${f.azienda_id}`;
+      const cur = map.get(key) || {
+        key,
         id: f.cliente_id,
+        azienda_id: f.azienda_id,
+        azienda_nome: f.azienda_nome,
+        nome: f.cliente_nome,
+        fatturato: 0,
+        righe: [],
       };
-      cur.prodotti += 1;
+      if (!cur.righe.some((r) => r.prodotto_id === f.prodotto_id)) {
+        cur.righe.push({ prodotto_id: f.prodotto_id, quantita_cartoni: f.ultima_quantita_cartoni });
+      }
       cur.fatturato += f.fatturato_medio;
-      map.set(f.cliente_id, cur);
+      map.set(key, cur);
     });
     return Array.from(map.values()).sort((a, b) => b.fatturato - a.fatturato).slice(0, 8);
   }, [filtered]);
+
+  const apriOrdina = (f: EnrichedForecast) =>
+    setOrdinaPrefill({
+      cliente_id: f.cliente_id,
+      azienda_id: f.azienda_id,
+      righe: [{ prodotto_id: f.prodotto_id, quantita_cartoni: f.ultima_quantita_cartoni }],
+    });
 
   return (
     <div className="flex min-h-[100dvh] bg-background">
@@ -189,17 +220,29 @@ export default function RiordinoForecast() {
               </CardHeader>
               <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {clientiGroup.map((c) => (
-                  <Link
-                    key={c.id}
-                    to={`/clienti/${c.id}`}
+                  <div
+                    key={c.key}
                     className="rounded-lg border border-border bg-card/50 p-3 transition hover-lift"
                   >
-                    <div className="truncate text-sm font-medium">{c.nome}</div>
+                    <Link to={`/clienti/${c.id}`} className="block truncate text-sm font-medium hover:text-primary">
+                      {c.nome}
+                    </Link>
+                    <div className="truncate text-xs text-muted-foreground">{c.azienda_nome}</div>
                     <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{c.prodotti} prodotti</span>
+                      <span>{c.righe.length} prodotti</span>
                       <span className="text-emerald-500">{fmtEur.format(c.fatturato)}</span>
                     </div>
-                  </Link>
+                    <Button
+                      size="sm"
+                      className="mt-2 w-full gap-1.5"
+                      onClick={() =>
+                        setOrdinaPrefill({ cliente_id: c.id, azienda_id: c.azienda_id, righe: c.righe })
+                      }
+                    >
+                      <ShoppingCart className="h-3.5 w-3.5" />
+                      Ordina
+                    </Button>
+                  </div>
                 ))}
               </CardContent>
             </Card>
@@ -285,9 +328,15 @@ export default function RiordinoForecast() {
                                 {fmtEur.format(f.fatturato_medio)}
                               </td>
                               <td className="p-3">
-                                <Button asChild size="sm" variant="outline">
-                                  <Link to={`/clienti/${f.cliente_id}`}>Apri</Link>
-                                </Button>
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button size="sm" className="gap-1.5" onClick={() => apriOrdina(f)}>
+                                    <ShoppingCart className="h-3.5 w-3.5" />
+                                    Ordina
+                                  </Button>
+                                  <Button asChild size="sm" variant="outline">
+                                    <Link to={`/clienti/${f.cliente_id}`}>Apri</Link>
+                                  </Button>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -323,6 +372,18 @@ export default function RiordinoForecast() {
                             </span>
                             <span className="text-emerald-500">{fmtEur.format(f.fatturato_medio)}</span>
                           </div>
+                          <Button
+                            size="sm"
+                            className="mt-2 w-full gap-1.5"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              apriOrdina(f);
+                            }}
+                          >
+                            <ShoppingCart className="h-3.5 w-3.5" />
+                            Ordina
+                          </Button>
                         </Link>
                       );
                     })}
@@ -333,6 +394,18 @@ export default function RiordinoForecast() {
           </Card>
         </div>
       </main>
+      <NuovoOrdineDialog
+        open={!!ordinaPrefill}
+        onOpenChange={(v) => {
+          if (!v) setOrdinaPrefill(null);
+        }}
+        prefill={ordinaPrefill}
+        onOrderCreated={() => {
+          setOrdinaPrefill(null);
+          queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+          toast.success("Ordine creato: lo trovi nella pagina Ordini.");
+        }}
+      />
       <BottomNav onOpenMore={() => setMobileMenuOpen(true)} moreActive={mobileMenuOpen} />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -98,13 +98,22 @@ const emptyFormData = () => ({
   data_ordine: format(new Date(), "yyyy-MM-dd"),
 });
 
+/** Pre-riempimento per il flusso Riordino → Ordina: cliente, azienda e
+ *  prodotti con quantità suggerita arrivano dalla pagina Riordino. */
+export interface OrdinePrefill {
+  cliente_id: string;
+  azienda_id: string;
+  righe: Array<{ prodotto_id: string; quantita_cartoni: number }>;
+}
+
 interface NuovoOrdineDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOrderCreated: (data: ProformaData) => void;
+  prefill?: OrdinePrefill | null;
 }
 
-export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoOrdineDialogProps) {
+export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill }: NuovoOrdineDialogProps) {
   const [formData, setFormData] = useState(emptyFormData());
   const [righeOrdine, setRigheOrdine] = useState<RigaOrdine[]>([]);
   const [selectedProdotto, setSelectedProdotto] = useState("");
@@ -155,6 +164,55 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     onOpenChange(v);
     if (!v) resetForm();
   };
+
+  // ── Pre-riempimento Riordino → Ordina ──────────────────────────────
+  // Fase 1: imposta cliente e azienda. Fase 2: quando lo storico prezzi del
+  // cliente è caricato, costruisce le righe con i prezzi attuali (mai prezzi
+  // storici non più validi: vale la stessa priorità dell'aggiunta manuale).
+  const prefillAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) {
+      prefillAppliedRef.current = false;
+      return;
+    }
+    if (!prefill) return;
+    if (formData.cliente_id !== prefill.cliente_id || formData.azienda_id !== prefill.azienda_id) {
+      setFormData((prev) => ({
+        ...prev,
+        cliente_id: prefill.cliente_id,
+        azienda_id: prefill.azienda_id,
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefill]);
+
+  useEffect(() => {
+    if (!open || !prefill || prefillAppliedRef.current) return;
+    if (formData.cliente_id !== prefill.cliente_id || formData.azienda_id !== prefill.azienda_id) return;
+    if (!allProdotti || productHistory === undefined || customPrices === undefined) return;
+
+    const prodottiValidi = allProdotti.filter((p) => p.azienda_id === prefill.azienda_id);
+    const righe: RigaOrdine[] = [];
+    const mancanti: string[] = [];
+    for (const r of prefill.righe) {
+      const prodotto = prodottiValidi.find((p) => p.id === r.prodotto_id);
+      if (!prodotto) {
+        const altrove = allProdotti.find((p) => p.id === r.prodotto_id);
+        mancanti.push(altrove ? `${altrove.nome} (non più dell'azienda selezionata)` : "un prodotto non più disponibile");
+        continue;
+      }
+      if (righe.some((x) => x.prodotto_id === prodotto.id)) continue;
+      righe.push(buildRiga(prodotto, Math.max(0, Math.round(r.quantita_cartoni))));
+    }
+    setRigheOrdine(righe);
+    if (righe.length > 0) setCurrentStep(1);
+    if (mancanti.length > 0) {
+      toast.warning(`Alcuni prodotti non sono stati caricati: ${mancanti.join(", ")}.`);
+    }
+    prefillAppliedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefill, formData.cliente_id, formData.azienda_id, allProdotti, productHistory, customPrices]);
 
   const clientiOptions = useMemo(
     () =>
@@ -285,11 +343,11 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     return riga;
   };
 
-  const addProdottoToOrder = () => {
-    if (!selectedProdotto) return;
-    const prodotto = prodottiAzienda.find((p) => p.id === selectedProdotto);
-    if (!prodotto) return;
-
+  // Costruisce una riga ordine per un prodotto: prezzo risolto con la stessa
+  // priorità ovunque (prezzo personalizzato cliente → ultimo ordine → listino),
+  // sconti da prodotto o da azienda. Usata sia dall'aggiunta manuale sia dal
+  // pre-riempimento Riordino → Ordina.
+  const buildRiga = (prodotto: (typeof prodottiAzienda)[number], quantitaCartoni = 0): RigaOrdine => {
     const azienda = aziende?.find((a) => a.id === formData.azienda_id);
 
     const getSc1 = () => (prodotto.sc1_default > 0 ? prodotto.sc1_default : azienda?.default_sc1 || 0);
@@ -304,14 +362,14 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
     });
     const prezzoIniziale = String(resolved.price).replace(".", ",");
 
-    const newRiga: RigaOrdine = {
+    return {
       prodotto_id: prodotto.id,
       prodotto_nome: prodotto.nome,
       prodotto_codice: prodotto.codice || undefined,
       prodotto_brand_id: prodotto.brand_id || undefined,
       prezzo_unitario: prezzoIniziale,
       quantita_pezzi: 0,
-      quantita_cartoni: 0,
+      quantita_cartoni: quantitaCartoni,
       pezzi_per_cartone: prodotto.pezzi_per_cartone,
       sc1: String(getSc1()).replace(".", ","),
       sc2: String(getSc2()).replace(".", ","),
@@ -323,6 +381,14 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoO
       prezzo_source_info: resolved.lastOrderInfo,
       prezzo_baseline: prezzoIniziale,
     };
+  };
+
+  const addProdottoToOrder = () => {
+    if (!selectedProdotto) return;
+    const prodotto = prodottiAzienda.find((p) => p.id === selectedProdotto);
+    if (!prodotto) return;
+
+    const newRiga = buildRiga(prodotto);
 
     const availablePromo = promozioniRilevanti.find((promo) =>
       promo.canvass_prodotti?.some((cp) => cp.prodotto_id === prodotto.id)
