@@ -106,7 +106,7 @@ const fmtEur = (v: number) =>
 const STATO_CONFIG: Record<StatoProvvigione, { label: string; color: string; rowBg?: string; icon: any; iconColor: string }> = {
   pagata: { label: "Pagata", color: "status-prov-paid", icon: CheckCircle2, iconColor: "text-success" },
   da_pagare: { label: "Non pagata", color: "status-prov-unpaid", icon: Clock, iconColor: "text-commission-unpaid" },
-  scaduta: { label: "Scaduta", color: "status-prov-overdue", rowBg: "bg-destructive/10 hover:bg-destructive/15 border-l-4 border-l-destructive", icon: AlertTriangle, iconColor: "text-destructive" },
+  scaduta: { label: "Scaduta", color: "status-prov-overdue", rowBg: "bg-scatto-danger/10 hover:bg-scatto-danger/15 border-l-4 border-l-scatto-danger", icon: AlertTriangle, iconColor: "text-scatto-danger" },
   parziale: { label: "Parzialmente pagata", color: "status-prov-partial", icon: CircleDot, iconColor: "text-primary" },
   contestazione: { label: "In contestazione", color: "status-prov-contested", icon: Ban, iconColor: "text-commission-contested" },
 };
@@ -877,7 +877,7 @@ const Provvigioni = () => {
                     </TableHeader>
                     <TableBody>
                       {filteredTableRows.length === 0 ? (
-                        <TableRow><TableCell colSpan={12} className="text-center py-8 text-muted-foreground">Nessuna riga per i filtri selezionati</TableCell></TableRow>
+                        <TableRow><TableCell colSpan={12} className="text-center py-8 text-scatto-muted">Nessuna riga per i filtri selezionati</TableCell></TableRow>
                       ) : (
                         filteredTableRows.map((r) => {
                           const S = STATO_CONFIG[r.statoProvvigione];
@@ -894,11 +894,11 @@ const Provvigioni = () => {
                                   />
                                 )}
                               </TableCell>
-                              <TableCell className="whitespace-nowrap text-sm">{format(new Date(r.data), "dd/MM/yy")}</TableCell>
-                              <TableCell className="font-mono text-xs">{r.numero}</TableCell>
-                              <TableCell className="text-sm font-medium">{r.aziendaNome}</TableCell>
-                              <TableCell className="text-sm">{r.clienteNome}</TableCell>
-                              <TableCell className="text-right text-sm">{fmtEur(r.imponibile)}</TableCell>
+                              <TableCell className="whitespace-nowrap text-sm text-scatto-muted">{format(new Date(r.data), "dd/MM/yy")}</TableCell>
+                              <TableCell className="font-mono text-xs text-scatto-muted">{r.numero}</TableCell>
+                              <TableCell className="text-sm font-medium text-scatto-ink">{r.aziendaNome}</TableCell>
+                              <TableCell className="text-sm text-scatto-ink">{r.clienteNome}</TableCell>
+                              <TableCell className="text-right text-sm tabular-nums text-scatto-ink">{fmtEur(r.imponibile)}</TableCell>
                               <TableCell className="text-center text-xs text-scatto-muted">{r.percentualeProvv}%</TableCell>
                               <TableCell className="text-right text-sm font-semibold tabular-nums text-scatto-ink">{fmtEur(r.provvigioneMaturata)}</TableCell>
                               <TableCell className="text-right text-sm tabular-nums text-scatto-success">{fmtEur(r.provvigionePagata)}</TableCell>
@@ -914,43 +914,43 @@ const Provvigioni = () => {
                                     value={r.trimestrePagamento ? String(r.trimestrePagamento) : ""}
                                     onValueChange={(v) => setTrimestreInline(r, Number(v))}
                                   >
-                                    <SelectTrigger className="h-8 text-xs">
+                                    <SelectTrigger className="h-8 rounded-lg border-scatto-line bg-scatto-surface text-xs text-scatto-ink">
                                       <SelectValue placeholder="—" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="1">Q1 · Gen-Mar</SelectItem>
-                                      <SelectItem value="2">Q2 · Apr-Giu</SelectItem>
-                                      <SelectItem value="3">Q3 · Lug-Set</SelectItem>
-                                      <SelectItem value="4">Q4 · Ott-Dic</SelectItem>
+                                    <SelectContent className="border-scatto-line bg-scatto-surface text-scatto-ink">
+                                      <SelectItem value="1" className="focus:bg-scatto-bg focus:text-scatto-ink">Q1 · Gen-Mar</SelectItem>
+                                      <SelectItem value="2" className="focus:bg-scatto-bg focus:text-scatto-ink">Q2 · Apr-Giu</SelectItem>
+                                      <SelectItem value="3" className="focus:bg-scatto-bg focus:text-scatto-ink">Q3 · Lug-Set</SelectItem>
+                                      <SelectItem value="4" className="focus:bg-scatto-bg focus:text-scatto-ink">Q4 · Ott-Dic</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 ) : (
-                                  <span className="text-xs text-muted-foreground">—</span>
+                                  <span className="text-xs text-scatto-muted">—</span>
                                 )}
                               </TableCell>
                               <TableCell>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button size="sm" className="h-8 gap-1.5 whitespace-nowrap shadow-sm">
+                                    <Button size="sm" className="h-8 gap-1.5 whitespace-nowrap bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90">
                                       <CircleDot className="h-3.5 w-3.5" />
                                       Aggiorna stato
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-56">
-                                    <DropdownMenuItem onClick={() => openPayDialog(r, "pagata")} className="gap-2">
-                                      <CheckCircle2 className="h-4 w-4 text-success" />
+                                  <DropdownMenuContent align="end" className="w-56 border-scatto-line bg-scatto-surface text-scatto-ink">
+                                    <DropdownMenuItem onClick={() => openPayDialog(r, "pagata")} className="gap-2 focus:bg-scatto-bg focus:text-scatto-ink">
+                                      <CheckCircle2 className="h-4 w-4 text-scatto-success" />
                                       <span>Pagata</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => quickSetStato(r, "da_pagare")} className="gap-2">
+                                    <DropdownMenuItem onClick={() => quickSetStato(r, "da_pagare")} className="gap-2 focus:bg-scatto-bg focus:text-scatto-ink">
                                       <Clock className="h-4 w-4 text-commission-unpaid" />
                                       <span>Non pagata</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => quickSetStato(r, "scaduta")} className="gap-2">
-                                      <AlertTriangle className="h-4 w-4 text-destructive" />
+                                    <DropdownMenuItem onClick={() => quickSetStato(r, "scaduta")} className="gap-2 focus:bg-scatto-bg focus:text-scatto-ink">
+                                      <AlertTriangle className="h-4 w-4 text-scatto-danger" />
                                       <span>Scaduta</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => openPayDialog(r, "parziale")} className="gap-2">
-                                      <CircleDot className="h-4 w-4 text-primary" />
+                                    <DropdownMenuItem onClick={() => openPayDialog(r, "parziale")} className="gap-2 focus:bg-scatto-bg focus:text-scatto-ink">
+                                      <CircleDot className="h-4 w-4 text-scatto-accent" />
                                       <span>Parzialmente pagata</span>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => quickSetStato(r, "contestazione")} className="gap-2">
@@ -1075,10 +1075,10 @@ const Provvigioni = () => {
               Aggiorna {selectedRows.length} provvigioni impostandole come <b>Pagate</b>. Il trimestre scelto verrà applicato a tutte.
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
+          <div className="rounded-lg border border-scatto-accent/30 bg-scatto-accent/5 p-3 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Totale maturato selezionato</span>
-              <span className="font-semibold text-primary">
+              <span className="text-scatto-muted">Totale maturato selezionato</span>
+              <span className="font-semibold tabular-nums text-scatto-accent">
                 {fmtEur(selectedRows.reduce((s, r) => s + r.provvigioneMaturata, 0))}
               </span>
             </div>
@@ -1297,11 +1297,11 @@ function Heatmap({
     return `hsl(var(--scatto-success) / ${intensity.toFixed(2)})`;
   };
 
-  const textColor = (v: number) => (v <= 0 ? "text-muted-foreground" : "text-white drop-shadow-sm");
+  const textColor = (v: number) => (v <= 0 ? "text-scatto-muted" : "text-white drop-shadow-sm");
 
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-[60px_repeat(12,1fr)] gap-1 text-xs text-muted-foreground text-center">
+      <div className="grid grid-cols-[60px_repeat(12,1fr)] gap-1 text-xs text-scatto-muted text-center">
         <div />
         {mesiLabel.map((m, i) => <div key={i}>{m}</div>)}
       </div>
@@ -1328,7 +1328,7 @@ function Heatmap({
         </div>
       ))}
       {/* Legenda */}
-      <div className="flex items-center justify-end gap-3 pt-2 text-xs text-muted-foreground">
+      <div className="flex items-center justify-end gap-3 pt-2 text-xs text-scatto-muted">
         <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-danger) / 0.7)" }} />Basso</div>
         <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-warning) / 0.75)" }} />Medio</div>
         <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-success) / 0.85)" }} />Alto</div>
