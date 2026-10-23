@@ -446,7 +446,7 @@ const Provvigioni = () => {
           {/* OVERVIEW */}
           <TabsContent value="overview" className="space-y-5">
             {aziendeDuplicate.length > 0 && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive">
+              <div className="flex items-start gap-2.5 rounded-xl border border-scatto-danger/30 bg-scatto-danger/5 p-3.5 text-sm text-scatto-danger">
                 <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                 <p>
                   <b className="font-semibold">Da sistemare nei dati:</b>{" "}
@@ -867,37 +867,35 @@ const Provvigioni = () => {
           <TabsContent value="aziende" className="space-y-4">
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {analytics.perAzienda.length === 0 ? (
-                <p className="text-muted-foreground col-span-full text-center py-8">Nessun dato</p>
+                <p className="text-scatto-muted col-span-full text-center py-8">Nessun dato</p>
               ) : (
                 analytics.perAzienda.map((a) => (
-                  <Card key={a.id} className="hover-lift">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <CardTitle className="text-base truncate">{a.nome}</CardTitle>
-                          <CardDescription>{a.ordini} ordini · {a.clienti} clienti</CardDescription>
-                        </div>
-                        <Badge variant="outline" className="shrink-0">{a.incidenza.toFixed(0)}%</Badge>
+                  <section key={a.id} className={provCardCls}>
+                    <header className="flex items-start justify-between gap-2 border-b border-scatto-line px-4 py-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate font-display text-base font-semibold tracking-tight text-scatto-ink">{a.nome}</h3>
+                        <p className="text-xs text-scatto-muted">{a.ordini} ordini · {a.clienti} clienti</p>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
+                      <span className="shrink-0 rounded-full bg-scatto-accent/10 px-2.5 py-0.5 text-xs font-semibold text-scatto-accent">{a.incidenza.toFixed(0)}%</span>
+                    </header>
+                    <div className="space-y-3 p-4">
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-xs text-muted-foreground">Fatturato</p>
-                          <p className="font-semibold">{fmtEur(a.fatturato)}</p>
+                          <p className="text-xs text-scatto-muted">Fatturato</p>
+                          <p className="font-semibold tabular-nums text-scatto-ink">{fmtEur(a.fatturato)}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Provvigioni</p>
-                          <p className="font-semibold text-primary">{fmtEur(a.provvigioni)}</p>
+                          <p className="text-xs text-scatto-muted">Provvigioni</p>
+                          <p className="font-semibold tabular-nums text-scatto-accent">{fmtEur(a.provvigioni)}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Media ordine</p>
-                          <p className="font-medium">{fmtEur(a.mediaOrdine)}</p>
+                          <p className="text-xs text-scatto-muted">Media ordine</p>
+                          <p className="font-medium tabular-nums text-scatto-ink">{fmtEur(a.mediaOrdine)}</p>
                         </div>
                       </div>
                       <Progress value={a.incidenza} className="h-1.5" />
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </section>
                 ))
               )}
             </div>
@@ -906,27 +904,30 @@ const Provvigioni = () => {
           {/* CLIENTI */}
           <TabsContent value="clienti" className="space-y-4">
             <div className="grid gap-4 lg:grid-cols-3">
-              <ClientiList title="Top clienti" icon={<Trophy className="h-4 w-4 text-primary" />} clienti={analytics.perCliente.slice(0, 10)} badge="top" />
-              <ClientiList title="In calo / Inattivi" icon={<TrendingDown className="h-4 w-4 text-destructive" />} clienti={analytics.perCliente.filter((c) => c.giorniInattivo > 60).slice(0, 10)} badge="inattivi" />
-              <ClientiList title="In crescita" icon={<TrendingUp className="h-4 w-4 text-success" />} clienti={analytics.perCliente.filter((c) => c.giorniInattivo < 30).slice(0, 10)} badge="crescita" />
+              <ClientiList title="Top clienti" icon={<Trophy className="h-4 w-4 text-scatto-accent" />} clienti={analytics.perCliente.slice(0, 10)} badge="top" />
+              <ClientiList title="In calo / Inattivi" icon={<TrendingDown className="h-4 w-4 text-scatto-danger" />} clienti={analytics.perCliente.filter((c) => c.giorniInattivo > 60).slice(0, 10)} badge="inattivi" />
+              <ClientiList title="In crescita" icon={<TrendingUp className="h-4 w-4 text-scatto-success" />} clienti={analytics.perCliente.filter((c) => c.giorniInattivo < 30).slice(0, 10)} badge="crescita" />
             </div>
           </TabsContent>
 
           {/* BONUS */}
           <TabsContent value="bonus">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5 text-warning" />Premi &amp; Bonus</CardTitle>
-                <CardDescription>Traccia i tuoi obiettivi e bonus (sezione in evoluzione)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Trophy className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">Nessun bonus configurato.</p>
-                  <p className="text-xs mt-1">Presto potrai definire premi trimestrali, annuali e contest commerciali.</p>
+            <section className={provCardCls}>
+              <header className="flex flex-wrap items-center justify-between gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-scatto-warning" />
+                  <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">Premi &amp; Bonus</h2>
                 </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-scatto-muted">Traccia i tuoi obiettivi e bonus (sezione in evoluzione)</p>
+              </header>
+              <div className="p-4 sm:p-5">
+                <div className="py-12 text-center text-scatto-muted">
+                  <Trophy className="mx-auto mb-3 h-12 w-12 opacity-30" />
+                  <p className="text-sm">Nessun bonus configurato.</p>
+                  <p className="mt-1 text-xs">Presto potrai definire premi trimestrali, annuali e contest commerciali.</p>
+                </div>
+              </div>
+            </section>
           </TabsContent>
 
           <TabsContent value="riconciliazione">
@@ -942,6 +943,7 @@ const Provvigioni = () => {
             <MatriceProvvigioniSection />
           </TabsContent>
         </Tabs>
+        </div>
       </div>
 
       <PagamentoProvvigioneDialog
@@ -1086,25 +1088,25 @@ function PeriodoSelector({ value, onChange }: { value: PeriodoFilter; onChange: 
 
 function EconomicoCell({ label, value, accent, big }: { label: string; value: number; accent?: string; big?: boolean }) {
   return (
-    <div>
-      <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
-      <p className={`font-bold ${big ? "text-3xl" : "text-xl"} ${accent || "text-foreground"}`}>{fmtEur(value)}</p>
+    <div className="p-4 sm:p-5">
+      <p className="text-xs uppercase tracking-wide text-scatto-muted">{label}</p>
+      <p className={`mt-1 font-display font-bold tracking-tight tabular-nums ${big ? "text-3xl" : "text-xl"} ${accent || "text-scatto-ink"}`}>{fmtEur(value)}</p>
     </div>
   );
 }
 
 function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: "success" | "warning" }) {
-  const accentClass = accent === "success" ? "text-success" : accent === "warning" ? "text-warning" : "text-primary";
+  const accentClass = accent === "success" ? "text-scatto-success" : accent === "warning" ? "text-scatto-warning" : "text-scatto-muted";
   return (
-    <Card className="hover-lift">
-      <CardContent className="p-4">
+    <div className={provCardCls}>
+      <div className="p-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <span className={`${accentClass}`}>{icon}</span>
+          <p className="text-xs text-scatto-muted">{label}</p>
+          <span className={accentClass}>{icon}</span>
         </div>
-        <p className="text-lg font-bold truncate">{value}</p>
-      </CardContent>
-    </Card>
+        <p className="truncate text-lg font-bold tabular-nums tracking-tight text-scatto-ink">{value}</p>
+      </div>
+    </div>
   );
 }
 
@@ -1112,44 +1114,45 @@ function GrowthCard({ label, value }: { label: string; value: number }) {
   const isPos = value > 0;
   const isNeg = value < 0;
   const Icon = isPos ? ArrowUpRight : isNeg ? ArrowDownRight : Minus;
-  const color = isPos ? "text-success" : isNeg ? "text-destructive" : "text-muted-foreground";
+  const color = isPos ? "text-scatto-success" : isNeg ? "text-scatto-danger" : "text-scatto-muted";
   return (
-    <Card className="hover-lift">
-      <CardContent className="p-4">
-        <p className="text-xs text-muted-foreground mb-2">{label}</p>
+    <div className={provCardCls}>
+      <div className="p-4">
+        <p className="text-xs text-scatto-muted mb-2">{label}</p>
         <div className={`flex items-center gap-1 ${color}`}>
           <Icon className="h-5 w-5" />
-          <p className="text-lg font-bold">{value > 0 ? "+" : ""}{value.toFixed(1)}%</p>
+          <p className="text-lg font-bold tabular-nums">{value > 0 ? "+" : ""}{value.toFixed(1)}%</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 function ObjectiveCard({ target, current, pct }: { target: number; current: number; pct: number }) {
   return (
-    <Card className="hover-lift col-span-2 md:col-span-1">
-      <CardContent className="p-4 space-y-2">
+    <div className={`${provCardCls} col-span-2 md:col-span-1`}>
+      <div className="p-4 space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Obiettivo mensile</p>
-          <Target className="h-4 w-4 text-primary" />
+          <p className="text-xs text-scatto-muted">Obiettivo mensile</p>
+          <Target className="h-4 w-4 text-scatto-accent" />
         </div>
-        <p className="text-lg font-bold">{pct.toFixed(0)}%</p>
+        <p className="text-lg font-bold tabular-nums text-scatto-ink">{pct.toFixed(0)}%</p>
         <Progress value={Math.min(100, pct)} className="h-1.5" />
-        <p className="text-xs text-muted-foreground">{fmtEur(current)} / {fmtEur(target)}</p>
-      </CardContent>
-    </Card>
+        <p className="text-xs tabular-nums text-scatto-muted">{fmtEur(current)} / {fmtEur(target)}</p>
+      </div>
+    </div>
   );
 }
 
 function ChartCard({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">{icon}{title}</CardTitle>
-      </CardHeader>
-      <CardContent>{children}</CardContent>
-    </Card>
+    <section className={provCardCls}>
+      <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
+        {icon && <span className="text-scatto-muted">{icon}</span>}
+        <h2 className="font-display text-sm font-semibold tracking-tight text-scatto-ink">{title}</h2>
+      </header>
+      <div className="p-4 sm:p-5">{children}</div>
+    </section>
   );
 }
 
@@ -1177,13 +1180,13 @@ function Heatmap({
   };
 
   const bgFor = (v: number, mediaAnno: number): string => {
-    if (v <= 0) return "hsl(var(--muted) / 0.4)";
+    if (v <= 0) return "hsl(var(--scatto-line) / 0.5)";
     const { tone, ratio } = classify(v, mediaAnno);
     // intensity 0.35 → 1
     const intensity = Math.min(1, 0.35 + Math.min(ratio, 2) * 0.35);
-    if (tone === "basso") return `hsl(0 75% 55% / ${intensity.toFixed(2)})`;
-    if (tone === "medio") return `hsl(45 90% 55% / ${intensity.toFixed(2)})`;
-    return `hsl(140 65% 45% / ${intensity.toFixed(2)})`;
+    if (tone === "basso") return `hsl(var(--scatto-danger) / ${intensity.toFixed(2)})`;
+    if (tone === "medio") return `hsl(var(--scatto-warning) / ${intensity.toFixed(2)})`;
+    return `hsl(var(--scatto-success) / ${intensity.toFixed(2)})`;
   };
 
   const textColor = (v: number) => (v <= 0 ? "text-muted-foreground" : "text-white drop-shadow-sm");
@@ -1218,9 +1221,9 @@ function Heatmap({
       ))}
       {/* Legenda */}
       <div className="flex items-center justify-end gap-3 pt-2 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(0 75% 55% / 0.7)" }} />Basso</div>
-        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(45 90% 55% / 0.75)" }} />Medio</div>
-        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(140 65% 45% / 0.85)" }} />Alto</div>
+        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-danger) / 0.7)" }} />Basso</div>
+        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-warning) / 0.75)" }} />Medio</div>
+        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-success) / 0.85)" }} />Alto</div>
       </div>
     </div>
   );
@@ -1229,24 +1232,24 @@ function Heatmap({
 
 function StatoSummaryCard({ label, value, icon, accent }: { label: string; value: number; icon: React.ReactNode; accent?: "success" | "warning" | "unpaid" | "primary" | "destructive" | "purple" }) {
   const map = {
-    success: "text-success",
-    warning: "text-warning",
+    success: "text-scatto-success",
+    warning: "text-scatto-warning",
     unpaid: "text-commission-unpaid",
-    primary: "text-primary",
-    destructive: "text-destructive",
+    primary: "text-scatto-accent",
+    destructive: "text-scatto-danger",
     purple: "text-commission-contested",
   } as const;
-  const c = accent ? map[accent] : "text-foreground";
+  const c = accent ? map[accent] : "text-scatto-ink";
   return (
-    <Card>
-      <CardContent className="p-4">
+    <div className={provCardCls}>
+      <div className="p-4">
         <div className={`flex items-center justify-between mb-1 ${c}`}>
           {icon}
-          <span className="text-xs text-muted-foreground">{label}</span>
+          <span className="text-xs text-scatto-muted">{label}</span>
         </div>
-        <p className={`text-lg font-bold ${c}`}>{fmtEur(value)}</p>
-      </CardContent>
-    </Card>
+        <p className={`text-lg font-bold tabular-nums ${c}`}>{fmtEur(value)}</p>
+      </div>
+    </div>
   );
 }
 
@@ -1263,29 +1266,30 @@ function SortableHead({ k, label, sortKey, sortDir, onSort, align }: { k: SortKe
 
 function ClientiList({ title, icon, clienti, badge }: { title: string; icon: React.ReactNode; clienti: any[]; badge: "top" | "inattivi" | "crescita" }) {
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">{icon}{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2">
+    <section className={provCardCls}>
+      <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
+        <span className="text-scatto-muted">{icon}</span>
+        <h2 className="font-display text-sm font-semibold tracking-tight text-scatto-ink">{title}</h2>
+      </header>
+      <div className="space-y-1 p-3">
         {clienti.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">Nessun cliente</p>
+          <p className="py-4 text-center text-xs text-scatto-muted">Nessun cliente</p>
         ) : (
           clienti.map((c) => (
-            <div key={c.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/40 transition">
+            <div key={c.id} className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-scatto-bg">
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">{c.nome}</p>
-                <p className="text-xs text-muted-foreground">{c.ordini} ordini · {c.giorniInattivo}gg fa</p>
+                <p className="truncate text-sm font-medium text-scatto-ink">{c.nome}</p>
+                <p className="text-xs text-scatto-muted">{c.ordini} ordini · {c.giorniInattivo}gg fa</p>
               </div>
-              <div className="text-right shrink-0 ml-2">
-                <p className="text-sm font-semibold">{fmtEur(c.fatturato)}</p>
-                <p className="text-xs text-primary">{fmtEur(c.provvigioni)}</p>
+              <div className="ml-2 shrink-0 text-right">
+                <p className="text-sm font-semibold tabular-nums text-scatto-ink">{fmtEur(c.fatturato)}</p>
+                <p className="text-xs tabular-nums text-scatto-accent">{fmtEur(c.provvigioni)}</p>
               </div>
             </div>
           ))
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }
 
