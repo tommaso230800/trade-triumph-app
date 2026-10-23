@@ -14,13 +14,6 @@ import { MeseDetailSheet } from "@/components/provvigioni/MeseDetailSheet";
 import { ScadenziarioTab } from "@/components/provvigioni/ScadenziarioTab";
 import { RiconciliazioneSection } from "@/components/provvigioni/RiconciliazioneSection";
 import { MatriceProvvigioniSection } from "@/components/provvigioni/MatriceProvvigioniSection";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,10 +97,10 @@ const fmtEur = (v: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
 
 const STATO_CONFIG: Record<StatoProvvigione, { label: string; color: string; rowBg?: string; icon: any; iconColor: string }> = {
-  pagata: { label: "Pagata", color: "status-prov-paid", icon: CheckCircle2, iconColor: "text-success" },
+  pagata: { label: "Pagata", color: "status-prov-paid", icon: CheckCircle2, iconColor: "text-scatto-success" },
   da_pagare: { label: "Non pagata", color: "status-prov-unpaid", icon: Clock, iconColor: "text-commission-unpaid" },
   scaduta: { label: "Scaduta", color: "status-prov-overdue", rowBg: "bg-scatto-danger/10 hover:bg-scatto-danger/15 border-l-4 border-l-scatto-danger", icon: AlertTriangle, iconColor: "text-scatto-danger" },
-  parziale: { label: "Parzialmente pagata", color: "status-prov-partial", icon: CircleDot, iconColor: "text-primary" },
+  parziale: { label: "Parzialmente pagata", color: "status-prov-partial", icon: CircleDot, iconColor: "text-scatto-accent" },
   contestazione: { label: "In contestazione", color: "status-prov-contested", icon: Ban, iconColor: "text-commission-contested" },
 };
 
