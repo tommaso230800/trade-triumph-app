@@ -109,7 +109,7 @@ async function callAI(pdfBase64: string, apiKey: string, pageCount: number): Pro
             content: [
               {
                 type: "text",
-                text: `Questo estratto contiene ${pageCount} pagine di un listino. Estrai TUTTI i prodotti in formato JSON, indicando per ciascuno la pagina dell'estrtto in cui compare.`,
+                text: `Questo estratto contiene ${pageCount} pagine di un listino. Estrai TUTTI i prodotti in formato JSON, indicando per ciascuno la pagina dell'estratto in cui compare.`,
               },
               { type: "image_url", image_url: { url: `data:application/pdf;base64,${pdfBase64}` } },
             ],
