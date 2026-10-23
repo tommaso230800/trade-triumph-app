@@ -300,7 +300,7 @@
     border-color: hsl(var(--success) / 0.42);
   }
   .status-prov-unpaid {
-    background: linear-gradient(135deg, hsl(var(--muted) / 0.8), hsl(var(--commission-unpaid) / 0.14));
+    background: hsl(var(--commission-unpaid) / 0.12);
     color: hsl(var(--commission-unpaid));
     border-color: hsl(var(--commission-unpaid) / 0.42);
   }
