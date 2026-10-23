@@ -694,55 +694,163 @@ const Provvigioni = () => {
               </div>
             </section>
 
-            <Card>
-              <CardHeader className="flex flex-col gap-3 space-y-0">
+            <section className={provCardCls}>
+              <div className="flex flex-col gap-3 border-b border-scatto-line px-4 py-3 sm:px-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-2">
                     {(["tutte", "pagata", "da_pagare", "scaduta", "parziale", "contestazione"] as const).map((s) => (
-                      <Button
+                      <button
                         key={s}
-                        size="sm"
-                        variant={statoFilter === s ? "default" : "outline"}
+                        type="button"
                         onClick={() => setStatoFilter(s)}
+                        className={`min-h-[36px] rounded-lg border px-3 text-xs font-semibold transition-colors ${
+                          statoFilter === s
+                            ? "border-scatto-accent bg-scatto-accent text-white"
+                            : "border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
+                        }`}
                       >
                         {s === "tutte" ? "Tutte" : STATO_CONFIG[s].label}
-                      </Button>
+                      </button>
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={exportExcel}><Download className="h-4 w-4 mr-1" />Excel{trimestreFilter !== 0 ? ` Q${trimestreFilter}` : ""}</Button>
-                    <Button size="sm" variant="outline" onClick={exportPDF}><Download className="h-4 w-4 mr-1" />PDF{trimestreFilter !== 0 ? ` Q${trimestreFilter}` : ""}</Button>
+                    <Button size="sm" variant="outline" className="rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg" onClick={exportExcel}><Download className="h-4 w-4 mr-1" />Excel{trimestreFilter !== 0 ? ` Q${trimestreFilter}` : ""}</Button>
+                    <Button size="sm" variant="outline" className="rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg" onClick={exportPDF}><Download className="h-4 w-4 mr-1" />PDF{trimestreFilter !== 0 ? ` Q${trimestreFilter}` : ""}</Button>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/60">
-                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground mr-1">Trimestre pagamento:</span>
+                <div className="flex flex-wrap items-center gap-2 border-t border-scatto-line pt-3">
+                  <span className="mr-1 text-xs font-medium uppercase tracking-wide text-scatto-muted">Trimestre pagamento:</span>
                   {([0, 1, 2, 3, 4] as const).map((q) => (
-                    <Button
+                    <button
                       key={q}
-                      size="sm"
-                      variant={trimestreFilter === q ? "default" : "outline"}
+                      type="button"
                       onClick={() => setTrimestreFilter(q)}
-                      className="h-7 px-3"
+                      className={`min-h-[32px] rounded-lg border px-3 text-xs font-semibold transition-colors ${
+                        trimestreFilter === q
+                          ? "border-scatto-accent bg-scatto-accent text-white"
+                          : "border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
+                      }`}
                     >
                       {q === 0 ? "Tutti" : `Q${q}`}
-                    </Button>
+                    </button>
                   ))}
                   {selectedRows.length > 0 && (
-                    <div className="ml-auto flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5">
-                      <span className="text-xs font-medium">{selectedRows.length} selezionate</span>
-                      <Button size="sm" onClick={() => setBulkOpen(true)} className="h-7">
+                    <div className="ml-auto flex items-center gap-2 rounded-lg border border-scatto-accent/40 bg-scatto-accent/5 px-3 py-1.5">
+                      <span className="text-xs font-medium text-scatto-ink">{selectedRows.length} selezionate</span>
+                      <Button size="sm" onClick={() => setBulkOpen(true)} className="h-7 bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90">
                         <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
                         Segna come pagate
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="h-7">
+                      <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="h-7 text-scatto-muted hover:text-scatto-ink">
                         Annulla
                       </Button>
                     </div>
                   )}
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
+              </div>
+              <div className="p-3 sm:p-4">
+                {/* Mobile: una card per riga, niente scorrimento orizzontale */}
+                <div className="space-y-3 lg:hidden">
+                  {filteredTableRows.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-scatto-muted">Nessuna riga per i filtri selezionati</p>
+                  ) : (
+                    filteredTableRows.map((r) => {
+                      const S = STATO_CONFIG[r.statoProvvigione];
+                      const selectable = r.source !== "movimento";
+                      return (
+                        <div
+                          key={r.id}
+                          className={`rounded-xl border bg-scatto-surface p-3.5 ${
+                            r.statoProvvigione === "scaduta" ? "border-scatto-danger/50" : "border-scatto-line"
+                          } ${selectedIds.has(r.id) ? "ring-2 ring-scatto-accent ring-offset-2 ring-offset-scatto-bg" : ""}`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex min-w-0 items-start gap-2.5">
+                              {selectable && (
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Seleziona provvigione ${r.numero}`}
+                                  className="mt-1 h-5 w-5 flex-shrink-0 rounded border-scatto-line cursor-pointer accent-scatto-accent"
+                                  checked={selectedIds.has(r.id)}
+                                  onChange={() => toggleSelectOne(r.id)}
+                                />
+                              )}
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-bold text-scatto-ink">{r.aziendaNome}</p>
+                                <p className="truncate text-xs text-scatto-muted">
+                                  {r.clienteNome} · {r.numero} · {format(new Date(r.data), "dd/MM/yy")}
+                                </p>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className={`flex-shrink-0 gap-1 border ${S?.color}`}>
+                              {S && <S.icon className="h-3 w-3" />}
+                              {S?.label}
+                            </Badge>
+                          </div>
+                          <div className="mt-3 flex items-end justify-between gap-3">
+                            <div>
+                              <p className="text-xs text-scatto-muted">Maturata</p>
+                              <p className="font-display text-xl font-bold tabular-nums tracking-tight text-scatto-ink">{fmtEur(r.provvigioneMaturata)}</p>
+                              <p className="mt-0.5 text-xs tabular-nums text-scatto-muted">
+                                Base {fmtEur(r.imponibile)} · {r.percentualeProvv}% · Pagata <span className="font-semibold text-scatto-success">{fmtEur(r.provvigionePagata)}</span>
+                              </p>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" className="h-9 gap-1.5 whitespace-nowrap bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90">
+                                  <CircleDot className="h-3.5 w-3.5" />
+                                  Stato
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56 border-scatto-line bg-scatto-surface text-scatto-ink">
+                                <DropdownMenuItem onClick={() => openPayDialog(r, "pagata")} className="gap-2 focus:bg-scatto-bg focus:text-scatto-ink">
+                                  <CheckCircle2 className="h-4 w-4 text-scatto-success" />
+                                  <span>Pagata</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => quickSetStato(r, "da_pagare")} className="gap-2 focus:bg-scatto-bg focus:text-scatto-ink">
+                                  <Clock className="h-4 w-4 text-commission-unpaid" />
+                                  <span>Non pagata</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => quickSetStato(r, "scaduta")} className="gap-2 focus:bg-scatto-bg focus:text-scatto-ink">
+                                  <AlertTriangle className="h-4 w-4 text-scatto-danger" />
+                                  <span>Scaduta</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => openPayDialog(r, "parziale")} className="gap-2 focus:bg-scatto-bg focus:text-scatto-ink">
+                                  <CircleDot className="h-4 w-4 text-scatto-accent" />
+                                  <span>Parzialmente pagata</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => quickSetStato(r, "contestazione")} className="gap-2 focus:bg-scatto-bg focus:text-scatto-ink">
+                                  <Ban className="h-4 w-4 text-commission-contested" />
+                                  <span>In contestazione</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          {selectable && (
+                            <div className="mt-3 border-t border-scatto-line pt-3">
+                              <Select
+                                value={r.trimestrePagamento ? String(r.trimestrePagamento) : ""}
+                                onValueChange={(v) => setTrimestreInline(r, Number(v))}
+                              >
+                                <SelectTrigger className="h-11 rounded-lg border-scatto-line bg-scatto-surface text-xs text-scatto-ink">
+                                  <SelectValue placeholder="Trimestre di pagamento —" />
+                                </SelectTrigger>
+                                <SelectContent className="border-scatto-line bg-scatto-surface text-scatto-ink">
+                                  <SelectItem value="1" className="focus:bg-scatto-bg focus:text-scatto-ink">Q1 · Gen-Mar</SelectItem>
+                                  <SelectItem value="2" className="focus:bg-scatto-bg focus:text-scatto-ink">Q2 · Apr-Giu</SelectItem>
+                                  <SelectItem value="3" className="focus:bg-scatto-bg focus:text-scatto-ink">Q3 · Lug-Set</SelectItem>
+                                  <SelectItem value="4" className="focus:bg-scatto-bg focus:text-scatto-ink">Q4 · Ott-Dic</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                {/* Desktop: tabella completa */}
+                <div className="hidden lg:block">
                   <Table>
                     <TableHeader>
                       <TableRow>
