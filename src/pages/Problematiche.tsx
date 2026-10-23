@@ -72,12 +72,14 @@ export default function Problematiche() {
   const { data: issues, isLoading } = useQuery({
     queryKey: ["data_issues"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("data_issues")
-        .select("*")
-        .order("controllato_il", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as DataIssue[];
+      const all: DataIssue[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase.from("data_issues").select("*")
+          .order("controllato_il", { ascending: false }).order("id").range(from, from + 999);
+        if (error) throw error;
+        all.push(...(data ?? []) as DataIssue[]);
+        if (!data || data.length < 1000) return all;
+      }
     },
   });
 
