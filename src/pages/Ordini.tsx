@@ -291,19 +291,35 @@ const Ordini = () => {
     actions: buildAnnullatiActions(ordine),
   }));
 
-  const hasActiveFilters = searchTerm.trim().length > 0 || statusFilter !== "tutti" || monthFilters.length > 0;
+  const hasActiveFilters =
+    searchTerm.trim().length > 0 ||
+    statusFilter !== "tutti" ||
+    monthFilters.length > 0 ||
+    clienteFilter !== "" ||
+    aziendaFilter !== "";
   const resetFilters = () => {
     setSearchTerm("");
     setStatusFilter("tutti");
     setMonthFilters([]);
+    setClienteFilter("");
+    setAziendaFilter("");
   };
+
+  // Intestazione di contesto: rende evidente a quali ordini si riferiscono
+  // elenco e riepiloghi ("Fatturato · Calonaci · Casoni Liquori").
+  const clienteNome = clienteFilter ? clienti?.find((c) => c.id === clienteFilter)?.nome : null;
+  const aziendaNome = aziendaFilter ? aziende?.find((a) => a.id === aziendaFilter)?.nome : null;
+  const contestoLabel =
+    clienteNome || aziendaNome
+      ? ["Fatturato", clienteNome, aziendaNome].filter(Boolean).join(" · ")
+      : null;
 
   // Selezione multipla: "visibili" = tutti gli ordini che passano i filtri
   // correnti (attivi + stand-by + annullati insieme, stessa fonte filtrata).
-  const totalVisibile = ordini?.length || 0;
+  const totalVisibile = ordiniFiltrati.length;
   const selectedOrdini = useMemo(
-    () => (ordini || []).filter((o) => selectedIds.has(o.id)),
-    [ordini, selectedIds]
+    () => ordiniFiltrati.filter((o) => selectedIds.has(o.id)),
+    [ordiniFiltrati, selectedIds]
   );
   const excludedAnnullatiCount = selectedOrdini.filter((o) => o.status === "annullato").length;
   const idsDaVerificare = selectedOrdini.filter((o) => o.status !== "annullato").map((o) => o.id);
