@@ -98,13 +98,22 @@ const emptyFormData = () => ({
   data_ordine: format(new Date(), "yyyy-MM-dd"),
 });
 
+/** Pre-riempimento per il flusso Riordino → Ordina: cliente, azienda e
+ *  prodotti con quantità suggerita arrivano dalla pagina Riordino. */
+export interface OrdinePrefill {
+  cliente_id: string;
+  azienda_id: string;
+  righe: Array<{ prodotto_id: string; quantita_cartoni: number }>;
+}
+
 interface NuovoOrdineDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOrderCreated: (data: ProformaData) => void;
+  prefill?: OrdinePrefill | null;
 }
 
-export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated }: NuovoOrdineDialogProps) {
+export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill }: NuovoOrdineDialogProps) {
   const [formData, setFormData] = useState(emptyFormData());
   const [righeOrdine, setRigheOrdine] = useState<RigaOrdine[]>([]);
   const [selectedProdotto, setSelectedProdotto] = useState("");
