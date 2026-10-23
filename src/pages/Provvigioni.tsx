@@ -770,7 +770,7 @@ const Provvigioni = () => {
                               )}
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-bold text-scatto-ink">{r.aziendaNome}</p>
-                                <p className="truncate text-xs text-scatto-muted">
+                                <p className="text-xs leading-snug text-scatto-muted">
                                   {r.clienteNome} · {r.numero} · {format(new Date(r.data), "dd/MM/yy")}
                                 </p>
                               </div>
