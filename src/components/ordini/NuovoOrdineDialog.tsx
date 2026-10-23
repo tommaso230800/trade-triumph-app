@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -164,6 +164,55 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
     onOpenChange(v);
     if (!v) resetForm();
   };
+
+  // ── Pre-riempimento Riordino → Ordina ──────────────────────────────
+  // Fase 1: imposta cliente e azienda. Fase 2: quando lo storico prezzi del
+  // cliente è caricato, costruisce le righe con i prezzi attuali (mai prezzi
+  // storici non più validi: vale la stessa priorità dell'aggiunta manuale).
+  const prefillAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) {
+      prefillAppliedRef.current = false;
+      return;
+    }
+    if (!prefill) return;
+    if (formData.cliente_id !== prefill.cliente_id || formData.azienda_id !== prefill.azienda_id) {
+      setFormData((prev) => ({
+        ...prev,
+        cliente_id: prefill.cliente_id,
+        azienda_id: prefill.azienda_id,
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefill]);
+
+  useEffect(() => {
+    if (!open || !prefill || prefillAppliedRef.current) return;
+    if (formData.cliente_id !== prefill.cliente_id || formData.azienda_id !== prefill.azienda_id) return;
+    if (!allProdotti || productHistory === undefined || customPrices === undefined) return;
+
+    const prodottiValidi = allProdotti.filter((p) => p.azienda_id === prefill.azienda_id);
+    const righe: RigaOrdine[] = [];
+    const mancanti: string[] = [];
+    for (const r of prefill.righe) {
+      const prodotto = prodottiValidi.find((p) => p.id === r.prodotto_id);
+      if (!prodotto) {
+        const altrove = allProdotti.find((p) => p.id === r.prodotto_id);
+        mancanti.push(altrove ? `${altrove.nome} (non più dell'azienda selezionata)` : "un prodotto non più disponibile");
+        continue;
+      }
+      if (righe.some((x) => x.prodotto_id === prodotto.id)) continue;
+      righe.push(buildRiga(prodotto, Math.max(0, Math.round(r.quantita_cartoni))));
+    }
+    setRigheOrdine(righe);
+    if (righe.length > 0) setCurrentStep(1);
+    if (mancanti.length > 0) {
+      toast.warning(`Alcuni prodotti non sono stati caricati: ${mancanti.join(", ")}.`);
+    }
+    prefillAppliedRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefill, formData.cliente_id, formData.azienda_id, allProdotti, productHistory, customPrices]);
 
   const clientiOptions = useMemo(
     () =>
