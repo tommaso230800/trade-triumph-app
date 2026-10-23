@@ -1110,6 +1110,78 @@ export type Database = {
         }
         Relationships: []
       }
+      data_issues: {
+        Row: {
+          azienda_nome: string | null
+          causa: string | null
+          causa_verificata: boolean
+          cliente_nome: string | null
+          controllato_il: string
+          created_at: string
+          descrizione: string
+          differenza: string | null
+          fingerprint: string
+          gravita: string
+          id: string
+          link: string | null
+          ordine_codice: string | null
+          ordine_id: string | null
+          periodo: string | null
+          stato: string
+          tipo: string
+          updated_at: string
+          user_id: string
+          valore_atteso: string | null
+          valore_rilevato: string | null
+        }
+        Insert: {
+          azienda_nome?: string | null
+          causa?: string | null
+          causa_verificata?: boolean
+          cliente_nome?: string | null
+          controllato_il?: string
+          created_at?: string
+          descrizione: string
+          differenza?: string | null
+          fingerprint: string
+          gravita?: string
+          id?: string
+          link?: string | null
+          ordine_codice?: string | null
+          ordine_id?: string | null
+          periodo?: string | null
+          stato?: string
+          tipo: string
+          updated_at?: string
+          user_id: string
+          valore_atteso?: string | null
+          valore_rilevato?: string | null
+        }
+        Update: {
+          azienda_nome?: string | null
+          causa?: string | null
+          causa_verificata?: boolean
+          cliente_nome?: string | null
+          controllato_il?: string
+          created_at?: string
+          descrizione?: string
+          differenza?: string | null
+          fingerprint?: string
+          gravita?: string
+          id?: string
+          link?: string | null
+          ordine_codice?: string | null
+          ordine_id?: string | null
+          periodo?: string | null
+          stato?: string
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+          valore_atteso?: string | null
+          valore_rilevato?: string | null
+        }
+        Relationships: []
+      }
       deal_messages: {
         Row: {
           content: string

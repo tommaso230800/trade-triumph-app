@@ -11,8 +11,10 @@ import { SectionKicker } from "@/components/dashboard/SectionKicker";
 import { InsightsPanel, type Insight } from "@/components/kpi/InsightsPanel";
 import { SalesOverviewPanel } from "@/components/kpi/SalesOverviewPanel";
 import { QuickStatTiles } from "@/components/kpi/QuickStatTiles";
-import { PeriodRangeTabs, type RangePreset } from "@/components/kpi/PeriodRangeTabs";
 import { RevenueDistributionDial } from "@/components/kpi/RevenueDistributionDial";
+import { PeriodFilter } from "@/components/filters/PeriodFilter";
+import { usePeriodoFiltro, usePrimoAnnoOrdini } from "@/hooks/usePeriodoFiltro";
+import { isDefaultPeriodo, periodoLabel, periodoRange } from "@/lib/periodFilter";
 
 import { MonthlyGoalCard } from "@/components/kpi/MonthlyGoalCard";
 import { RevenueMarginChart } from "@/components/kpi/RevenueMarginChart";
@@ -30,11 +32,8 @@ import { KpiEntityCards } from "@/components/kpi/KpiEntityCards";
 import { buildAziendaColorMap } from "@/lib/aziendaColor";
 import { formatCompact, formatCurrency, formatNumberIT, mesiLabel } from "@/components/kpi/kpiShared";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { format, startOfMonth, endOfMonth, subMonths, subDays, startOfYear } from "date-fns";
+import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import {
   Select,
@@ -61,8 +60,6 @@ import {
 } from "lucide-react";
 import { exportKPIToPDF, exportKPIToCSV } from "@/lib/exportKPI";
 
-type PeriodPreset = "7d" | "30d" | "90d" | "1y" | "mese" | "semestre" | "anno" | "custom";
-
 interface AnalyticsProps {
   /** Se valorizzato, la pagina mostra SOLO i dati di questa azienda. */
   lockedAziendaId?: string;
@@ -72,39 +69,18 @@ interface AnalyticsProps {
 }
 
 const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {}) => {
-  const [periodPreset, setPeriodPreset] = useState<PeriodPreset>("anno");
-  const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
-  const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+  // Periodo: selettore unico anno/mese, condiviso con la pagina Ordini
+  // (stessa sorgente, stessa persistenza) cosi' i totali coincidono.
+  const { periodo, setPeriodo, resetPeriodo } = usePeriodoFiltro();
+  const { data: primoAnno } = usePrimoAnnoOrdini();
   const [selectedClienti, setSelectedClienti] = useState<string[]>([]);
   const [selectedAziende, setSelectedAziende] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [clientSearch, setClientSearch] = useState("");
   const [prodottoSearch, setProdottoSearch] = useState("");
 
-  // Calculate date range from preset
-  const dateRange = useMemo(() => {
-    const now = new Date();
-    switch (periodPreset) {
-      case "7d":
-        return { start: subDays(now, 6), end: now };
-      case "30d":
-        return { start: subDays(now, 29), end: now };
-      case "90d":
-        return { start: subDays(now, 89), end: now };
-      case "1y":
-        return { start: subDays(now, 364), end: now };
-      case "mese":
-        return { start: startOfMonth(now), end: endOfMonth(now) };
-      case "semestre":
-        return { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) };
-      case "anno":
-        return { start: startOfYear(now), end: now };
-      case "custom":
-        return { start: customStartDate || null, end: customEndDate || null };
-      default:
-        return { start: null, end: null };
-    }
-  }, [periodPreset, customStartDate, customEndDate]);
+  // Intervallo date derivato dal periodo (anno intero o mese solare).
+  const dateRange = useMemo(() => periodoRange(periodo), [periodo]);
 
   // Sottopagina azienda: il filtro fornitore è bloccato e non modificabile.
   const aziendaIds = lockedAziendaId ? [lockedAziendaId] : selectedAziende;
@@ -236,27 +212,16 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
     setSelectedClienti([]);
     setSelectedAziende([]);
     setSelectedBrands([]);
-    setPeriodPreset("anno");
-    setCustomStartDate(undefined);
-    setCustomEndDate(undefined);
+    resetPeriodo();
   };
 
-  const getPeriodoLabel = () => {
-    const fmt = (d?: Date | null) => (d ? format(d, "dd/MM/yyyy", { locale: it }) : "—");
-    const labels: Record<PeriodPreset, string> = {
-      "7d": "Ultimi 7 giorni",
-      "30d": "Ultimi 30 giorni",
-      "90d": "Ultimi 90 giorni",
-      "1y": "Ultimi 12 mesi",
-      mese: "Questo Mese",
-      semestre: "Ultimi 6 Mesi",
-      anno: "Anno in Corso",
-      custom: `${fmt(dateRange.start)} → ${fmt(dateRange.end)}`,
-    };
-    return labels[periodPreset] || "Periodo";
-  };
+  const getPeriodoLabel = () => periodoLabel(periodo);
 
-  const hasActiveFilters = selectedClienti.length > 0 || selectedAziende.length > 0 || selectedBrands.length > 0;
+  const hasActiveFilters =
+    selectedClienti.length > 0 ||
+    selectedAziende.length > 0 ||
+    selectedBrands.length > 0 ||
+    !isDefaultPeriodo(periodo);
 
   // Build options for multi-select
   const clientiOptions = useMemo(() => 
@@ -361,28 +326,12 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
 
           {/* Filtri a pillole */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Finestre rolling rapide: chiudono sempre sul giorno corrente */}
-            <PeriodRangeTabs
-              value={(["7d", "30d", "90d", "1y"] as const).includes(periodPreset as any) ? (periodPreset as RangePreset) : null}
-              onChange={(r) => setPeriodPreset(r)}
+            <PeriodFilter
+              value={periodo}
+              onChange={setPeriodo}
+              minYear={primoAnno ?? new Date().getFullYear()}
+              className="h-auto w-auto gap-1.5 rounded-full border border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm [&>svg]:text-scatto-muted"
             />
-
-            <Select value={periodPreset} onValueChange={(v) => setPeriodPreset(v as PeriodPreset)}>
-              <SelectTrigger className="h-auto w-auto gap-1.5 rounded-full border border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm [&>svg]:text-scatto-muted">
-                <CalendarIcon className="h-3.5 w-3.5 text-scatto-muted" />
-                <SelectValue placeholder="Periodo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7d">Ultimi 7 giorni</SelectItem>
-                <SelectItem value="30d">Ultimi 30 giorni</SelectItem>
-                <SelectItem value="90d">Ultimi 90 giorni</SelectItem>
-                <SelectItem value="1y">Ultimi 12 mesi</SelectItem>
-                <SelectItem value="mese">Questo mese</SelectItem>
-                <SelectItem value="semestre">Ultimi 6 mesi</SelectItem>
-                <SelectItem value="anno">Anno in corso</SelectItem>
-                <SelectItem value="custom">Personalizzato</SelectItem>
-              </SelectContent>
-            </Select>
 
             <MultiSelect
               options={clientiOptions}
@@ -420,44 +369,21 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
             )}
           </div>
 
-          {/* Custom Date Range */}
-          {periodPreset === "custom" && (
-            <div className="flex flex-wrap gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "rounded-full border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg",
-                      !customStartDate && "text-scatto-muted"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {customStartDate ? format(customStartDate, "dd/MM/yyyy", { locale: it }) : "Da"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={customStartDate} onSelect={setCustomStartDate} initialFocus className="pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "rounded-full border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg",
-                      !customEndDate && "text-scatto-muted"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {customEndDate ? format(customEndDate, "dd/MM/yyyy", { locale: it }) : "A"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={customEndDate} onSelect={setCustomEndDate} initialFocus className="pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
-            </div>
+          {/* Contesto attivo: a quali dati si riferiscono tutti i numeri */}
+          {hasActiveFilters && (
+            <p className="min-w-0 break-words text-sm font-semibold text-scatto-ink">
+              {[
+                selectedClienti.length > 0
+                  ? selectedClienti.map((id) => clientiNames.get(id) ?? id).join(", ")
+                  : null,
+                aziendaIds.length > 0 && !lockedAziendaId
+                  ? aziendaIds.map((id) => aziendeNames.get(id) ?? id).join(", ")
+                  : null,
+                periodoLabel(periodo),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
           )}
 
           {/* Panoramica vendite (andamento per fornitore + ripartizione) */}

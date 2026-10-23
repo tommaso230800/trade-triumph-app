@@ -32,6 +32,7 @@ const RiordinoForecast = lazy(() => import("./pages/RiordinoForecast"));
 const IntelligenzaCommerciale = lazy(() => import("./pages/IntelligenzaCommerciale"));
 const Diagnostica = lazy(() => import("./pages/Diagnostica"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
+const Problematiche = lazy(() => import("./pages/Problematiche"));
 const PreparaVisita = lazy(() => import("./pages/PreparaVisita"));
 const MappaClienti = lazy(() => import("./pages/MappaClienti"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -72,6 +73,7 @@ const App = () => (
                 <Route path="/riordino" element={<RiordinoForecast />} />
                 <Route path="/intelligenza-commerciale" element={<IntelligenzaCommerciale />} />
                 <Route path="/impostazioni" element={<Impostazioni />} />
+                <Route path="/impostazioni/problematiche" element={<Problematiche />} />
                 <Route path="/diagnostica" element={<Diagnostica />} />
                 <Route path="/prepara-visita" element={<PreparaVisita />} />
                 <Route path="/mappa" element={<MappaClienti />} />

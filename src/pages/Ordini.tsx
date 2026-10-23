@@ -68,11 +68,14 @@ import { StandByDialog } from "@/components/ordini/StandByDialog";
 import { ConfermaOrdineDialog } from "@/components/ordini/ConfermaOrdineDialog";
 import { formatCurrency } from "@/components/ordini/ordiniShared";
 import { exportOrdiniToCSV } from "@/lib/exportOrdiniCsv";
+import { usePeriodoFiltro, usePrimoAnnoOrdini } from "@/hooks/usePeriodoFiltro";
+import { isDefaultPeriodo, periodoLabel } from "@/lib/periodFilter";
 
 const Ordini = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Ordine["status"] | "tutti">("tutti");
-  const [monthFilters, setMonthFilters] = useState<string[]>([]);
+  const { periodo, setPeriodo, resetPeriodo } = usePeriodoFiltro();
+  const { data: primoAnno } = usePrimoAnnoOrdini();
   const [clienteFilter, setClienteFilter] = useState("");
   const [aziendaFilter, setAziendaFilter] = useState("");
 
@@ -104,7 +107,7 @@ const Ordini = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  const { data: ordini, isLoading, isError, refetch } = useOrdini(searchTerm, statusFilter, monthFilters);
+  const { data: ordini, isLoading, isError, refetch } = useOrdini(searchTerm, statusFilter);
   const { data: mom } = useOrdiniValoreMoM();
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
@@ -172,17 +175,22 @@ const Ordini = () => {
     setIsProformaOpen(true);
   };
 
-  // Filtri Cliente/Azienda: si combinano in AND con ricerca, stato e mese.
+  // Filtri Cliente/Azienda/Periodo: si combinano in AND con ricerca e stato.
   // Elenco e riepiloghi derivano sempre da questo stesso insieme filtrato.
-  const ordiniFiltrati = useMemo(
-    () =>
-      (ordini || []).filter(
-        (o) =>
-          (!clienteFilter || o.cliente_id === clienteFilter) &&
-          (!aziendaFilter || o.azienda_id === aziendaFilter)
-      ),
-    [ordini, clienteFilter, aziendaFilter]
-  );
+  // Il periodo si applica su data_ordine (fallback created_at) confrontando
+  // direttamente anno/mese della stringa ISO: nessuno slittamento di fuso.
+  const ordiniFiltrati = useMemo(() => {
+    const prefix =
+      periodo.kind === "year"
+        ? `${periodo.year}-`
+        : `${periodo.year}-${String(periodo.month).padStart(2, "0")}-`;
+    return (ordini || []).filter(
+      (o) =>
+        (!clienteFilter || o.cliente_id === clienteFilter) &&
+        (!aziendaFilter || o.azienda_id === aziendaFilter) &&
+        (o.data_ordine || o.created_at || "").startsWith(prefix)
+    );
+  }, [ordini, clienteFilter, aziendaFilter, periodo]);
 
   // Sezioni per stato
   const ordiniAttivi = useMemo(
@@ -294,13 +302,13 @@ const Ordini = () => {
   const hasActiveFilters =
     searchTerm.trim().length > 0 ||
     statusFilter !== "tutti" ||
-    monthFilters.length > 0 ||
+    !isDefaultPeriodo(periodo) ||
     clienteFilter !== "" ||
     aziendaFilter !== "";
   const resetFilters = () => {
     setSearchTerm("");
     setStatusFilter("tutti");
-    setMonthFilters([]);
+    resetPeriodo();
     setClienteFilter("");
     setAziendaFilter("");
   };
@@ -309,10 +317,9 @@ const Ordini = () => {
   // elenco e riepiloghi ("Fatturato · Calonaci · Casoni Liquori").
   const clienteNome = clienteFilter ? clienti?.find((c) => c.id === clienteFilter)?.nome : null;
   const aziendaNome = aziendaFilter ? aziende?.find((a) => a.id === aziendaFilter)?.nome : null;
-  const contestoLabel =
-    clienteNome || aziendaNome
-      ? ["Fatturato", clienteNome, aziendaNome].filter(Boolean).join(" · ")
-      : null;
+  const contestoLabel = hasActiveFilters
+    ? ["Fatturato", clienteNome, aziendaNome, periodoLabel(periodo)].filter(Boolean).join(" · ")
+    : null;
 
   // Selezione multipla: "visibili" = tutti gli ordini che passano i filtri
   // correnti (attivi + stand-by + annullati insieme, stessa fonte filtrata).
@@ -454,8 +461,9 @@ const Ordini = () => {
                 onSearchTermChange={setSearchTerm}
                 statusFilter={statusFilter}
                 onStatusFilterChange={setStatusFilter}
-                monthFilters={monthFilters}
-                onMonthFiltersChange={setMonthFilters}
+                periodo={periodo}
+                onPeriodoChange={setPeriodo}
+                minYear={primoAnno ?? new Date().getFullYear()}
                 clienteFilter={clienteFilter}
                 onClienteFilterChange={setClienteFilter}
                 aziendaFilter={aziendaFilter}
@@ -493,7 +501,7 @@ const Ordini = () => {
                 ? {
                     icon: SearchX,
                     title: "Nessun ordine trovato con i filtri selezionati",
-                    description: "Prova a modificare ricerca, cliente, azienda, stato o mese.",
+                    description: "Prova a modificare ricerca, cliente, azienda, stato o periodo.",
                     actionLabel: "Azzera filtri",
                     onAction: resetFilters,
                   }

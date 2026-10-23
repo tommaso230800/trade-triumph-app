@@ -6,31 +6,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MultiSelect } from "@/components/ui/multi-select";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { Button } from "@/components/ui/button";
+import { PeriodFilter } from "@/components/filters/PeriodFilter";
 import { Search, Filter, X } from "lucide-react";
 import type { Ordine } from "@/hooks/useOrdini";
-
-const getMonthOptions = () => {
-  const opts: { value: string; label: string }[] = [];
-  const now = new Date();
-  for (let i = 0; i < 24; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const label = d.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
-    opts.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
-  }
-  return opts;
-};
+import type { PeriodoFiltro } from "@/lib/periodFilter";
 
 interface OrdiniFiltersProps {
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
   statusFilter: Ordine["status"] | "tutti";
   onStatusFilterChange: (value: Ordine["status"] | "tutti") => void;
-  monthFilters: string[];
-  onMonthFiltersChange: (value: string[]) => void;
+  periodo: PeriodoFiltro;
+  onPeriodoChange: (value: PeriodoFiltro) => void;
+  minYear: number;
   clienteFilter: string;
   onClienteFilterChange: (value: string) => void;
   aziendaFilter: string;
@@ -47,8 +37,9 @@ export function OrdiniFilters({
   onSearchTermChange,
   statusFilter,
   onStatusFilterChange,
-  monthFilters,
-  onMonthFiltersChange,
+  periodo,
+  onPeriodoChange,
+  minYear,
   clienteFilter,
   onClienteFilterChange,
   aziendaFilter,
@@ -128,12 +119,11 @@ export function OrdiniFilters({
           <SelectItem value="annullato" className="focus:bg-scatto-bg focus:text-scatto-ink">Annullato</SelectItem>
         </SelectContent>
       </Select>
-      <MultiSelect
-        className={`w-full sm:w-64 ${inputCls}`}
-        placeholder="Filtra per mese"
-        values={monthFilters}
-        onValuesChange={onMonthFiltersChange}
-        options={getMonthOptions()}
+      <PeriodFilter
+        value={periodo}
+        onChange={onPeriodoChange}
+        minYear={minYear}
+        className={`w-full sm:w-48 ${inputCls}`}
       />
       </div>
     </div>
