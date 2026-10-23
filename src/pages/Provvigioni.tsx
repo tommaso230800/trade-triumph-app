@@ -883,7 +883,7 @@ const Provvigioni = () => {
                           const S = STATO_CONFIG[r.statoProvvigione];
                           const selectable = r.source !== "movimento";
                           return (
-                            <TableRow key={r.id} className={`transition-colors ${S?.rowBg || "hover:bg-muted/30"} ${selectedIds.has(r.id) ? "bg-primary/5" : ""}`}>
+                            <TableRow key={r.id} className={`transition-colors ${S?.rowBg || "hover:bg-scatto-bg"} ${selectedIds.has(r.id) ? "bg-scatto-accent/5" : ""}`}>
                               <TableCell>
                                 {selectable && (
                                   <input
@@ -899,9 +899,9 @@ const Provvigioni = () => {
                               <TableCell className="text-sm font-medium">{r.aziendaNome}</TableCell>
                               <TableCell className="text-sm">{r.clienteNome}</TableCell>
                               <TableCell className="text-right text-sm">{fmtEur(r.imponibile)}</TableCell>
-                              <TableCell className="text-center text-xs text-muted-foreground">{r.percentualeProvv}%</TableCell>
-                              <TableCell className="text-right text-sm font-semibold text-primary">{fmtEur(r.provvigioneMaturata)}</TableCell>
-                              <TableCell className="text-right text-sm text-success">{fmtEur(r.provvigionePagata)}</TableCell>
+                              <TableCell className="text-center text-xs text-scatto-muted">{r.percentualeProvv}%</TableCell>
+                              <TableCell className="text-right text-sm font-semibold tabular-nums text-scatto-ink">{fmtEur(r.provvigioneMaturata)}</TableCell>
+                              <TableCell className="text-right text-sm tabular-nums text-scatto-success">{fmtEur(r.provvigionePagata)}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className={`gap-1 border ${S?.color}`}>
                                   {S && <S.icon className="h-3 w-3" />}
@@ -967,8 +967,8 @@ const Provvigioni = () => {
                     </TableBody>
                   </Table>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </section>
           </TabsContent>
 
           {/* AZIENDE */}
