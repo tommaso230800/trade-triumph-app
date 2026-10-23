@@ -111,6 +111,14 @@ const STATO_CONFIG: Record<StatoProvvigione, { label: string; color: string; row
   contestazione: { label: "In contestazione", color: "status-prov-contested", icon: Ban, iconColor: "text-commission-contested" },
 };
 
+// Stili condivisi della pagina (scope "scatto", coerenti con la pagina Ordini).
+const provInputCls =
+  "flex-1 rounded-xl border-scatto-line bg-scatto-surface text-scatto-ink placeholder:text-scatto-muted focus-visible:ring-scatto-accent";
+const provTabCls =
+  "gap-2 rounded-lg text-scatto-muted hover:text-scatto-ink data-[state=active]:bg-scatto-accent data-[state=active]:text-white data-[state=active]:shadow-none";
+const provCardCls =
+  "rounded-xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_hsl(225_18%_9%/0.05)]";
+
 type SortKey = keyof ProvvigioneRow;
 
 const Provvigioni = () => {
@@ -424,15 +432,15 @@ const Provvigioni = () => {
 
         {/* MAIN TABS */}
         <Tabs defaultValue="overview" className="space-y-5">
-          <TabsList className="w-full flex-wrap h-auto justify-start">
-            <TabsTrigger value="overview" className="gap-2"><LineChartIcon className="h-4 w-4" />Overview</TabsTrigger>
-            <TabsTrigger value="provvigioni" className="gap-2"><Euro className="h-4 w-4" />Provvigioni</TabsTrigger>
-            <TabsTrigger value="aziende" className="gap-2"><Building2 className="h-4 w-4" />Aziende</TabsTrigger>
-            <TabsTrigger value="clienti" className="gap-2"><Users className="h-4 w-4" />Clienti</TabsTrigger>
-            <TabsTrigger value="bonus" className="gap-2"><Trophy className="h-4 w-4" />Bonus</TabsTrigger>
-            <TabsTrigger value="scadenziario" className="gap-2"><Receipt className="h-4 w-4" />Scadenziario</TabsTrigger>
-            <TabsTrigger value="riconciliazione" className="gap-2"><Sparkles className="h-4 w-4" />Riconciliazione</TabsTrigger>
-            <TabsTrigger value="matrice" className="gap-2"><Percent className="h-4 w-4" />Matrice</TabsTrigger>
+          <TabsList className="w-full flex-wrap h-auto justify-start gap-1 rounded-xl border border-scatto-line bg-scatto-surface p-1">
+            <TabsTrigger value="overview" className={provTabCls}><LineChartIcon className="h-4 w-4" />Overview</TabsTrigger>
+            <TabsTrigger value="provvigioni" className={provTabCls}><Euro className="h-4 w-4" />Provvigioni</TabsTrigger>
+            <TabsTrigger value="aziende" className={provTabCls}><Building2 className="h-4 w-4" />Aziende</TabsTrigger>
+            <TabsTrigger value="clienti" className={provTabCls}><Users className="h-4 w-4" />Clienti</TabsTrigger>
+            <TabsTrigger value="bonus" className={provTabCls}><Trophy className="h-4 w-4" />Bonus</TabsTrigger>
+            <TabsTrigger value="scadenziario" className={provTabCls}><Receipt className="h-4 w-4" />Scadenziario</TabsTrigger>
+            <TabsTrigger value="riconciliazione" className={provTabCls}><Sparkles className="h-4 w-4" />Riconciliazione</TabsTrigger>
+            <TabsTrigger value="matrice" className={provTabCls}><Percent className="h-4 w-4" />Matrice</TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW */}
@@ -638,19 +646,17 @@ const Provvigioni = () => {
             </div>
 
             {/* LIQUIDATO PER TRIMESTRE (Dashboard trimestrale) */}
-            <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-card">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <CalendarClock className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-base">Liquidato per trimestre di pagamento</CardTitle>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Basato sul trimestre in cui l'azienda ha effettivamente liquidato la provvigione
-                  </p>
+            <section className={provCardCls}>
+              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-scatto-line px-4 py-3 sm:px-5">
+                <div className="flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-scatto-muted" />
+                  <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">Liquidato per trimestre di pagamento</h2>
                 </div>
-              </CardHeader>
-              <CardContent>
+                <p className="text-xs text-scatto-muted">
+                  Basato sul trimestre in cui l'azienda ha effettivamente liquidato la provvigione
+                </p>
+              </header>
+              <div className="p-4 sm:p-5">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {analytics.perTrimestrePagamento.map((t) => {
                     const active = trimestreFilter === t.trimestre;
@@ -658,14 +664,14 @@ const Provvigioni = () => {
                       <button
                         key={t.trimestre}
                         onClick={() => setTrimestreFilter(active ? 0 : (t.trimestre as 1 | 2 | 3 | 4))}
-                        className={`text-left rounded-lg border p-4 transition ${active ? "border-primary bg-primary/10 shadow-sm" : "border-border hover:border-primary/40 hover:bg-muted/30"}`}
+                        className={`text-left rounded-xl border p-4 transition-colors ${active ? "border-scatto-accent bg-scatto-accent/5" : "border-scatto-line bg-scatto-surface hover:bg-scatto-bg"}`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-semibold">Q{t.trimestre}</span>
-                          <span className="text-xs text-muted-foreground">{["Gen-Mar","Apr-Giu","Lug-Set","Ott-Dic"][t.trimestre-1]}</span>
+                          <span className="text-sm font-semibold text-scatto-ink">Q{t.trimestre}</span>
+                          <span className="text-xs text-scatto-muted">{["Gen-Mar","Apr-Giu","Lug-Set","Ott-Dic"][t.trimestre-1]}</span>
                         </div>
-                        <p className="text-xl font-bold text-primary">{fmtEur(t.liquidato)}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{t.conteggio} provvigioni</p>
+                        <p className={`text-xl font-bold tabular-nums ${active ? "text-scatto-accent" : "text-scatto-ink"}`}>{fmtEur(t.liquidato)}</p>
+                        <p className="text-xs text-scatto-muted mt-1">{t.conteggio} provvigioni</p>
                       </button>
                     );
                   })}
@@ -673,20 +679,20 @@ const Provvigioni = () => {
                 <div className="mt-4 h-[180px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={analytics.perTrimestrePagamento.map((t) => ({ name: `Q${t.trimestre}`, liquidato: t.liquidato }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--scatto-line))" />
+                      <XAxis dataKey="name" stroke="hsl(var(--scatto-muted))" fontSize={11} />
+                      <YAxis stroke="hsl(var(--scatto-muted))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip contentStyle={{ background: "hsl(var(--scatto-surface))", border: "1px solid hsl(var(--scatto-line))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
                       <Bar dataKey="liquidato" radius={[6, 6, 0, 0]}>
                         {analytics.perTrimestrePagamento.map((t, i) => (
-                          <Cell key={i} fill={trimestreFilter === t.trimestre ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.55)"} />
+                          <Cell key={i} fill={trimestreFilter === t.trimestre ? "hsl(var(--scatto-accent))" : "hsl(var(--scatto-accent) / 0.4)"} />
                         ))}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </section>
 
             <Card>
               <CardHeader className="flex flex-col gap-3 space-y-0">
