@@ -73,6 +73,8 @@ const Ordini = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Ordine["status"] | "tutti">("tutti");
   const [monthFilters, setMonthFilters] = useState<string[]>([]);
+  const [clienteFilter, setClienteFilter] = useState("");
+  const [aziendaFilter, setAziendaFilter] = useState("");
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -170,13 +172,25 @@ const Ordini = () => {
     setIsProformaOpen(true);
   };
 
+  // Filtri Cliente/Azienda: si combinano in AND con ricerca, stato e mese.
+  // Elenco e riepiloghi derivano sempre da questo stesso insieme filtrato.
+  const ordiniFiltrati = useMemo(
+    () =>
+      (ordini || []).filter(
+        (o) =>
+          (!clienteFilter || o.cliente_id === clienteFilter) &&
+          (!aziendaFilter || o.azienda_id === aziendaFilter)
+      ),
+    [ordini, clienteFilter, aziendaFilter]
+  );
+
   // Sezioni per stato
   const ordiniAttivi = useMemo(
-    () => ordini?.filter((o) => o.status !== "annullato" && o.status !== "stand_by") || [],
-    [ordini]
+    () => ordiniFiltrati.filter((o) => o.status !== "annullato" && o.status !== "stand_by"),
+    [ordiniFiltrati]
   );
-  const ordiniStandBy = useMemo(() => ordini?.filter((o) => o.status === "stand_by") || [], [ordini]);
-  const ordiniAnnullati = useMemo(() => ordini?.filter((o) => o.status === "annullato") || [], [ordini]);
+  const ordiniStandBy = useMemo(() => ordiniFiltrati.filter((o) => o.status === "stand_by"), [ordiniFiltrati]);
+  const ordiniAnnullati = useMemo(() => ordiniFiltrati.filter((o) => o.status === "annullato"), [ordiniFiltrati]);
 
   const stats = {
     totale: ordiniAttivi.length,
