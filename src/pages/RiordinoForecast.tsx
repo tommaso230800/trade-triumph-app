@@ -372,6 +372,18 @@ export default function RiordinoForecast() {
                             </span>
                             <span className="text-emerald-500">{fmtEur.format(f.fatturato_medio)}</span>
                           </div>
+                          <Button
+                            size="sm"
+                            className="mt-2 w-full gap-1.5"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              apriOrdina(f);
+                            }}
+                          >
+                            <ShoppingCart className="h-3.5 w-3.5" />
+                            Ordina
+                          </Button>
                         </Link>
                       );
                     })}
@@ -382,6 +394,18 @@ export default function RiordinoForecast() {
           </Card>
         </div>
       </main>
+      <NuovoOrdineDialog
+        open={!!ordinaPrefill}
+        onOpenChange={(v) => {
+          if (!v) setOrdinaPrefill(null);
+        }}
+        prefill={ordinaPrefill}
+        onOrderCreated={() => {
+          setOrdinaPrefill(null);
+          queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+          toast.success("Ordine creato: lo trovi nella pagina Ordini.");
+        }}
+      />
       <BottomNav onOpenMore={() => setMobileMenuOpen(true)} moreActive={mobileMenuOpen} />
     </div>
   );
