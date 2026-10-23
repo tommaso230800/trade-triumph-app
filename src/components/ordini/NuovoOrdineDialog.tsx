@@ -294,11 +294,11 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
     return riga;
   };
 
-  const addProdottoToOrder = () => {
-    if (!selectedProdotto) return;
-    const prodotto = prodottiAzienda.find((p) => p.id === selectedProdotto);
-    if (!prodotto) return;
-
+  // Costruisce una riga ordine per un prodotto: prezzo risolto con la stessa
+  // priorità ovunque (prezzo personalizzato cliente → ultimo ordine → listino),
+  // sconti da prodotto o da azienda. Usata sia dall'aggiunta manuale sia dal
+  // pre-riempimento Riordino → Ordina.
+  const buildRiga = (prodotto: (typeof prodottiAzienda)[number], quantitaCartoni = 0): RigaOrdine => {
     const azienda = aziende?.find((a) => a.id === formData.azienda_id);
 
     const getSc1 = () => (prodotto.sc1_default > 0 ? prodotto.sc1_default : azienda?.default_sc1 || 0);
@@ -313,14 +313,14 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
     });
     const prezzoIniziale = String(resolved.price).replace(".", ",");
 
-    const newRiga: RigaOrdine = {
+    return {
       prodotto_id: prodotto.id,
       prodotto_nome: prodotto.nome,
       prodotto_codice: prodotto.codice || undefined,
       prodotto_brand_id: prodotto.brand_id || undefined,
       prezzo_unitario: prezzoIniziale,
       quantita_pezzi: 0,
-      quantita_cartoni: 0,
+      quantita_cartoni: quantitaCartoni,
       pezzi_per_cartone: prodotto.pezzi_per_cartone,
       sc1: String(getSc1()).replace(".", ","),
       sc2: String(getSc2()).replace(".", ","),
@@ -332,6 +332,14 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
       prezzo_source_info: resolved.lastOrderInfo,
       prezzo_baseline: prezzoIniziale,
     };
+  };
+
+  const addProdottoToOrder = () => {
+    if (!selectedProdotto) return;
+    const prodotto = prodottiAzienda.find((p) => p.id === selectedProdotto);
+    if (!prodotto) return;
+
+    const newRiga = buildRiga(prodotto);
 
     const availablePromo = promozioniRilevanti.find((promo) =>
       promo.canvass_prodotti?.some((cp) => cp.prodotto_id === prodotto.id)
