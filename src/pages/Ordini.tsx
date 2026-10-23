@@ -429,6 +429,22 @@ const Ordini = () => {
             </div>
           </div>
 
+          {contestoLabel && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="min-w-0 break-words text-sm font-semibold text-scatto-ink">
+                {contestoLabel}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
+                onClick={resetFilters}
+              >
+                <X className="h-3.5 w-3.5" />
+                Azzera filtri
+              </Button>
+            </div>
+          )}
           <OrdiniStatsRow stats={stats} mom={mom} isLoading={isLoading} />
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
@@ -440,6 +456,16 @@ const Ordini = () => {
                 onStatusFilterChange={setStatusFilter}
                 monthFilters={monthFilters}
                 onMonthFiltersChange={setMonthFilters}
+                clienteFilter={clienteFilter}
+                onClienteFilterChange={setClienteFilter}
+                aziendaFilter={aziendaFilter}
+                onAziendaFilterChange={setAziendaFilter}
+                clienteOptions={(clienti || []).map((c) => ({
+                  value: c.id,
+                  label: c.nome,
+                  searchTerms: c.azienda ? [c.azienda] : undefined,
+                }))}
+                aziendaOptions={(aziende || []).map((a) => ({ value: a.id, label: a.nome }))}
               />
             </div>
             <Button
@@ -466,9 +492,9 @@ const Ordini = () => {
               hasActiveFilters
                 ? {
                     icon: SearchX,
-                    title: "Nessun ordine corrisponde ai filtri",
-                    description: "Prova a modificare ricerca, stato o mese selezionato.",
-                    actionLabel: "Rimuovi filtri",
+                    title: "Nessun ordine trovato con i filtri selezionati",
+                    description: "Prova a modificare ricerca, cliente, azienda, stato o mese.",
+                    actionLabel: "Azzera filtri",
                     onAction: resetFilters,
                   }
                 : {
