@@ -63,7 +63,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       >
         <div className="crm-page min-w-0 p-4 pt-6 pb-24 lg:pt-6 lg:p-8 lg:pb-8"><InternalSearch />{children}</div>
       </main>
-      <QuickActions />
+      <div className="hidden lg:block"><QuickActions /></div>
       <BottomNav
         onOpenMore={() => setMobileMenuOpen(true)}
         moreActive={mobileMenuOpen}

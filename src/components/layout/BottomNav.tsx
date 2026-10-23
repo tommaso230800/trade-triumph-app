@@ -1,6 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, Users, ShoppingCart, Wallet, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { QuickActions } from "./QuickActions";
+import { Button } from "@/components/ui/button";
 
 type BottomNavItem = {
   name: string;
@@ -50,7 +52,8 @@ export function BottomNav({ onOpenMore, moreActive }: BottomNavProps) {
           </Link>
         );
       })}
-      <button
+      <QuickActions compact />
+      <Button variant="ghost"
         onClick={onOpenMore}
         className={cn(
           "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium touch-target",
@@ -59,7 +62,7 @@ export function BottomNav({ onOpenMore, moreActive }: BottomNavProps) {
       >
         <Menu className="h-5 w-5" />
         <span>Altro</span>
-      </button>
+      </Button>
     </nav>
   );
 }
