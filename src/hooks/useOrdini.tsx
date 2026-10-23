@@ -114,9 +114,18 @@ export function useOrdini(
         query = query.or(ranges.join(","));
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as Ordine[];
+      // Caricamento completo a blocchi da 1000 righe (limite PostgREST):
+      // senza questo, con più di 1000 ordini gli ultimi resterebbero fuori
+      // da elenco, riepiloghi e filtri cliente/azienda.
+      const PAGE = 1000;
+      const all: Ordine[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await query.range(from, from + PAGE - 1);
+        if (error) throw error;
+        all.push(...((data || []) as Ordine[]));
+        if (!data || data.length < PAGE) break;
+      }
+      return all;
     },
   });
 }
