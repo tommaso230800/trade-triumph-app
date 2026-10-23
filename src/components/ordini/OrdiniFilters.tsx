@@ -7,7 +7,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { Search, Filter } from "lucide-react";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
+import { Button } from "@/components/ui/button";
+import { Search, Filter, X } from "lucide-react";
 import type { Ordine } from "@/hooks/useOrdini";
 
 const getMonthOptions = () => {
@@ -29,6 +31,12 @@ interface OrdiniFiltersProps {
   onStatusFilterChange: (value: Ordine["status"] | "tutti") => void;
   monthFilters: string[];
   onMonthFiltersChange: (value: string[]) => void;
+  clienteFilter: string;
+  onClienteFilterChange: (value: string) => void;
+  aziendaFilter: string;
+  onAziendaFilterChange: (value: string) => void;
+  clienteOptions: SearchableSelectOption[];
+  aziendaOptions: SearchableSelectOption[];
 }
 
 const inputCls =
@@ -41,9 +49,62 @@ export function OrdiniFilters({
   onStatusFilterChange,
   monthFilters,
   onMonthFiltersChange,
+  clienteFilter,
+  onClienteFilterChange,
+  aziendaFilter,
+  onAziendaFilterChange,
+  clienteOptions,
+  aziendaOptions,
 }: OrdiniFiltersProps) {
+  const clearBtnCls =
+    "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg border border-scatto-line bg-scatto-surface text-scatto-muted hover:bg-scatto-bg";
   return (
-    <div className="flex flex-col gap-3 sm:flex-row">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-1 items-center gap-2">
+          <SearchableSelect
+            options={clienteOptions}
+            value={clienteFilter}
+            onValueChange={onClienteFilterChange}
+            placeholder="Cliente: tutti"
+            searchPlaceholder="Cerca cliente..."
+            emptyMessage="Nessun cliente trovato"
+            className={`h-11 ${inputCls}`}
+          />
+          {clienteFilter && (
+            <button
+              type="button"
+              aria-label="Rimuovi filtro cliente"
+              className={clearBtnCls}
+              onClick={() => onClienteFilterChange("")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-1 items-center gap-2">
+          <SearchableSelect
+            options={aziendaOptions}
+            value={aziendaFilter}
+            onValueChange={onAziendaFilterChange}
+            placeholder="Azienda: tutte"
+            searchPlaceholder="Cerca azienda..."
+            emptyMessage="Nessuna azienda trovata"
+            className={`h-11 ${inputCls}`}
+          />
+          {aziendaFilter && (
+            <button
+              type="button"
+              aria-label="Rimuovi filtro azienda"
+              className={clearBtnCls}
+              onClick={() => onAziendaFilterChange("")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-col gap-3 sm:flex-row">
       <div className="relative max-w-md flex-1">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-scatto-muted" />
         <Input
@@ -74,6 +135,7 @@ export function OrdiniFilters({
         onValuesChange={onMonthFiltersChange}
         options={getMonthOptions()}
       />
+      </div>
     </div>
   );
 }

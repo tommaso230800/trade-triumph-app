@@ -73,6 +73,8 @@ const Ordini = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<Ordine["status"] | "tutti">("tutti");
   const [monthFilters, setMonthFilters] = useState<string[]>([]);
+  const [clienteFilter, setClienteFilter] = useState("");
+  const [aziendaFilter, setAziendaFilter] = useState("");
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -170,13 +172,25 @@ const Ordini = () => {
     setIsProformaOpen(true);
   };
 
+  // Filtri Cliente/Azienda: si combinano in AND con ricerca, stato e mese.
+  // Elenco e riepiloghi derivano sempre da questo stesso insieme filtrato.
+  const ordiniFiltrati = useMemo(
+    () =>
+      (ordini || []).filter(
+        (o) =>
+          (!clienteFilter || o.cliente_id === clienteFilter) &&
+          (!aziendaFilter || o.azienda_id === aziendaFilter)
+      ),
+    [ordini, clienteFilter, aziendaFilter]
+  );
+
   // Sezioni per stato
   const ordiniAttivi = useMemo(
-    () => ordini?.filter((o) => o.status !== "annullato" && o.status !== "stand_by") || [],
-    [ordini]
+    () => ordiniFiltrati.filter((o) => o.status !== "annullato" && o.status !== "stand_by"),
+    [ordiniFiltrati]
   );
-  const ordiniStandBy = useMemo(() => ordini?.filter((o) => o.status === "stand_by") || [], [ordini]);
-  const ordiniAnnullati = useMemo(() => ordini?.filter((o) => o.status === "annullato") || [], [ordini]);
+  const ordiniStandBy = useMemo(() => ordiniFiltrati.filter((o) => o.status === "stand_by"), [ordiniFiltrati]);
+  const ordiniAnnullati = useMemo(() => ordiniFiltrati.filter((o) => o.status === "annullato"), [ordiniFiltrati]);
 
   const stats = {
     totale: ordiniAttivi.length,
@@ -277,19 +291,35 @@ const Ordini = () => {
     actions: buildAnnullatiActions(ordine),
   }));
 
-  const hasActiveFilters = searchTerm.trim().length > 0 || statusFilter !== "tutti" || monthFilters.length > 0;
+  const hasActiveFilters =
+    searchTerm.trim().length > 0 ||
+    statusFilter !== "tutti" ||
+    monthFilters.length > 0 ||
+    clienteFilter !== "" ||
+    aziendaFilter !== "";
   const resetFilters = () => {
     setSearchTerm("");
     setStatusFilter("tutti");
     setMonthFilters([]);
+    setClienteFilter("");
+    setAziendaFilter("");
   };
+
+  // Intestazione di contesto: rende evidente a quali ordini si riferiscono
+  // elenco e riepiloghi ("Fatturato · Calonaci · Casoni Liquori").
+  const clienteNome = clienteFilter ? clienti?.find((c) => c.id === clienteFilter)?.nome : null;
+  const aziendaNome = aziendaFilter ? aziende?.find((a) => a.id === aziendaFilter)?.nome : null;
+  const contestoLabel =
+    clienteNome || aziendaNome
+      ? ["Fatturato", clienteNome, aziendaNome].filter(Boolean).join(" · ")
+      : null;
 
   // Selezione multipla: "visibili" = tutti gli ordini che passano i filtri
   // correnti (attivi + stand-by + annullati insieme, stessa fonte filtrata).
-  const totalVisibile = ordini?.length || 0;
+  const totalVisibile = ordiniFiltrati.length;
   const selectedOrdini = useMemo(
-    () => (ordini || []).filter((o) => selectedIds.has(o.id)),
-    [ordini, selectedIds]
+    () => ordiniFiltrati.filter((o) => selectedIds.has(o.id)),
+    [ordiniFiltrati, selectedIds]
   );
   const excludedAnnullatiCount = selectedOrdini.filter((o) => o.status === "annullato").length;
   const idsDaVerificare = selectedOrdini.filter((o) => o.status !== "annullato").map((o) => o.id);
@@ -309,7 +339,7 @@ const Ordini = () => {
       return next;
     });
   };
-  const selectAllVisible = () => setSelectedIds(new Set((ordini || []).map((o) => o.id)));
+  const selectAllVisible = () => setSelectedIds(new Set(ordiniFiltrati.map((o) => o.id)));
   const exitSelectionMode = () => {
     setSelectionMode(false);
     setSelectedIds(new Set());
@@ -399,6 +429,22 @@ const Ordini = () => {
             </div>
           </div>
 
+          {contestoLabel && (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="min-w-0 break-words text-sm font-semibold text-scatto-ink">
+                {contestoLabel}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
+                onClick={resetFilters}
+              >
+                <X className="h-3.5 w-3.5" />
+                Azzera filtri
+              </Button>
+            </div>
+          )}
           <OrdiniStatsRow stats={stats} mom={mom} isLoading={isLoading} />
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
@@ -410,6 +456,16 @@ const Ordini = () => {
                 onStatusFilterChange={setStatusFilter}
                 monthFilters={monthFilters}
                 onMonthFiltersChange={setMonthFilters}
+                clienteFilter={clienteFilter}
+                onClienteFilterChange={setClienteFilter}
+                aziendaFilter={aziendaFilter}
+                onAziendaFilterChange={setAziendaFilter}
+                clienteOptions={(clienti || []).map((c) => ({
+                  value: c.id,
+                  label: c.nome,
+                  searchTerms: c.azienda ? [c.azienda] : undefined,
+                }))}
+                aziendaOptions={(aziende || []).map((a) => ({ value: a.id, label: a.nome }))}
               />
             </div>
             <Button
@@ -436,9 +492,9 @@ const Ordini = () => {
               hasActiveFilters
                 ? {
                     icon: SearchX,
-                    title: "Nessun ordine corrisponde ai filtri",
-                    description: "Prova a modificare ricerca, stato o mese selezionato.",
-                    actionLabel: "Rimuovi filtri",
+                    title: "Nessun ordine trovato con i filtri selezionati",
+                    description: "Prova a modificare ricerca, cliente, azienda, stato o mese.",
+                    actionLabel: "Azzera filtri",
                     onAction: resetFilters,
                   }
                 : {
