@@ -2560,9 +2560,12 @@ export type Database = {
           formato: string | null
           id: string
           immagine_url: string | null
+          iva: number | null
           nome: string
           pezzi_per_cartone: number
           prezzo_listino: number
+          prezzo_riferimento: string | null
+          prezzo_vendita: number | null
           quantita_pezzi: number
           sc1_default: number
           sc2_default: number
@@ -2582,9 +2585,12 @@ export type Database = {
           formato?: string | null
           id?: string
           immagine_url?: string | null
+          iva?: number | null
           nome: string
           pezzi_per_cartone?: number
           prezzo_listino?: number
+          prezzo_riferimento?: string | null
+          prezzo_vendita?: number | null
           quantita_pezzi?: number
           sc1_default?: number
           sc2_default?: number
@@ -2604,9 +2610,12 @@ export type Database = {
           formato?: string | null
           id?: string
           immagine_url?: string | null
+          iva?: number | null
           nome?: string
           pezzi_per_cartone?: number
           prezzo_listino?: number
+          prezzo_riferimento?: string | null
+          prezzo_vendita?: number | null
           quantita_pezzi?: number
           sc1_default?: number
           sc2_default?: number
@@ -2667,6 +2676,97 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      product_import_jobs: {
+        Row: {
+          azienda_id: string
+          chunk_status: Json
+          created_at: string
+          file_name: string
+          id: string
+          status: string
+          storage_path: string
+          total_pages: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id: string
+          chunk_status?: Json
+          created_at?: string
+          file_name: string
+          id?: string
+          status?: string
+          storage_path: string
+          total_pages?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string
+          chunk_status?: Json
+          created_at?: string
+          file_name?: string
+          id?: string
+          status?: string
+          storage_path?: string
+          total_pages?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_import_jobs_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_import_rows: {
+        Row: {
+          azienda_id: string
+          created_at: string
+          data: Json
+          id: string
+          imported: boolean
+          job_id: string
+          page: number | null
+          row_hash: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id: string
+          created_at?: string
+          data: Json
+          id?: string
+          imported?: boolean
+          job_id: string
+          page?: number | null
+          row_hash: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string
+          created_at?: string
+          data?: Json
+          id?: string
+          imported?: boolean
+          job_id?: string
+          page?: number | null
+          row_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_import_rows_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "product_import_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
