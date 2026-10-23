@@ -5,6 +5,7 @@ import { BottomNav } from "./BottomNav";
 import { QuickActions } from "./QuickActions";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { InternalSearch } from "./InternalSearch";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -60,7 +61,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         className="lg:pl-80 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden text-foreground"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="p-4 pt-6 pb-24 lg:pt-6 lg:p-8 lg:pb-8">{children}</div>
+        <div className="crm-page min-w-0 p-4 pt-6 pb-24 lg:pt-6 lg:p-8 lg:pb-8"><InternalSearch />{children}</div>
       </main>
       <QuickActions />
       <BottomNav
