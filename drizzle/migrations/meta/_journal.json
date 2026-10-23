@@ -15,6 +15,13 @@
       "when": 1792740979063,
       "tag": "0001_product_import_jobs",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792740996458,
+      "tag": "0002_product_imports_storage_rls",
+      "breakpoints": true
     }
   ]
 }
