@@ -54,8 +54,9 @@ export const formatNumberIT = (value: number) =>
 export const formatCurrency = (value: number) => {
   const abs = Math.abs(value);
   const sign = value < 0 ? "-" : "";
-  const intPart = Math.floor(abs);
-  const decPart = Math.round((abs - intPart) * 100).toString().padStart(2, "0");
+  const cents = Math.round(abs * 100);
+  const intPart = Math.floor(cents / 100);
+  const decPart = (cents % 100).toString().padStart(2, "0");
   return `${sign}${formatNumberIT(intPart)},${decPart} €`;
 };
 
