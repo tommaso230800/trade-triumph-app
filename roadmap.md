@@ -17,5 +17,5 @@
 - [x] 7. Verifica finale: Ordini e Analytics = 102.288,00 € marzo 2026 = database; accesso desktop/mobile OK
 
 ## Aperti da doc ottimizzazione precedente
-- [ ] Restyling pagina Provvigioni
-- [ ] Revisione grafica pagina Ordini
+- [x] Restyling pagina Provvigioni (stile scatto, card mobile senza scroll orizzontale)
+- [x] Revisione grafica pagina Ordini (verifica responsive 320/375/430/desktop, nessun difetto)
