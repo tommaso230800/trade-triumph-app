@@ -73,7 +73,7 @@ export function OrdiniList({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-1">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-1">
         <Skeleton className="h-24 w-full rounded-xl bg-scatto-surface" />
         <Skeleton className="h-24 w-full rounded-xl bg-scatto-surface" />
         <Skeleton className="h-24 w-full rounded-xl bg-scatto-surface" />
@@ -147,10 +147,10 @@ export function OrdiniList({
                 {group.rows.length} {group.rows.length === 1 ? "ordine" : "ordini"}
               </span>
             </div>
-            <div className="hidden lg:block">
+            <div className="hidden xl:block">
               <OrdiniTable rows={group.rows} selectionMode={selectionMode} selectedIds={selectedIds} onToggleSelect={onToggleSelect} />
             </div>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:hidden">
               {group.rows.map(({ ordine, muted, actions, primaryAction, giorniInStandBy }) => (
                 <OrdineCard
                   key={ordine.id}
