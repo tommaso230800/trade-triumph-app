@@ -69,14 +69,16 @@ export function SearchableSelect({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between", className)}
+          className={cn("w-full min-w-0 justify-between gap-2 font-normal", className)}
           disabled={disabled}
         >
-          {selectedOption ? selectedOption.label : placeholder}
+          <span className={cn("min-w-0 flex-1 truncate text-left", !selectedOption && "text-muted-foreground")}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full min-w-[300px] p-0" align="start">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[min(300px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] p-0" align="start" collisionPadding={16}>
         <Command shouldFilter={false}>
           <CommandInput 
             placeholder={searchPlaceholder} 
@@ -98,11 +100,11 @@ export function SearchableSelect({
                 >
                   <Check
                     className={cn(
-                      "mr-2 h-4 w-4",
+                      "mr-2 h-4 w-4 shrink-0",
                       value === option.value ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {option.label}
+                  <span className="min-w-0 flex-1 whitespace-normal break-words">{option.label}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
