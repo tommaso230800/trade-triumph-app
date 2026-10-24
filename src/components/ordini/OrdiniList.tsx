@@ -7,6 +7,7 @@ import { format, isToday, isYesterday } from "date-fns";
 import { it } from "date-fns/locale";
 import type { Ordine } from "@/hooks/useOrdini";
 import { OrdineCard } from "./OrdineCard";
+import { OrdiniTable } from "./OrdiniTable";
 import type { OrdiniTableRow } from "./ordiniShared";
 import { parseLocalDate } from "@/lib/periodRange";
 
@@ -72,7 +73,7 @@ export function OrdiniList({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-1">
         <Skeleton className="h-24 w-full rounded-xl bg-scatto-surface" />
         <Skeleton className="h-24 w-full rounded-xl bg-scatto-surface" />
         <Skeleton className="h-24 w-full rounded-xl bg-scatto-surface" />
@@ -146,7 +147,10 @@ export function OrdiniList({
                 {group.rows.length} {group.rows.length === 1 ? "ordine" : "ordini"}
               </span>
             </div>
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <div className="hidden lg:block">
+              <OrdiniTable rows={group.rows} selectionMode={selectionMode} selectedIds={selectedIds} onToggleSelect={onToggleSelect} />
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:hidden">
               {group.rows.map(({ ordine, muted, actions, primaryAction, giorniInStandBy }) => (
                 <OrdineCard
                   key={ordine.id}

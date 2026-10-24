@@ -146,8 +146,8 @@ export function OrdineCard({
                   {ordine.clienti?.nome || "—"}
                 </p>
                 <p className="mt-0.5 truncate text-xs">
-                  <span className="font-semibold text-scatto-accent">{format(dataOrdine, "d MMMM", { locale: it })}</span>
-                  <span className="text-scatto-muted"> · {oraOrdine}</span>
+                  <span className="font-semibold text-scatto-accent">{format(dataOrdine, "d MMM yyyy", { locale: it })}</span>
+                  <span className="text-scatto-muted"> · {ordine.codice}</span>
                 </p>
               </div>
               <p className={`flex-shrink-0 text-base font-bold tabular-nums tracking-tight ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>

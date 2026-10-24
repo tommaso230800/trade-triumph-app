@@ -87,7 +87,7 @@ export function OrdiniTable({ rows, selectionMode, selectedIds, onToggleSelect }
                   <p className={`truncate font-semibold text-scatto-ink ${muted ? "line-through" : ""}`} title={ordine.clienti?.nome || ""}>
                     {ordine.clienti?.nome || "—"}
                   </p>
-                  {ordine.clienti?.citta && <p className="truncate text-xs text-scatto-muted">{ordine.clienti.citta}</p>}
+                  {ordine.clienti?.azienda && ordine.clienti.azienda !== ordine.clienti.nome && <p className="truncate text-xs text-scatto-muted">{ordine.clienti.azienda}</p>}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex min-w-0 items-center gap-2">
