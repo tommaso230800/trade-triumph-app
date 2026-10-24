@@ -51,14 +51,14 @@ export function OrdiniTable({ rows, selectionMode, selectedIds, onToggleSelect }
       <table className="w-full table-fixed text-sm">
         <thead>
           <tr className="border-b border-scatto-line text-left text-xs font-semibold text-scatto-muted">
-            {selectionMode && <th className="w-12 px-4 py-3" />}
-            <th className="w-[104px] px-4 py-3">Data</th>
-            <th className="px-4 py-3">Cliente</th>
-            <th className="w-[22%] px-4 py-3">Fornitore</th>
-            <th className="w-[132px] px-4 py-3">Riferimento</th>
-            <th className="w-[132px] px-4 py-3 text-right">Totale</th>
-            <th className="w-[124px] px-4 py-3">Stato</th>
-            <th className="w-[148px] px-4 py-3 text-right"><span className="sr-only">Azioni</span></th>
+            {selectionMode && <th className="w-[5%] px-4 py-3" />}
+            <th className="w-[11%] px-4 py-3">Data</th>
+            <th className="w-[27%] px-4 py-3">Cliente</th>
+            <th className="w-[20%] px-4 py-3">Fornitore</th>
+            <th className="w-[14%] px-4 py-3">Riferimento</th>
+            <th className="w-[12%] px-4 py-3 text-right">Totale</th>
+            <th className="w-[11%] px-4 py-3">Stato</th>
+            <th className="w-[5%] px-2 py-3 text-right"><span className="sr-only">Azioni</span></th>
           </tr>
         </thead>
         <tbody>
@@ -102,18 +102,19 @@ export function OrdiniTable({ rows, selectionMode, selectedIds, onToggleSelect }
                   {formatCurrency(Number(ordine.totale))}
                 </td>
                 <td className="px-4 py-3"><OrderStatusPill ordine={ordine} /></td>
-                <td className="px-4 py-3">
+                <td className="px-2 py-3">
                   <div className="flex items-center justify-end gap-1">
                     {primaryAction && (
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-9 gap-1.5 rounded-lg border-scatto-line bg-transparent text-scatto-ink hover:bg-scatto-bg"
+                        className="h-9 w-9 shrink-0 rounded-lg border-scatto-line bg-transparent p-0 text-scatto-ink hover:bg-scatto-bg"
+                        title={primaryAction.label}
+                        aria-label={primaryAction.label}
                         onClick={primaryAction.onClick}
                         disabled={primaryAction.pending}
                       >
                         {primaryAction.pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <primaryAction.icon className="h-4 w-4" />}
-                        <span className="max-w-16 truncate">{primaryAction.label}</span>
                       </Button>
                     )}
                     <DropdownMenu>
