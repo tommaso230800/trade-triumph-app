@@ -404,7 +404,6 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
 
     setRigheOrdine((prev) => [...prev, newRiga]);
     setSelectedProdotto("");
-    toast.success(`Aggiunto: ${prodotto.nome}`, { duration: 1500 });
   };
 
   const updateRiga = (index: number, field: keyof RigaOrdine, value: number | string | boolean) => {
