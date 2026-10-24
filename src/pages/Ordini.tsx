@@ -410,99 +410,78 @@ const Ordini = () => {
         {/* Direzione "Scatto": pannello con scope proprio (token --scatto-*,
             non tocca il tema globale dell'app). */}
         <div className={`space-y-6 rounded-2xl bg-scatto-bg p-4 lg:p-6 ${selectionMode ? "pb-40 lg:pb-32" : ""}`}>
-          {/* Header */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="space-y-1">
+          {/* Intestazione */}
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="min-w-0 space-y-1">
               <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink">Ordini</h1>
-              <p className="text-sm text-scatto-muted">Crea e gestisci gli ordini dei tuoi clienti</p>
+              <p className="text-sm text-scatto-muted">
+                {isLoading ? "Caricamento…" : (
+                  <>
+                    <span className="font-semibold tabular-nums text-scatto-ink">{ordiniFiltrati.length}</span> ordini
+                    {contestoLabel ? <> · {contestoLabel}</> : null}
+                  </>
+                )}
+              </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex w-full gap-2 sm:w-auto">
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={selectionMode ? "Esci da selezione" : "Seleziona ordini"}
+                title={selectionMode ? "Esci da selezione" : "Seleziona ordini"}
+                className={`h-11 w-11 shrink-0 rounded-lg border-scatto-line text-scatto-ink hover:bg-scatto-bg ${selectionMode ? "bg-scatto-accent/10" : "bg-scatto-surface"}`}
+                onClick={() => (selectionMode ? exitSelectionMode() : setSelectionMode(true))}
+              >
+                {selectionMode ? <X className="h-4 w-4" /> : <ListChecks className="h-4 w-4" />}
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2 rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg">
+                  <Button variant="outline" className="h-11 shrink-0 gap-2 rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg">
                     <Upload className="h-4 w-4" />
-                    <span className="hidden sm:inline">Importa</span>
+                    <span>Importa</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="border-scatto-line bg-scatto-surface text-scatto-ink">
-                  <DropdownMenuItem
-                    onClick={() => setIsMultiImportOpen(true)}
-                    className="focus:bg-scatto-bg focus:text-scatto-ink"
-                  >
+                  <DropdownMenuItem onClick={() => setIsMultiImportOpen(true)} className="min-h-11 focus:bg-scatto-bg focus:text-scatto-ink">
                     Carica più file ordini
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setIsImportPDFOpen(true)}
-                    className="focus:bg-scatto-bg focus:text-scatto-ink"
-                  >
+                  <DropdownMenuItem onClick={() => setIsImportPDFOpen(true)} className="min-h-11 focus:bg-scatto-bg focus:text-scatto-ink">
                     Importa singolo PDF/Excel
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
-                className="gap-2 rounded-lg bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90"
+                className="h-11 flex-1 gap-2 rounded-lg bg-scatto-accent font-semibold text-white hover:bg-scatto-accent/90 sm:flex-none sm:px-5"
                 onClick={() => setIsDialogOpen(true)}
               >
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">Nuovo Ordine</span>
-                <span className="sm:hidden">Aggiungi</span>
+                Nuovo ordine
               </Button>
             </div>
           </div>
 
-          {contestoLabel && (
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="min-w-0 break-words text-sm font-semibold text-scatto-ink">
-                {contestoLabel}
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5 rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
-                onClick={resetFilters}
-              >
-                <X className="h-3.5 w-3.5" />
-                Azzera filtri
-              </Button>
-            </div>
-          )}
+          <OrdiniFilters
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+            periodo={periodo}
+            onPeriodoChange={setPeriodo}
+            minYear={primoAnno ?? new Date().getFullYear()}
+            clienteFilter={clienteFilter}
+            onClienteFilterChange={setClienteFilter}
+            aziendaFilter={aziendaFilter}
+            onAziendaFilterChange={setAziendaFilter}
+            clienteOptions={(clienti || []).map((c) => ({
+              value: c.id,
+              label: c.nome,
+              searchTerms: c.azienda ? [c.azienda] : undefined,
+            }))}
+            aziendaOptions={(aziende || []).map((a) => ({ value: a.id, label: a.nome }))}
+            onReset={hasActiveFilters ? resetFilters : undefined}
+          />
+
           <OrdiniStatsRow stats={stats} mom={mom} isLoading={isLoading} />
-          <details className="min-w-0">
-            <summary className="min-h-11 cursor-pointer text-sm font-semibold text-scatto-ink">Audit dati del periodo e dei filtri attivi</summary>
-            <OrderAudit ids={ordiniFiltrati.map(o => o.id)} />
-          </details>
-
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
-            <div className="flex-1">
-              <OrdiniFilters
-                searchTerm={searchTerm}
-                onSearchTermChange={setSearchTerm}
-                statusFilter={statusFilter}
-                onStatusFilterChange={setStatusFilter}
-                periodo={periodo}
-                onPeriodoChange={setPeriodo}
-                minYear={primoAnno ?? new Date().getFullYear()}
-                clienteFilter={clienteFilter}
-                onClienteFilterChange={setClienteFilter}
-                aziendaFilter={aziendaFilter}
-                onAziendaFilterChange={setAziendaFilter}
-                clienteOptions={(clienti || []).map((c) => ({
-                  value: c.id,
-                  label: c.nome,
-                  searchTerms: c.azienda ? [c.azienda] : undefined,
-                }))}
-                aziendaOptions={(aziende || []).map((a) => ({ value: a.id, label: a.nome }))}
-              />
-            </div>
-            <Button
-              variant="outline"
-              className="touch-target flex-shrink-0 gap-2 rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
-              onClick={() => (selectionMode ? exitSelectionMode() : setSelectionMode(true))}
-            >
-              {selectionMode ? <X className="h-4 w-4" /> : <ListChecks className="h-4 w-4" />}
-              {selectionMode ? "Esci da selezione" : "Seleziona"}
-            </Button>
-          </div>
 
           <DashCard title="Ordini attivi" icon={<ShoppingCart className="h-4 w-4" />} bodyClassName="p-3 sm:p-4">
           <OrdiniList
@@ -569,6 +548,10 @@ const Ordini = () => {
               />
             </DashCard>
           )}
+          <details className="min-w-0 rounded-xl border border-scatto-line bg-scatto-surface px-4">
+            <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-scatto-ink">Controllo dati del periodo e dei filtri attivi</summary>
+            <div className="pb-4"><OrderAudit ids={ordiniFiltrati.map(o => o.id)} /></div>
+          </details>
         </div>
 
         <NuovoOrdineDialog

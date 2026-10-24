@@ -61,77 +61,63 @@ export function OrdineRigaEditor({
   onRemove,
   onAddOmaggio,
 }: OrdineRigaEditorProps) {
+  const numCls = "h-11 rounded-lg border-order-line bg-order-paper px-3 text-right text-base tabular-nums sm:text-sm";
+  const pezziTot = quantitaPezzi + quantitaCartoni * pezziPerCartone;
   return (
-    <div className={`space-y-4 rounded-xl border p-4 shadow-sm ${isOmaggio ? "border-success/40 bg-success/10" : "border-order-line bg-order-surface"}`}>
-      {/* Intestazione prodotto */}
-      <div className="flex flex-wrap items-start justify-between gap-2">
+    <div className={`min-w-0 rounded-xl border p-4 shadow-sm ${isOmaggio ? "border-success/40 bg-success/5" : "border-order-line bg-order-surface"}`}>
+      {/* Prodotto */}
+      <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="break-words text-sm font-semibold text-order-ink">{prodottoNome}</p>
+            <p className="min-w-0 break-words text-sm font-semibold leading-snug text-order-ink">{prodottoNome}</p>
             {isOmaggio && (
-              <span className="inline-flex items-center gap-1 rounded bg-success/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-success">
+              <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-semibold text-success">
                 <Gift className="h-3 w-3" /> Omaggio
               </span>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">
-            {formato && <span className="mr-2">{formato}</span>}
-            {pezziPerCartone} pz/cart
+          <p className="mt-1 break-words text-xs text-order-muted">
+            {[formato, `${pezziPerCartone} pz/cartone`].filter(Boolean).join(" · ")}
+            {strati !== undefined && cartoniPerStrato !== undefined && strati * cartoniPerStrato > 1 && (
+              <span className="inline-flex items-center gap-1"> · <Boxes className="h-3 w-3" /> {strati * cartoniPerStrato} cart/pallet</span>
+            )}
           </p>
-          {strati !== undefined && cartoniPerStrato !== undefined && (
-            <p className="mt-1 flex items-center gap-1 text-xs text-primary/80">
-              <Boxes className="h-3.5 w-3.5" />
-              {strati} strati × {cartoniPerStrato} cart/strato = {strati * cartoniPerStrato} cart/pallet
-            </p>
-          )}
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          {isOmaggio ? (
-            <span className="inline-flex h-11 items-center gap-1 rounded-md bg-success/20 px-2 text-xs font-semibold text-success">
-              <Gift className="h-3.5 w-3.5" /> Omaggio
-            </span>
-          ) : (
-            onAddOmaggio && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-11 gap-1 touch-target"
-                onClick={onAddOmaggio}
-                title="Aggiungi una riga omaggio per questo prodotto"
-              >
-                <Gift className="h-3.5 w-3.5" />
-                <span className="text-xs">+ Omaggio</span>
-              </Button>
-            )
+          {!isOmaggio && onAddOmaggio && (
+            <Button type="button" variant="ghost" size="icon" className="h-11 w-11 text-order-muted hover:text-success" onClick={onAddOmaggio} title="Aggiungi riga omaggio" aria-label="Aggiungi riga omaggio">
+              <Gift className="h-4 w-4" />
+            </Button>
           )}
           {onRemove && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-11 w-11 text-destructive hover:text-destructive touch-target"
-              onClick={onRemove}
-            >
+            <Button type="button" variant="ghost" size="icon" className="h-11 w-11 text-order-muted hover:text-destructive" onClick={onRemove} title="Elimina riga" aria-label="Elimina riga">
               <Trash2 className="h-4 w-4" />
             </Button>
           )}
         </div>
       </div>
 
-      {/* Prezzo / Pezzi / Cartoni */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-1">
-            <Label className="text-xs text-muted-foreground">Prezzo</Label>
-            {!isOmaggio && prezzoSourceLabel && (
-              <span className="text-[10px] text-muted-foreground">· {prezzoSourceLabel}</span>
-            )}
+      {/* Quantità e prezzo */}
+      <div className="mt-4 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_1.3fr]">
+        <div className="min-w-0 space-y-1">
+          <Label className="text-xs text-order-muted">Cartoni</Label>
+          <Input type="number" inputMode="numeric" min="0" className={numCls} value={quantitaCartoni} onFocus={(e) => e.target.select()}
+            onChange={(e) => onChangeQuantitaCartoni(parseInt(e.target.value) || 0)} />
+        </div>
+        <div className="min-w-0 space-y-1">
+          <Label className="text-xs text-order-muted">Pezzi sfusi</Label>
+          <Input type="number" inputMode="numeric" min="0" className={numCls} value={quantitaPezzi} onFocus={(e) => e.target.select()}
+            onChange={(e) => onChangeQuantitaPezzi(parseInt(e.target.value) || 0)} />
+        </div>
+        <div className="col-span-2 min-w-0 space-y-1 sm:col-span-1">
+          <div className="flex min-w-0 items-center gap-1">
+            <Label className="text-xs text-order-muted">Prezzo € / pezzo</Label>
+            {!isOmaggio && prezzoSourceLabel && <span className="truncate text-[11px] text-order-muted">· {prezzoSourceLabel}</span>}
             {!isOmaggio && prezzoSourceInfo && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <button type="button" className="text-muted-foreground hover:text-foreground" title="Dettagli ultimo acquisto">
-                    <Info className="h-3 w-3" />
+                  <button type="button" className="-m-2 p-2 text-order-muted hover:text-order-ink" aria-label="Dettagli ultimo acquisto">
+                    <Info className="h-3.5 w-3.5" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-64 text-xs" align="start">
@@ -150,85 +136,34 @@ export function OrdineRigaEditor({
               </Popover>
             )}
           </div>
-          <Input
-            type="text"
-            inputMode="decimal"
-            className="h-11 px-3 text-sm"
-            value={isOmaggio ? "0" : prezzoUnitario}
-            disabled={isOmaggio}
-            onChange={(e) => onChangePrezzo(e.target.value)}
-            onBlur={onBlurPrezzo}
-            placeholder="1,85"
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Pezzi</Label>
-          <Input
-            type="number"
-            inputMode="numeric"
-            min="0"
-            className="h-11 px-3 text-sm"
-            value={quantitaPezzi}
-            onChange={(e) => onChangeQuantitaPezzi(parseInt(e.target.value) || 0)}
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Cartoni</Label>
-          <Input
-            type="number"
-            inputMode="numeric"
-            min="0"
-            className="h-11 px-3 text-sm"
-            value={quantitaCartoni}
-            onChange={(e) => onChangeQuantitaCartoni(parseInt(e.target.value) || 0)}
-          />
+          <Input type="text" inputMode="decimal" className={numCls} value={isOmaggio ? "0" : prezzoUnitario} disabled={isOmaggio}
+            onChange={(e) => onChangePrezzo(e.target.value)} onBlur={onBlurPrezzo} placeholder="0,00" />
         </div>
       </div>
 
-      {/* Sconti (nascosti per omaggio) */}
       {!isOmaggio && (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Sc1 %</Label>
-            <Input
-              type="text"
-              inputMode="decimal"
-              className="h-11 px-3 text-sm"
-              value={sc1}
-              onChange={(e) => onChangeSc1(e.target.value)}
-              placeholder="0"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Sc2 %</Label>
-            <Input
-              type="text"
-              inputMode="decimal"
-              className="h-11 px-3 text-sm"
-              value={sc2}
-              onChange={(e) => onChangeSc2(e.target.value)}
-              placeholder="0"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Sc3 %</Label>
-            <Input
-              type="text"
-              inputMode="decimal"
-              className="h-11 px-3 text-sm"
-              value={sc3}
-              onChange={(e) => onChangeSc3(e.target.value)}
-              placeholder="0"
-            />
+        <div className="mt-3 space-y-1">
+          <Label className="text-xs text-order-muted">Sconti in cascata %</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { l: "1°", v: sc1, f: onChangeSc1 },
+              { l: "2°", v: sc2, f: onChangeSc2 },
+              { l: "3°", v: sc3, f: onChangeSc3 },
+            ].map((x) => (
+              <div key={x.l} className="relative min-w-0">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-order-muted">{x.l}</span>
+                <Input type="text" inputMode="decimal" aria-label={`Sconto ${x.l} %`} className={`${numCls} pl-8`} value={x.v} onFocus={(e) => e.target.select()}
+                  onChange={(e) => x.f(e.target.value)} placeholder="0" />
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Subtotale */}
-      <div className="flex items-center justify-between border-t border-border pt-3">
-        <span className="text-xs text-muted-foreground">Subtotale</span>
-        <p className="text-sm font-semibold tabular-nums">
-          {isOmaggio ? <span className="text-success">Omaggio (0,00 €)</span> : formatCurrency(subtotale)}
+      <div className="mt-4 flex items-baseline justify-between gap-3 border-t border-order-line pt-3">
+        <span className="text-xs tabular-nums text-order-muted">{pezziTot} pezzi</span>
+        <p className="text-base font-semibold tabular-nums text-order-ink">
+          {isOmaggio ? <span className="text-success">Omaggio · 0,00 €</span> : formatCurrency(subtotale)}
         </p>
       </div>
     </div>

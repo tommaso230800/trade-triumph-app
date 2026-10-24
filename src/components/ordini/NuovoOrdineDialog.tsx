@@ -42,7 +42,7 @@ import {
   ShoppingBag,
   CalendarDays,
   Check,
-  Store,
+  Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -64,6 +64,7 @@ import {
 import type { ProformaData } from "./ProformaDialog";
 import { OrdineRigaEditor } from "./OrdineRigaEditor";
 import { PromozioniAttiveAlert } from "./PromozioniAttiveAlert";
+import { ProductPicker } from "./ProductPicker";
 import { formatCurrency, parseDecimalInput, TIPI_PAGAMENTO } from "./ordiniShared";
 
 type RigaOrdine = {
@@ -123,6 +124,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
   // true quando la conferma prezzo è stata aperta dal salvataggio: dopo la
   // scelta l'ordine prosegue automaticamente.
   const [pendingSubmit, setPendingSubmit] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
@@ -383,9 +385,9 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
     };
   };
 
-  const addProdottoToOrder = () => {
-    if (!selectedProdotto) return;
-    const prodotto = prodottiAzienda.find((p) => p.id === selectedProdotto);
+  const addProdottoToOrder = (id: string = selectedProdotto) => {
+    if (!id) return;
+    const prodotto = prodottiAzienda.find((p) => p.id === id);
     if (!prodotto) return;
 
     const newRiga = buildRiga(prodotto);
@@ -400,7 +402,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
       });
     }
 
-    setRigheOrdine([...righeOrdine, newRiga]);
+    setRigheOrdine((prev) => [...prev, newRiga]);
     setSelectedProdotto("");
   };
 
@@ -680,160 +682,213 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
     { label: "Prodotti", icon: PackagePlus },
     { label: "Conferma", icon: ReceiptText },
   ];
+  const canGoTo = (index: number) => index === 0 || (index === 1 && !!formData.azienda_id) || (index === 2 && righeOrdine.length > 0);
+  const subtotaleRighe = righeOrdine.reduce((sum, r) => sum + rigaSubtotale(r), 0);
+  const totale = calcolaTotale();
+  const scontoPct = parseDecimalInput(formData.sconto);
+  const scontoMerce = parseDecimalInput(formData.sconto_merce);
+  const omaggiCount = righeOrdine.filter((r) => r.is_omaggio).length;
+  const prodottiIdsInOrdine = new Set(righeOrdine.map((r) => r.prodotto_id));
+  const pickerProducts = prodottiAzienda.map((p) => ({
+    id: p.id,
+    nome: p.nome,
+    codice: p.codice,
+    formato: p.formato,
+    pezzi_per_cartone: p.pezzi_per_cartone,
+    prezzo_listino: p.prezzo_listino,
+    brand: brands?.find((b) => b.id === p.brand_id)?.name,
+  }));
+  const fieldCls = "h-11 w-full min-w-0 rounded-lg border-order-line bg-order-paper text-base sm:text-sm";
+
+  const SectionTitle = ({ n, title, hint }: { n: string; title: string; hint?: string }) => (
+    <div className="mb-3 flex items-baseline gap-2">
+      <span className="text-xs font-semibold tabular-nums text-order-muted">{n}</span>
+      <h3 className="text-base font-semibold">{title}</h3>
+      {hint && <span className="ml-auto text-xs text-order-muted">{hint}</span>}
+    </div>
+  );
+
+  const SummaryRow = ({ label, value, strong }: { label: string; value: string; strong?: boolean }) => (
+    <div className="flex items-baseline justify-between gap-3 text-sm">
+      <span className="text-order-muted">{label}</span>
+      <span className={`tabular-nums ${strong ? "font-semibold text-order-ink" : "text-order-ink"}`}>{value}</span>
+    </div>
+  );
+
+  const ReviewBlock = ({ title, step, children }: { title: string; step: number; children: React.ReactNode }) => (
+    <div className="min-w-0 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-order-muted">{title}</h4>
+        <Button type="button" variant="ghost" size="sm" className="h-9 px-2 text-xs font-semibold text-order-blue hover:bg-order-blue/10" onClick={() => setCurrentStep(step)}>
+          Modifica
+        </Button>
+      </div>
+      {children}
+    </div>
+  );
 
   return (
     <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="inset-0 left-0 top-0 flex h-[100dvh] max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 bg-order-paper p-0 text-order-ink sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[92dvh] sm:w-[calc(100vw-2rem)] sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-order-line lg:max-w-4xl">
-        <DialogHeader className="shrink-0 border-b border-order-line bg-order-paper px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-8 sm:py-6">
-          <div className="pr-10">
-            <DialogDescription className="mb-1 text-xs font-semibold uppercase text-order-muted">
-              Passaggio {currentStep + 1} di 3
-            </DialogDescription>
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <DialogTitle className="text-2xl font-bold text-order-ink">Nuovo ordine</DialogTitle>
-                <p className="mt-1 text-sm text-order-muted">
-                  {currentStep === 0 && "Cliente e condizioni iniziali"}
-                  {currentStep === 1 && "Prodotti e quantità"}
-                  {currentStep === 2 && "Controllo economico"}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-order-muted">Totale</p>
-                <p className="text-2xl font-bold tabular-nums text-order-blue">{formatCurrency(calcolaTotale())}</p>
-              </div>
+      <DialogContent className="inset-0 left-0 top-0 flex h-[100dvh] max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 bg-order-paper p-0 text-order-ink sm:left-1/2 sm:top-1/2 sm:h-[min(92dvh,900px)] sm:w-[calc(100vw-2rem)] sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-order-line lg:max-w-6xl">
+        {/* Intestazione compatta: titolo, totale, avanzamento */}
+        <DialogHeader className="shrink-0 space-y-4 border-b border-order-line bg-order-paper px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-6 sm:pt-5">
+          <div className="flex items-start justify-between gap-4 pr-10">
+            <div className="min-w-0">
+              <DialogTitle className="text-xl font-bold sm:text-2xl">Nuovo ordine</DialogTitle>
+              <DialogDescription className="mt-0.5 truncate text-xs text-order-muted sm:text-sm">
+                {selectedClienteName || "Nessun cliente"}{selectedAziendaName ? ` · ${selectedAziendaName}` : ""}
+              </DialogDescription>
+            </div>
+            <div className="shrink-0 text-right lg:hidden">
+              <p className="text-[11px] text-order-muted">Totale</p>
+              <p className="text-lg font-bold tabular-nums text-order-blue sm:text-xl">{formatCurrency(totale)}</p>
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-2" aria-label="Avanzamento ordine">
+          <ol className="flex items-center gap-2" aria-label="Avanzamento ordine">
             {steps.map((step, index) => {
-              const StepIcon = step.icon;
               const active = index === currentStep;
               const complete = index < currentStep;
+              const enabled = canGoTo(index);
               return (
-                <Button
-                  key={step.label}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    if (index === 0 || (index === 1 && formData.azienda_id) || (index === 2 && righeOrdine.length > 0)) {
-                      setCurrentStep(index);
-                    }
-                  }}
-                  className={`flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border px-2 text-xs font-semibold transition-colors duration-200 sm:text-sm ${
-                    active
-                      ? "border-order-blue bg-order-blue text-primary-foreground"
-                      : complete
-                        ? "border-order-blue/30 bg-order-blue/10 text-order-blue"
-                        : "border-order-line bg-order-surface/60 text-order-muted"
-                  }`}
-                  aria-current={active ? "step" : undefined}
-                >
-                  <StepIcon className="h-4 w-4 shrink-0" />
-                  <span>{step.label}</span>
-                </Button>
+                <li key={step.label} className="flex min-w-0 flex-1 items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={!enabled}
+                    onClick={() => enabled && setCurrentStep(index)}
+                    aria-current={active ? "step" : undefined}
+                    className="flex min-h-11 min-w-0 items-center gap-2 rounded-lg pr-2 text-left disabled:cursor-not-allowed"
+                  >
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold tabular-nums transition-colors duration-200 ${
+                        active
+                          ? "border-order-blue bg-order-blue text-primary-foreground"
+                          : complete
+                            ? "border-order-blue/40 bg-order-blue/10 text-order-blue"
+                            : "border-order-line bg-order-surface text-order-muted"
+                      }`}
+                    >
+                      {complete ? <Check className="h-3.5 w-3.5" /> : index + 1}
+                    </span>
+                    <span className={`truncate text-sm ${active ? "font-semibold text-order-ink" : complete ? "text-order-ink" : "text-order-muted"}`}>
+                      {step.label}
+                    </span>
+                  </button>
+                  {index < steps.length - 1 && <span className={`h-px flex-1 ${complete ? "bg-order-blue/40" : "bg-order-line"}`} />}
+                </li>
               );
             })}
-          </div>
+          </ol>
         </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-hidden bg-order-paper">
-          <div className="mx-auto h-full max-w-3xl overflow-y-auto px-4 py-5 sm:px-8 sm:py-8" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
+            <div className="mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-6">
+            {/* ── 1. Cliente ─────────────────────────────── */}
             <section className={currentStep === 0 ? "space-y-6" : "hidden"}>
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-order-blue/10 text-order-blue">
-                  <UserRound className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-semibold">Destinatario dell’ordine</h3>
-                   <p className="text-xs text-order-muted">Le scelte determinano listini, storico e prodotti.</p>
-                </div>
-              </div>
-              <div className="grid gap-4 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:grid-cols-2 sm:p-6">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>Cliente</Label>
-                  <SearchableSelect options={clientiOptions} value={formData.cliente_id} onValueChange={(v) => setFormData({ ...formData, cliente_id: v })} placeholder="Seleziona cliente" searchPlaceholder="Cerca cliente..." emptyMessage="Nessun cliente trovato" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Azienda fornitrice *</Label>
-                  <SearchableSelect
-                    options={aziendeOptions}
-                    value={formData.azienda_id}
-                    onValueChange={(v) => {
-                      setFormData({ ...formData, azienda_id: v });
-                      setRigheOrdine([]);
-                      setSelectedProdotto("");
-                    }}
-                    placeholder="Seleziona azienda"
-                    searchPlaceholder="Cerca azienda..."
-                    emptyMessage="Nessuna azienda trovata"
-                  />
-                </div>
-                <div className="min-w-0 space-y-2">
-                  <Label>Data ordine</Label>
-                  <div className="relative min-w-0 max-w-full overflow-hidden rounded-xl">
-                    <CalendarDays className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                    <Input type="date" className="min-w-0 max-w-full appearance-none pl-10" value={formData.data_ordine} onChange={(e) => setFormData({ ...formData, data_ordine: e.target.value })} />
-                  </div>
-                </div>
-              </div>
-              {selectedCliente && (
-                <div className="rounded-xl border border-order-blue/20 bg-order-surface p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-base font-semibold">{selectedCliente.nome}</p>
-                      <p className="mt-1 truncate text-xs text-order-muted">
+              <div>
+                <SectionTitle n="01" title="Cliente" hint="Facoltativo" />
+                <div className="min-w-0 space-y-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:p-5">
+                  <SearchableSelect options={clientiOptions} value={formData.cliente_id} onValueChange={(v) => setFormData({ ...formData, cliente_id: v })} placeholder="Cerca e seleziona il cliente" searchPlaceholder="Nome, città, P.IVA…" emptyMessage="Nessun cliente trovato" className={fieldCls} />
+                  {selectedCliente && (
+                    <div className="min-w-0 rounded-lg bg-order-paper p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="min-w-0 break-words text-sm font-semibold leading-snug">{selectedCliente.nome}</p>
+                        <span className="shrink-0 rounded-full bg-order-blue/10 px-2.5 py-0.5 text-xs font-semibold text-order-blue">{clienteStatusLabel}</span>
+                      </div>
+                      <p className="mt-1 break-words text-xs text-order-muted">
                         {[selectedCliente.indirizzo, selectedCliente.citta, selectedCliente.provincia].filter(Boolean).join(" · ") || "Indirizzo N/D"}
                       </p>
+                      <p className="mt-2 text-xs tabular-nums text-order-muted">
+                        {selectedCliente.ordini_count ?? 0} ordini nello storico
+                        {selectedCliente.partita_iva && ` · P.IVA ${selectedCliente.partita_iva}`}
+                      </p>
                     </div>
-                    <span className="rounded-full bg-order-blue/10 px-3 py-1 text-xs font-semibold text-order-blue">{clienteStatusLabel}</span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <SectionTitle n="02" title="Fornitore e data" />
+                <div className="grid min-w-0 gap-4 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:grid-cols-2 sm:p-5">
+                  <div className="min-w-0 space-y-1.5">
+                    <Label className="text-xs text-order-muted">Azienda fornitrice <span className="text-destructive">*</span></Label>
+                    <SearchableSelect
+                      options={aziendeOptions}
+                      value={formData.azienda_id}
+                      onValueChange={(v) => {
+                        setFormData({ ...formData, azienda_id: v });
+                        setRigheOrdine([]);
+                        setSelectedProdotto("");
+                      }}
+                      placeholder="Seleziona fornitore"
+                      searchPlaceholder="Cerca fornitore…"
+                      emptyMessage="Nessuna azienda trovata"
+                      className={`${fieldCls} ${!formData.azienda_id ? "border-order-line" : ""}`}
+                    />
+                    {!formData.azienda_id && <p className="text-xs text-order-muted">Necessaria per scegliere i prodotti.</p>}
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-order-line bg-order-paper px-3 py-1 text-xs font-medium tabular-nums text-order-muted">
-                      Storico · {selectedCliente.ordini_count ?? 0} ordini
-                    </span>
-                    {selectedCliente.partita_iva && (
-                      <span className="rounded-full border border-order-line bg-order-paper px-3 py-1 text-xs font-medium text-order-muted">P.IVA {selectedCliente.partita_iva}</span>
-                    )}
+                  <div className="min-w-0 space-y-1.5">
+                    <Label htmlFor="nuovo-ordine-data" className="text-xs text-order-muted">Data ordine</Label>
+                    <div className="relative min-w-0">
+                      <CalendarDays className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-order-muted" />
+                      <Input id="nuovo-ordine-data" type="date" className={`${fieldCls} block appearance-none pl-10 text-left [&::-webkit-date-and-time-value]:text-left`} value={formData.data_ordine} onChange={(e) => setFormData({ ...formData, data_ordine: e.target.value })} />
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
+
+              <div>
+                <SectionTitle n="03" title="Pagamento" />
+                <div className="rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:p-5">
+                  <Select value={formData.tipo_pagamento} onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}>
+                    <SelectTrigger className={fieldCls} aria-label="Tipo pagamento"><SelectValue /></SelectTrigger>
+                    <SelectContent>{TIPI_PAGAMENTO.map((tipo) => <SelectItem key={tipo} value={tipo} className="min-h-11">{tipo}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
             </section>
 
+            {/* ── 2. Prodotti ────────────────────────────── */}
             <section className={currentStep === 1 ? "space-y-4" : "hidden"}>
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-order-blue/10 text-order-blue"><PackagePlus className="h-5 w-5" /></div>
-                <div>
-                  <h3 className="text-base font-semibold">Composizione ordine</h3>
-                  <p className="text-xs text-order-muted">Cerca un prodotto e inserisci quantità e condizioni.</p>
-                </div>
-              </div>
-
               {promozioniRilevanti.length > 0 && <PromozioniAttiveAlert promozioni={promozioniRilevanti} appliedPromos={appliedPromos} onApply={handleApplyPromo} />}
 
-              <div className="space-y-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:p-6">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => setPickerOpen(true)}
+                  disabled={prodottiAzienda.length === 0}
+                  className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-xl border border-order-line bg-order-surface px-4 text-left text-base text-order-muted shadow-sm transition-colors duration-150 hover:border-order-blue/50 disabled:opacity-50 sm:text-sm"
+                >
+                  <Search className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Cerca e aggiungi prodotti…</span>
+                  <span className="ml-auto shrink-0 text-xs tabular-nums">{prodottiAzienda.length}</span>
+                </button>
                 {formData.cliente_id && productHistory && productHistory.products.length > 0 && (
-                  <Button type="button" variant="outline" className="h-auto min-h-11 w-full whitespace-normal border-primary/40 px-3 text-primary" onClick={handleRiassortimento}>
-                    <RefreshCw className="h-4 w-4 shrink-0" />
-                    Riassortimento · {productHistory.products.length} prodotti
+                  <Button type="button" variant="outline" className="h-12 shrink-0 gap-2 rounded-xl border-order-line bg-order-surface text-order-ink hover:bg-order-paper" onClick={handleRiassortimento}>
+                    <RefreshCw className="h-4 w-4" />
+                    Riassortimento ({productHistory.products.length})
                   </Button>
                 )}
-                <div className="flex gap-2">
-                  <SearchableSelect className="min-w-0 flex-1 justify-between" options={prodottiOptions} value={selectedProdotto} onValueChange={setSelectedProdotto} placeholder="Cerca prodotto..." searchPlaceholder="Nome, codice o brand..." emptyMessage="Nessun prodotto trovato" />
-                  <Button type="button" size="icon" onClick={addProdottoToOrder} disabled={!selectedProdotto} aria-label="Aggiungi prodotto"><Plus className="h-5 w-5" /></Button>
-                </div>
-                {prodottiAzienda.length === 0 && <p className="text-sm text-muted-foreground">Nessun prodotto disponibile per questa azienda.</p>}
               </div>
+              {prodottiAzienda.length === 0 && <p className="text-sm text-order-muted">Nessun prodotto disponibile per questo fornitore.</p>}
 
               {righeOrdine.length === 0 ? (
-                <div className="flex min-h-40 flex-col items-center justify-center rounded-xl border border-dashed border-order-line bg-order-surface p-6 text-center">
-                  <ShoppingBag className="mb-3 h-6 w-6 text-muted-foreground" />
+                <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-order-line p-6 text-center">
+                  <ShoppingBag className="mb-3 h-6 w-6 text-order-muted" />
                   <p className="text-sm font-semibold">L’ordine è ancora vuoto</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Seleziona un prodotto dal campo qui sopra.</p>
+                  <p className="mt-1 text-xs text-order-muted">Aggiungi i prodotti con la ricerca qui sopra.</p>
+                  <Button type="button" className="mt-4 h-11 gap-2 rounded-lg bg-order-ink text-primary-foreground hover:bg-order-ink/90" onClick={() => setPickerOpen(true)} disabled={prodottiAzienda.length === 0}>
+                    <Plus className="h-4 w-4" /> Aggiungi prodotto
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
+                  <div className="flex items-baseline justify-between px-1 text-xs text-order-muted">
+                    <span>{righeOrdine.length} righe{omaggiCount > 0 ? ` · ${omaggiCount} omaggi` : ""}</span>
+                    <span className="tabular-nums">{calcolaProdottiTotali()} pezzi</span>
+                  </div>
                   {righeOrdine.map((riga, index) => (
                     <OrdineRigaEditor
                       key={`${riga.prodotto_id}-${index}`}
@@ -848,51 +903,131 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
                       onRemove={() => removeRiga(index)} onAddOmaggio={riga.is_omaggio ? undefined : () => addOmaggioFromRiga(index)}
                     />
                   ))}
+                  <Button type="button" variant="outline" className="h-12 w-full gap-2 rounded-xl border-dashed border-order-line bg-transparent text-order-ink hover:bg-order-surface" onClick={() => setPickerOpen(true)}>
+                    <Plus className="h-4 w-4" /> Aggiungi altro prodotto
+                  </Button>
                 </div>
               )}
             </section>
 
+            {/* ── 3. Conferma ────────────────────────────── */}
             <section className={currentStep === 2 ? "space-y-4" : "hidden"}>
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-order-blue/10 text-order-blue"><ReceiptText className="h-5 w-5" /></div>
-                <div>
-                  <h3 className="text-base font-semibold">Dettagli e conferma</h3>
-                  <p className="text-xs text-order-muted">Controlla pagamento, sconti e note.</p>
+              <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+                <ReviewBlock title="Cliente" step={0}>
+                  <p className="break-words text-sm font-semibold leading-snug">{selectedClienteName || "Nessun cliente"}</p>
+                  {selectedCliente?.citta && <p className="mt-0.5 text-xs text-order-muted">{selectedCliente.citta}</p>}
+                </ReviewBlock>
+                <ReviewBlock title="Fornitore" step={0}>
+                  <p className="break-words text-sm font-semibold leading-snug">{selectedAziendaName || "—"}</p>
+                  <p className="mt-0.5 text-xs tabular-nums text-order-muted">
+                    {format(new Date(`${formData.data_ordine}T12:00:00`), "dd/MM/yyyy")} · {formData.tipo_pagamento}
+                  </p>
+                </ReviewBlock>
+              </div>
+
+              <ReviewBlock title={`Prodotti · ${righeOrdine.length}`} step={1}>
+                <ul className="divide-y divide-order-line">
+                  {righeOrdine.map((r, i) => (
+                    <li key={`${r.prodotto_id}-${i}`} className="flex items-start justify-between gap-3 py-2.5">
+                      <div className="min-w-0">
+                        <p className="break-words text-sm leading-snug">{r.prodotto_nome}</p>
+                        <p className="mt-0.5 text-xs tabular-nums text-order-muted">
+                          {r.quantita_cartoni > 0 && `${r.quantita_cartoni} cart`}
+                          {r.quantita_cartoni > 0 && r.quantita_pezzi > 0 && " + "}
+                          {r.quantita_pezzi > 0 && `${r.quantita_pezzi} pz`}
+                          {r.quantita_cartoni === 0 && r.quantita_pezzi === 0 && "Quantità 0"}
+                          {!r.is_omaggio && ` · ${r.prezzo_unitario} €/pz`}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 text-sm font-semibold tabular-nums ${r.is_omaggio ? "text-success" : ""}`}>
+                        {r.is_omaggio ? "Omaggio" : formatCurrency(rigaSubtotale(r))}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </ReviewBlock>
+
+              <div className="min-w-0 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm">
+                <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-order-muted">Condizioni finali</h4>
+                <div className="grid min-w-0 grid-cols-2 gap-3">
+                  <div className="min-w-0 space-y-1.5"><Label className="text-xs text-order-muted">Sconto in fattura %</Label><Input type="text" inputMode="decimal" className={`${fieldCls} text-right tabular-nums`} value={formData.sconto} onChange={(e) => setFormData({ ...formData, sconto: e.target.value })} placeholder="0" /></div>
+                  <div className="min-w-0 space-y-1.5"><Label className="text-xs text-order-muted">Sconto merce €</Label><Input type="text" inputMode="decimal" className={`${fieldCls} text-right tabular-nums`} value={formData.sconto_merce} onChange={(e) => setFormData({ ...formData, sconto_merce: e.target.value })} placeholder="0,00" /></div>
+                  <div className="col-span-2 min-w-0 space-y-1.5"><Label className="text-xs text-order-muted">Note</Label><Textarea className="min-h-24 rounded-lg border-order-line bg-order-paper text-base sm:text-sm" value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Indicazioni per consegna o fornitore…" /></div>
                 </div>
               </div>
-              <div className="grid gap-4 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:grid-cols-3 sm:p-6">
-                <div className="space-y-2 sm:col-span-3"><Label>Tipo pagamento</Label><Select value={formData.tipo_pagamento} onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{TIPI_PAGAMENTO.map((tipo) => <SelectItem key={tipo} value={tipo}>{tipo}</SelectItem>)}</SelectContent></Select></div>
-                <div className="space-y-2"><Label>Sconto %</Label><Input type="text" inputMode="decimal" value={formData.sconto} onChange={(e) => setFormData({ ...formData, sconto: e.target.value })} placeholder="0" /></div>
-                <div className="space-y-2 sm:col-span-2"><Label>Sconto merce €</Label><Input type="text" inputMode="decimal" value={formData.sconto_merce} onChange={(e) => setFormData({ ...formData, sconto_merce: e.target.value })} placeholder="0,00" /></div>
-                <div className="space-y-2 sm:col-span-3"><Label>Note</Label><Textarea className="min-h-24" value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Aggiungi indicazioni utili all’ordine..." /></div>
+
+              <div className="space-y-2 rounded-xl border border-order-blue/30 bg-order-surface p-4 shadow-sm lg:hidden">
+                <SummaryRow label="Subtotale righe" value={formatCurrency(subtotaleRighe)} />
+                {scontoPct > 0 && <SummaryRow label={`Sconto ${formData.sconto}%`} value={`-${formatCurrency(subtotaleRighe * scontoPct / 100)}`} />}
+                {scontoMerce > 0 && <SummaryRow label="Sconto merce" value={`-${formatCurrency(scontoMerce)}`} />}
+                <div className="flex items-baseline justify-between border-t border-order-line pt-2">
+                  <span className="text-sm font-semibold">Totale ordine</span>
+                  <span className="text-2xl font-bold tabular-nums text-order-blue">{formatCurrency(totale)}</span>
+                </div>
               </div>
             </section>
-          </div>
-
-        </div>
-
-        <div className="shrink-0 border-t border-order-line bg-order-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-sm sm:px-8 sm:pb-5 sm:pt-4">
-          <div className="mx-auto mb-3 flex max-w-3xl items-end justify-between">
-            <div className="text-xs text-order-muted"><p>{righeOrdine.length} righe · {calcolaProdottiTotali()} pezzi</p></div>
-            <div className="flex items-center gap-2 text-xs text-order-muted">
-              {selectedAziendaName && <><Store className="h-3.5 w-3.5" /><span className="max-w-36 truncate">{selectedAziendaName}</span></>}
             </div>
           </div>
-          <DialogFooter className="mx-auto grid max-w-3xl grid-cols-2 gap-2 sm:flex sm:justify-between sm:space-x-0">
+
+          {/* Riepilogo laterale (solo computer) */}
+          <aside className="hidden w-80 shrink-0 flex-col border-l border-order-line bg-order-surface lg:flex">
+            <div className="flex-1 space-y-5 overflow-y-auto p-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-order-muted">Riepilogo</p>
+                <p className="mt-2 break-words text-sm font-semibold leading-snug">{selectedClienteName || "Nessun cliente"}</p>
+                <p className="mt-0.5 break-words text-xs text-order-muted">{selectedAziendaName || "Fornitore da scegliere"}</p>
+              </div>
+              <div className="space-y-2">
+                <SummaryRow label="Righe" value={`${righeOrdine.length}${omaggiCount ? ` (${omaggiCount} omaggi)` : ""}`} />
+                <SummaryRow label="Pezzi" value={String(calcolaProdottiTotali())} />
+                <SummaryRow label="Pagamento" value={formData.tipo_pagamento} />
+              </div>
+              <div className="space-y-2 border-t border-order-line pt-4">
+                <SummaryRow label="Subtotale" value={formatCurrency(subtotaleRighe)} />
+                {scontoPct > 0 && <SummaryRow label={`Sconto ${formData.sconto}%`} value={`-${formatCurrency(subtotaleRighe * scontoPct / 100)}`} />}
+                {scontoMerce > 0 && <SummaryRow label="Sconto merce" value={`-${formatCurrency(scontoMerce)}`} />}
+              </div>
+            </div>
+            <div className="border-t border-order-line p-6">
+              <p className="text-xs text-order-muted">Totale ordine</p>
+              <p className="text-3xl font-bold tracking-tight tabular-nums text-order-blue">{formatCurrency(totale)}</p>
+            </div>
+          </aside>
+        </div>
+
+        {/* Barra azioni fissa, rispetta la safe area */}
+        <div className="shrink-0 border-t border-order-line bg-order-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-4">
+          <DialogFooter className="flex flex-row items-center gap-2 sm:justify-between sm:space-x-0">
             {currentStep === 0 ? (
-              <Button variant="outline" onClick={() => handleOpenChange(false)}>Annulla</Button>
+              <Button variant="outline" className="h-11 rounded-lg border-order-line" onClick={() => handleOpenChange(false)}>Annulla</Button>
             ) : (
-              <Button variant="outline" onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}><ChevronLeft className="h-4 w-4" />Indietro</Button>
+              <Button variant="outline" className="h-11 rounded-lg border-order-line" onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}><ChevronLeft className="h-4 w-4" />Indietro</Button>
             )}
+            <div className="hidden min-w-0 flex-1 text-center text-xs tabular-nums text-order-muted sm:block lg:hidden">
+              {righeOrdine.length} righe · {calcolaProdottiTotali()} pezzi
+            </div>
             {currentStep < 2 ? (
-              <Button className="bg-order-ink text-primary-foreground hover:bg-order-ink/90" onClick={() => setCurrentStep((step) => Math.min(2, step + 1))} disabled={currentStep === 0 ? !formData.azienda_id : righeOrdine.length === 0}>Continua<ChevronRight className="h-4 w-4" /></Button>
+              <Button className="h-11 flex-1 rounded-lg bg-order-ink text-primary-foreground hover:bg-order-ink/90 sm:flex-none sm:px-6" onClick={() => setCurrentStep((step) => Math.min(2, step + 1))} disabled={currentStep === 0 ? !formData.azienda_id : righeOrdine.length === 0}>
+                {currentStep === 0 ? "Scegli prodotti" : "Rivedi ordine"}<ChevronRight className="h-4 w-4" />
+              </Button>
             ) : (
-              <Button className="bg-order-blue text-primary-foreground hover:bg-order-blue/90" onClick={handleSubmit} disabled={isSubmitting || righeOrdine.length === 0}>{isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}Crea ordine</Button>
+              <Button className="h-11 flex-1 gap-2 rounded-lg bg-order-blue font-semibold text-primary-foreground hover:bg-order-blue/90 sm:flex-none sm:px-6" onClick={handleSubmit} disabled={isSubmitting || righeOrdine.length === 0}>
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                <span className="truncate">Crea ordine · {formatCurrency(totale)}</span>
+              </Button>
             )}
           </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>
+
+    <ProductPicker
+      open={pickerOpen}
+      onOpenChange={setPickerOpen}
+      products={pickerProducts}
+      inOrder={prodottiIdsInOrdine}
+      onPick={(id) => addProdottoToOrder(id)}
+    />
 
       <AlertDialog open={priceConfirmIndex !== null} onOpenChange={(v) => !v && priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
         <AlertDialogContent>
