@@ -82,7 +82,7 @@ export function OrdiniTable({ rows, selectionMode, selectedIds, onToggleSelect }
                     />
                   </td>
                 )}
-                <td className="whitespace-nowrap px-4 py-3 tabular-nums text-scatto-ink">{format(data, "dd MMM yy", { locale: it })}</td>
+                <td className="whitespace-nowrap px-4 py-3 tabular-nums text-scatto-ink">{format(data, "dd MMM", { locale: it })}</td>
                 <td className="px-4 py-3">
                   <p className={`truncate font-semibold text-scatto-ink ${muted ? "line-through" : ""}`} title={ordine.clienti?.nome || ""}>
                     {ordine.clienti?.nome || "—"}

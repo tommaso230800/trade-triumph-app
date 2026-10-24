@@ -27,3 +27,8 @@
 ## Aperti da doc ottimizzazione precedente
 - [x] Restyling pagina Provvigioni (stile scatto, card mobile senza scroll orizzontale)
 - [x] Revisione grafica pagina Ordini (verifica responsive 320/375/430/desktop, nessun difetto)
+
+## Doc "Migliorare il design di Ordini e Nuovo ordine"
+- [x] Pagina Ordini: intestazione, barra filtri con filtri attivi, tabella computer, schede telefono
+- [x] Nuovo ordine: stepper, riepilogo laterale su computer, selettore prodotti dedicato, righe prodotto, conferma con "Modifica"
+- [x] iPhone: campi lunghi e menu di scelta dentro lo schermo, testo campi 16px, barra azioni in safe area
