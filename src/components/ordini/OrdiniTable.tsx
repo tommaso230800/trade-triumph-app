@@ -53,12 +53,12 @@ export function OrdiniTable({ rows, selectionMode, selectedIds, onToggleSelect }
           <tr className="border-b border-scatto-line text-left text-xs font-semibold text-scatto-muted">
             {selectionMode && <th className="w-[5%] px-4 py-3" />}
             <th className="w-[11%] px-4 py-3">Data</th>
-            <th className="w-[27%] px-4 py-3">Cliente</th>
+            <th className="w-[23%] px-4 py-3">Cliente</th>
             <th className="w-[20%] px-4 py-3">Fornitore</th>
             <th className="w-[14%] px-4 py-3">Riferimento</th>
             <th className="w-[12%] px-4 py-3 text-right">Totale</th>
             <th className="w-[11%] px-4 py-3">Stato</th>
-            <th className="w-[5%] px-2 py-3 text-right"><span className="sr-only">Azioni</span></th>
+            <th className="w-[9%] px-2 py-3 text-right"><span className="sr-only">Azioni</span></th>
           </tr>
         </thead>
         <tbody>
