@@ -18,7 +18,6 @@ export const themeConfigs: Record<ThemeStyle, { name: string; description: strin
       "--accent": "152 69% 45%",
       "--background": "210 20% 98%",
       "--card": "0 0% 100%",
-      "--sidebar-background": "220 25% 12%",
     }
   },
   classic: {
@@ -29,7 +28,6 @@ export const themeConfigs: Record<ThemeStyle, { name: string; description: strin
       "--accent": "38 92% 50%",
       "--background": "30 15% 97%",
       "--card": "30 20% 99%",
-      "--sidebar-background": "25 30% 15%",
     }
   },
   minimal: {
@@ -40,7 +38,6 @@ export const themeConfigs: Record<ThemeStyle, { name: string; description: strin
       "--accent": "220 10% 40%",
       "--background": "0 0% 100%",
       "--card": "220 10% 98%",
-      "--sidebar-background": "220 10% 8%",
     }
   },
   vibrant: {
@@ -51,7 +48,6 @@ export const themeConfigs: Record<ThemeStyle, { name: string; description: strin
       "--accent": "330 81% 60%",
       "--background": "270 30% 98%",
       "--card": "270 40% 100%",
-      "--sidebar-background": "262 40% 15%",
     }
   },
   dark: {
@@ -62,7 +58,6 @@ export const themeConfigs: Record<ThemeStyle, { name: string; description: strin
       "--accent": "152 69% 50%",
       "--background": "220 25% 8%",
       "--card": "220 25% 12%",
-      "--sidebar-background": "220 30% 6%",
     }
   }
 };
@@ -81,6 +76,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     const config = themeConfigs[theme];
+    // Sidebar colors are paired in global CSS; discard the legacy one-color override.
+    root.style.removeProperty("--sidebar-background");
     
     // Apply colors
     Object.entries(config.colors).forEach(([key, value]) => {
