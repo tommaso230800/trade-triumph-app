@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { ORDER_EMAIL_SELECT, orderEmailVersion } from '../_shared/orderEmailSnapshot.ts';
+import { encodeUtf8Base64, foldBase64, decodePdfBase64 } from './encoding.ts';
 
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/google_mail/gmail/v1';
 const email = z.string().email().max(254).refine(v => !/[\r\n]/.test(v));
@@ -14,9 +15,9 @@ const schema = z.discriminatedUnion('action', [
     pdf: z.string().min(8).max(16000000).regex(/^[A-Za-z0-9+/]+={0,2}$/), filename: z.string().regex(/^Proforma_[A-Za-z0-9_-]+\.pdf$/).max(150)
   })
 ]);
-const b64 = (value: string) => btoa(Array.from(new TextEncoder().encode(value), b => String.fromCharCode(b)).join(''));
+const b64 = encodeUtf8Base64;
 const header = (value: string) => `=?UTF-8?B?${b64(value)}?=`;
-const fold = (value: string) => value.match(/.{1,76}/g)?.join('\r\n') ?? '';
+const fold = foldBase64;
 
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -60,9 +61,8 @@ Deno.serve(async req => {
     const { data: existing } = await admin.from('order_email_sends').select('*').eq('id', input.attemptId).eq('user_id', user.id).maybeSingle();
     if (existing) return json({ send: existing, duplicate: true });
     if (version !== input.version) return json({ error: 'L’ordine è stato modificato. Chiudi e riapri la composizione per aggiornare il PDF.' }, 409);
-    const binary = atob(input.pdf);
-    if (!binary.startsWith('%PDF-') || binary.length > 12000000) return json({ error: 'Il PDF non è valido o supera 12 MB.' }, 400);
-    const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+    const bytes = decodePdfBase64(input.pdf);
+    if (new TextDecoder().decode(bytes.subarray(0, 5)) !== '%PDF-' || bytes.length > 12000000) return json({ error: 'Il PDF non è valido o supera 12 MB.' }, 400);
     const path = `${user.id}/order-email/${input.attemptId}/${input.filename}`;
     const { data: send, error: claimError } = await admin.from('order_email_sends').insert({
       id: input.attemptId, user_id: user.id, ordine_id: order.id, to_addresses: input.to, cc_addresses: input.cc,

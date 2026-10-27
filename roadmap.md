@@ -1,5 +1,10 @@
 # Roadmap
 
+## Correzione invio email interrotto
+- [x] Eliminare le allocazioni per-byte nella preparazione MIME/PDF
+- [ ] Verificare allegati grandi e distribuire la correzione
+- [ ] Verificare l’esito del tentativo interrotto senza reinviarlo
+
 ## Invio proforma via email
 - [x] Gmail agenzia collegato e credenziali applicazione verificate
 - [x] Impostazioni di invio separate per azienda
