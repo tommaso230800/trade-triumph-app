@@ -1,11 +1,12 @@
 # Roadmap
 
 ## Invio proforma via email
-- [ ] Scegliere e collegare il servizio che supporta PDF allegati e A/CC
-- [ ] Impostazioni di invio separate per azienda
-- [ ] Composizione con saluti/data Europe/Rome e proforma aggiornato
-- [ ] Invio esplicito, protezione doppi tocchi, storico e reinvio
-- [ ] Test fasce orarie e verifica flusso su iPhone e computer
+- [x] Gmail agenzia collegato e credenziali applicazione verificate
+- [x] Impostazioni di invio separate per azienda
+- [x] Composizione con saluti/data Europe/Rome e proforma aggiornato
+- [x] Invio esplicito, protezione doppi tocchi, storico e reinvio implementati
+- [x] Test fasce orarie e verifica composizione/PDF/errori su iPhone e computer
+- [ ] Invio reale e lettura dello storico: serve un ordine e destinatario approvati per la prova; nessuna email inviata durante le verifiche
 
 ## Revisione iPhone e dati
 - [x] Logo agenzia nelle icone installabili

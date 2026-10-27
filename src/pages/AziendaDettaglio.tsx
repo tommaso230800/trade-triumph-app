@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { OrderEmailSettings } from "@/components/aziende/OrderEmailSettings";
 import { DocumentiSection } from "@/components/documenti/DocumentiSection";
 
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -520,6 +521,8 @@ const AziendaDettaglio = () => {
             </div>
           </div>
         </div>
+
+        <OrderEmailSettings companyId={azienda.id} />
 
         {/* Products Section */}
         <div className="rounded-xl bg-card shadow-card overflow-hidden">

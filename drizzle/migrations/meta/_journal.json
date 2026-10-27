@@ -29,6 +29,13 @@
       "when": 1792743088950,
       "tag": "0003_create_data_issues",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793101964392,
+      "tag": "0004_order_email_settings_and_history",
+      "breakpoints": true
     }
   ]
 }
