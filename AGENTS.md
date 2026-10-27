@@ -8,3 +8,4 @@
 - Orders list shows a table from xl width and compact cards below it; both read the same OrdiniTableRow data so actions stay identical.
 - Send order PDFs through the agency Gmail connector server-side with an authenticated owner-scoped snapshot and unique persisted attempt ID; immutable PDF copies and outcome records prevent silent stale attachments and duplicate retries.
 - Share proforma PDF capture between downloads and email attachments, reloading the order before capture and checking its snapshot version before Gmail submission.
+- Encode order email MIME and PDF bytes in bounded chunks without per-byte arrays, so large attachments stay within the email function memory budget.
