@@ -12,6 +12,7 @@ import { useCompanyEmailSettings, useOrderEmailHistory, saveCompanyEmailSettings
 import { dynamicEmailTemplate, parseEmailAddresses, renderEmailTemplate, romeEmailContext, validEmailAddresses } from '@/lib/orderEmailTemplates';
 import { invokeOrderEmail } from '@/lib/orderEmailSnapshot';
 import type { ProformaData } from './ProformaDialog';
+import { OrderPdfPreview } from './OrderPdfPreview';
 
 export type PreparedOrderEmail = { data: ProformaData; version: string; senderEmail: string; pdf: Blob; filename: string };
 export function OrderEmailComposer({ prepared, onClose }: { prepared: PreparedOrderEmail; onClose: () => void }) {
@@ -124,7 +125,7 @@ export function OrderEmailComposer({ prepared, onClose }: { prepared: PreparedOr
         </div>
       </DialogContent>
     </Dialog>
-    <Dialog open={preview} onOpenChange={setPreview}><DialogContent className="flex h-[90dvh] max-w-3xl flex-col"><DialogHeader><DialogTitle className="break-all text-base">{prepared.filename}</DialogTitle></DialogHeader><object data={pdfUrl} type="application/pdf" className="min-h-0 w-full flex-1"><a href={pdfUrl} target="_blank" rel="noreferrer" className="text-primary underline">Apri PDF</a></object><Button variant="outline" asChild><a href={pdfUrl} target="_blank" rel="noreferrer">Apri PDF</a></Button></DialogContent></Dialog>
+    <Dialog open={preview} onOpenChange={setPreview}><DialogContent className="flex h-[90dvh] max-w-3xl flex-col"><DialogHeader><DialogTitle className="break-all text-base">{prepared.filename}</DialogTitle></DialogHeader><OrderPdfPreview file={prepared.pdf} /><Button variant="outline" asChild><a href={pdfUrl} target="_blank" rel="noreferrer">Apri PDF</a></Button></DialogContent></Dialog>
   </>;
 }
 
