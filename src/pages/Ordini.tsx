@@ -153,6 +153,8 @@ const Ordini = () => {
       .eq("ordine_id", ordine.id);
 
     setProformaData({
+      ordine_id: ordine.id,
+      azienda_id: ordine.azienda_id,
       codice: ordine.codice || `ORD-${ordine.id.slice(0, 8)}`,
       created_at: ordine.created_at,
       data_ordine: ordine.data_ordine,

@@ -1,15 +1,19 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { Printer, X, Download, Loader2, Gift } from "lucide-react";
+import { Printer, X, Download, Loader2, Gift, Send } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { parseLocalDate } from "@/lib/periodRange";
+import { OrderEmailComposer, OrderEmailHistory, type PreparedOrderEmail } from "./OrderEmailComposer";
+import { useOrderEmailHistory } from "@/hooks/useOrderEmail";
+import { loadOrderEmailSnapshot } from "@/lib/orderEmailSnapshot";
+import { toast } from "sonner";
 
 export type ProformaRigaOrdine = {
   prodotto_codice?: string;
@@ -35,6 +39,8 @@ export type PromoApplicata = {
 };
 
 export type ProformaData = {
+  ordine_id?: string;
+  azienda_id?: string | null;
   codice: string;
   created_at: string;
   data_ordine?: string | null;
@@ -64,7 +70,13 @@ type ProformaDialogProps = {
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
 
-export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps) {
+export function ProformaDialog({ open, onOpenChange, data: originalData }: ProformaDialogProps) {
+  const [freshData, setFreshData] = useState<ProformaData | null>(null);
+  const [prepared, setPrepared] = useState<PreparedOrderEmail | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const data = freshData ?? originalData;
+  const history = useOrderEmailHistory(originalData?.ordine_id);
+  useEffect(() => { setFreshData(null); setPrepared(null); }, [originalData, open]);
   const contentRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -78,7 +90,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
 
   const CAPTURE_WIDTH = 1000;
 
-  const handleExportPDF = async () => {
+  const generatePDF = async () => {
     if (!contentRef.current) return;
 
     setIsExporting(true);
@@ -124,9 +136,10 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
       const imgY = 10;
 
       pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      pdf.save(`Proforma_${data.codice}.pdf`);
+      return pdf;
     } catch (error) {
       console.error("Error exporting PDF:", error);
+      throw error;
     } finally {
       element.style.position = originalStyle.position;
       element.style.top = originalStyle.top;
@@ -135,6 +148,24 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
       element.style.zIndex = originalStyle.zIndex;
       setIsExporting(false);
     }
+  };
+
+  const handleExportPDF = async () => {
+    try { const pdf = await generatePDF(); pdf?.save(`Proforma_${data.codice}.pdf`); }
+    catch { toast.error("Impossibile generare il PDF. Riprova."); }
+  };
+  const prepareEmail = async () => {
+    if (!data.ordine_id || preparing) return;
+    setPreparing(true);
+    try {
+      const snapshot = await loadOrderEmailSnapshot(data.ordine_id);
+      setFreshData(snapshot.data);
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      const pdf = await generatePDF();
+      if (!pdf) throw new Error("PDF non disponibile");
+      setPrepared({ ...snapshot, pdf: pdf.output('blob'), filename: `Proforma_${snapshot.data.codice.replace(/[^A-Za-z0-9_-]/g, '_')}.pdf` });
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Preparazione email non riuscita"); }
+    finally { setPreparing(false); }
   };
 
   // Calculate subtotals with cascading discounts - pieces auto-calculated from cartons
@@ -154,6 +185,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
   const scontoPercentuale = subtotale * (data.sconto / 100);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto print:max-w-none print:max-h-none print:overflow-visible print:shadow-none print:border-none">
         <DialogHeader className="print:hidden">
@@ -358,7 +390,12 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
           )}
         </div>
 
-        <DialogFooter className="print:hidden gap-2">
+        <OrderEmailHistory orderId={data.ordine_id} />
+        <DialogFooter className="print:hidden flex-wrap gap-2">
+          {data.ordine_id && <Button onClick={prepareEmail} disabled={preparing || isExporting} className="min-h-11 gap-2 whitespace-normal">
+            <Send className="h-4 w-4 shrink-0" />{preparing ? "Preparazione PDF…" : history.data?.some(r => r.status === 'sent') ? "Invia nuovamente" : "Invia ordine via email"}
+          </Button>}
+          {history.data?.find(r => r.status === 'sent') && <span className="w-full text-xs text-muted-foreground">Ultimo invio: {new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'short', timeStyle: 'short' }).format(new Date(history.data.find(r => r.status === 'sent')?.sent_at ?? history.data[0].created_at))}</span>}
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             <X className="h-4 w-4 mr-2" />
             Chiudi
@@ -378,5 +415,7 @@ export function ProformaDialog({ open, onOpenChange, data }: ProformaDialogProps
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {prepared && <OrderEmailComposer prepared={prepared} onClose={() => setPrepared(null)} />}
+    </>
   );
 }

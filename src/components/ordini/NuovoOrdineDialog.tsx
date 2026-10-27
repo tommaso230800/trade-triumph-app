@@ -628,6 +628,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
       .filter(Boolean) as { nome: string; tipo: string; valore: number }[];
 
     onOrderCreated({
+      ordine_id: ordine.id,
+      azienda_id: ordine.azienda_id,
       codice: ordine.codice || `ORD-${ordine.id.slice(0, 8)}`,
       created_at: ordine.created_at,
       data_ordine: formData.data_ordine,
