@@ -177,6 +177,53 @@ export type Database = {
           },
         ]
       }
+      azienda_order_email_settings: {
+        Row: {
+          azienda_id: string
+          body_template: string
+          cc_addresses: string[]
+          reply_to: string
+          sender_name: string
+          signature: string
+          subject_template: string
+          to_addresses: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id: string
+          body_template?: string
+          cc_addresses?: string[]
+          reply_to?: string
+          sender_name?: string
+          signature?: string
+          subject_template?: string
+          to_addresses?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string
+          body_template?: string
+          cc_addresses?: string[]
+          reply_to?: string
+          sender_name?: string
+          signature?: string
+          subject_template?: string
+          to_addresses?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "azienda_order_email_settings_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: true
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aziende: {
         Row: {
           citta: string | null
@@ -2158,6 +2205,74 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      order_email_sends: {
+        Row: {
+          body: string
+          cc_addresses: string[]
+          created_at: string
+          error_message: string | null
+          id: string
+          order_version: string
+          ordine_id: string
+          pdf_filename: string
+          pdf_path: string
+          provider_message_id: string | null
+          reply_to: string
+          sender_name: string
+          sent_at: string | null
+          status: string
+          subject: string
+          to_addresses: string[]
+          user_id: string
+        }
+        Insert: {
+          body: string
+          cc_addresses?: string[]
+          created_at?: string
+          error_message?: string | null
+          id: string
+          order_version: string
+          ordine_id: string
+          pdf_filename: string
+          pdf_path: string
+          provider_message_id?: string | null
+          reply_to?: string
+          sender_name?: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          to_addresses: string[]
+          user_id: string
+        }
+        Update: {
+          body?: string
+          cc_addresses?: string[]
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          order_version?: string
+          ordine_id?: string
+          pdf_filename?: string
+          pdf_path?: string
+          provider_message_id?: string | null
+          reply_to?: string
+          sender_name?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_addresses?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_email_sends_ordine_id_fkey"
+            columns: ["ordine_id"]
+            isOneToOne: false
+            referencedRelation: "ordini"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ordini: {
         Row: {
