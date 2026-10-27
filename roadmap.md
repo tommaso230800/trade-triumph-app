@@ -1,5 +1,12 @@
 # Roadmap
 
+## Invio proforma via email
+- [ ] Scegliere e collegare il servizio che supporta PDF allegati e A/CC
+- [ ] Impostazioni di invio separate per azienda
+- [ ] Composizione con saluti/data Europe/Rome e proforma aggiornato
+- [ ] Invio esplicito, protezione doppi tocchi, storico e reinvio
+- [ ] Test fasce orarie e verifica flusso su iPhone e computer
+
 ## Revisione iPhone e dati
 - [x] Logo agenzia nelle icone installabili
 - [x] Audit pagine iPhone e correzioni condivise
