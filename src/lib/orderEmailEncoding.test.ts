@@ -15,7 +15,7 @@ describe('Order email attachment encoding', () => {
     pdf.write('%PDF-1.7\n');
     const encoded = pdf.toString('base64');
     const folded = foldBase64(encoded);
-    expect(folded.replaceAll('\r\n', '')).toBe(encoded);
+    expect(folded.split('\r\n').join('')).toBe(encoded);
     const mime = `Content-Transfer-Encoding: base64\r\n\r\n${folded}`;
     expect(Buffer.from(encodeUtf8Base64(mime), 'base64').toString('utf8')).toBe(mime);
     expect(Buffer.compare(Buffer.from(decodePdfBase64(encoded)), pdf)).toBe(0);

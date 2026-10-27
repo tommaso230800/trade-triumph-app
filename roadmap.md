@@ -2,8 +2,8 @@
 
 ## Correzione invio email interrotto
 - [x] Eliminare le allocazioni per-byte nella preparazione MIME/PDF
-- [ ] Verificare allegati grandi e distribuire la correzione
-- [ ] Verificare l’esito del tentativo interrotto senza reinviarlo
+- [x] Verificare allegati grandi e distribuire la correzione (16 test e allegato 12 MB con heap 128 MB)
+- [x] Verificare l’esito del tentativo interrotto senza reinviarlo: Gmail non trova messaggi inviati con il Message-ID del tentativo
 
 ## Invio proforma via email
 - [x] Gmail agenzia collegato e credenziali applicazione verificate
