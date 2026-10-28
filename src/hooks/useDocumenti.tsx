@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { spreadsheetText } from "@/lib/documentText";
 
 export type DocumentoTipo =
   | "ordine_originale"
@@ -159,9 +160,9 @@ export function useUploadDocumento() {
 
       // Auto-classifica in background (best-effort)
       if (input.autoClassify !== false) {
-        supabase.functions
-          .invoke("classify-document", { body: { documento_id: row.id } })
-          .catch(() => void 0);
+        const text=/\.(xlsx?|xlsm|csv)$/i.test(input.file.name)?await spreadsheetText(input.file).catch(()=>""):undefined;
+        const {error:analysisError}=await supabase.functions.invoke("classify-document", { body: { documento_id: row.id, text } });
+        if(analysisError)toast.warning("File salvato; associazioni da verificare.");
       }
       return row as Documento;
     },
