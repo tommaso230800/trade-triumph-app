@@ -23,7 +23,8 @@ Deno.serve(async req=>{
   const [companies,customers]=await Promise.all([entities('aziende'),entities('clienti')]);const company=matchIdentity(parsed.company||{},companies),customer=matchIdentity(parsed.customer||{},customers);const reliable=!!company.id&&(!parsed.customer||!!customer.id);
   let orderId:string|null=null;if(parsed.order_code&&company.id&&customer.id){const {data,error}=await db.from('ordini').select('id').eq('codice',String(parsed.order_code)).eq('azienda_id',company.id).eq('cliente_id',customer.id).is('deleted_at',null);if(error)throw error;if(data?.length===1)orderId=data[0].id;}
   const updates:any={association_status:reliable?'automatic':'review',association_details:{company:company.candidates,customer:customer.candidates,reason:parsed.reason||'Identità insufficienti o ambigue',at:new Date().toISOString()},classificazione_ai:{tipo:parsed.tipo,at:new Date().toISOString()}};
-  if(reliable){updates.company_id=company.id;updates.customer_id=customer.id;updates.entita=orderId?'ordine':'azienda';updates.entita_id=orderId||company.id;}
+  updates.company_id=company.id;updates.customer_id=customer.id;
+  if(company.id){updates.entita=orderId?'ordine':'azienda';updates.entita_id=orderId||company.id;}
   if(types.includes(parsed.tipo)&&doc.tipo==='altro')updates.tipo=parsed.tipo;
   const {data:updated,error:updateError}=await db.from('documenti').update(updates).eq('id',doc.id).neq('association_status','manual').select('id');if(updateError)throw updateError;
   return response({ok:true,associated:reliable,preserved:!updated?.length});
