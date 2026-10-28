@@ -33,15 +33,14 @@ export function useProdotti(aziendaId?: string) {
         .from("prodotti")
         .select("*")
         .is("deleted_at", null)
-        .order("nome", { ascending: true });
+        .order("nome", { ascending: true }).order('id');
 
       if (aziendaId) {
         query = query.eq("azienda_id", aziendaId);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as Prodotto[];
+      const all: Prodotto[]=[];
+      for(let from=0;;from+=1000){const {data,error}=await query.range(from,from+999);if(error)throw error;all.push(...(data || []) as Prodotto[]);if(!data || data.length<1000)return all;}
     },
   });
 }
