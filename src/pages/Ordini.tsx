@@ -208,9 +208,9 @@ const Ordini = () => {
       (o) =>
         (!clienteFilter || o.cliente_id === clienteFilter) &&
         (!aziendaFilter || o.azienda_id === aziendaFilter) &&
-        (o.data_ordine || o.created_at || "").startsWith(prefix)
+        (searchParams.get('storico')==='1' || (o.data_ordine || o.created_at || "").startsWith(prefix))
     );
-  }, [ordini, clienteFilter, aziendaFilter, periodo]);
+  }, [ordini, clienteFilter, aziendaFilter, periodo, searchParams]);
 
   // Sezioni per stato
   const ordiniAttivi = useMemo(
