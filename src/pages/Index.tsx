@@ -10,7 +10,7 @@ import { StatTile } from "@/components/dashboard/modern/StatTile";
 import { ModernTopStrip } from "@/components/dashboard/modern/ModernTopStrip";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { useAdvancedKPIStats, type AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
-import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
+import { useReorderPairs } from "@/hooks/useReorderPairs";
 import { useAziende } from "@/hooks/useAziende";
 import { useOrdini, type Ordine } from "@/hooks/useOrdini";
 import { useOrdiniRighe } from "@/hooks/useOrdiniRighe";
@@ -187,7 +187,7 @@ const Index = () => {
   const { data: yoy, isLoading: yoyLoading } = useKPIYoY(kpiFilters);
   const { data: stats, isLoading: statsLoading } = useAdvancedKPIStats(kpiFilters);
 
-  const { data: forecastData, isLoading: forecastLoading } = useReorderForecast();
+  const { data: pairData, isLoading: forecastLoading, isError: reorderError, refetch: refreshReorders } = useReorderPairs();
   const { data: aziendeList, isLoading: aziendeLoading } = useAziende();
   const { data: ordini, isLoading: ordiniLoading } = useOrdini();
   const { data: clienti } = useClienti();
@@ -305,25 +305,7 @@ const Index = () => {
   const fornitoriVisibili = fornitoriEspanso ? fornitori : fornitori.slice(0, 5);
   const fornitoreMax = Math.max(1, ...fornitori.map((f) => f.curr));
 
-  // Da ricontattare: un cliente per riga (prodotto più in ritardo), ordinato
-  // per fatturato annuo e per ritardo di riordino.
-  const daRicontattare = useMemo(() => {
-    const list = (forecastData?.forecasts || []).filter((f) => f.urgenza === "critica");
-    const perCliente = new Map<string, EnrichedForecast>();
-    list.forEach((f) => {
-      const ex = perCliente.get(f.cliente_id);
-      if (!ex || (f.giorni_al_riordino ?? 0) < (ex.giorni_al_riordino ?? 0)) perCliente.set(f.cliente_id, f);
-    });
-    return Array.from(perCliente.values())
-      .map((f) => ({
-        ...f,
-        fatturatoCliente: yoy?.clientiYoY.get(f.cliente_id)?.curr ?? 0,
-        ritardo: Math.abs(f.giorni_al_riordino ?? 0),
-        giorniUltimoOrdine: daysAgo(f.ultimo_ordine),
-      }))
-      .sort((a, b) => b.fatturatoCliente - a.fatturatoCliente || b.ritardo - a.ritardo)
-      .slice(0, 8);
-  }, [forecastData, yoy]);
+  const daRicontattare = useMemo(() => (pairData || []).filter(p=>p.da_ricontattare).map(p=>({...p,fatturatoCliente:yoy?.clientiYoY.get(p.cliente_id)?.curr ?? 0,ritardo:p.giorni_ritardo,giorniUltimoOrdine:p.giorni_trascorsi})).sort((a,b)=>b.ritardo-a.ritardo).slice(0,8),[pairData,yoy]);
 
   const attivitaRecente = useMemo(() => {
     // Stessa regola di KPI/Ordini: esclusi annullato e stand_by, data_ordine come riferimento
@@ -767,7 +749,7 @@ const Index = () => {
                     <Skeleton key={i} className="h-16 w-full rounded-xl" />
                   ))}
                 </div>
-              ) : daRicontattare.length === 0 ? (
+              ) : reorderError ? (<div role="alert" className="p-4 text-sm">Riordini non disponibili. <Button variant="outline" onClick={()=>refreshReorders()}>Riprova</Button></div>) : daRicontattare.length === 0 ? (
                 <div className="py-10 text-center">
                   <p className="text-sm font-semibold text-scatto-ink">Nessun cliente in ritardo</p>
                   <p className="mt-1 text-xs text-scatto-muted">
@@ -780,9 +762,9 @@ const Index = () => {
                     const az = aziendaMap.get(c.azienda_id);
                     const color = aziendaColorValue(c.azienda_id, aziendaColorMap);
                     return (
-                      <li key={c.cliente_id}>
+                      <li key={c.id}>
                         <Link
-                          to={`/clienti/${c.cliente_id}`}
+                          to={`/ordini?cliente=${c.cliente_id}&azienda=${c.azienda_id}&storico=1`}
                           className="flex min-h-[64px] items-center gap-3 px-4 py-3 transition-colors hover:bg-scatto-ink/[0.02] sm:px-5"
                         >
                           <span
@@ -800,7 +782,7 @@ const Index = () => {
                               {c.cliente_nome}
                             </p>
                             <p className="truncate text-xs text-scatto-muted">
-                              ultimo ordine:{" "}
+                              {c.azienda_nome} · {c.ultimo_ordine_data.split("-").reverse().join("/")} · ultimo ordine:{" "}
                               {c.giorniUltimoOrdine === null
                                 ? "N/D"
                                 : c.giorniUltimoOrdine === 0
@@ -810,9 +792,9 @@ const Index = () => {
                           </div>
                           <div className="flex-shrink-0 text-right">
                             <p className="font-display text-sm font-bold tabular-nums text-scatto-ink">
-                              {c.fatturatoCliente > 0 ? formatCompact(c.fatturatoCliente) : "N/D"}
+                              {formatCompact(c.ultimo_importo)}
                             </p>
-                            <p className="text-[11px] font-medium text-scatto-danger">
+                            <p className="text-xs text-muted-foreground">Importo ultimo ordine</p><p className="text-[11px] font-medium text-scatto-danger">
                               +{c.ritardo} {c.ritardo === 1 ? "giorno" : "giorni"}
                             </p>
                           </div>

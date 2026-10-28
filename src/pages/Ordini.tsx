@@ -100,6 +100,10 @@ const Ordini = () => {
   // Apertura automatica da azione rapida globale (FAB "+" nel layout): arriva
   // come /ordini?nuovo=1, apre la scheda e ripulisce l'URL.
   useEffect(() => {
+    if (searchParams.get("cliente") || searchParams.get("azienda")) {
+      setClienteFilter(searchParams.get("cliente") || "");setAziendaFilter(searchParams.get("azienda") || "");setStatusFilter("tutti");
+      if(searchParams.get("storico")==="1")setPeriodo({kind:"year",year:new Date().getFullYear()});
+    }
     if (searchParams.get("ricerca")) {
       setSearchTerm(searchParams.get("ricerca") ?? "");
       const year = Number(searchParams.get("anno"));
