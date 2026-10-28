@@ -36,6 +36,13 @@
       "when": 1793101964392,
       "tag": "0004_order_email_settings_and_history",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793199501014,
+      "tag": "0005_commercial_proposals_archive_acceptance",
+      "breakpoints": true
     }
   ]
 }

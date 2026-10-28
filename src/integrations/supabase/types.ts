@@ -14,6 +14,64 @@ export type Database = {
   }
   public: {
     Tables: {
+      accepted_commercial_conditions: {
+        Row: {
+          accepted_on: string
+          company_id: string
+          content: Json
+          created_at: string
+          customer_id: string
+          id: string
+          proposal_id: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          accepted_on: string
+          company_id: string
+          content: Json
+          created_at?: string
+          customer_id: string
+          id?: string
+          proposal_id: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          accepted_on?: string
+          company_id?: string
+          content?: Json
+          created_at?: string
+          customer_id?: string
+          id?: string
+          proposal_id?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accepted_commercial_conditions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accepted_commercial_conditions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accepted_commercial_conditions_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: true
+            referencedRelation: "commercial_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_activity_log: {
         Row: {
           azioni_confermate: Json | null
@@ -337,12 +395,14 @@ export type Database = {
           azienda_id: string
           cartoni_acquisto: number | null
           cartoni_omaggio: number | null
+          commercial_terms: Json | null
           created_at: string
           data_fine: string
           data_inizio: string
           descrizione: string | null
           id: string
           nome: string
+          proposal_id: string | null
           tipo: string
           tutti_clienti: boolean
           updated_at: string
@@ -354,12 +414,14 @@ export type Database = {
           azienda_id: string
           cartoni_acquisto?: number | null
           cartoni_omaggio?: number | null
+          commercial_terms?: Json | null
           created_at?: string
           data_fine: string
           data_inizio: string
           descrizione?: string | null
           id?: string
           nome: string
+          proposal_id?: string | null
           tipo: string
           tutti_clienti?: boolean
           updated_at?: string
@@ -371,12 +433,14 @@ export type Database = {
           azienda_id?: string
           cartoni_acquisto?: number | null
           cartoni_omaggio?: number | null
+          commercial_terms?: Json | null
           created_at?: string
           data_fine?: string
           data_inizio?: string
           descrizione?: string | null
           id?: string
           nome?: string
+          proposal_id?: string | null
           tipo?: string
           tutti_clienti?: boolean
           updated_at?: string
@@ -389,6 +453,13 @@ export type Database = {
             columns: ["azienda_id"]
             isOneToOne: false
             referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canvass_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -783,6 +854,101 @@ export type Database = {
           },
         ]
       }
+      commercial_proposals: {
+        Row: {
+          apply_conditions: boolean | null
+          apply_prices: boolean | null
+          company_id: string
+          content: Json
+          created_at: string
+          customer_id: string | null
+          id: string
+          kind: string
+          parent_id: string | null
+          pdf_document_id: string | null
+          pdf_version: number | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          valid_from: string | null
+          valid_until: string | null
+          version: number
+          year: number
+        }
+        Insert: {
+          apply_conditions?: boolean | null
+          apply_prices?: boolean | null
+          company_id: string
+          content?: Json
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          kind?: string
+          parent_id?: string | null
+          pdf_document_id?: string | null
+          pdf_version?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          valid_from?: string | null
+          valid_until?: string | null
+          version?: number
+          year: number
+        }
+        Update: {
+          apply_conditions?: boolean | null
+          apply_prices?: boolean | null
+          company_id?: string
+          content?: Json
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          kind?: string
+          parent_id?: string | null
+          pdf_document_id?: string | null
+          pdf_version?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          valid_from?: string | null
+          valid_until?: string | null
+          version?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commercial_proposals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_proposals_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_proposals_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commercial_proposals_pdf_document_id_fkey"
+            columns: ["pdf_document_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_products: {
         Row: {
           agente_concorrente: string | null
@@ -945,6 +1111,7 @@ export type Database = {
           is_consorzio: boolean
           note: string | null
           percentuale_premio: number
+          proposal_id: string | null
           qta_base: number | null
           qta_omaggio: number | null
           soglia_fatturato: number | null
@@ -964,6 +1131,7 @@ export type Database = {
           is_consorzio?: boolean
           note?: string | null
           percentuale_premio?: number
+          proposal_id?: string | null
           qta_base?: number | null
           qta_omaggio?: number | null
           soglia_fatturato?: number | null
@@ -983,6 +1151,7 @@ export type Database = {
           is_consorzio?: boolean
           note?: string | null
           percentuale_premio?: number
+          proposal_id?: string | null
           qta_base?: number | null
           qta_omaggio?: number | null
           soglia_fatturato?: number | null
@@ -1003,6 +1172,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratti_clienti_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -1051,6 +1227,74 @@ export type Database = {
           },
         ]
       }
+      customer_price_history: {
+        Row: {
+          company_id: string
+          created_at: string
+          custom_price: number
+          customer_id: string
+          id: string
+          product_id: string
+          proposal_id: string | null
+          user_id: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          custom_price: number
+          customer_id: string
+          id?: string
+          product_id: string
+          proposal_id?: string | null
+          user_id: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          custom_price?: number
+          customer_id?: string
+          id?: string
+          product_id?: string
+          proposal_id?: string | null
+          user_id?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_price_history_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_price_history_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_price_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_price_history_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_product_prices: {
         Row: {
           company_id: string
@@ -1060,6 +1304,7 @@ export type Database = {
           id: string
           note: string | null
           product_id: string
+          proposal_id: string | null
           updated_at: string
           user_id: string
           valid_from: string | null
@@ -1072,6 +1317,7 @@ export type Database = {
           id?: string
           note?: string | null
           product_id: string
+          proposal_id?: string | null
           updated_at?: string
           user_id: string
           valid_from?: string | null
@@ -1084,6 +1330,7 @@ export type Database = {
           id?: string
           note?: string | null
           product_id?: string
+          proposal_id?: string | null
           updated_at?: string
           user_id?: string
           valid_from?: string | null
@@ -1108,6 +1355,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "prodotti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_product_prices_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -1332,8 +1586,11 @@ export type Database = {
       }
       documenti: {
         Row: {
+          category: string | null
           classificazione_ai: Json | null
+          company_id: string | null
           created_at: string
+          customer_id: string | null
           deleted_at: string | null
           dimensione: number | null
           entita: Database["public"]["Enums"]["documento_entita"]
@@ -1343,17 +1600,25 @@ export type Database = {
           mime_type: string | null
           nome_file: string
           note: string | null
+          proposal_id: string | null
+          proposal_version: number | null
+          reference_year: number | null
           storage_path: string
           suggerimenti_ai: Json | null
           tags: string[] | null
           tipo: Database["public"]["Enums"]["documento_tipo"]
           updated_at: string
           user_id: string
+          valid_from: string | null
+          valid_until: string | null
           verificato: boolean
         }
         Insert: {
+          category?: string | null
           classificazione_ai?: Json | null
+          company_id?: string | null
           created_at?: string
+          customer_id?: string | null
           deleted_at?: string | null
           dimensione?: number | null
           entita?: Database["public"]["Enums"]["documento_entita"]
@@ -1363,17 +1628,25 @@ export type Database = {
           mime_type?: string | null
           nome_file: string
           note?: string | null
+          proposal_id?: string | null
+          proposal_version?: number | null
+          reference_year?: number | null
           storage_path: string
           suggerimenti_ai?: Json | null
           tags?: string[] | null
           tipo?: Database["public"]["Enums"]["documento_tipo"]
           updated_at?: string
           user_id: string
+          valid_from?: string | null
+          valid_until?: string | null
           verificato?: boolean
         }
         Update: {
+          category?: string | null
           classificazione_ai?: Json | null
+          company_id?: string | null
           created_at?: string
+          customer_id?: string | null
           deleted_at?: string | null
           dimensione?: number | null
           entita?: Database["public"]["Enums"]["documento_entita"]
@@ -1383,15 +1656,42 @@ export type Database = {
           mime_type?: string | null
           nome_file?: string
           note?: string | null
+          proposal_id?: string | null
+          proposal_version?: number | null
+          reference_year?: number | null
           storage_path?: string
           suggerimenti_ai?: Json | null
           tags?: string[] | null
           tipo?: Database["public"]["Enums"]["documento_tipo"]
           updated_at?: string
           user_id?: string
+          valid_from?: string | null
+          valid_until?: string | null
           verificato?: boolean
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "documenti_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documenti_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documenti_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "commercial_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_allegati: {
         Row: {
@@ -3098,6 +3398,70 @@ export type Database = {
           },
         ]
       }
+      proposal_acceptances: {
+        Row: {
+          accepted_on: string
+          apply_conditions: boolean
+          apply_prices: boolean
+          created_at: string
+          evidence_document_id: string | null
+          id: string
+          notes: string | null
+          pdf_document_id: string
+          proposal_id: string
+          snapshot: Json
+          user_id: string
+        }
+        Insert: {
+          accepted_on: string
+          apply_conditions: boolean
+          apply_prices: boolean
+          created_at?: string
+          evidence_document_id?: string | null
+          id?: string
+          notes?: string | null
+          pdf_document_id: string
+          proposal_id: string
+          snapshot: Json
+          user_id: string
+        }
+        Update: {
+          accepted_on?: string
+          apply_conditions?: boolean
+          apply_prices?: boolean
+          created_at?: string
+          evidence_document_id?: string | null
+          id?: string
+          notes?: string | null
+          pdf_document_id?: string
+          proposal_id?: string
+          snapshot?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_acceptances_evidence_document_id_fkey"
+            columns: ["evidence_document_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_acceptances_pdf_document_id_fkey"
+            columns: ["pdf_document_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_acceptances_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: true
+            referencedRelation: "commercial_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provvigioni_condizioni: {
         Row: {
           applica_su_resi: boolean
@@ -4231,6 +4595,18 @@ export type Database = {
       }
     }
     Functions: {
+      accept_commercial_proposal: {
+        Args: {
+          p_accepted_on: string
+          p_apply_conditions: boolean
+          p_apply_prices: boolean
+          p_evidence_document_id?: string
+          p_expected_version?: number
+          p_notes?: string
+          p_proposal_id: string
+        }
+        Returns: string
+      }
       calcola_provvigione_prevista: {
         Args: { p_ordine_id: string }
         Returns: number
