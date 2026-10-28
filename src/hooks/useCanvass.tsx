@@ -27,6 +27,8 @@ export type Canvass = {
   cartoni_acquisto: number;
   created_at: string;
   updated_at: string;
+  proposal_id?: string | null;
+  commercial_terms?: import('@/lib/commercialProposal').ProposalPromotion | null;
   azienda?: {
     nome: string;
     logo_url: string | null;

@@ -1,5 +1,5 @@
 export type ProposalRow = { product_id: string; category: string; name: string; format: string; description: string; image: string; price: string; unit: string; vat_mode: string; vat_rate: string; notes: string };
-export type ProposalPromotion = { title: string; product_ids: string[]; buy: string; gift: string; minimum: string; unit: string; start: string; end: string; periods: string; months: string; notes: string };
+export type ProposalPromotion = { title: string; product_ids: string[]; buy: string; gift: string; minimum: string; unit: string; start: string; end: string; periods: string; months: string; notes: string; type?: string; value?: string };
 export type ProposalReward = { description: string; value: string; unit: string; threshold: string };
 export type ProposalContent = { rows: ProposalRow[]; promotions: ProposalPromotion[]; rewards: ProposalReward[]; reward_rules: string; reward_cumulative?: boolean; loading: string; payment: string; discounts: string; notes: string; contact: string; logo: string; show_images: boolean; attachment_ids: string[] };
 export const emptyProposalContent = (): ProposalContent => ({ rows: [], promotions: [], rewards: [], reward_rules: '', loading: '', payment: '', discounts: '', notes: '', contact: 'Tommaso Salti · Agenzia Mazzi Group · 331 7328488', logo: '', show_images: false, attachment_ids: [] });
