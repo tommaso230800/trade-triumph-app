@@ -97,7 +97,7 @@ export function useCanvass() {
           azienda:aziende(nome, logo_url),
           canvass_clienti(cliente_id, clienti(nome, azienda)),
           canvass_prodotti(prodotto_id, valore_override, prodotti(nome, codice)),
-          canvass_periodi(id, data_inizio, data_fine)
+          canvass_periodi(*)
         `)
         .order("data_inizio", { ascending: true });
 
@@ -119,7 +119,7 @@ export function useCanvassAttive() {
           azienda:aziende(nome, logo_url),
           canvass_clienti(cliente_id, clienti(nome, azienda)),
           canvass_prodotti(prodotto_id, valore_override, prodotti(nome, codice)),
-          canvass_periodi(id, data_inizio, data_fine)
+          canvass_periodi(*)
         `)
         .eq("attivo", true)
         .order("data_fine", { ascending: true });
@@ -146,7 +146,7 @@ export function useCanvassScadute() {
           azienda:aziende(nome, logo_url),
           canvass_clienti(cliente_id, clienti(nome, azienda)),
           canvass_prodotti(prodotto_id, valore_override, prodotti(nome, codice)),
-          canvass_periodi(id, data_inizio, data_fine)
+          canvass_periodi(*)
         `)
         .order("data_fine", { ascending: false });
 
