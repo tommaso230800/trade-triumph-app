@@ -41,6 +41,14 @@ export type Documento = {
   verificato: boolean;
   created_at: string;
   updated_at: string;
+  company_id: string | null;
+  customer_id: string | null;
+  reference_year: number | null;
+  category: string | null;
+  valid_from: string | null;
+  valid_until: string | null;
+  proposal_id: string | null;
+  proposal_version: number | null;
 };
 
 export const TIPO_LABEL: Record<DocumentoTipo, string> = {
@@ -61,14 +69,15 @@ export function useDocumenti(entita?: DocumentoEntita, entita_id?: string | null
   return useQuery({
     queryKey: ["documenti", entita, entita_id],
     queryFn: async () => {
-      let q = supabase.from("documenti").select("*").order("created_at", { ascending: false });
-      if (entita) q = q.eq("entita", entita);
-      if (entita_id) q = q.eq("entita_id", entita_id);
-      const { data, error } = await q;
-      if (error) throw error;
-      return data as Documento[];
+      const all: Documento[] = [];
+      for (let from=0;;from+=1000) {
+        let q = supabase.from("documenti").select("*").is("deleted_at", null).order("created_at", { ascending: false }).order('id').range(from,from+999);
+        if(entita_id && entita === 'azienda') q=q.or(`company_id.eq.${entita_id},and(entita.eq.azienda,entita_id.eq.${entita_id})`);
+        else if(entita_id && entita === 'cliente') q=q.or(`customer_id.eq.${entita_id},and(entita.eq.cliente,entita_id.eq.${entita_id})`);
+        else {if(entita)q=q.eq('entita',entita);if(entita_id)q=q.eq('entita_id',entita_id);}
+        const {data,error}=await q;if(error)throw error;all.push(...(data || []) as Documento[]);if(!data || data.length<1000)return all;
+      }
     },
-    enabled: entita !== undefined,
   });
 }
 
@@ -95,6 +104,14 @@ export function useUploadDocumento() {
       note?: string;
       tags?: string[];
       autoClassify?: boolean;
+      company_id?: string | null;
+      customer_id?: string | null;
+      reference_year?: number | null;
+      category?: string | null;
+      valid_from?: string | null;
+      valid_until?: string | null;
+      proposal_id?: string | null;
+      proposal_version?: number | null;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non autenticato");
@@ -124,10 +141,18 @@ export function useUploadDocumento() {
           hash_sha256: hash,
           tags: input.tags ?? [],
           note: input.note ?? null,
+          company_id: input.company_id ?? (input.entita === 'azienda' ? input.entita_id : null),
+          customer_id: input.customer_id ?? (input.entita === 'cliente' ? input.entita_id : null),
+          reference_year: input.reference_year ?? null,
+          category: input.category ?? null,
+          valid_from: input.valid_from ?? null,
+          valid_until: input.valid_until ?? null,
+          proposal_id: input.proposal_id ?? null,
+          proposal_version: input.proposal_version ?? null,
         })
         .select()
         .single();
-      if (insErr) throw insErr;
+      if (insErr) { await supabase.storage.from('documenti').remove([path]); throw insErr; }
 
       // Auto-classifica in background (best-effort)
       if (input.autoClassify !== false) {
