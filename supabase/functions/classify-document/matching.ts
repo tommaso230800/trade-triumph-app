@@ -2,7 +2,8 @@ export type Entity = { id:string; nome:string; partita_iva?:string|null; codice_
 export type Identity = { name?:string; vat?:string; code?:string; address?:string };
 const norm=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 export function matchIdentity(identity:Identity,entities:Entity[]) {
- const candidates=entities.map(e=>{let score=0;const vat=norm(identity.vat||'');if(vat&&[e.partita_iva,e.codice_fiscale].some(x=>x&&norm(x)===vat))score=1;
+ const tax=(s:string)=>norm(s).replace(/^it(?=\d{11}$)/,'');
+ const candidates=entities.map(e=>{let score=0;const vat=tax(identity.vat||'');if(vat&&[e.partita_iva,e.codice_fiscale].some(x=>x&&tax(x)===vat))score=1;
  if(identity.code&&e.codice_cliente&&norm(identity.code)===norm(e.codice_cliente))score=Math.max(score,.98);
  if(identity.name&&norm(identity.name)===norm(e.nome))score=Math.max(score,.88);
  if(score&&identity.address&&e.indirizzo&&norm(identity.address)===norm(e.indirizzo))score=Math.min(1,score+.1);
