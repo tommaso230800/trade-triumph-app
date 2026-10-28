@@ -22,6 +22,7 @@ import { periodStart, periodEnd, type DashboardPeriod } from "@/lib/periodRange"
 import { supabase } from "@/integrations/supabase/client";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerClose } from "@/components/ui/drawer";
 import type { ProformaData } from "@/components/ordini/ProformaDialog";
 import {
