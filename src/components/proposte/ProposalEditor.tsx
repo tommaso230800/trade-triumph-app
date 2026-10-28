@@ -9,6 +9,7 @@ import { emptyProposalContent,euro,decimalPrice,validateProposalExport,type Prop
 import { PosterOfferEditor } from './PosterOfferEditor';
 import { downloadPosterImages } from '@/lib/posterExport';
 import { generateProposalPdf } from '@/lib/proposalPdf';
+import { productImage } from '@/lib/productImages';
 import { useUploadDocumento,getDocumentoSignedUrl } from '@/hooks/useDocumenti';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
