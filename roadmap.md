@@ -1,5 +1,13 @@
 # Roadmap
 
+## Aggiornamento archivio, proposte, locandine e riordino (28 ottobre)
+- [ ] Ridisegnare archivio e proposte con filtri, anteprime e azioni iPhone
+- [ ] Verificare prezzi salvati/PDF e completare offerte grafiche con foto reali ed esportazione immagine
+- [ ] Eliminazione persistente con protezione dello storico accettato e dei file condivisi
+- [ ] Riconoscimento documenti dal contenuto, associazioni verificabili e correzioni manuali preservate
+- [ ] Unificare ultimo ordine cliente–azienda fra Ordini, Riordino e Home; controllare Calonaci–Casoni
+- [ ] Eseguire test funzionali e verifiche 375/390/393/430 px; documentare limiti reali
+
 ## Locandine, proposte e archivio collegati
 - [x] Proposte salvate/versionate, editor, prodotti, promozioni/PFA e PDF A4
 - [x] Accettazione atomica con opzioni indipendenti, storico listino e condizioni condivise implementata; PDF accettati protetti
