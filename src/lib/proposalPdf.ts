@@ -1,14 +1,16 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { CommercialProposal } from '@/hooks/useCommercialProposals';
-import { euro,potentialReward } from './commercialProposal';
+import { generatePosterPdf } from './posterExport';
+import { euro,potentialReward,decimalPrice,validateProposalExport } from './commercialProposal';
 async function imageData(url:string) {
  if(!url) return null;
- try { const res=await fetch(url); if(!res.ok)return null; const blob=await res.blob(); return await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=reject;reader.readAsDataURL(blob);}); } catch {return null;}
+ try { const res=await fetch(url); if(!res.ok)throw new Error('Immagine non disponibile'); const blob=await res.blob(); return await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=reject;reader.readAsDataURL(blob);}); } catch {throw new Error('Logo o fotografia non disponibile: sostituisci l’immagine prima di esportare.');}
 }
 export async function generateProposalPdf(p:CommercialProposal,company:string,customer:string) {
+ validateProposalExport(p);if(p.kind==='locandina')return generatePosterPdf(p,company);
  const doc=new jsPDF({format:'a4',unit:'mm'}); const c=p.content; let y=16;
- const logo=await imageData(c.logo); if(logo) {const props=doc.getImageProperties(logo);const h=Math.min(25,45*props.height/props.width);doc.addImage(logo, 'PNG',82.5,y,45,h);y+=h+8;}
+ const logo=await imageData(c.logo); if(logo) {const props=doc.getImageProperties(logo);const scale=Math.min(45/props.width,25/props.height);const w=props.width*scale,h=props.height*scale;doc.addImage(logo,props.fileType,(210-w)/2,y,w,h);y+=h+8;}
  const text=(s:string,size=10,bold=false)=>{if(!s.trim())return;doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);const lines=doc.splitTextToSize(s,178);for(const line of lines){if(y>276){doc.addPage();y=18;}doc.text(line,16,y);y+=size*0.45;}y+=3;};
  const section=(s:string)=>{if(y>256){doc.addPage();y=18;}y+=3;text(s,12,true);};
  text(p.title || `${p.kind==='locandina'?'Promozione':'Proposta commerciale'} ${company} ${p.year}`,16,true);
@@ -18,9 +20,9 @@ export async function generateProposalPdf(p:CommercialProposal,company:string,cu
  if(c.rewards.length){section('Premio Fine Anno (PFA)');for(const r of c.rewards)text(`${r.value}${r.unit==='percentuale'?'%': ' EUR'} · ${r.description}${Number(r.threshold)>0?` · Soglia ${euro(Number(r.threshold))}`:''}`);text(c.reward_rules);const potential=potentialReward(c.rewards,c.reward_cumulative===true);if(potential!==null)text(`Totale PFA potenziale: ${potential}%`,10,true);text('Premio maturato: N/D (da verificare sui dati annuali)',9);}
  if(c.rows.length){section('Listino prodotti e prezzi');
  if(c.show_images || p.kind==='locandina'){
-  for(const r of c.rows){const image=await imageData(r.image);if(!image)continue;doc.setFontSize(11);const lines=doc.splitTextToSize(`${r.name} ${r.format}`,125);const height=Math.max(36,lines.length*5+18);if(y+height>276){doc.addPage();y=18;}const props=doc.getImageProperties(image); const h=Math.min(28,28*props.height/props.width);doc.addImage(image,'PNG',16,y,28,h);const start=y;doc.setFont('helvetica','bold');doc.text(lines,49,y+5);doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(`${r.price===''?'N/D':euro(Number(r.price))} / ${r.unit || 'unità N/D'}`,49,y+lines.length*5+7);y=start+height;}
+  for(const r of c.rows){const image=await imageData(r.image);if(!image)continue;doc.setFontSize(11);const lines=doc.splitTextToSize(`${r.name} ${r.format}`,125);const height=Math.max(36,lines.length*5+18);if(y+height>276){doc.addPage();y=18;}const props=doc.getImageProperties(image); const scale=Math.min(28/props.width,28/props.height);const w=props.width*scale,h=props.height*scale;doc.addImage(image,props.fileType,16+(28-w)/2,y,w,h);const start=y;doc.setFont('helvetica','bold');doc.text(lines,49,y+5);doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(`${r.price===''?'N/D':euro(decimalPrice(r.price) || 0)} / ${r.unit || 'unità N/D'}`,49,y+lines.length*5+7);y=start+height;}
  }
- autoTable(doc,{startY:y,margin:{left:16,right:16,top:18,bottom:18},head:[['Categoria','Prodotto e formato','Prezzo / unità · IVA']],body:c.rows.map(r=>[r.category || '—',`${r.name} ${r.format}\n${r.description || ''}${r.notes?`\n${r.notes}`:''}`,`${r.price===''?'N/D':euro(Number(r.price))} / ${r.unit || 'N/D'}\nIVA ${r.vat_mode || 'N/D'} ${r.vat_rate!==''?`${r.vat_rate}%`:''}`]),rowPageBreak:'avoid',styles:{fontSize:9,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:35,textColor:255},columnStyles:{0:{cellWidth:38},1:{cellWidth:87},2:{cellWidth:53,halign:'right'}},showHead:'everyPage'});
+ autoTable(doc,{startY:y,margin:{left:16,right:16,top:18,bottom:18},head:[['Categoria','Prodotto e formato','Prezzo / unità · IVA']],body:c.rows.map(r=>[r.category || '—',`${r.name} ${r.format}\n${r.description || ''}${r.notes?`\n${r.notes}`:''}`,`${r.price===''?'N/D':euro(decimalPrice(r.price) || 0)} / ${r.unit || 'N/D'}\nIVA ${r.vat_mode || 'N/D'} ${r.vat_rate!==''?`${r.vat_rate}%`:''}`]),rowPageBreak:'avoid',styles:{fontSize:9,cellPadding:2,overflow:'linebreak'},headStyles:{fillColor:35,textColor:255},columnStyles:{0:{cellWidth:38},1:{cellWidth:87},2:{cellWidth:53,halign:'right'}},showHead:'everyPage'});
  y=(doc as unknown as {lastAutoTable:{finalY:number}}).lastAutoTable.finalY+7;
  }
  if(c.promotions.length){section('Promozioni');autoTable(doc,{startY:y,margin:{left:16,right:16,top:18,bottom:18},head:[['Prodotto','Promozione','Minimo ordine / Note']],body:c.promotions.map(t=>[t.title,`${t.type==='sconto_percentuale'?`Sconto ${t.value}%`:t.type==='prezzo_fisso'?`Prezzo ${euro(Number(t.value))} / pezzo`:`${t.buy} acquistati + ${t.gift} omaggio (${t.unit || 'N/D'})`}\n${t.start&&t.end?`${t.start} / ${t.end}`:`${t.periods || 'N/D'} periodi di ${t.months || 'N/D'} mesi · date da concordare`}`,`${t.minimum || 'N/D'} ${t.unit}\n${t.notes}`]),rowPageBreak:'avoid',styles:{fontSize:9,cellPadding:2},headStyles:{fillColor:35,textColor:255},showHead:'everyPage'});y=(doc as unknown as {lastAutoTable:{finalY:number}}).lastAutoTable.finalY+7;}
