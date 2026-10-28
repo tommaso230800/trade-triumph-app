@@ -34,6 +34,8 @@ const Diagnostica = lazy(() => import("./pages/Diagnostica"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 const Problematiche = lazy(() => import("./pages/Problematiche"));
 const PannelloDati = lazy(() => import("./pages/PannelloDati"));
+const Proposte = lazy(() => import("./pages/Proposte"));
+const FileDocumenti = lazy(() => import("./pages/FileDocumenti"));
 const PreparaVisita = lazy(() => import("./pages/PreparaVisita"));
 const MappaClienti = lazy(() => import("./pages/MappaClienti"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -65,6 +67,8 @@ const App = () => (
                 <Route path="/clienti/consorzio/:slug" element={<ConsorzioDettaglio />} />
                 <Route path="/ordini" element={<Ordini />} />
                 <Route path="/pannello-dati" element={<PannelloDati />} />
+                <Route path="/proposte" element={<Proposte />} />
+                <Route path="/file-documenti" element={<FileDocumenti />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/analytics/azienda/:id" element={<AnalyticsAzienda />} />
                 {/* Vecchio percorso KPI: reindirizza ad Analytics */}

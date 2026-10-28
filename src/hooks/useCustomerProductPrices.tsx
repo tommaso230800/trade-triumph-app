@@ -16,6 +16,7 @@ export type CustomerProductPrice = {
   note: string | null;
   created_at: string;
   updated_at: string;
+  proposal_id?: string | null;
 };
 
 export function useCustomerProductPrices(customerId?: string, companyId?: string) {

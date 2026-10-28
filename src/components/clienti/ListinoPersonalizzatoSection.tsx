@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { format } from "date-fns";
 import { Tag, Search, RotateCcw, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,6 +76,7 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
   const { data: productHistory } = useClientProductHistory(clienteId, selectedAziendaId || undefined);
   const upsertPrice = useUpsertCustomerProductPrice();
   const deletePrice = useDeleteCustomerProductPrice();
+  const {data:priceHistory=[]}=useQuery({queryKey:['customer_price_history',clienteId,selectedAziendaId],enabled:!!selectedAziendaId,queryFn:async()=>{const {data,error}=await supabase.from('customer_price_history').select('*').eq('customer_id',clienteId).eq('company_id',selectedAziendaId).order('created_at',{ascending:false});if(error)throw error;return data;}});
 
   const aziendeConStorico = useMemo(
     () => new Set(reorderData.map((rt) => rt.azienda_id)),
@@ -224,6 +228,8 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
                   <div className="flex-shrink-0 text-right">
                     <p className="tabular-nums font-semibold">{formatCurrency(resolved.price)}</p>
                     <p className="text-[10px] text-muted-foreground">{PRICE_SOURCE_LABELS[resolved.source]}</p>
+                    {custom?.valid_from&&<p className="text-xs text-muted-foreground">Dal {custom.valid_from}</p>}
+                    {custom?.proposal_id&&<Link className="text-xs text-primary underline" to={`/proposte?id=${custom.proposal_id}`}>Proposta di origine</Link>}
                   </div>
                 </div>
 
@@ -280,6 +286,7 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
                     </Button>
                   )}
                 </div>
+                {priceHistory.some(h=>h.product_id===prodotto.id)&&<details className="mt-3"><summary className="cursor-pointer text-xs text-muted-foreground">Storico listino</summary>{priceHistory.filter(h=>h.product_id===prodotto.id).map(h=><p key={h.id} className="py-1 text-xs">{formatCurrency(h.custom_price)} · {h.valid_from || 'Decorrenza N/D'} → {h.valid_until || '—'}</p>)}</details>}
               </div>
             ))}
           </div>

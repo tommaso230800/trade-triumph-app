@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { MainLayout } from '@/components/layout/MainLayout';
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +24,7 @@ import {
   Search,
   Phone,
   ShoppingCart,
+  RefreshCw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -44,11 +44,10 @@ const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
 
 export default function RiordinoForecast() {
-  const { data, isLoading } = useReorderForecast();
+  const { data, isLoading, isError, isFetching, refetch, dataUpdatedAt } = useReorderForecast();
   const [tab, setTab] = useState<"tutti" | "critica" | "alta" | "media">("critica");
   const [search, setSearch] = useState("");
   const [aziendaFilter, setAziendaFilter] = useState<string>("all");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ordinaPrefill, setOrdinaPrefill] = useState<OrdinePrefill | null>(null);
   const queryClient = useQueryClient();
 
@@ -122,10 +121,8 @@ export default function RiordinoForecast() {
     });
 
   return (
-    <div className="flex min-h-[100dvh] bg-background">
-      <Sidebar mobileOpen={mobileMenuOpen} onMobileOpenChange={setMobileMenuOpen} />
-      <main className="flex-1 overflow-x-hidden pb-24 md:pb-8 md:pl-64">
-        <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
+    <MainLayout>
+        <div className="min-w-0 space-y-6">
           <header className="space-y-1">
             <div className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" />
@@ -133,10 +130,9 @@ export default function RiordinoForecast() {
                 Previsione Riordino
               </h1>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Stima automatica del prossimo riordino per ogni prodotto x cliente, basata sullo storico ordini.
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted-foreground">{dataUpdatedAt ? `Ultimo aggiornamento: ${new Date(dataUpdatedAt).toLocaleString('it-IT')}` : 'Aggiornamento non ancora disponibile'}</p><Button variant="outline" disabled={isFetching} onClick={()=>refetch()}><RefreshCw className="mr-2 h-4 w-4"/>{isFetching?'Aggiornamento…':'Aggiorna'}</Button></div>
           </header>
+          {isError && <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive p-4 text-sm">Non riesco ad aggiornare Riordino. Controlla la connessione e riprova.<Button variant="outline" onClick={()=>refetch()}>Riprova</Button></div>}
 
           {/* KPI cards */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -201,7 +197,7 @@ export default function RiordinoForecast() {
           </Card>
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-            <TabsList>
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-2 sm:grid-cols-4">
               <TabsTrigger value="critica">In rottura</TabsTrigger>
               <TabsTrigger value="alta">Entro 7 gg</TabsTrigger>
               <TabsTrigger value="media">Entro 30 gg</TabsTrigger>
@@ -263,7 +259,7 @@ export default function RiordinoForecast() {
                     <Skeleton key={i} className="h-14 w-full" />
                   ))}
                 </div>
-              ) : filtered.length === 0 ? (
+              ) : isError ? <p className="p-4 text-sm text-muted-foreground">Dati non disponibili</p> : filtered.length === 0 ? (
                 <div className="p-8 text-center text-sm text-muted-foreground">
                   Nessun prodotto in questa categoria.
                 </div>
@@ -393,7 +389,6 @@ export default function RiordinoForecast() {
             </CardContent>
           </Card>
         </div>
-      </main>
       <NuovoOrdineDialog
         open={!!ordinaPrefill}
         onOpenChange={(v) => {
@@ -406,8 +401,7 @@ export default function RiordinoForecast() {
           toast.success("Ordine creato: lo trovi nella pagina Ordini.");
         }}
       />
-      <BottomNav onOpenMore={() => setMobileMenuOpen(true)} moreActive={mobileMenuOpen} />
-    </div>
+    </MainLayout>
   );
 }
 

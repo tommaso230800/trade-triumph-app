@@ -16,6 +16,8 @@ import {
   Repeat,
   Gauge,
   Activity,
+  FileText,
+  FolderOpen,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -49,6 +51,8 @@ const baseNavigation: NavItem[] = [
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
+  { name: "Locandine e proposte", href: "/proposte", icon: FileText },
+  { name: "File e documenti", href: "/file-documenti", icon: FolderOpen },
   { name: "Riordino", href: "/riordino", icon: Repeat },
   { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge },
   { name: "Aziende", href: "/aziende", icon: Building2 },

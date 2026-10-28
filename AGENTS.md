@@ -1,4 +1,7 @@
 # Architecture rules
+- Keep commercial proposals isolated from operational prices and conditions until the owner-authorized, row-locked acceptance RPC commits once; preserve accepted snapshots/PDFs and normalize explicit price units/IVA into the existing per-piece price source.
+- Use the existing private document archive for proposal PDFs and references with explicit company/customer/year metadata; shared archive views must read the same records.
+- Use MainLayout for Riordino and paginate both historical orders and lines; query refresh must include errors and successful update timestamps.
 - Use the canonical metrics engine for economic inclusion, order dates and saved revenue; audits must not alter commercial records.
 - Share paginated read-only order loading between the data panel and order audit so comparisons cover the complete archive.
 - Keep document comparison local and explicit: read PDF text with PDF.js and require the user to enter declared totals and matching period, preventing invented extracted values or accidental order imports.
