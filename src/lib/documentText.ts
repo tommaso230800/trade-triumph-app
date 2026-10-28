@@ -1,0 +1,1 @@
+export async function spreadsheetText(file:File){const XLSX=await import('xlsx');const workbook=XLSX.read(await file.arrayBuffer(),{type:'array'});return workbook.SheetNames.map(name=>`${name}\n${XLSX.utils.sheet_to_csv(workbook.Sheets[name])}`).join('\n').slice(0,180000);}

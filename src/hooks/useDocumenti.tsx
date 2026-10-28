@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { spreadsheetText } from "@/lib/documentText";
 
 export type DocumentoTipo =
   | "ordine_originale"
@@ -49,6 +50,8 @@ export type Documento = {
   valid_until: string | null;
   proposal_id: string | null;
   proposal_version: number | null;
+  association_status: "automatic"|"manual"|"review";
+  association_details: any;
 };
 
 export const TIPO_LABEL: Record<DocumentoTipo, string> = {
@@ -112,11 +115,13 @@ export function useUploadDocumento() {
       valid_until?: string | null;
       proposal_id?: string | null;
       proposal_version?: number | null;
+      generated?:boolean;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non autenticato");
 
-      const ext = input.file.name.split(".").pop() || "bin";
+      const hash = await sha256Hex(input.file);
+      if(hash&&!input.generated){const {data:existing,error}=await supabase.from('documenti').select('*').eq('hash_sha256',hash).is('deleted_at',null).limit(1).maybeSingle();if(error)throw error;if(existing){toast.info('File già presente: conservato un solo documento con i suoi collegamenti.');return existing as Documento;}}
       const safeName = input.file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
       const path = `${user.id}/${input.entita}/${crypto.randomUUID()}-${safeName}`;
 
@@ -125,11 +130,10 @@ export function useUploadDocumento() {
         .upload(path, input.file, { contentType: input.file.type, upsert: false });
       if (upErr) throw upErr;
 
-      const hash = await sha256Hex(input.file);
-
       const { data: row, error: insErr } = await supabase
         .from("documenti")
         .insert({
+          association_status: input.generated?'automatic':input.autoClassify===false || input.entita_id || input.company_id || input.customer_id ? "manual" : "review",
           user_id: user.id,
           entita: input.entita,
           entita_id: input.entita_id ?? null,
@@ -156,9 +160,9 @@ export function useUploadDocumento() {
 
       // Auto-classifica in background (best-effort)
       if (input.autoClassify !== false) {
-        supabase.functions
-          .invoke("classify-document", { body: { documento_id: row.id } })
-          .catch(() => void 0);
+        const text=/\.(xlsx?|xlsm|csv)$/i.test(input.file.name)?await spreadsheetText(input.file).catch(()=>""):undefined;
+        const {error:analysisError}=await supabase.functions.invoke("classify-document", { body: { documento_id: row.id, text } });
+        if(analysisError)toast.warning("File salvato; associazioni da verificare.");
       }
       return row as Documento;
     },
@@ -166,7 +170,7 @@ export function useUploadDocumento() {
       qc.invalidateQueries({ queryKey: ["documenti"] });
       toast.success(`Documento "${v.file.name}" caricato`);
     },
-    onError: (e: any) => toast.error("Errore upload: " + e.message),
+    onError: () => toast.error("Caricamento non riuscito. Riprova."),
   });
 }
 

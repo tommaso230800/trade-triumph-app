@@ -1,10 +1,20 @@
-export type ProposalRow = { product_id: string; category: string; name: string; format: string; description: string; image: string; price: string; unit: string; vat_mode: string; vat_rate: string; notes: string };
+export type ProposalRow = { product_id: string; code?:string; price_source?:string; category: string; name: string; format: string; description: string; image: string; price: string; unit: string; vat_mode: string; vat_rate: string; notes: string };
 export type ProposalPromotion = { title: string; product_ids: string[]; buy: string; gift: string; minimum: string; unit: string; start: string; end: string; periods: string; months: string; notes: string; type?: string; value?: string };
 export type ProposalReward = { description: string; value: string; unit: string; threshold: string };
-export type ProposalContent = { rows: ProposalRow[]; promotions: ProposalPromotion[]; rewards: ProposalReward[]; reward_rules: string; reward_cumulative?: boolean; loading: string; payment: string; discounts: string; notes: string; contact: string; logo: string; show_images: boolean; attachment_ids: string[] };
+export type PosterOffer = { mode:'price'|'gift'|'combined'; previous_price:string; buy:string; gift:string; gift_product_id:string; minimum:string; conditions:string };
+export type ProposalContent = { poster?:PosterOffer; rows: ProposalRow[]; promotions: ProposalPromotion[]; rewards: ProposalReward[]; reward_rules: string; reward_cumulative?: boolean; loading: string; payment: string; discounts: string; notes: string; contact: string; logo: string; show_images: boolean; attachment_ids: string[] };
 export const emptyProposalContent = (): ProposalContent => ({ rows: [], promotions: [], rewards: [], reward_rules: '', loading: '', payment: '', discounts: '', notes: '', contact: 'Tommaso Salti · Agenzia Mazzi Group · 331 7328488', logo: '', show_images: false, attachment_ids: [] });
 export const euro = (n: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n);
 export const todayRome = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date());
+export function decimalPrice(value:string):number|null { const v=value.trim().replace(',','.');return /^(?:\d+(?:\.\d*)?|\.\d+)$/.test(v)&&Number.isFinite(Number(v))?Number(v):null; }
+export function validateProposalExport(p:{kind:string;content:ProposalContent}) {
+ if(!p.content.rows.length)throw new Error('Seleziona almeno un prodotto prima di esportare.');
+ for(const r of p.content.rows){if(decimalPrice(r.price)===null||!r.unit||!r.vat_mode||decimalPrice(r.vat_rate)===null)throw new Error(`Completa prezzo, unità e IVA: ${r.name}`);}
+ if(p.kind==='locandina'){
+  if(p.content.rows.some(r=>!r.image))throw new Error('Carica una fotografia reale per ogni prodotto della locandina.');
+  const t=p.content.poster;if(t&&t.mode!=='price'&&(!/^\d+$/.test(t.buy)||Number(t.buy)<=0||!/^\d+$/.test(t.gift)||Number(t.gift)<=0))throw new Error('Indica cartoni acquistati e omaggio maggiori di zero.');
+ }
+}
 export function proposalStatus(p: { status: string; valid_until: string | null }, today = todayRome()) { return p.status !== 'accettata' && p.status !== 'rifiutata' && p.valid_until && p.valid_until < today ? 'scaduta' : p.status; }
 export function normalizedProposalPrice(row: ProposalRow, product: { pezzi_per_cartone: number; cartoni_per_strato: number; strati: number }) {
  const factors: Record<string, number> = { pezzo: 1, cartone: product.pezzi_per_cartone, strato: product.pezzi_per_cartone * product.cartoni_per_strato, pallet: product.pezzi_per_cartone * product.cartoni_per_strato * product.strati };

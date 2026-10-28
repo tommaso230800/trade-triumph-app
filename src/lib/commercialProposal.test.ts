@@ -1,7 +1,12 @@
 import { describe,it,expect } from 'vitest';
-import { normalizedProposalPrice,proposalStatus,potentialReward,type ProposalRow } from './commercialProposal';
+import { normalizedProposalPrice,proposalStatus,potentialReward,decimalPrice,validateProposalExport,emptyProposalContent,type ProposalRow } from './commercialProposal';
 const row:ProposalRow={product_id:'p',category:'',name:'Tonica',description:'',format:'1L',image:'',price:'0.50',unit:'pezzo',vat_mode:'esclusa',vat_rate:'22',notes:''};
 describe('Prezzi proposta',()=>{
+ it('accetta virgola decimale 0,55',()=>expect(decimalPrice('0,55')).toBe(.55));
+ it('distingue campo vuoto e zero',()=>{expect(decimalPrice('')).toBeNull();expect(decimalPrice('0')).toBe(0);});
+ it('blocca prezzi negativi',()=>expect(decimalPrice('-1')).toBeNull());
+ it('blocca export senza articoli',()=>expect(()=>validateProposalExport({kind:'proposta',content:emptyProposalContent()})).toThrow());
+ it('blocca locandina senza fotografia reale',()=>expect(()=>validateProposalExport({kind:'locandina',content:{...emptyProposalContent(),rows:[row]}})).toThrow());
  it('preserva 0,50 euro per pezzo IVA esclusa',()=>expect(normalizedProposalPrice(row,{pezzi_per_cartone:12,cartoni_per_strato:12,strati:5})).toBe(0.5));
  it('converte cartoni soltanto con conversione reale',()=>expect(normalizedProposalPrice({...row,price:'6',unit:'cartone'},{pezzi_per_cartone:12,cartoni_per_strato:12,strati:5})).toBe(0.5));
  it('non deduce unità assente',()=>expect(normalizedProposalPrice({...row,unit:''},{pezzi_per_cartone:12,cartoni_per_strato:12,strati:5})).toBeNull());

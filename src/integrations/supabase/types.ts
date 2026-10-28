@@ -1586,6 +1586,8 @@ export type Database = {
       }
       documenti: {
         Row: {
+          association_details: Json
+          association_status: string
           category: string | null
           classificazione_ai: Json | null
           company_id: string | null
@@ -1614,6 +1616,8 @@ export type Database = {
           verificato: boolean
         }
         Insert: {
+          association_details?: Json
+          association_status?: string
           category?: string | null
           classificazione_ai?: Json | null
           company_id?: string | null
@@ -1642,6 +1646,8 @@ export type Database = {
           verificato?: boolean
         }
         Update: {
+          association_details?: Json
+          association_status?: string
           category?: string | null
           classificazione_ai?: Json | null
           company_id?: string | null
@@ -3462,6 +3468,32 @@ export type Database = {
           },
         ]
       }
+      proposal_removals: {
+        Row: {
+          proposal_id: string
+          removed_at: string
+          user_id: string
+        }
+        Insert: {
+          proposal_id: string
+          removed_at?: string
+          user_id: string
+        }
+        Update: {
+          proposal_id?: string
+          removed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_removals_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: true
+            referencedRelation: "commercial_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       provvigioni_condizioni: {
         Row: {
           applica_su_resi: boolean
@@ -4637,6 +4669,7 @@ export type Database = {
         Returns: undefined
       }
       purge_cestino_expired: { Args: never; Returns: undefined }
+      remove_commercial_proposal: { Args: { p_id: string }; Returns: undefined }
       trova_condizione_provvigione: {
         Args: {
           p_azienda_id: string
