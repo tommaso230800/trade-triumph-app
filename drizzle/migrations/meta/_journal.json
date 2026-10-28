@@ -64,6 +64,13 @@
       "when": 1793200369626,
       "tag": "0008_map_proposal_promotion_values",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793202062990,
+      "tag": "0009_proposal_removal_and_document_associations",
+      "breakpoints": true
     }
   ]
 }
