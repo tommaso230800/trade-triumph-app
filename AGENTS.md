@@ -1,7 +1,7 @@
 # Architecture rules
 - Keep commercial proposals isolated from operational prices and conditions until the owner-authorized, row-locked acceptance RPC commits once; preserve accepted snapshots/PDFs and normalize explicit price units/IVA into the existing per-piece price source.
 - Use the existing private document archive for proposal PDFs and references with explicit company/customer/year metadata; shared archive views must read the same records.
-- Use MainLayout for Riordino and paginate both historical orders and lines; query refresh must include errors and successful update timestamps.
+- Use the shared header-order pair engine for Home, Riordino and reorder alerts, paginating all valid commercial dates; product forecasts remain a separately labelled drilldown.
 - Use the canonical metrics engine for economic inclusion, order dates and saved revenue; audits must not alter commercial records.
 - Share paginated read-only order loading between the data panel and order audit so comparisons cover the complete archive.
 - Keep document comparison local and explicit: read PDF text with PDF.js and require the user to enter declared totals and matching period, preventing invented extracted values or accidental order imports.
@@ -12,3 +12,7 @@
 - Send order PDFs through the agency Gmail connector server-side with an authenticated owner-scoped snapshot and unique persisted attempt ID; immutable PDF copies and outcome records prevent silent stale attachments and duplicate retries.
 - Share proforma PDF capture between downloads and email attachments, reloading the order before capture and checking its snapshot version before Gmail submission.
 - Encode order email MIME and PDF bytes in bounded chunks without per-byte arrays, so large attachments stay within the email function memory budget.
+
+- Persist proposal removal separately from immutable accepted snapshots; retain accepted conditions and shared archive/image references.
+- Match document identities from content against accessible records; manual association status is authoritative and must survive reanalysis.
+- Generate dedicated poster exports from saved proposal content, awaiting real image decoding and preserving aspect ratio.
