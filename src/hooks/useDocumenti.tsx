@@ -189,9 +189,9 @@ export function useDeleteDocumento() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (doc: Documento) => {
-      await supabase.storage.from("documenti").remove([doc.storage_path]);
       const { error } = await supabase.from("documenti").delete().eq("id", doc.id);
       if (error) throw error;
+      // Soft deletion preserves the file for trash restoration and accepted-document history.
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documenti"] });

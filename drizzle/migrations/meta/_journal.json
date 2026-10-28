@@ -43,6 +43,13 @@
       "when": 1793199501014,
       "tag": "0005_commercial_proposals_archive_acceptance",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793199937966,
+      "tag": "0006_lock_accepted_proposal_files",
+      "breakpoints": true
     }
   ]
 }

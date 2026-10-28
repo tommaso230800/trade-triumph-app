@@ -4626,6 +4626,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_accepted_proposal_file: { Args: { p_path: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       merge_prodotti: {
         Args: {

@@ -18,7 +18,7 @@ export function useCommercialProposals(companyId?: string, customerId?: string) 
 }
 export async function saveProposal(p: CommercialProposal) {
  const {data:{user}}=await supabase.auth.getUser(); if(!user) throw new Error('Accedi per salvare');
- const values={company_id:p.company_id,customer_id:p.customer_id || null,year:p.year,kind:p.kind,title:p.title,status:p.status,valid_from:p.valid_from || null,valid_until:p.valid_until || null,content:p.content as unknown as Json,apply_prices:p.apply_prices,apply_conditions:p.apply_conditions,parent_id:p.parent_id,user_id:p.user_id || user.id};
+ const values={company_id:p.company_id,customer_id:p.customer_id || null,year:p.year,kind:p.kind,title:p.title,status:p.status,valid_from:p.valid_from || null,valid_until:p.valid_until || null,content:p.content as unknown as Json,apply_prices:p.apply_prices,apply_conditions:p.apply_conditions,parent_id:p.parent_id,user_id:p.id?p.user_id:user.id};
  const q=p.id ? supabase.from('commercial_proposals').update(values).eq('id',p.id).eq('version',p.version) : supabase.from('commercial_proposals').insert(values);
  const {data,error}=await q.select().single(); if(error) throw error; return {...data,content:data.content as unknown as ProposalContent} as CommercialProposal;
 }

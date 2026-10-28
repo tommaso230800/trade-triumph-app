@@ -1,0 +1,5 @@
+CREATE OR REPLACE FUNCTION public.is_accepted_proposal_file(p_path text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM public.documenti d JOIN public.proposal_acceptances a ON d.id=a.pdf_document_id OR d.id=a.evidence_document_id WHERE d.storage_path=p_path); $$;
+REVOKE ALL ON FUNCTION public.is_accepted_proposal_file(text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.is_accepted_proposal_file(text) TO authenticated;
+CREATE POLICY accepted_proposal_files_no_update ON storage.objects AS RESTRICTIVE FOR UPDATE TO authenticated USING(bucket_id<>'documenti' OR NOT public.is_accepted_proposal_file(name)) WITH CHECK(bucket_id<>'documenti' OR NOT public.is_accepted_proposal_file(name));
+CREATE POLICY accepted_proposal_files_no_delete ON storage.objects AS RESTRICTIVE FOR DELETE TO authenticated USING(bucket_id<>'documenti' OR NOT public.is_accepted_proposal_file(name));

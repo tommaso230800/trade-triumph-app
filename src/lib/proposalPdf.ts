@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { CommercialProposal } from '@/hooks/useCommercialProposals';
-import { euro } from './commercialProposal';
+import { euro,potentialReward } from './commercialProposal';
 async function imageData(url:string) {
  if(!url) return null;
  try { const res=await fetch(url); if(!res.ok)return null; const blob=await res.blob(); return await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=reject;reader.readAsDataURL(blob);}); } catch {return null;}
@@ -15,10 +15,10 @@ export async function generateProposalPdf(p:CommercialProposal,company:string,cu
  text(`${company} · ${p.year}`,10); if(customer)text(`Cliente: ${customer}`,12,true);
  text(`AMG-${p.id.slice(0,8).toUpperCase()} · Versione ${p.version} · ${new Date(p.created_at).toLocaleDateString('it-IT')}`,8);
  if(p.valid_from || p.valid_until)text(`Validità: ${p.valid_from || 'da concordare'} / ${p.valid_until || 'da concordare'}`,9);
- if(c.rewards.length){section('Premio Fine Anno (PFA)');for(const r of c.rewards)text(`${r.value}${r.unit==='percentuale'?'%': ' EUR'} · ${r.description}${Number(r.threshold)>0?` · Soglia ${euro(Number(r.threshold))}`:''}`);text(c.reward_rules);text('Premio maturato: N/D (da verificare sui dati annuali)',9);}
+ if(c.rewards.length){section('Premio Fine Anno (PFA)');for(const r of c.rewards)text(`${r.value}${r.unit==='percentuale'?'%': ' EUR'} · ${r.description}${Number(r.threshold)>0?` · Soglia ${euro(Number(r.threshold))}`:''}`);text(c.reward_rules);const potential=potentialReward(c.rewards,c.reward_cumulative===true);if(potential!==null)text(`Totale PFA potenziale: ${potential}%`,10,true);text('Premio maturato: N/D (da verificare sui dati annuali)',9);}
  if(c.rows.length){section('Listino prodotti e prezzi');
  if(c.show_images || p.kind==='locandina'){
-  for(const r of c.rows){if(y>237){doc.addPage();y=18;}const image=await imageData(r.image);if(image){const props=doc.getImageProperties(image); const h=Math.min(28,28*props.height/props.width);doc.addImage(image,'PNG',16,y,28,h);}const start=y;doc.setFontSize(11);doc.setFont('helvetica','bold');const lines=doc.splitTextToSize(`${r.name} ${r.format}`,125);doc.text(lines,49,y+5);doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(`${r.price===''?'N/D':euro(Number(r.price))} / ${r.unit || 'unità N/D'}`,49,y+18);y=start+36;}
+  for(const r of c.rows){doc.setFontSize(11);const lines=doc.splitTextToSize(`${r.name} ${r.format}`,125);const height=Math.max(36,lines.length*5+18);if(y+height>276){doc.addPage();y=18;}const image=await imageData(r.image);if(image){const props=doc.getImageProperties(image); const h=Math.min(28,28*props.height/props.width);doc.addImage(image,'PNG',16,y,28,h);}const start=y;doc.setFont('helvetica','bold');doc.text(lines,49,y+5);doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(`${r.price===''?'N/D':euro(Number(r.price))} / ${r.unit || 'unità N/D'}`,49,y+lines.length*5+7);y=start+height;}
  }
  autoTable(doc,{startY:y,margin:{left:16,right:16,top:18,bottom:18},head:[['Categoria','Prodotto e formato','Prezzo / unità · IVA']],body:c.rows.map(r=>[r.category || '—',`${r.name} ${r.format}\n${r.description || ''}${r.notes?`\n${r.notes}`:''}`,`${r.price===''?'N/D':euro(Number(r.price))} / ${r.unit || 'N/D'}\nIVA ${r.vat_mode || 'N/D'} ${r.vat_rate!==''?`${r.vat_rate}%`:''}`]),styles:{fontSize:9,cellPadding:3,overflow:'linebreak'},headStyles:{fillColor:35,textColor:255},columnStyles:{0:{cellWidth:38},1:{cellWidth:87},2:{cellWidth:53,halign:'right'}},showHead:'everyPage'});
  y=(doc as unknown as {lastAutoTable:{finalY:number}}).lastAutoTable.finalY+7;
