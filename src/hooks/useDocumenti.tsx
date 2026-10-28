@@ -49,6 +49,8 @@ export type Documento = {
   valid_until: string | null;
   proposal_id: string | null;
   proposal_version: number | null;
+  association_status: "automatic"|"manual"|"review";
+  association_details: any;
 };
 
 export const TIPO_LABEL: Record<DocumentoTipo, string> = {
@@ -130,6 +132,7 @@ export function useUploadDocumento() {
       const { data: row, error: insErr } = await supabase
         .from("documenti")
         .insert({
+          association_status: input.autoClassify===false || input.entita_id || input.company_id || input.customer_id ? "manual" : "review",
           user_id: user.id,
           entita: input.entita,
           entita_id: input.entita_id ?? null,
@@ -166,7 +169,7 @@ export function useUploadDocumento() {
       qc.invalidateQueries({ queryKey: ["documenti"] });
       toast.success(`Documento "${v.file.name}" caricato`);
     },
-    onError: (e: any) => toast.error("Errore upload: " + e.message),
+    onError: () => toast.error("Caricamento non riuscito. Riprova."),
   });
 }
 
