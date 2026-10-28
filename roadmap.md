@@ -1,12 +1,16 @@
 # Roadmap
 
 ## Aggiornamento archivio, proposte, locandine e riordino (28 ottobre)
-- [ ] Ridisegnare archivio e proposte con filtri, anteprime e azioni iPhone
-- [ ] Verificare prezzi salvati/PDF e completare offerte grafiche con foto reali ed esportazione immagine
-- [ ] Eliminazione persistente con protezione dello storico accettato e dei file condivisi
-- [ ] Riconoscimento documenti dal contenuto, associazioni verificabili e correzioni manuali preservate
-- [ ] Unificare ultimo ordine cliente–azienda fra Ordini, Riordino e Home; controllare Calonaci–Casoni
-- [ ] Eseguire test funzionali e verifiche 375/390/393/430 px; documentare limiti reali
+- [x] Archivio/proposte ridisegnati: filtri richiudibili, anteprime, tipi, date, ordinamento e azioni iPhone
+- [x] Tre prodotti reali e prezzo 0,55 salvato/riaperto/PDF; listino invariato; export vuoto bloccato; PDF 36 righe con 2 intestazioni
+- [x] Locandine prezzo/omaggio/combinate esportate PDF e PNG 1654×2339; logo proporzionato; foto ufficiali Limonata Bio 27,5cl e Bitter Lemon 20cl, caricamento/sostituzione manuale
+- [x] Eliminazione persistente proposta/locandina verificata dopo ricarica; rimozione logica protegge storico accettato e conserva file condivisi; prove rimosse dagli elenchi
+- [x] Analisi autenticata contenuto PDF/immagini/testo/fogli, matching identità e candidati; PDF Polara riconosciuto, Elba assente segnalato; correzione manuale conservata dopo rianalisi
+- [x] Home/Riordino/avvisi usano ordini completi per coppia cliente–azienda: Calonaci–Casoni 29/09/2026, 29 giorni, 2.478,97 €, media 33 giorni; Ordini filtrati verificati
+- [x] 32 test superati; quattro pagine e modulo a 375/390/393/430px senza overflow/errori; altezza ridotta 520px verificata (non tastiera Safari reale)
+- [ ] Accettazione e modifiche/importazioni/annullamenti reali: richiedono condizioni e ordine autorizzati; verificati soltanto motore/regressioni senza alterare acquisti
+- [ ] Archivio: scansione, Casoni–Calonaci, catalogo e Word da verificare con documenti reali specifici; Word non supportato dall’analisi automatica attuale
+- [ ] Foto degli altri prodotti: variante/formato affidabili da verificare; disponibili caricamento manuale e segnalazione foto mancante
 
 ## Locandine, proposte e archivio collegati
 - [x] Proposte salvate/versionate, editor, prodotti, promozioni/PFA e PDF A4
