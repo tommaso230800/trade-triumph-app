@@ -290,6 +290,10 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
 
   const handleApplyPromo = (promo: Canvass) => {
     if (appliedPromos.includes(promo.id)) return;
+    if (promo.proposal_id && !(promo.valore > 0)) {
+      toast.info('Condizione omaggio concordata: aggiungi la riga omaggio dopo aver verificato quantità e minimo indicati.');
+      return;
+    }
 
     if (promo.tipo === "sconto_percentuale") {
       if (promo.canvass_prodotti && promo.canvass_prodotti.length > 0) {
@@ -332,6 +336,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
   const applyPromoToNewProduct = (riga: RigaOrdine): RigaOrdine => {
     const scSlot = getPromoScSlot();
     for (const promo of promozioniRilevanti) {
+      if (promo.proposal_id) continue;
       const promoProduct = promo.canvass_prodotti?.find((cp) => cp.prodotto_id === riga.prodotto_id);
       if (promoProduct) {
         const scontoValue = promoProduct.valore_override ?? promo.valore;

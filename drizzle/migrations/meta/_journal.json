@@ -50,6 +50,20 @@
       "when": 1793199937966,
       "tag": "0006_lock_accepted_proposal_files",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793200300700,
+      "tag": "0007_validate_proposal_acceptance_terms",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793200369626,
+      "tag": "0008_map_proposal_promotion_values",
+      "breakpoints": true
     }
   ]
 }

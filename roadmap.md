@@ -1,11 +1,13 @@
 # Roadmap
 
 ## Locandine, proposte e archivio collegati
-- [ ] Proposte salvate/versionate, editor, prodotti, promozioni/PFA e PDF A4
-- [ ] Accettazione atomica con opzioni indipendenti, storico listino e condizioni condivise
-- [ ] Archivio file centrale e collegamenti azienda/cliente/editor
-- [ ] Riordino: dati aggiornati, aggiorna/riprova e ultimo aggiornamento
-- [ ] Test regole, percorsi reali non distruttivi e verifica PDF/iPhone/computer
+- [x] Proposte salvate/versionate, editor, prodotti, promozioni/PFA e PDF A4
+- [x] Accettazione atomica con opzioni indipendenti, storico listino e condizioni condivise implementata; PDF accettati protetti
+- [x] Archivio file centrale e collegamenti azienda/cliente/editor; PDF Polara originale caricato e riletto nella scheda azienda
+- [x] Riordino: dati aggiornati, aggiorna/riprova e ultimo aggiornamento; 127 prodotti urgenti letti, nessun overflow 320/375/430
+- [x] 16 test regole; salvataggio/riapertura/PDF locandina verificati; righe PDF spezzate corrette e pagine ispezionate
+- [ ] Verifica applicazione reale e ripetizione accettazione: serve una proposta effettivamente accettata e autorizzata; nessuna accettazione creata per prova
+- [ ] Caso Polara/Elba completo salvato: Elba Bevande non presente fra i clienti; unità prezzo e trattamento IVA nel PDF non dichiarati, da confermare
 
 ## Correzione invio email interrotto
 - [x] Eliminare le allocazioni per-byte nella preparazione MIME/PDF

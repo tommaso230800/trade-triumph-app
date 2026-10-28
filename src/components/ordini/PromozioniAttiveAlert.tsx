@@ -29,13 +29,14 @@ export function PromozioniAttiveAlert({ promozioni, appliedPromos, onApply }: Pr
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{promo.nome}</p>
               <p className="text-xs text-muted-foreground">
-                {promo.tipo === "sconto_percentuale" && `Sconto ${promo.valore}%`}
+                {promo.tipo === "sconto_percentuale" && promo.valore > 0 && `Sconto ${promo.valore}%`}
                 {promo.tipo === "prezzo_fisso" && `Prezzo fisso €${promo.valore}`}
                 {promo.cartoni_omaggio > 0 && ` • ${promo.cartoni_acquisto}+${promo.cartoni_omaggio} omaggio`}
                 {promo.canvass_prodotti && promo.canvass_prodotti.length > 0 && (
                   <span> • {promo.canvass_prodotti.length} prodotti</span>
                 )}
               </p>
+              {promo.commercial_terms && <p className="text-xs text-muted-foreground">{promo.commercial_terms.buy} acquistati + {promo.commercial_terms.gift} omaggio · Minimo {promo.commercial_terms.minimum} {promo.commercial_terms.unit} · {promo.commercial_terms.notes}</p>}
             </div>
             {appliedPromos.includes(promo.id) ? (
               <Badge variant="success" className="shrink-0">
@@ -51,14 +52,11 @@ export function PromozioniAttiveAlert({ promozioni, appliedPromos, onApply }: Pr
                 onClick={() => onApply(promo)}
               >
                 <Gift className="mr-1 h-3 w-3" />
-                Applica
+                {promo.proposal_id && !(promo.valore > 0) ? 'Verifica omaggi' : 'Applica'}
               </Button>
             )}
           </div>
         ))}
-        <p className="mt-2 text-xs text-muted-foreground">
-          Le promozioni sui prodotti vengono applicate automaticamente quando li aggiungi all'ordine.
-        </p>
       </AlertDescription>
     </Alert>
   );
