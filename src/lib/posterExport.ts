@@ -11,7 +11,7 @@ export async function renderPosterPages(p:CommercialProposal,company:string){
  const text=(value:string,y:number,size:number,bold=false,max=1414)=>{ctx.font=`${bold?'700':'400'} ${size}px Arial`;const words=value.split(/\s+/);let line='';for(const word of words){if(ctx.measureText(`${line} ${word}`).width>max&&line){ctx.fillText(line,WIDTH/2,y);y+=size*1.3;line=word;}else line+=`${line?' ':''}${word}`;}if(line){ctx.fillText(line,WIDTH/2,y);y+=size*1.3;}return y;};
  const fit=(image:HTMLImageElement,x:number,y:number,w:number,h:number)=>{const scale=Math.min(w/image.naturalWidth,h/image.naturalHeight);const iw=image.naturalWidth*scale,ih=image.naturalHeight*scale;ctx.drawImage(image,x+(w-iw)/2,y+(h-ih)/2,iw,ih);};
  if(c.logo){const logo=await loadImage(c.logo).catch(()=>{throw new Error('Logo non disponibile. Sostituiscilo prima di esportare.');});fit(logo,527,65,600,190);}
- let y=text(company,310,32);y=text(p.title,y+45,76,true);if(y>590)throw new Error('Titolo troppo lungo: abbrevialo per la locandina.');
+ let y=text(company,310,32);y=text(p.title,y+40,p.title.length>40?52:68,true);if(y>590)throw new Error('Titolo troppo lungo: abbrevialo per la locandina.');
  const product=await loadImage(r.image).catch(()=>{throw new Error(`Fotografia non disponibile: ${r.name}`);});fit(product,300,590,1054,780);
  y=text(r.name,1460,52,true);y=text([r.category,r.format].filter(Boolean).join(' · '),y+5,32);
  const offer=c.poster;const mode=offer?.mode||'price';
