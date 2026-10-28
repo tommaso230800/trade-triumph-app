@@ -6,7 +6,7 @@ import type { Tables, Json } from '@/integrations/supabase/types';
 export type CommercialProposal = Omit<Tables<'commercial_proposals'>, 'content'> & { content: ProposalContent };
 export function useCommercialProposals(companyId?: string, customerId?: string) {
  const { user } = useAuth();
- return useQuery({ queryKey: ['commercial_proposals', user?.id, companyId, customerId], enabled: !!user, queryFn: async () => {
+ return useQuery({ queryKey: ['commercial_proposals', user?.id, companyId, customerId], enabled: !!user, refetchOnMount:'always', queryFn: async () => {
   const {data:removed,error:removalError}=await supabase.from('proposal_removals').select('proposal_id');if(removalError)throw removalError;const removedIds=new Set((removed||[]).map(r=>r.proposal_id));
   const all: CommercialProposal[] = [];
   for(let from=0;;from+=1000) {
