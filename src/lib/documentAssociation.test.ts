@@ -4,4 +4,5 @@ describe('Associazioni documentali',()=>{
  it('collega per partita IVA esatta',()=>expect(matchIdentity({vat:'IT 12345678901'},[{id:'polara',nome:'Polara',partita_iva:'12345678901'}]).id).toBe('polara'));
  it('non sceglie fra omonimi',()=>expect(matchIdentity({name:'Calonaci SRL'},[{id:'a',nome:'Calonaci SRL'},{id:'b',nome:'Calonaci SRL'}]).id).toBeNull());
  it('non inventa Elba assente',()=>expect(matchIdentity({name:'Elba Bevande'},[{id:'polara',nome:'Polara'}]).id).toBeNull());
+ it('riconosce Polara dal contenuto senza confondere ragione sociale legale',()=>expect(matchIdentity({name:'Polara'},[{id:'polara',nome:'BIBITE POLARA S.R.L.'}]).id).toBe('polara'));
 });
