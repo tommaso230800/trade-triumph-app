@@ -32,10 +32,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { NuovoOrdineDialog, type OrdinePrefill } from "@/components/ordini/NuovoOrdineDialog";
 
 const urgenzaBadge: Record<EnrichedForecast["urgenza"], { label: string; className: string }> = {
-  critica: { label: "In rottura", className: "bg-red-500/15 text-red-500 border-red-500/30" },
-  alta: { label: "Entro 7 gg", className: "bg-orange-500/15 text-orange-500 border-orange-500/30" },
-  media: { label: "Entro 30 gg", className: "bg-yellow-500/15 text-yellow-500 border-yellow-500/30" },
-  bassa: { label: "Entro 60 gg", className: "bg-blue-500/15 text-blue-500 border-blue-500/30" },
+  critica: { label: "In rottura", className: "bg-destructive/10 text-destructive border-destructive/30" },
+  alta: { label: "Entro 7 gg", className: "bg-warning/10 text-warning border-warning/30" },
+  media: { label: "Entro 30 gg", className: "bg-warning/10 text-warning border-warning/30" },
+  bassa: { label: "Entro 60 gg", className: "bg-info/10 text-info border-info/30" },
   futura: { label: "Futura", className: "bg-muted text-muted-foreground border-border" },
 };
 
@@ -137,19 +137,19 @@ export default function RiordinoForecast() {
           {/* KPI cards */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <KpiCard
-              icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
+              icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
               label="In rottura oggi"
               value={isLoading ? "…" : String(kpi?.in_rottura_oggi ?? 0)}
               tone="red"
             />
             <KpiCard
-              icon={<Clock className="h-4 w-4 text-orange-500" />}
+              icon={<Clock className="h-4 w-4 text-warning" />}
               label="Entro 7 giorni"
               value={isLoading ? "…" : String(kpi?.in_rottura_7gg ?? 0)}
               tone="orange"
             />
             <KpiCard
-              icon={<Clock className="h-4 w-4 text-yellow-500" />}
+              icon={<Clock className="h-4 w-4 text-warning" />}
               label="Entro 30 giorni"
               value={isLoading ? "…" : String(kpi?.in_rottura_30gg ?? 0)}
               tone="yellow"
@@ -161,7 +161,7 @@ export default function RiordinoForecast() {
               tone="blue"
             />
             <KpiCard
-              icon={<TrendingUp className="h-4 w-4 text-emerald-500" />}
+              icon={<TrendingUp className="h-4 w-4 text-success" />}
               label="Fatturato potenziale 30gg"
               value={isLoading ? "…" : fmtEur.format(kpi?.fatturato_potenziale_30gg ?? 0)}
               tone="green"
@@ -226,7 +226,7 @@ export default function RiordinoForecast() {
                     <div className="truncate text-xs text-muted-foreground">{c.azienda_nome}</div>
                     <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
                       <span>{c.righe.length} prodotti</span>
-                      <span className="text-emerald-500">{fmtEur.format(c.fatturato)}</span>
+                      <span className="text-success">{fmtEur.format(c.fatturato)}</span>
                     </div>
                     <Button
                       size="sm"
@@ -310,7 +310,7 @@ export default function RiordinoForecast() {
                                 {f.media_giorni > 0 ? `${Math.round(f.media_giorni)} gg` : "—"}
                               </td>
                               <td className="p-3 text-right">{f.ultima_quantita_cartoni}</td>
-                              <td className={`p-3 text-right ${ritardo ? "text-red-500 font-semibold" : ""}`}>
+                              <td className={`p-3 text-right ${ritardo ? "text-destructive font-semibold" : ""}`}>
                                 {fmtDate(f.prossimo_riordino)}
                                 {f.giorni_al_riordino !== null && (
                                   <div className="text-xs text-muted-foreground">
@@ -320,7 +320,7 @@ export default function RiordinoForecast() {
                                   </div>
                                 )}
                               </td>
-                              <td className="p-3 text-right text-emerald-500">
+                              <td className="p-3 text-right text-success">
                                 {fmtEur.format(f.fatturato_medio)}
                               </td>
                               <td className="p-3">
@@ -366,7 +366,7 @@ export default function RiordinoForecast() {
                             <span className="text-muted-foreground">
                               Media {Math.round(f.media_giorni)} gg · ult. {f.ultima_quantita_cartoni} ct
                             </span>
-                            <span className="text-emerald-500">{fmtEur.format(f.fatturato_medio)}</span>
+                            <span className="text-success">{fmtEur.format(f.fatturato_medio)}</span>
                           </div>
                           <Button
                             size="sm"
@@ -417,20 +417,20 @@ function KpiCard({
   tone: "red" | "orange" | "yellow" | "blue" | "green";
 }) {
   const toneRing: Record<string, string> = {
-    red: "ring-red-500/20",
-    orange: "ring-orange-500/20",
-    yellow: "ring-yellow-500/20",
+    red: "ring-destructive/20",
+    orange: "ring-warning/20",
+    yellow: "ring-warning/20",
     blue: "ring-primary/20",
-    green: "ring-emerald-500/20",
+    green: "ring-success/20",
   };
   return (
     <Card className={`surface-glass ring-1 ${toneRing[tone]} hover-lift`}>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {icon}
-          <span className="truncate">{label}</span>
+          <span className="min-w-0 break-words">{label}</span>
         </div>
-        <div className="mt-2 font-display text-xl font-bold md:text-2xl">{value}</div>
+        <div className="mt-2 break-words text-right font-display text-xl font-bold tabular-nums md:text-2xl">{value}</div>
       </CardContent>
     </Card>
   );
