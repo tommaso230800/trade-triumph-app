@@ -1,5 +1,12 @@
 # Roadmap
 
+## Locandine, proposte e archivio collegati
+- [ ] Proposte salvate/versionate, editor, prodotti, promozioni/PFA e PDF A4
+- [ ] Accettazione atomica con opzioni indipendenti, storico listino e condizioni condivise
+- [ ] Archivio file centrale e collegamenti azienda/cliente/editor
+- [ ] Riordino: dati aggiornati, aggiorna/riprova e ultimo aggiornamento
+- [ ] Test regole, percorsi reali non distruttivi e verifica PDF/iPhone/computer
+
 ## Correzione invio email interrotto
 - [x] Eliminare le allocazioni per-byte nella preparazione MIME/PDF
 - [x] Verificare allegati grandi e distribuire la correzione (16 test e allegato 12 MB con heap 128 MB)

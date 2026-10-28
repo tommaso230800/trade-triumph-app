@@ -1,5 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { DocumentiSection } from "@/components/documenti/DocumentiSection";
+import { FileArchive } from '@/components/documenti/FileArchive';
+import { AcceptedConditions } from '@/components/proposte/AcceptedConditions';
 
 import { MainLayout } from "@/components/layout/MainLayout";
 import { VisitsSection } from "@/components/visite/VisitsSection";
@@ -417,6 +419,9 @@ const ClienteDettaglio = () => {
         </div>
 
         {id && <ListinoPersonalizzatoSection clienteId={id} />}
+        <Button variant="outline" asChild><Link to={`/proposte?cliente=${id}`}>Proposte commerciali</Link></Button>
+        <AcceptedConditions customerId={id}/>
+        <section className="space-y-4"><h2 className="text-base font-semibold">File e documenti cliente</h2><FileArchive customerId={id}/></section>
 
         {/* Promozioni Attive */}
         <div className="rounded-xl bg-card p-6 shadow-card">

@@ -23,14 +23,15 @@ export function useReorderForecast() {
     queryKey: ["reorder_forecast_v1", user?.id],
     enabled: !!user,
     staleTime: 60_000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       // 1. Ordini validi (esclude annullati/stand_by)
-      const { data: ordini, error: eOrd } = await supabase
-        .from("ordini")
-        .select("id, cliente_id, azienda_id, data_ordine, status")
-        .not("status", "in", '("annullato","stand_by")')
-        .not("data_ordine", "is", null);
-      if (eOrd) throw eOrd;
+      const ordini: Array<{id:string;cliente_id:string|null;azienda_id:string|null;data_ordine:string|null;status:string}> = [];
+      for (let from=0;;from+=1000) {
+        const {data,error}=await supabase.from('ordini').select('id, cliente_id, azienda_id, data_ordine, status').is('deleted_at',null).not('status','in','("annullato","stand_by")').not('data_ordine','is',null).order('id').range(from,from+999);
+        if(error)throw error;ordini.push(...(data || []));if(!data||data.length<1000)break;
+      }
       if (!ordini || ordini.length === 0) {
         return { forecasts: [] as EnrichedForecast[], kpi: computeForecastKPIs([]) };
       }
@@ -45,12 +46,15 @@ export function useReorderForecast() {
       const CHUNK = 500;
       for (let i = 0; i < ordineIds.length; i += CHUNK) {
         const slice = ordineIds.slice(i, i + CHUNK);
+        for(let from=0;;from+=1000){
         const { data, error } = await supabase
           .from("ordini_righe")
           .select("ordine_id, prodotto_id, quantita_cartoni, quantita_pezzi, is_omaggio, prezzo_unitario")
-          .in("ordine_id", slice);
+          .in("ordine_id", slice).order('id').range(from,from+999);
         if (error) throw error;
         if (data) righeAll.push(...data);
+        if(!data || data.length<1000)break;
+        }
       }
 
       const raw: RawRigaOrdine[] = righeAll
@@ -88,17 +92,18 @@ export function useReorderForecast() {
         prodIds.length
           ? supabase
               .from("prodotti")
-              .select("id, nome, codice, brands(nome)")
+              .select("id, nome, codice, brands(name)")
               .in("id", prodIds)
           : Promise.resolve({ data: [] as any[], error: null }),
       ]);
+      if(cli.error)throw cli.error;if(az.error)throw az.error;if(pr.error)throw pr.error;
 
       const cliMap = new Map((cli.data || []).map((c: any) => [c.id, c.nome]));
       const azMap = new Map((az.data || []).map((a: any) => [a.id, a.nome]));
       const prMap = new Map(
         (pr.data || []).map((p: any) => [
           p.id,
-          { nome: p.nome, codice: p.codice, brand: p.brands?.nome || null },
+          { nome: p.nome, codice: p.codice, brand: p.brands?.name || null },
         ])
       );
 

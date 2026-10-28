@@ -197,6 +197,9 @@ export function useCreateOrdine() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       toast.success("Ordine creato con successo!");
     },
@@ -219,6 +222,9 @@ export function useUpdateOrdineStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       toast.success("Stato ordine aggiornato!");
     },
@@ -254,6 +260,9 @@ export function useSetOrdineStandBy() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_yoy"] });
@@ -279,6 +288,9 @@ export function useConfermaOrdineDaStandBy() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_yoy"] });
@@ -313,6 +325,9 @@ export function useBulkSetVerificatoConferma() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
     },
     onError: (error) => toast.error("Errore: " + error.message),
@@ -337,6 +352,9 @@ export function useBulkUpdateOrdiniStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_yoy"] });
@@ -358,6 +376,9 @@ export function useUpdateProvvigionePagata() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
       toast.success("Stato provvigione aggiornato!");
     },
     onError: (error) => {
@@ -391,6 +412,9 @@ export function useUpdateOrdine() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ordini"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
+      queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
       queryClient.invalidateQueries({ queryKey: ["cliente_ordini"] });

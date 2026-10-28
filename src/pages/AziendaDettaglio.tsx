@@ -2,6 +2,8 @@ import { useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { OrderEmailSettings } from "@/components/aziende/OrderEmailSettings";
 import { DocumentiSection } from "@/components/documenti/DocumentiSection";
+import { FileArchive } from '@/components/documenti/FileArchive';
+import { AcceptedConditions } from '@/components/proposte/AcceptedConditions';
 
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -523,6 +525,8 @@ const AziendaDettaglio = () => {
         </div>
 
         <OrderEmailSettings companyId={azienda.id} />
+        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={()=>navigate(`/proposte?azienda=${azienda.id}`)}>Locandine e proposte</Button></div>
+        <AcceptedConditions companyId={azienda.id}/>
 
         {/* Products Section */}
         <div className="rounded-xl bg-card shadow-card overflow-hidden">
@@ -1077,7 +1081,7 @@ const AziendaDettaglio = () => {
       </Sheet>
 
       <div className="px-4 pb-6 lg:px-0">
-        <DocumentiSection entita="azienda" entita_id={id} title="Documenti azienda" />
+        <section className="space-y-4"><h2 className="text-base font-semibold">File e documenti azienda</h2><FileArchive companyId={id}/></section>
       </div>
     </MainLayout>
 

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { BottomNav } from "@/components/layout/BottomNav";
+import { MainLayout } from '@/components/layout/MainLayout';
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +24,7 @@ import {
   Search,
   Phone,
   ShoppingCart,
+  RefreshCw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -32,10 +32,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { NuovoOrdineDialog, type OrdinePrefill } from "@/components/ordini/NuovoOrdineDialog";
 
 const urgenzaBadge: Record<EnrichedForecast["urgenza"], { label: string; className: string }> = {
-  critica: { label: "In rottura", className: "bg-red-500/15 text-red-500 border-red-500/30" },
-  alta: { label: "Entro 7 gg", className: "bg-orange-500/15 text-orange-500 border-orange-500/30" },
-  media: { label: "Entro 30 gg", className: "bg-yellow-500/15 text-yellow-500 border-yellow-500/30" },
-  bassa: { label: "Entro 60 gg", className: "bg-blue-500/15 text-blue-500 border-blue-500/30" },
+  critica: { label: "In rottura", className: "bg-destructive/10 text-destructive border-destructive/30" },
+  alta: { label: "Entro 7 gg", className: "bg-warning/10 text-warning border-warning/30" },
+  media: { label: "Entro 30 gg", className: "bg-warning/10 text-warning border-warning/30" },
+  bassa: { label: "Entro 60 gg", className: "bg-info/10 text-info border-info/30" },
   futura: { label: "Futura", className: "bg-muted text-muted-foreground border-border" },
 };
 
@@ -44,11 +44,10 @@ const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
 
 export default function RiordinoForecast() {
-  const { data, isLoading } = useReorderForecast();
+  const { data, isLoading, isError, isFetching, refetch, dataUpdatedAt } = useReorderForecast();
   const [tab, setTab] = useState<"tutti" | "critica" | "alta" | "media">("critica");
   const [search, setSearch] = useState("");
   const [aziendaFilter, setAziendaFilter] = useState<string>("all");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [ordinaPrefill, setOrdinaPrefill] = useState<OrdinePrefill | null>(null);
   const queryClient = useQueryClient();
 
@@ -122,10 +121,8 @@ export default function RiordinoForecast() {
     });
 
   return (
-    <div className="flex min-h-[100dvh] bg-background">
-      <Sidebar mobileOpen={mobileMenuOpen} onMobileOpenChange={setMobileMenuOpen} />
-      <main className="flex-1 overflow-x-hidden pb-24 md:pb-8 md:pl-64">
-        <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
+    <MainLayout>
+        <div className="min-w-0 space-y-6">
           <header className="space-y-1">
             <div className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" />
@@ -133,27 +130,26 @@ export default function RiordinoForecast() {
                 Previsione Riordino
               </h1>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Stima automatica del prossimo riordino per ogni prodotto x cliente, basata sullo storico ordini.
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted-foreground">{dataUpdatedAt ? `Ultimo aggiornamento: ${new Date(dataUpdatedAt).toLocaleString('it-IT')}` : 'Aggiornamento non ancora disponibile'}</p><Button variant="outline" disabled={isFetching} onClick={()=>refetch()}><RefreshCw className="mr-2 h-4 w-4"/>{isFetching?'Aggiornamento…':'Aggiorna'}</Button></div>
           </header>
+          {isError && <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive p-4 text-sm">Non riesco ad aggiornare Riordino. Controlla la connessione e riprova.<Button variant="outline" onClick={()=>refetch()}>Riprova</Button></div>}
 
           {/* KPI cards */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <KpiCard
-              icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
+              icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
               label="In rottura oggi"
               value={isLoading ? "…" : String(kpi?.in_rottura_oggi ?? 0)}
               tone="red"
             />
             <KpiCard
-              icon={<Clock className="h-4 w-4 text-orange-500" />}
+              icon={<Clock className="h-4 w-4 text-warning" />}
               label="Entro 7 giorni"
               value={isLoading ? "…" : String(kpi?.in_rottura_7gg ?? 0)}
               tone="orange"
             />
             <KpiCard
-              icon={<Clock className="h-4 w-4 text-yellow-500" />}
+              icon={<Clock className="h-4 w-4 text-warning" />}
               label="Entro 30 giorni"
               value={isLoading ? "…" : String(kpi?.in_rottura_30gg ?? 0)}
               tone="yellow"
@@ -165,7 +161,7 @@ export default function RiordinoForecast() {
               tone="blue"
             />
             <KpiCard
-              icon={<TrendingUp className="h-4 w-4 text-emerald-500" />}
+              icon={<TrendingUp className="h-4 w-4 text-success" />}
               label="Fatturato potenziale 30gg"
               value={isLoading ? "…" : fmtEur.format(kpi?.fatturato_potenziale_30gg ?? 0)}
               tone="green"
@@ -201,7 +197,7 @@ export default function RiordinoForecast() {
           </Card>
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-            <TabsList>
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-2 sm:grid-cols-4">
               <TabsTrigger value="critica">In rottura</TabsTrigger>
               <TabsTrigger value="alta">Entro 7 gg</TabsTrigger>
               <TabsTrigger value="media">Entro 30 gg</TabsTrigger>
@@ -230,7 +226,7 @@ export default function RiordinoForecast() {
                     <div className="truncate text-xs text-muted-foreground">{c.azienda_nome}</div>
                     <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
                       <span>{c.righe.length} prodotti</span>
-                      <span className="text-emerald-500">{fmtEur.format(c.fatturato)}</span>
+                      <span className="text-success">{fmtEur.format(c.fatturato)}</span>
                     </div>
                     <Button
                       size="sm"
@@ -263,7 +259,7 @@ export default function RiordinoForecast() {
                     <Skeleton key={i} className="h-14 w-full" />
                   ))}
                 </div>
-              ) : filtered.length === 0 ? (
+              ) : isError ? <p className="p-4 text-sm text-muted-foreground">Dati non disponibili</p> : filtered.length === 0 ? (
                 <div className="p-8 text-center text-sm text-muted-foreground">
                   Nessun prodotto in questa categoria.
                 </div>
@@ -314,7 +310,7 @@ export default function RiordinoForecast() {
                                 {f.media_giorni > 0 ? `${Math.round(f.media_giorni)} gg` : "—"}
                               </td>
                               <td className="p-3 text-right">{f.ultima_quantita_cartoni}</td>
-                              <td className={`p-3 text-right ${ritardo ? "text-red-500 font-semibold" : ""}`}>
+                              <td className={`p-3 text-right ${ritardo ? "text-destructive font-semibold" : ""}`}>
                                 {fmtDate(f.prossimo_riordino)}
                                 {f.giorni_al_riordino !== null && (
                                   <div className="text-xs text-muted-foreground">
@@ -324,7 +320,7 @@ export default function RiordinoForecast() {
                                   </div>
                                 )}
                               </td>
-                              <td className="p-3 text-right text-emerald-500">
+                              <td className="p-3 text-right text-success">
                                 {fmtEur.format(f.fatturato_medio)}
                               </td>
                               <td className="p-3">
@@ -370,7 +366,7 @@ export default function RiordinoForecast() {
                             <span className="text-muted-foreground">
                               Media {Math.round(f.media_giorni)} gg · ult. {f.ultima_quantita_cartoni} ct
                             </span>
-                            <span className="text-emerald-500">{fmtEur.format(f.fatturato_medio)}</span>
+                            <span className="text-success">{fmtEur.format(f.fatturato_medio)}</span>
                           </div>
                           <Button
                             size="sm"
@@ -393,7 +389,6 @@ export default function RiordinoForecast() {
             </CardContent>
           </Card>
         </div>
-      </main>
       <NuovoOrdineDialog
         open={!!ordinaPrefill}
         onOpenChange={(v) => {
@@ -406,8 +401,7 @@ export default function RiordinoForecast() {
           toast.success("Ordine creato: lo trovi nella pagina Ordini.");
         }}
       />
-      <BottomNav onOpenMore={() => setMobileMenuOpen(true)} moreActive={mobileMenuOpen} />
-    </div>
+    </MainLayout>
   );
 }
 
@@ -423,20 +417,20 @@ function KpiCard({
   tone: "red" | "orange" | "yellow" | "blue" | "green";
 }) {
   const toneRing: Record<string, string> = {
-    red: "ring-red-500/20",
-    orange: "ring-orange-500/20",
-    yellow: "ring-yellow-500/20",
+    red: "ring-destructive/20",
+    orange: "ring-warning/20",
+    yellow: "ring-warning/20",
     blue: "ring-primary/20",
-    green: "ring-emerald-500/20",
+    green: "ring-success/20",
   };
   return (
     <Card className={`surface-glass ring-1 ${toneRing[tone]} hover-lift`}>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {icon}
-          <span className="truncate">{label}</span>
+          <span className="min-w-0 break-words">{label}</span>
         </div>
-        <div className="mt-2 font-display text-xl font-bold md:text-2xl">{value}</div>
+        <div className="mt-2 break-words text-right font-display text-xl font-bold tabular-nums md:text-2xl">{value}</div>
       </CardContent>
     </Card>
   );

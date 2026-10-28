@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
+import { AcceptedConditions } from '@/components/proposte/AcceptedConditions';
 import { useCanvass, useCanvassAttive, useContrattiClienti, useCreateCanvass, useUpdateCanvass, useDeleteCanvass, useCreateContrattoCliente, useUpdateContrattoCliente, useDeleteContrattoCliente, Canvass, ContrattoCliente } from "@/hooks/useCanvass";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
@@ -372,6 +373,7 @@ export default function CanvassPage() {
             </Card>
           </TabsContent>
         </Tabs>
+        <AcceptedConditions/>
       </div>
 
       <PromoFormDialog open={isPromoDialogOpen} onOpenChange={(open) => { setIsPromoDialogOpen(open); if (!open) setEditingPromo(null); }} editingPromo={editingPromo} aziende={aziende} clienti={clienti} prodotti={prodotti} onSave={handleSavePromo} isPending={createCanvass.isPending || updateCanvass.isPending} />
