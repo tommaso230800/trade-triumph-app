@@ -1,0 +1,9 @@
+import { isCounted,orderRevenue } from './metricsEngine';
+import { todayRome } from './commercialProposal';
+export type ReorderOrder={id:string;cliente_id:string|null;azienda_id:string|null;data_ordine:string|null;status:string;totale:number|string|null;deleted_at?:string|null};
+export const calendarDay=(date:string)=>Date.parse(`${date.slice(0,10)}T00:00:00Z`)/86400000;
+export function computeReorderPairs(orders:ReorderOrder[],today=todayRome()){
+ const groups=new Map<string,ReorderOrder[]>();
+ for(const o of orders){if(!o.cliente_id||!o.azienda_id||!o.data_ordine||o.deleted_at||!isCounted(o)||['bozza','da_confermare'].includes(o.status)||o.data_ordine>today)continue;const key=`${o.cliente_id}|${o.azienda_id}`;groups.set(key,[...(groups.get(key)||[]),o]);}
+ return Array.from(groups,([id,list])=>{list.sort((a,b)=>(b.data_ordine||'').localeCompare(a.data_ordine||''));const latest=list[0];const dates=Array.from(new Set(list.map(o=>o.data_ordine||''))).sort();const last=latest.data_ordine||'';const average=dates.length>=2?(calendarDay(dates[dates.length-1])-calendarDay(dates[0]))/(dates.length-1):null;const days=calendarDay(today)-calendarDay(last);const expected=average===null?null:new Date((calendarDay(last)+Math.round(average))*86400000).toISOString().slice(0,10);return {id,cliente_id:latest.cliente_id||'',azienda_id:latest.azienda_id||'',ultimo_ordine_data:last,media_giorni_riordino:average,numero_ordini:list.length,prossimo_riordino_previsto:expected,giorni_trascorsi:days,giorni_ritardo:average===null?0:Math.max(0,days-Math.round(average)),da_ricontattare:average!==null&&days>Math.round(average)+7,ultimo_importo:orderRevenue(latest),ordine_ids:list.map(o=>o.id)};});
+}
