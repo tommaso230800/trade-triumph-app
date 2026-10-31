@@ -1,8 +1,9 @@
 import {describe,it,expect} from 'vitest';
 import {cashOf,Commission,fiscalSummary,HISTORICAL,inpsCalc,enasarcoCalc,progressiveTax,resolveMandate} from './engine';
-const c=(extra:Partial<Commission>={}):Commission=>({id:'ord-a',source:'ordine',sourceId:'a',number:'a',companyId:'company',company:'company',customerId:null,customer:'',competence:'2026-01-01',competenceUntil:null,subjectId:'tommaso',mandateId:'m',gross:1000,estimated:false,paidSnapshot:null,paidDate:null,status:'pagata',fiscal:{},receipts:[],issues:[],revenue:999999,notes:null,...extra});
+const c=(extra:Partial<Commission>={}):Commission=>({id:'ord-a',source:'ordine',sourceId:'a',number:'a',companyId:'company',company:'company',customerId:null,customer:'',competence:'2026-01-01',competenceUntil:null,subjectId:'tommaso',mandateId:'m',gross:1000,estimated:false,paidSnapshot:null,paidDate:null,status:'pagata',fiscal:{legacy_receipt_confirmed:true},receipts:[],issues:[],revenue:999999,notes:null,...extra});
 const m={id:'m',subject_id:'tommaso',company_id:'company',relationship_key:'r',valid_from:'2026-01-01',valid_until:null,agency_type:'pluri'};
 describe('fiscal rules',()=>{
+ it('unconfirmed dated cumulative amount is not annual cash',()=>expect(cashOf(c({paidSnapshot:1000,paidDate:'2026-01-01',fiscal:{}}))).toEqual([]));
  it('paid status is not cash',()=>expect(cashOf(c())).toEqual([]));
  it('amount without date is incomplete',()=>expect(cashOf(c({paidSnapshot:1000}))).toEqual([]));
  it('partial receipts use their own year not competence',()=>{const x=c({competence:'2025-12-01',fiscal:{receipts_managed:true},receipts:[{id:'r',source:'ordine',source_id:'a',received_on:'2026-01-01',gross_amount:300,enasarco_withheld:null,bank_amount:null,verification:'dichiarato'}]});const s=fiscalSummary([x],[m],[],{}, {subjectId:'tommaso',year:2026});expect(s.receipts).toBe(300);expect(s.gross).toBe(0);});
