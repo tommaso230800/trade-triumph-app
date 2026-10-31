@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryClient } from "@tanstack/react-query";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 
 /**
@@ -8,6 +8,10 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
  * - data persisted to localStorage and rehydrated on next launch
  */
 export const queryClient = new QueryClient({
+  mutationCache: new MutationCache({ onSuccess: () => {
+    queryClient.invalidateQueries({queryKey:['fiscal-commissions']});
+    queryClient.invalidateQueries({queryKey:['fiscal-entries']});
+  }}),
   defaultOptions: {
     queries: {
       staleTime: 1000 * 30, // 30s: ricontrolla spesso, evita cache vuote persistenti

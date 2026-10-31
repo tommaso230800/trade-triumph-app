@@ -16,7 +16,7 @@ export function useFiscalCommissions(){const {user}=useAuth();return useQuery({q
  const competence=fiscal.competence_from??(source==='ordine'?r.data_ordine:source==='fattura'?(r.anno_competenza&&r.trimestre_competenza?`${r.anno_competenza}-${String((r.trimestre_competenza-1)*3+1).padStart(2,'0')}-01`:r.data_fattura):r.anno&&r.trimestre?`${r.anno}-${String((r.trimestre-1)*3+1).padStart(2,'0')}-01`:null);
  const recognized=source==='ordine'?r.provvigione_riconosciuta:null;
  const estimated=source==='ordine'&&fiscal.gross==null&&recognized==null;
- const gross=fiscal.gross??recognized??(source==='ordine'?(r.provvigione_prevista??(company?.provvigione_percentuale!=null?Number(r.totale)*Number(company.provvigione_percentuale)/100:null)):source==='fattura'?r.provvigione_calcolata:r.importo);
+ const gross=fiscal.gross??recognized??(source==='ordine'?(r.condizione_applicata_id&&r.provvigione_prevista!=null?r.provvigione_prevista:(company?.provvigione_percentuale!=null?Number(r.totale)*Number(company.provvigione_percentuale)/100:null)):source==='fattura'?r.provvigione_calcolata:r.importo);
  const status=source==='movimento'?r.stato:r.stato_provvigione??((r.provvigione_pagata||r.provvigione_incassata)?'pagata':'da_pagare');
  const paidSnapshot=source==='movimento'?(status==='pagata'?r.importo:null):r.importo_provvigione_pagata;
  const paidDate=source==='movimento'?r.data_pagamento:r.data_incasso_provvigione;

@@ -23,6 +23,8 @@ import { ScadenziarioFattura, StatoProvvigione, useScadenziario } from "@/hooks/
 import { format } from "date-fns";
 import { AlertTriangle, Ban, CheckCircle2, CircleDot, Clock, type LucideIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useFiscalCommissions } from "@/hooks/useFiscalCommissions";
+import { CommissionDetail } from "@/components/fiscal/CommissionDetail";
 import { supabase } from "@/integrations/supabase/client";
 
 
@@ -62,6 +64,8 @@ const statoOptions: {
 ];
 
 export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initialStato }: Props) => {
+  const fiscalSource=useFiscalCommissions();
+  const [showFiscal,setShowFiscal]=useState(false);
   const { aggiornaStatoProvvigione } = useScadenziario();
   const [stato, setStato] = useState<StatoProvvigione>("pagata");
   const [dataPagamento, setDataPagamento] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -77,7 +81,7 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
     queryFn: async () => {
       const { data } = await supabase
         .from("estratti_provvigioni")
-        .select("id, azienda_nome, anno, trimestre, data_documento")
+        .select("id, aziende(nome), anno, trimestre, data_documento")
         .eq("anno", annoPag)
         .eq("trimestre", trimPag)
         .order("data_documento", { ascending: false })
@@ -113,6 +117,7 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
   const selectedOption = statoOptions.find((o) => o.value === stato) || statoOptions[0];
   const SelectedIcon = selectedOption.icon;
 
+  const fiscalRecord=fiscalSource.data?.find(c=>c.sourceId===fattura.id&&c.source===(fattura.source??'fattura'));
   const handleConfirm = async () => {
     await aggiornaStatoProvvigione.mutateAsync({
       id: fattura.id,
@@ -134,6 +139,8 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
 
 
   return (
+    <>
+    {showFiscal&&<CommissionDetail commission={fiscalRecord??null} onClose={()=>setShowFiscal(false)}/>}
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
@@ -144,6 +151,8 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
         </DialogHeader>
 
         <div className="space-y-4">
+          <Button variant="outline" onClick={()=>setShowFiscal(true)} disabled={!fiscalRecord}>Incassi dettagliati e dati fiscali</Button>
+          {fiscalRecord?.fiscal.receipts_managed&&<p className="text-sm text-warning">Incassi gestiti per rata: correggili nei dettagli, senza sostituire il cumulativo.</p>}
           <div className="grid grid-cols-2 gap-3 p-3 bg-muted rounded-lg text-sm">
             <div>
               <p className="text-muted-foreground text-xs">Cliente</p>
@@ -276,7 +285,7 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
                       <SelectItem value="none">Nessuno</SelectItem>
                       {estratti.map((e: any) => (
                         <SelectItem key={e.id} value={e.id}>
-                          {e.azienda_nome} — {e.data_documento?.slice(0, 10)}
+                          {e.aziende?.nome} — {e.data_documento?.slice(0, 10)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -303,11 +312,12 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Annulla
           </Button>
-          <Button onClick={handleConfirm} disabled={aggiornaStatoProvvigione.isPending}>
+          <Button onClick={handleConfirm} disabled={aggiornaStatoProvvigione.isPending||fiscalRecord?.fiscal.receipts_managed===true}>
             {aggiornaStatoProvvigione.isPending ? "Salvataggio..." : "Conferma"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 };

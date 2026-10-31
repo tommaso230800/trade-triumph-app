@@ -1,6 +1,7 @@
 import { useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { OrderEmailSettings } from "@/components/aziende/OrderEmailSettings";
+import { MandateAssignment } from "@/components/fiscal/MandateAssignment";
 import { DocumentiSection } from "@/components/documenti/DocumentiSection";
 import { FileArchive } from '@/components/documenti/FileArchive';
 import { AcceptedConditions } from '@/components/proposte/AcceptedConditions';
@@ -525,6 +526,7 @@ const AziendaDettaglio = () => {
         </div>
 
         <OrderEmailSettings companyId={azienda.id} />
+        <MandateAssignment companies={[{id:azienda.id,nome:azienda.nome}]} />
         <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={()=>navigate(`/proposte?azienda=${azienda.id}`)}>Locandine e proposte</Button></div>
         <AcceptedConditions companyId={azienda.id}/>
 

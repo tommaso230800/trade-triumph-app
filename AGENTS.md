@@ -1,4 +1,7 @@
 # Architecture rules
+- Fiscality and commissions share the same paginated commission source; retain original records and persist incremental receipts separately, never infer cash from paid status or client order revenue.
+- Resolve fiscal ownership through dated mandates and explicit historical corrections; subject-wide annual tax and INPS calculations precede local filters, and Enasarco limits group by subject and agency relationship.
+- Fiscal calculations return unavailable results for unverified mandatory inputs; declared references, liabilities, paid cash, and deductible verified contributions remain separate.
 - Keep commercial proposals isolated from operational prices and conditions until the owner-authorized, row-locked acceptance RPC commits once; preserve accepted snapshots/PDFs and normalize explicit price units/IVA into the existing per-piece price source.
 - Use the existing private document archive for proposal PDFs and references with explicit company/customer/year metadata; shared archive views must read the same records.
 - Use the shared header-order pair engine for Home, Riordino and reorder alerts, paginating all valid commercial dates; product forecasts remain a separately labelled drilldown.

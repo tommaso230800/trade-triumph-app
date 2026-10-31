@@ -1,11 +1,14 @@
 # Roadmap
 
 ## Fiscalità e netto (31 ottobre)
-- [ ] Collegare Provvigioni e Fiscalità alla stessa fonte con incassi parziali e dettagli originali
-- [ ] Anagrafiche fiscali, mandati storici, assegnazioni azienda e correzioni esplicite
-- [ ] Profili annuali, contributi/imposte e flussi di cassa distinti; dati mancanti evidenti
-- [ ] Documenti e riferimenti dichiarati 2024/2025 senza inventare movimenti
-- [ ] Filtri, ripartizioni annuali, simulazioni e verifiche iPhone/regressioni
+- [x] Fonte condivisa paginata, nessun incasso presunto, dettagli originali e ricevute incrementali protette implementati; lettura autenticata verificata
+- [x] Quattro anagrafiche/profili persistenti; mandati con decorrenza, selezione multipla, anteprima e correzione storica esplicita implementati
+- [x] Calcolo annuale 2026 standard INPS/Enasarco e imposte con N/D per parametri mancanti; cassa distinta; riferimenti 2024/2025 persistiti senza movimenti
+- [x] Filtri e collegamenti verificati, apertura registrazione originale e dichiarazione 2025; 38 test; 375/390/393/430 senza overflow; compilazione automatica riuscita
+- [ ] Attribuire aziende/storico e verificare salvataggio incassi reali: servono intestatari, decorrenze e un incasso reale autorizzato; nessun movimento economico creato per prova
+- [ ] Calcoli personali completi: servono CF/P.IVA, nome del padre, posizione INPS/agevolazioni, contributi versati, costi, altri redditi e domicilio; riduzione 35% non calcolata finché non verificata
+- [ ] SAS e simulazioni complete: configurazione soci/quote e calcolo societario non completati; confronto ordinario segnala dati mancanti, non produce un risultato definitivo
+- [ ] Estrazione fiscale documenti con conferma pagina/campo: disponibili archivio e collegamento manuale, estrazione dedicata non completata
 
 ## Aggiornamento archivio, proposte, locandine e riordino (28 ottobre)
 - [x] Archivio/proposte ridisegnati: filtri richiudibili, anteprime, tipi, date, ordinamento e azioni iPhone

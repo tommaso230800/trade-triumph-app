@@ -1,4 +1,9 @@
 import { useState, useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useFiscal } from "@/hooks/useFiscal";
+import { useFiscalCommissions } from "@/hooks/useFiscalCommissions";
+import { CommissionDetail } from "@/components/fiscal/CommissionDetail";
+import { Commission } from "@/lib/fiscal/engine";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
@@ -115,10 +120,15 @@ const provCardCls =
 type SortKey = keyof ProvvigioneRow;
 
 const Provvigioni = () => {
+  const [params] = useSearchParams();
+  const fiscal = useFiscal();
+  const fiscalSource = useFiscalCommissions();
+  const [fiscalDetail,setFiscalDetail]=useState<Commission|null>(null);
+  const [subjectFilter,setSubjectFilter]=useState(params.get("soggetto")??"all");
   const now = new Date();
   const [aziendaId, setAziendaId] = useState<string | "tutte">("tutte");
   const [clienteId, setClienteId] = useState<string | "tutti">("tutti");
-  const [periodo, setPeriodo] = useState<PeriodoFilter>({ tipo: "anno", year: now.getFullYear() });
+  const [periodo, setPeriodo] = useState<PeriodoFilter>(params.get("voce")||params.get("soggetto")?{tipo:"tutti"}:{ tipo: "anno", year: now.getFullYear() });
   const [search, setSearch] = useState("");
   const [statoFilter, setStatoFilter] = useState<"tutte" | "pagata" | "da_pagare" | "scaduta" | "parziale" | "contestazione">("tutte");
   const [sortKey, setSortKey] = useState<SortKey>("data");
@@ -136,7 +146,7 @@ const Provvigioni = () => {
   const { fattureIncassate, fattureScadute, aggiornaStatoProvvigione, aggiornaTrimestrePagamento, aggiornaBulkPagate } = useScadenziario();
   const aziendaColorMap = useAziendaColorMap();
 
-  const filters: ProvvigioniFilters = { aziendaId, clienteId, periodo, search };
+  const filters: ProvvigioniFilters = { aziendaId, clienteId, periodo, search,subjectId:subjectFilter==='all'?undefined:subjectFilter,rowId:params.get('voce')??undefined };
   const analytics = useProvvigioniAnalytics(filters);
 
   // Serie mensile senza i mesi vuoti iniziali: la finestra resta di 24 mesi,
@@ -197,6 +207,8 @@ const Provvigioni = () => {
     return sorted;
   }, [analytics.filteredRows, statoFilter, trimestreFilter, sortKey, sortDir]);
 
+  const [tableLimit,setTableLimit]=useState(100);
+  const visibleTableRows=filteredTableRows.slice(0,tableLimit);
   const toggleSort = (k: SortKey) => {
     if (k === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
@@ -331,6 +343,7 @@ const Provvigioni = () => {
 
   return (
     <MainLayout>
+      <CommissionDetail commission={fiscalDetail} onClose={()=>setFiscalDetail(null)}/>
       <div className="space-y-6 animate-rise-in pb-8">
         {/* Pannello con scope proprio (token --scatto-*), coerente con Ordini. */}
         <div className="space-y-6 rounded-2xl bg-scatto-bg p-4 lg:p-6">
@@ -339,6 +352,7 @@ const Provvigioni = () => {
           <div className="space-y-1">
             <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink">Provvigioni</h1>
             <p className="text-sm text-scatto-muted">Centro di controllo economico — filtra, analizza, gestisci pagamenti</p>
+            <Button asChild variant="outline" className="mt-2"><Link to="/fiscalita-netto">Fiscalità e netto</Link></Button>
           </div>
         </div>
 
@@ -360,6 +374,7 @@ const Provvigioni = () => {
               </Select>
             </div>
 
+            <Select value={subjectFilter} onValueChange={setSubjectFilter}><SelectTrigger className="w-full sm:w-56" aria-label="Intestatario provvigioni"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Tutti gli intestatari</SelectItem><SelectItem value="unassigned">Da assegnare</SelectItem>{fiscal.subjects.data?.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
             <PeriodoSelector value={periodo} onChange={setPeriodo} />
 
             <div className="flex items-center gap-2 flex-1 min-w-[180px]">
@@ -424,7 +439,7 @@ const Provvigioni = () => {
         </div>
 
         {/* MAIN TABS */}
-        <Tabs defaultValue="overview" className="space-y-5">
+        <Tabs defaultValue={params.get("voce")?"provvigioni":"overview"} className="space-y-5">
           <TabsList className="w-full flex-wrap h-auto justify-start gap-1 rounded-xl border border-scatto-line bg-scatto-surface p-1">
             <TabsTrigger value="overview" className={provTabCls}><LineChartIcon className="h-4 w-4" />Overview</TabsTrigger>
             <TabsTrigger value="provvigioni" className={provTabCls}><Euro className="h-4 w-4" />Provvigioni</TabsTrigger>
@@ -742,12 +757,13 @@ const Provvigioni = () => {
                 </div>
               </div>
               <div className="p-3 sm:p-4">
+                {filteredTableRows.length>tableLimit&&<Button variant="outline" className="mb-3" onClick={()=>setTableLimit(n=>n+100)}>Mostra altri 100 ({tableLimit} / {filteredTableRows.length})</Button>}
                 {/* Mobile: una card per riga, niente scorrimento orizzontale */}
                 <div className="space-y-3 lg:hidden">
                   {filteredTableRows.length === 0 ? (
                     <p className="py-8 text-center text-sm text-scatto-muted">Nessuna riga per i filtri selezionati</p>
                   ) : (
-                    filteredTableRows.map((r) => {
+                    visibleTableRows.map((r) => {
                       const S = STATO_CONFIG[r.statoProvvigione];
                       const selectable = r.source !== "movimento";
                       return (
@@ -770,8 +786,9 @@ const Provvigioni = () => {
                               )}
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-bold text-scatto-ink">{r.aziendaNome}</p>
+                                <Button variant="ghost" size="sm" className="h-auto p-0 text-xs whitespace-normal" onClick={()=>setFiscalDetail(fiscalSource.data?.find(c=>c.id===r.id)??null)}>{fiscal.subjects.data?.find(s=>s.id===fiscalSource.data?.find(c=>c.id===r.id)?.subjectId)?.name??'Da assegnare'} · Dettaglio fiscale</Button>
                                 <p className="text-xs leading-snug text-scatto-muted">
-                                  {r.clienteNome} · {r.numero} · {format(new Date(r.data), "dd/MM/yy")}
+                                  {r.clienteNome} · {r.numero} · {r.data?format(new Date(r.data), "dd/MM/yy"):"N/D"}
                                 </p>
                               </div>
                             </div>
@@ -872,7 +889,7 @@ const Provvigioni = () => {
                       {filteredTableRows.length === 0 ? (
                         <TableRow><TableCell colSpan={12} className="text-center py-8 text-scatto-muted">Nessuna riga per i filtri selezionati</TableCell></TableRow>
                       ) : (
-                        filteredTableRows.map((r) => {
+                        visibleTableRows.map((r) => {
                           const S = STATO_CONFIG[r.statoProvvigione];
                           const selectable = r.source !== "movimento";
                           return (
@@ -887,7 +904,7 @@ const Provvigioni = () => {
                                   />
                                 )}
                               </TableCell>
-                              <TableCell className="whitespace-nowrap text-sm text-scatto-muted">{format(new Date(r.data), "dd/MM/yy")}</TableCell>
+                              <TableCell className="text-sm text-scatto-muted">{r.data?format(new Date(r.data), "dd/MM/yy"):'N/D'}<Button variant="ghost" size="sm" className="block h-auto p-0 text-xs" onClick={()=>setFiscalDetail(fiscalSource.data?.find(c=>c.id===r.id)??null)}>{fiscal.subjects.data?.find(s=>s.id===fiscalSource.data?.find(c=>c.id===r.id)?.subjectId)?.name??'Da assegnare'} · Fiscalità</Button></TableCell>
                               <TableCell className="font-mono text-xs text-scatto-muted">{r.numero}</TableCell>
                               <TableCell className="text-sm font-medium text-scatto-ink">{r.aziendaNome}</TableCell>
                               <TableCell className="text-sm text-scatto-ink">{r.clienteNome}</TableCell>

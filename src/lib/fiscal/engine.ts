@@ -1,4 +1,4 @@
-export type FiscalData = { competence_from?: string; competence_until?: string; invoice_on?: string; gross?: number; enasarco?: number; document_id?: string; receipts_managed?: boolean; duplicate_of?: string; confirmed?: boolean };
+export type FiscalData = { competence_from?: string; competence_until?: string; invoice_on?: string; gross?: number; enasarco?: number; document_id?: string; receipts_managed?: boolean; duplicate_of?: string; confirmed?: boolean; legacy_receipt_confirmed?: boolean };
 export type Receipt = { id: string; source: string; source_id: string; received_on: string; gross_amount: number; enasarco_withheld: number | null; bank_amount: number | null; verification: string; withholding?: number | null; vat?: number | null; stamp?: number | null; other_deductions?: number | null; document_id?: string | null };
 export type Commission = { id: string; source: 'ordine'|'fattura'|'movimento'; sourceId: string; number: string; companyId: string|null; company: string; customerId: string|null; customer: string; competence: string|null; competenceUntil: string|null; subjectId: string|null; mandateId: string|null; gross: number|null; estimated: boolean; paidSnapshot: number|null; paidDate: string|null; status: string; fiscal: FiscalData; receipts: Receipt[]; issues: string[]; revenue: number; notes: string|null };
 export type Mandate = { id: string; subject_id: string; company_id: string; relationship_key: string; valid_from: string; valid_until: string|null; agency_type: string };
@@ -12,7 +12,7 @@ export function resolveMandate(mandates:Mandate[],company:string|null,date:strin
 export function cashOf(c:Commission):Receipt[]{
  if(c.fiscal.receipts_managed||c.receipts.length)return c.receipts;
  // A paid status never substitutes for an amount or receipt date.
- if(c.paidSnapshot==null||c.paidSnapshot<=0||!c.paidDate||!['pagata','parziale'].includes(c.status))return [];
+ if(c.fiscal.legacy_receipt_confirmed!==true||c.paidSnapshot==null||c.paidSnapshot<=0||!c.paidDate||!['pagata','parziale'].includes(c.status))return [];
  return [{id:'legacy-'+c.id,source:c.source,source_id:c.sourceId,received_on:c.paidDate,gross_amount:c.paidSnapshot,enasarco_withheld:null,bank_amount:null,verification:'da_verificare'}];
 }
 export function progressiveTax(income:number,year:number){if(year!==2026)return null;return round(Math.min(Math.max(income,0),28000)*.23+Math.min(Math.max(income-28000,0),22000)*.33+Math.max(income-50000,0)*.43);}
@@ -25,7 +25,7 @@ export function inpsCalc(income:number,s:Settings,year:number){
 }
 export function enasarcoCalc(rows:Commission[],mandates:Mandate[],year:number){
  const groups=new Map<string,{base:number;type:string;ids:string[]}>();let incomplete=false;
- for(const c of rows){if(c.gross==null){incomplete=true;continue;}const m=mandates.find(x=>x.id===c.mandateId);if(!m||!['mono','pluri'].includes(m.agency_type)){incomplete=true;continue;}const key=m.relationship_key;const g=groups.get(key)??{base:0,type:m.agency_type,ids:[]};g.base+=c.gross;g.ids.push(c.id);groups.set(key,g);}
+ for(const c of rows){if(c.gross==null){incomplete=true;continue;}const m=mandates.find(x=>x.id===c.mandateId);if(!m||m.subject_id!==c.subjectId||m.company_id!==c.companyId||!c.competence||c.competence<m.valid_from||(m.valid_until!=null&&c.competence>m.valid_until)||!['mono','pluri'].includes(m.agency_type)){incomplete=true;continue;}const key=m.subject_id+':'+m.company_id+':'+m.relationship_key;const g=groups.get(key)??{base:0,type:m.agency_type,ids:[]};g.base+=c.gross;g.ids.push(c.id);groups.set(key,g);}
  const details=[...groups.entries()].map(([key,g])=>{const cap=year===2026?(g.type==='mono'?45717:30478):null;return {key,...g,cap,remaining:cap==null?null:Math.max(0,cap-g.base),agent:cap==null?null:round(Math.min(Math.max(0,g.base),cap)*.085)};});
  return {total:incomplete||year!==2026?null:round(details.reduce((s,g)=>s+(g.agent??0),0)),details,incomplete};
 }
@@ -45,7 +45,7 @@ export function fiscalSummary(all:Commission[],mandates:Mandate[],entries:Entry[
  const outstanding=round(localEarned.reduce((s,c)=>s+Math.max(0,(c.gross??0)-cashOf(c).reduce((a,r)=>a+r.gross_amount,0)),0));
  const fiscalEntries=entries.filter(e=>e.subject_id===f.subjectId&&e.year===f.year);
  const payments=entries.filter(e=>e.subject_id===f.subjectId&&e.paid_on?.startsWith(String(f.year))&&e.verification==='verificato');
- const deductible=round(payments.filter(e=>e.deductible).reduce((s,e)=>s+(e.amount+e.compensation)*e.deduction_percent/100,0));
+ const deductible=round(payments.filter(e=>e.deductible&&['inps','enasarco'].includes(e.kind)).reduce((s,e)=>s+(e.amount+e.compensation)*e.deduction_percent/100,0));
  const expenses=fiscalEntries.filter(e=>e.kind==='spesa');const expensesAmount=round(expenses.reduce((s,e)=>s+e.amount,0));
  const deductibleExpenses=expenses.filter(e=>e.deductible).reduce((s,e)=>s+e.amount*e.deduction_percent/100,0);
  const cashCriterion=settings.regime==='forfettario'||settings.criterion==='cassa';
@@ -54,7 +54,8 @@ export function fiscalSummary(all:Commission[],mandates:Mandate[],entries:Entry[
  const inps=inpsCalc(settings.inpsIncome??Math.max(0,income),settings,f.year);
  const enasarco=enasarcoCalc(annualEarned,mandates,f.year);
  const taxable=round(Math.max(0,income-deductible+(settings.regime==='ordinario'?(settings.otherIncome??0):0)));
- const blocked=settings.deductionsComplete!==true||(settings.regime==='ordinario'&&(settings.expensesComplete!==true||settings.otherIncomeComplete!==true||!settings.criterion));
+ const incompleteCash=subjectRows.some(c=>['pagata','parziale'].includes(c.status)&&!c.fiscal.receipts_managed&&!c.receipts.length&&c.fiscal.legacy_receipt_confirmed!==true);
+ const blocked=incompleteCash||settings.deductionsComplete!==true||(settings.regime==='ordinario'&&(settings.expensesComplete!==true||settings.otherIncomeComplete!==true||!settings.criterion));
  let tax:number|null=null;
  if(!blocked&&settings.regime==='forfettario'&&settings.rate!=null&&annualReceipts<=100000)tax=round(taxable*settings.rate/100);
  if(!blocked&&settings.regime==='ordinario'&&settings.regionalRate!=null&&settings.municipalRate!=null){const irpef=progressiveTax(taxable,f.year);tax=irpef==null?null:round(Math.max(0,irpef-(settings.taxCredits??0))+taxable*(settings.regionalRate+settings.municipalRate)/100);}
@@ -62,12 +63,14 @@ export function fiscalSummary(all:Commission[],mandates:Mandate[],entries:Entry[
  const paidLiabilities=confirmedPayments.reduce((s,e)=>s+e.amount+e.compensation,0);
  const withheld=annualCash.reduce((s,x)=>s+(x.receipt.enasarco_withheld??0),0);
  const documentedEnasarco=fiscalEntries.filter(e=>e.kind==='enasarco'&&e.verification==='verificato'&&e.paid_on).reduce((s,e)=>s+e.amount+e.compensation,0);
- const net=tax==null||inps==null||enasarco.total==null?null:round(annualRevenue-tax-inps.total-enasarco.total-expensesAmount);
+ const net=settings.expensesComplete!==true||tax==null||inps==null||enasarco.total==null?null:round(annualRevenue-tax-inps.total-enasarco.total-expensesAmount);
  const reserve=tax==null||inps==null||enasarco.total==null?null:round(Math.max(0,tax+inps.total+Math.max(0,enasarco.total-withheld-documentedEnasarco)-paidLiabilities-(settings.reserve??0)));
  const ratio=annualRevenue>0?Math.max(0,(cashCriterion?receipts:gross)/annualRevenue):0;
- const bankKnown=localCash.every(x=>x.receipt.bank_amount!=null);
+ const bankKnown=settings.expensesComplete===true&&!incompleteCash&&localCash.every(x=>x.receipt.bank_amount!=null);
  const cashAvailable=bankKnown?round(localCash.reduce((s,x)=>s+(x.receipt.bank_amount??0),0)-payments.filter(e=>matchesPeriod(e.paid_on,f)).reduce((s,e)=>s+e.amount,0)):null;
  const issues=[...subjectRows.flatMap(c=>c.issues.map(issue=>`${c.number}: ${issue}`))];
+ if(incompleteCash)issues.push('Incassi cumulativi precedenti da confermare o ricostruire: non inclusi nel reddito fiscale');
+ if(settings.expensesComplete!==true)issues.push('Spese attività incomplete: netto e disponibilità di cassa N/D');
  if(settings.deductionsComplete!==true)issues.push('Contributi deducibili effettivamente versati da completare');
  if(inps==null)issues.push('Posizione INPS, periodo di iscrizione o agevolazioni da confermare');
  if(enasarco.incomplete)issues.push('Tipo di mandato o base Enasarco da verificare');

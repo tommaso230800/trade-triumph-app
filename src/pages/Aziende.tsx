@@ -26,6 +26,10 @@ import { PriceIncreaseManager } from "@/components/aziende/PriceIncreaseManager"
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MandateAssignment } from "@/components/fiscal/MandateAssignment";
+import { useFiscal } from "@/hooks/useFiscal";
+import { resolveMandate } from "@/lib/fiscal/engine";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type FormData = {
   nome: string;
@@ -67,6 +71,11 @@ const Aziende = () => {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [editingAzienda, setEditingAzienda] = useState<Azienda | null>(null);
   const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const fiscal = useFiscal();
+  const [newSubject,setNewSubject]=useState('');
+  const [newDate,setNewDate]=useState('');
+  const [subjectFilter,setSubjectFilter]=useState("all");
+  const [selectedCompanies,setSelectedCompanies]=useState<string[]>([]);
 
   const { data: aziende, isLoading } = useAziende(searchTerm);
   const createAzienda = useCreateAzienda();
@@ -156,7 +165,8 @@ const Aziende = () => {
     if (editingAzienda) {
       await updateAzienda.mutateAsync({ id: editingAzienda.id, ...submitData });
     } else {
-      await createAzienda.mutateAsync(submitData);
+      const created=await createAzienda.mutateAsync(submitData);
+      await fiscal.assign.mutateAsync({companies:[created.id],subject:newSubject,date:newDate,type:'da_verificare'});
     }
     
     handleCloseDialog();
@@ -195,6 +205,7 @@ const Aziende = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                {editingAzienda ? <MandateAssignment companies={[editingAzienda]} /> : <div className="space-y-3"><Label>Intestatario del mandato e delle provvigioni *</Label><Select value={newSubject} onValueChange={setNewSubject}><SelectTrigger><SelectValue placeholder="Seleziona intestatario"/></SelectTrigger><SelectContent>{fiscal.subjects.data?.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><Label>Decorrenza mandato *</Label><Input type="date" className="min-w-0 max-w-full" value={newDate} onChange={e=>setNewDate(e.target.value)}/></div>}
                 <div className="space-y-2">
                   <Label>Partita IVA</Label>
                   <div className="flex gap-2">
@@ -352,7 +363,7 @@ const Aziende = () => {
                 <Button variant="outline" onClick={handleCloseDialog}>
                   Annulla
                 </Button>
-                <Button onClick={handleSubmit} disabled={(createAzienda.isPending || updateAzienda.isPending) || !formData.nome}>
+                <Button onClick={handleSubmit} disabled={(createAzienda.isPending || updateAzienda.isPending) || !formData.nome || (!editingAzienda&&(!newSubject||!newDate))}>
                   {(createAzienda.isPending || updateAzienda.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {editingAzienda ? "Salva" : "Crea"}
                 </Button>
@@ -369,6 +380,8 @@ const Aziende = () => {
           </TabsList>
 
           <TabsContent value="aziende" className="space-y-6">
+            <Select value={subjectFilter} onValueChange={setSubjectFilter}><SelectTrigger className="max-w-md" aria-label="Filtra intestatario"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Tutti gli intestatari</SelectItem><SelectItem value="unassigned">Da assegnare</SelectItem>{fiscal.subjects.data?.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
+            {selectedCompanies.length>0&&<MandateAssignment companies={(aziende??[]).filter(a=>selectedCompanies.includes(a.id))}/>}
             {/* Search - Modern */}
             <div className="relative max-w-md">
               <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -401,8 +414,9 @@ const Aziende = () => {
               </div>
             ) : (
               <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {aziende.map((azienda, idx) => (
+                {aziende.filter(a=>{const m=resolveMandate(fiscal.mandates.data??[],a.id,new Date().toLocaleDateString('sv-SE'));return subjectFilter==='all'||(subjectFilter==='unassigned'?!m:m?.subject_id===subjectFilter);}).map((azienda, idx) => (
                   <div key={azienda.id} className="min-w-0">
+                    <label className="flex items-center gap-3 py-2 text-xs text-muted-foreground"><Checkbox aria-label={`Seleziona azienda ${azienda.nome}`} checked={selectedCompanies.includes(azienda.id)} onCheckedChange={checked=>setSelectedCompanies(prev=>checked===true?[...prev,azienda.id]:prev.filter(id=>id!==azienda.id))}/>Intestatario: {fiscal.subjects.data?.find(s=>s.id===resolveMandate(fiscal.mandates.data??[],azienda.id,new Date().toLocaleDateString('sv-SE'))?.subject_id)?.name??'Da assegnare'}</label>
                     <AziendaCard
                       azienda={azienda}
                       onEdit={openEditDialog}

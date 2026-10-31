@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { useFiscalCommissions } from "@/hooks/useFiscalCommissions";
+import { cashOf } from "@/lib/fiscal/engine";
 import { useOrdini } from "@/hooks/useOrdini";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
@@ -16,6 +18,8 @@ export interface ProvvigioniFilters {
   clienteId: string | "tutti";
   periodo: PeriodoFilter;
   search?: string;
+  subjectId?: string;
+  rowId?: string;
 }
 
 export interface ProvvigioneRow {
@@ -63,150 +67,26 @@ const diffDays = (a: Date, b: Date) =>
   Math.floor((a.getTime() - b.getTime()) / (1000 * 60 * 60 * 24));
 
 export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
-  const { data: ordini } = useOrdini();
+  const fiscalSource = useFiscalCommissions();
   const { data: aziende } = useAziende();
   const { data: clienti } = useClienti();
-  const { fattureIncassate, fattureScadute } = useScadenziario();
-  const { data: movimenti } = useMovimentiProvvigione();
-
-  // Row unificate: ogni riga = una potenziale provvigione (da ordine o da fattura scadenziario)
-  const allRows = useMemo<ProvvigioneRow[]>(() => {
-    if (!ordini || !aziende) return [];
-
-    const aziendaById = new Map(aziende.map((a) => [a.id, a]));
-
-    const fromOrdini: ProvvigioneRow[] = ordini
-      .filter((o) => o.status !== "annullato" && o.status !== "stand_by")
-      .map((o) => {
-        const azienda = o.azienda_id ? aziendaById.get(o.azienda_id) : null;
-        const pct = azienda?.provvigione_percentuale || 0;
-        const totale = Number(o.totale) || 0;
-        const provv = totale * (pct / 100);
-        const stato = o.stato_provvigione || (o.provvigione_pagata ? "pagata" : "da_pagare");
-        const importoRegistrato = Number(o.importo_provvigione_pagata) || 0;
-        const provvPagata = stato === "pagata" || o.provvigione_pagata
-          ? (importoRegistrato || provv)
-          : stato === "parziale"
-          ? importoRegistrato
-          : 0;
-        const baseDate = new Date(o.data_ordine || o.created_at);
-        const ritardo = stato === "scaduta" && !isNaN(baseDate.getTime())
-          ? Math.max(0, diffDays(new Date(), baseDate))
-          : 0;
-        return {
-          id: `ord-${o.id}`,
-          ordineId: o.id,
-          source: "ordine" as const,
-          // Stessa catena di fallback di metricsEngine.orderDate: data_ordine,
-          // poi data_conferma, infine created_at. Prima mancava data_conferma:
-          // un ordine con data_ordine nullo finiva nel mese sbagliato rispetto
-          // a come lo bucketizzano KPI/Dashboard.
-          data: o.data_ordine || o.data_conferma || o.created_at,
-          numero: o.codice,
-          aziendaId: o.azienda_id,
-          aziendaNome: azienda?.nome || "—",
-          clienteId: o.cliente_id,
-          clienteNome: o.clienti?.nome || "—",
-          imponibile: totale,
-          sconto: Number(o.sconto) || 0,
-          netto: totale,
-          percentualeProvv: pct,
-          provvigioneMaturata: provv,
-          provvigionePagata: provvPagata,
-          statoProvvigione: stato as any,
-          dataPrevistaPagamento: stato === "scaduta" ? (o.data_ordine || o.created_at) : null,
-          dataEffettivaPagamento: o.data_incasso_provvigione,
-          giorniRitardo: ritardo,
-          metodoPagamento: o.metodo_pagamento_provvigione,
-          note: o.note_provvigione || o.note,
-          trimestrePagamento: (o as any).trimestre_pagamento ?? null,
-          annoPagamento: (o as any).anno_pagamento ?? null,
-        };
-      });
-
-    const allFatture = [...fattureIncassate, ...fattureScadute];
-    const fromFatture: ProvvigioneRow[] = allFatture.map((f: ScadenziarioFattura) => {
-      const stato = f.stato_provvigione || (f.provvigione_incassata ? "pagata" : "da_pagare");
-      const provvMaturata = Number(f.provvigione_calcolata) || 0;
-      const importoRegistrato = Number(f.importo_provvigione_pagata) || 0;
-      const provvPagata = stato === "pagata" || f.provvigione_incassata
-        ? (importoRegistrato || provvMaturata)
-        : stato === "parziale"
-        ? importoRegistrato
-        : 0;
-      const scadenza = f.data_scadenza ? new Date(f.data_scadenza) : null;
-      const pagamento = f.data_incasso_provvigione ? new Date(f.data_incasso_provvigione) : null;
-      const ritardo =
-        stato === "pagata" && scadenza && pagamento
-          ? Math.max(0, diffDays(pagamento, scadenza))
-          : scadenza && stato !== "pagata"
-          ? Math.max(0, diffDays(new Date(), scadenza))
-          : 0;
-      return {
-        id: `sc-${f.id}`,
-        scadenziarioId: f.id,
-        source: "fattura" as const,
-        data: f.data_incasso || f.data_fattura,
-        numero: f.numero_fattura,
-        aziendaId: f.azienda_id,
-        aziendaNome: f.azienda_nome,
-        clienteId: f.cliente_id,
-        clienteNome: f.cliente_nome,
-        imponibile: Number(f.importo) || 0,
-        sconto: 0,
-        netto: Number(f.importo) || 0,
-        percentualeProvv: Number(f.percentuale_provvigione) || 0,
-        provvigioneMaturata: provvMaturata,
-        provvigionePagata: provvPagata,
-        statoProvvigione: stato as any,
-        dataPrevistaPagamento: f.data_scadenza,
-        dataEffettivaPagamento: f.data_incasso_provvigione,
-        giorniRitardo: ritardo,
-        metodoPagamento: f.metodo_pagamento_provvigione,
-        note: f.note_provvigione,
-        trimestrePagamento: (f as any).trimestre_pagamento ?? null,
-        annoPagamento: (f as any).anno_pagamento ?? null,
-      };
-    });
-
-    const fromMovimenti: ProvvigioneRow[] = (movimenti || []).map((m: any) => {
-      const azienda = m.azienda_id ? aziendaById.get(m.azienda_id) : null;
-      const importo = Number(m.importo) || 0;
-      const stato = (m.stato || "pagata") as any;
-      return {
-        id: `mv-${m.id}`,
-        source: "movimento" as const,
-        data: m.data_pagamento || m.created_at,
-        numero: (m.tipo || "movimento").toUpperCase(),
-        aziendaId: m.azienda_id,
-        aziendaNome: azienda?.nome || m.aziende?.nome || "—",
-        clienteId: null,
-        clienteNome: m.descrizione || "Movimento provvigionale",
-        imponibile: 0,
-        sconto: 0,
-        netto: 0,
-        percentualeProvv: 0,
-        provvigioneMaturata: importo,
-        provvigionePagata: stato === "pagata" ? importo : stato === "parziale" ? importo : 0,
-        statoProvvigione: stato,
-        dataPrevistaPagamento: null,
-        dataEffettivaPagamento: m.data_pagamento,
-        giorniRitardo: 0,
-        metodoPagamento: m.metodo_pagamento,
-        note: m.note,
-        trimestrePagamento: m.trimestre_pagamento ?? (m.data_pagamento ? Math.floor(new Date(m.data_pagamento).getMonth() / 3) + 1 : null),
-        annoPagamento: m.anno_pagamento ?? (m.data_pagamento ? new Date(m.data_pagamento).getFullYear() : null),
-      };
-    });
-
-    return [...fromOrdini, ...fromFatture, ...fromMovimenti].sort(
-      (a, b) => new Date(b.data).getTime() - new Date(a.data).getTime()
-    );
-  }, [ordini, aziende, fattureIncassate, fattureScadute, movimenti]);
+  const allRows = useMemo<ProvvigioneRow[]>(() => (fiscalSource.data ?? []).filter(c => !c.fiscal.duplicate_of).map(c => ({
+    id:c.id, source:c.source, data:c.competence ?? '', numero:c.number,
+    aziendaId:c.companyId, aziendaNome:c.company, clienteId:c.customerId,clienteNome:c.customer,
+    imponibile:c.revenue,sconto:0,netto:c.revenue,percentualeProvv:c.revenue>0?(c.gross??0)/c.revenue*100:0,
+    provvigioneMaturata:c.gross??0,provvigionePagata:cashOf(c).reduce((s,r)=>s+r.gross_amount,0),
+    statoProvvigione:c.status as ProvvigioneRow['statoProvvigione'],dataPrevistaPagamento:null,
+    dataEffettivaPagamento:cashOf(c).map(r=>r.received_on).sort().at(-1)??null,giorniRitardo:0,
+    metodoPagamento:null,note:c.notes,ordineId:c.source==='ordine'?c.sourceId:undefined,
+    scadenziarioId:c.source==='fattura'?c.sourceId:undefined,trimestrePagamento:c.paidDate?Math.ceil(Number(c.paidDate.slice(5,7))/3):null,
+    annoPagamento:c.paidDate?Number(c.paidDate.slice(0,4)):null,
+  })),[fiscalSource.data]);
 
   const filteredRows = useMemo(() => {
     const term = (filters.search || "").trim().toLowerCase();
     return allRows.filter((r) => {
+      if (filters.rowId && r.id !== filters.rowId) return false;
+      if (filters.subjectId) { const c=fiscalSource.data?.find(c=>c.id===r.id); if(filters.subjectId==='unassigned'?!!c?.subjectId:c?.subjectId!==filters.subjectId)return false; }
       if (filters.aziendaId !== "tutte" && r.aziendaId !== filters.aziendaId) return false;
       if (filters.clienteId !== "tutti" && r.clienteId !== filters.clienteId) return false;
       if (!inPeriodo(r.data, filters.periodo)) return false;
@@ -216,7 +96,7 @@ export function useProvvigioniAnalytics(filters: ProvvigioniFilters) {
       }
       return true;
     });
-  }, [allRows, filters]);
+  }, [allRows, filters, fiscalSource.data]);
 
   // KPI
   const kpi = useMemo(() => {
