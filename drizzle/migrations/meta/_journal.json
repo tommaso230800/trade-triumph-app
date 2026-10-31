@@ -78,6 +78,13 @@
       "when": 1793451606030,
       "tag": "0010_fiscal_subjects_mandates_receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793451953508,
+      "tag": "0011_validate_fiscal_receipts_and_historical_corrections",
+      "breakpoints": true
     }
   ]
 }

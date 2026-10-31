@@ -5014,6 +5014,10 @@ export type Database = {
         Args: { p_id: string; p_tipo: string }
         Returns: undefined
       }
+      correct_fiscal_attributions: {
+        Args: { p_items: Json; p_mandate_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
