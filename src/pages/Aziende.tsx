@@ -72,6 +72,8 @@ const Aziende = () => {
   const [editingAzienda, setEditingAzienda] = useState<Azienda | null>(null);
   const [formData, setFormData] = useState<FormData>(defaultFormData);
   const fiscal = useFiscal();
+  const [newSubject,setNewSubject]=useState('');
+  const [newDate,setNewDate]=useState('');
   const [subjectFilter,setSubjectFilter]=useState("all");
   const [selectedCompanies,setSelectedCompanies]=useState<string[]>([]);
 
@@ -163,7 +165,8 @@ const Aziende = () => {
     if (editingAzienda) {
       await updateAzienda.mutateAsync({ id: editingAzienda.id, ...submitData });
     } else {
-      await createAzienda.mutateAsync(submitData);
+      const created=await createAzienda.mutateAsync(submitData);
+      await fiscal.assign.mutateAsync({companies:[created.id],subject:newSubject,date:newDate,type:'da_verificare'});
     }
     
     handleCloseDialog();
@@ -202,7 +205,7 @@ const Aziende = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                {editingAzienda && <MandateAssignment companies={[editingAzienda]} />}
+                {editingAzienda ? <MandateAssignment companies={[editingAzienda]} /> : <div className="space-y-3"><Label>Intestatario del mandato e delle provvigioni *</Label><Select value={newSubject} onValueChange={setNewSubject}><SelectTrigger><SelectValue placeholder="Seleziona intestatario"/></SelectTrigger><SelectContent>{fiscal.subjects.data?.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><Label>Decorrenza mandato *</Label><Input type="date" className="min-w-0 max-w-full" value={newDate} onChange={e=>setNewDate(e.target.value)}/></div>}
                 <div className="space-y-2">
                   <Label>Partita IVA</Label>
                   <div className="flex gap-2">
@@ -360,7 +363,7 @@ const Aziende = () => {
                 <Button variant="outline" onClick={handleCloseDialog}>
                   Annulla
                 </Button>
-                <Button onClick={handleSubmit} disabled={(createAzienda.isPending || updateAzienda.isPending) || !formData.nome}>
+                <Button onClick={handleSubmit} disabled={(createAzienda.isPending || updateAzienda.isPending) || !formData.nome || (!editingAzienda&&(!newSubject||!newDate))}>
                   {(createAzienda.isPending || updateAzienda.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {editingAzienda ? "Salva" : "Crea"}
                 </Button>
