@@ -1,5 +1,12 @@
 # Roadmap
 
+## Fiscalità e netto (31 ottobre)
+- [ ] Collegare Provvigioni e Fiscalità alla stessa fonte con incassi parziali e dettagli originali
+- [ ] Anagrafiche fiscali, mandati storici, assegnazioni azienda e correzioni esplicite
+- [ ] Profili annuali, contributi/imposte e flussi di cassa distinti; dati mancanti evidenti
+- [ ] Documenti e riferimenti dichiarati 2024/2025 senza inventare movimenti
+- [ ] Filtri, ripartizioni annuali, simulazioni e verifiche iPhone/regressioni
+
 ## Aggiornamento archivio, proposte, locandine e riordino (28 ottobre)
 - [x] Archivio/proposte ridisegnati: filtri richiudibili, anteprime, tipi, date, ordinamento e azioni iPhone
 - [x] Tre prodotti reali e prezzo 0,55 salvato/riaperto/PDF; listino invariato; export vuoto bloccato; PDF 36 righe con 2 intestazioni
