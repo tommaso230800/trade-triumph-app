@@ -207,6 +207,8 @@ const Provvigioni = () => {
     return sorted;
   }, [analytics.filteredRows, statoFilter, trimestreFilter, sortKey, sortDir]);
 
+  const [tableLimit,setTableLimit]=useState(100);
+  const visibleTableRows=filteredTableRows.slice(0,tableLimit);
   const toggleSort = (k: SortKey) => {
     if (k === sortKey) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
@@ -437,7 +439,7 @@ const Provvigioni = () => {
         </div>
 
         {/* MAIN TABS */}
-        <Tabs defaultValue="overview" className="space-y-5">
+        <Tabs defaultValue={params.get("voce")?"provvigioni":"overview"} className="space-y-5">
           <TabsList className="w-full flex-wrap h-auto justify-start gap-1 rounded-xl border border-scatto-line bg-scatto-surface p-1">
             <TabsTrigger value="overview" className={provTabCls}><LineChartIcon className="h-4 w-4" />Overview</TabsTrigger>
             <TabsTrigger value="provvigioni" className={provTabCls}><Euro className="h-4 w-4" />Provvigioni</TabsTrigger>
@@ -755,12 +757,13 @@ const Provvigioni = () => {
                 </div>
               </div>
               <div className="p-3 sm:p-4">
+                {filteredTableRows.length>tableLimit&&<Button variant="outline" className="mb-3" onClick={()=>setTableLimit(n=>n+100)}>Mostra altri 100 ({tableLimit} / {filteredTableRows.length})</Button>}
                 {/* Mobile: una card per riga, niente scorrimento orizzontale */}
                 <div className="space-y-3 lg:hidden">
                   {filteredTableRows.length === 0 ? (
                     <p className="py-8 text-center text-sm text-scatto-muted">Nessuna riga per i filtri selezionati</p>
                   ) : (
-                    filteredTableRows.map((r) => {
+                    visibleTableRows.map((r) => {
                       const S = STATO_CONFIG[r.statoProvvigione];
                       const selectable = r.source !== "movimento";
                       return (
@@ -886,7 +889,7 @@ const Provvigioni = () => {
                       {filteredTableRows.length === 0 ? (
                         <TableRow><TableCell colSpan={12} className="text-center py-8 text-scatto-muted">Nessuna riga per i filtri selezionati</TableCell></TableRow>
                       ) : (
-                        filteredTableRows.map((r) => {
+                        visibleTableRows.map((r) => {
                           const S = STATO_CONFIG[r.statoProvvigione];
                           const selectable = r.source !== "movimento";
                           return (
