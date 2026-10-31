@@ -1,4 +1,9 @@
 import { useState, useMemo } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useFiscal } from "@/hooks/useFiscal";
+import { useFiscalCommissions } from "@/hooks/useFiscalCommissions";
+import { CommissionDetail } from "@/components/fiscal/CommissionDetail";
+import { Commission } from "@/lib/fiscal/engine";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAziende } from "@/hooks/useAziende";
 import { useClienti } from "@/hooks/useClienti";
@@ -115,10 +120,15 @@ const provCardCls =
 type SortKey = keyof ProvvigioneRow;
 
 const Provvigioni = () => {
+  const [params] = useSearchParams();
+  const fiscal = useFiscal();
+  const fiscalSource = useFiscalCommissions();
+  const [fiscalDetail,setFiscalDetail]=useState<Commission|null>(null);
+  const [subjectFilter,setSubjectFilter]=useState(params.get("soggetto")??"all");
   const now = new Date();
   const [aziendaId, setAziendaId] = useState<string | "tutte">("tutte");
   const [clienteId, setClienteId] = useState<string | "tutti">("tutti");
-  const [periodo, setPeriodo] = useState<PeriodoFilter>({ tipo: "anno", year: now.getFullYear() });
+  const [periodo, setPeriodo] = useState<PeriodoFilter>(params.get("voce")||params.get("soggetto")?{tipo:"tutti"}:{ tipo: "anno", year: now.getFullYear() });
   const [search, setSearch] = useState("");
   const [statoFilter, setStatoFilter] = useState<"tutte" | "pagata" | "da_pagare" | "scaduta" | "parziale" | "contestazione">("tutte");
   const [sortKey, setSortKey] = useState<SortKey>("data");
@@ -136,7 +146,7 @@ const Provvigioni = () => {
   const { fattureIncassate, fattureScadute, aggiornaStatoProvvigione, aggiornaTrimestrePagamento, aggiornaBulkPagate } = useScadenziario();
   const aziendaColorMap = useAziendaColorMap();
 
-  const filters: ProvvigioniFilters = { aziendaId, clienteId, periodo, search };
+  const filters: ProvvigioniFilters = { aziendaId, clienteId, periodo, search,subjectId:subjectFilter==='all'?undefined:subjectFilter,rowId:params.get('voce')??undefined };
   const analytics = useProvvigioniAnalytics(filters);
 
   // Serie mensile senza i mesi vuoti iniziali: la finestra resta di 24 mesi,
@@ -331,6 +341,7 @@ const Provvigioni = () => {
 
   return (
     <MainLayout>
+      <CommissionDetail commission={fiscalDetail} onClose={()=>setFiscalDetail(null)}/>
       <div className="space-y-6 animate-rise-in pb-8">
         {/* Pannello con scope proprio (token --scatto-*), coerente con Ordini. */}
         <div className="space-y-6 rounded-2xl bg-scatto-bg p-4 lg:p-6">
@@ -339,6 +350,7 @@ const Provvigioni = () => {
           <div className="space-y-1">
             <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink">Provvigioni</h1>
             <p className="text-sm text-scatto-muted">Centro di controllo economico — filtra, analizza, gestisci pagamenti</p>
+            <Button asChild variant="outline" className="mt-2"><Link to="/fiscalita-netto">Fiscalità e netto</Link></Button>
           </div>
         </div>
 
@@ -360,6 +372,7 @@ const Provvigioni = () => {
               </Select>
             </div>
 
+            <Select value={subjectFilter} onValueChange={setSubjectFilter}><SelectTrigger className="w-full sm:w-56" aria-label="Intestatario provvigioni"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Tutti gli intestatari</SelectItem><SelectItem value="unassigned">Da assegnare</SelectItem>{fiscal.subjects.data?.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
             <PeriodoSelector value={periodo} onChange={setPeriodo} />
 
             <div className="flex items-center gap-2 flex-1 min-w-[180px]">
@@ -770,8 +783,9 @@ const Provvigioni = () => {
                               )}
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-bold text-scatto-ink">{r.aziendaNome}</p>
+                                <Button variant="ghost" size="sm" className="h-auto p-0 text-xs whitespace-normal" onClick={()=>setFiscalDetail(fiscalSource.data?.find(c=>c.id===r.id)??null)}>{fiscal.subjects.data?.find(s=>s.id===fiscalSource.data?.find(c=>c.id===r.id)?.subjectId)?.name??'Da assegnare'} · Dettaglio fiscale</Button>
                                 <p className="text-xs leading-snug text-scatto-muted">
-                                  {r.clienteNome} · {r.numero} · {format(new Date(r.data), "dd/MM/yy")}
+                                  {r.clienteNome} · {r.numero} · {r.data?format(new Date(r.data), "dd/MM/yy"):"N/D"}
                                 </p>
                               </div>
                             </div>
@@ -887,7 +901,7 @@ const Provvigioni = () => {
                                   />
                                 )}
                               </TableCell>
-                              <TableCell className="whitespace-nowrap text-sm text-scatto-muted">{format(new Date(r.data), "dd/MM/yy")}</TableCell>
+                              <TableCell className="text-sm text-scatto-muted">{r.data?format(new Date(r.data), "dd/MM/yy"):'N/D'}<Button variant="ghost" size="sm" className="block h-auto p-0 text-xs" onClick={()=>setFiscalDetail(fiscalSource.data?.find(c=>c.id===r.id)??null)}>{fiscal.subjects.data?.find(s=>s.id===fiscalSource.data?.find(c=>c.id===r.id)?.subjectId)?.name??'Da assegnare'} · Fiscalità</Button></TableCell>
                               <TableCell className="font-mono text-xs text-scatto-muted">{r.numero}</TableCell>
                               <TableCell className="text-sm font-medium text-scatto-ink">{r.aziendaNome}</TableCell>
                               <TableCell className="text-sm text-scatto-ink">{r.clienteNome}</TableCell>
