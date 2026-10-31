@@ -26,6 +26,7 @@ const Ordini = lazy(() => import("./pages/Ordini"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const AnalyticsAzienda = lazy(() => import("./pages/AnalyticsAzienda"));
 const Provvigioni = lazy(() => import("./pages/Provvigioni"));
+const FiscalitaNetto = lazy(() => import("./pages/FiscalitaNetto"));
 const Canvass = lazy(() => import("./pages/Canvass"));
 const AssistenteAICommerciale = lazy(() => import("./pages/AssistenteAICommerciale"));
 const RiordinoForecast = lazy(() => import("./pages/RiordinoForecast"));
@@ -74,6 +75,7 @@ const App = () => (
                 {/* Vecchio percorso KPI: reindirizza ad Analytics */}
                 <Route path="/kpi" element={<Navigate to="/analytics" replace />} />
                 <Route path="/provvigioni" element={<Provvigioni />} />
+                <Route path="/fiscalita-netto" element={<FiscalitaNetto />} />
                 <Route path="/canvass" element={<Canvass />} />
                 <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
                 <Route path="/riordino" element={<RiordinoForecast />} />

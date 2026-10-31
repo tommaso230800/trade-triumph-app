@@ -50,6 +50,7 @@ const baseNavigation: NavItem[] = [
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
+  { name: "Fiscalità e netto", href: "/fiscalita-netto", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
   { name: "Locandine e proposte", href: "/proposte", icon: FileText },
   { name: "File e documenti", href: "/file-documenti", icon: FolderOpen },
