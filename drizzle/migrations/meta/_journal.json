@@ -85,6 +85,13 @@
       "when": 1793451953508,
       "tag": "0011_validate_fiscal_receipts_and_historical_corrections",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793452052560,
+      "tag": "0012_protect_managed_receipt_snapshots",
+      "breakpoints": true
     }
   ]
 }
