@@ -1,0 +1,21 @@
+import {describe,it,expect} from 'vitest';
+import {cashOf,Commission,fiscalSummary,HISTORICAL,inpsCalc,enasarcoCalc,progressiveTax,resolveMandate} from './engine';
+const c=(extra:Partial<Commission>={}):Commission=>({id:'ord-a',source:'ordine',sourceId:'a',number:'a',companyId:'company',company:'company',customerId:null,customer:'',competence:'2026-01-01',competenceUntil:null,subjectId:'tommaso',mandateId:'m',gross:1000,estimated:false,paidSnapshot:null,paidDate:null,status:'pagata',fiscal:{},receipts:[],issues:[],revenue:999999,notes:null,...extra});
+const m={id:'m',subject_id:'tommaso',company_id:'company',relationship_key:'r',valid_from:'2026-01-01',valid_until:null,agency_type:'pluri'};
+describe('fiscal rules',()=>{
+ it('paid status is not cash',()=>expect(cashOf(c())).toEqual([]));
+ it('amount without date is incomplete',()=>expect(cashOf(c({paidSnapshot:1000}))).toEqual([]));
+ it('partial receipts use their own year not competence',()=>{const x=c({competence:'2025-12-01',fiscal:{receipts_managed:true},receipts:[{id:'r',source:'ordine',source_id:'a',received_on:'2026-01-01',gross_amount:300,enasarco_withheld:null,bank_amount:null,verification:'dichiarato'}]});const s=fiscalSummary([x],[m],[],{}, {subjectId:'tommaso',year:2026});expect(s.receipts).toBe(300);expect(s.gross).toBe(0);});
+ it('managed receipts do not duplicate legacy cumulative totals',()=>expect(cashOf(c({paidSnapshot:1000,paidDate:'2026-01-01',fiscal:{receipts_managed:true}}))).toEqual([]));
+ it('uses 62% income then 15%, never customer order revenue',()=>{const s=fiscalSummary([c({paidSnapshot:1000,paidDate:'2026-01-01'})],[m],[],{regime:'forfettario',coefficient:62,rate:15,deductionsComplete:true},{subjectId:'tommaso',year:2026});expect(s.income).toBe(620);expect(s.tax).toBe(93);});
+ it('does not infer deductible payments from declared liabilities',()=>{const e={id:'e',subject_id:'tommaso',year:2026,kind:'inps',nature:'saldo',amount:100,compensation:0,paid_on:null,due_on:null,verification:'verificato',deductible:true,deduction_percent:100};expect(fiscalSummary([],[],[e],{}, {subjectId:'tommaso',year:2026}).deductible).toBe(0);});
+ it('company filtering does not restart annual INPS',()=>{const s={inpsEnabled:true,inpsMonths:12,inpsCeiling:122295,inpsReduction:0};const a=fiscalSummary([c()], [m],[],s,{subjectId:'tommaso',year:2026});const b=fiscalSummary([c()], [m],[],s,{subjectId:'tommaso',year:2026,companyId:'other'});expect(a.inps?.total).toBe(4611.64);expect(b.inps?.total).toBe(a.inps?.total);});
+ it('unconfirmed reduction is not blindly applied',()=>expect(inpsCalc(20000,{inpsEnabled:true,inpsMonths:12,inpsCeiling:122295,inpsReduction:35},2026)).toBeNull());
+ it('Enasarco agent is 8.5% capped per relationship',()=>{expect(enasarcoCalc([c({gross:50000})],[m],2026).total).toBe(2590.63);expect(enasarcoCalc([c({gross:50000}),c({id:'b',mandateId:'n',companyId:'other',gross:50000})],[m,{...m,id:'n',relationship_key:'other',company_id:'other'}],2026).total).toBe(5181.26);});
+ it('no Tommaso income from SAS',()=>expect(fiscalSummary([c({subjectId:'sas'})],[m],[],{}, {subjectId:'tommaso',year:2026}).gross).toBe(0));
+ it('preserves mandate validity',()=>{expect(resolveMandate([m],'company','2025-12-31')).toBeNull();expect(resolveMandate([m],'company','2026-01-01')?.subject_id).toBe('tommaso');});
+ it('2026 progressive IRPEF',()=>expect(progressiveTax(50000,2026)).toBe(13700));
+ it('declared references are not generated receipts',()=>{expect(HISTORICAL[2024].tax).toBe(738);expect(HISTORICAL[2025].receipts).toBe(34735);expect(fiscalSummary([],[],[],{}, {subjectId:'tommaso',year:2025}).receipts).toBe(0);});
+ it('missing deduction completeness blocks tax',()=>expect(fiscalSummary([c()],[],[],{regime:'forfettario',rate:15},{subjectId:'tommaso',year:2026}).tax).toBeNull());
+ it('over 100000 requires ordinary recalculation',()=>expect(fiscalSummary([c({paidSnapshot:100001,paidDate:'2026-01-01'})],[m],[],{regime:'forfettario',rate:15,deductionsComplete:true},{subjectId:'tommaso',year:2026}).tax).toBeNull());
+});

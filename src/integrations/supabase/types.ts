@@ -949,6 +949,74 @@ export type Database = {
           },
         ]
       }
+      commission_receipts: {
+        Row: {
+          bank_amount: number | null
+          created_at: string
+          document_id: string | null
+          enasarco_withheld: number | null
+          gross_amount: number
+          id: string
+          notes: string | null
+          other_deductions: number | null
+          received_on: string
+          request_id: string
+          source: string
+          source_id: string
+          stamp: number | null
+          user_id: string
+          vat: number | null
+          verification: string
+          withholding: number | null
+        }
+        Insert: {
+          bank_amount?: number | null
+          created_at?: string
+          document_id?: string | null
+          enasarco_withheld?: number | null
+          gross_amount: number
+          id?: string
+          notes?: string | null
+          other_deductions?: number | null
+          received_on: string
+          request_id?: string
+          source: string
+          source_id: string
+          stamp?: number | null
+          user_id?: string
+          vat?: number | null
+          verification?: string
+          withholding?: number | null
+        }
+        Update: {
+          bank_amount?: number | null
+          created_at?: string
+          document_id?: string | null
+          enasarco_withheld?: number | null
+          gross_amount?: number
+          id?: string
+          notes?: string | null
+          other_deductions?: number | null
+          received_on?: string
+          request_id?: string
+          source?: string
+          source_id?: string
+          stamp?: number | null
+          user_id?: string
+          vat?: number | null
+          verification?: string
+          withholding?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commission_receipts_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_products: {
         Row: {
           agente_concorrente: string | null
@@ -1597,6 +1665,7 @@ export type Database = {
           dimensione: number | null
           entita: Database["public"]["Enums"]["documento_entita"]
           entita_id: string | null
+          fiscal_subject_id: string | null
           hash_sha256: string | null
           id: string
           mime_type: string | null
@@ -1627,6 +1696,7 @@ export type Database = {
           dimensione?: number | null
           entita?: Database["public"]["Enums"]["documento_entita"]
           entita_id?: string | null
+          fiscal_subject_id?: string | null
           hash_sha256?: string | null
           id?: string
           mime_type?: string | null
@@ -1657,6 +1727,7 @@ export type Database = {
           dimensione?: number | null
           entita?: Database["public"]["Enums"]["documento_entita"]
           entita_id?: string | null
+          fiscal_subject_id?: string | null
           hash_sha256?: string | null
           id?: string
           mime_type?: string | null
@@ -1688,6 +1759,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "clienti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documenti_fiscal_subject_id_fkey"
+            columns: ["fiscal_subject_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_subjects"
             referencedColumns: ["id"]
           },
           {
@@ -2199,6 +2277,213 @@ export type Database = {
           },
         ]
       }
+      fiscal_entries: {
+        Row: {
+          amount: number
+          compensation: number
+          created_at: string
+          deductible: boolean
+          deduction_percent: number
+          document_field: string | null
+          document_id: string | null
+          document_page: number | null
+          due_on: string | null
+          id: string
+          kind: string
+          nature: string
+          notes: string | null
+          paid_on: string | null
+          subject_id: string
+          user_id: string
+          verification: string
+          year: number
+        }
+        Insert: {
+          amount: number
+          compensation?: number
+          created_at?: string
+          deductible?: boolean
+          deduction_percent?: number
+          document_field?: string | null
+          document_id?: string | null
+          document_page?: number | null
+          due_on?: string | null
+          id?: string
+          kind: string
+          nature?: string
+          notes?: string | null
+          paid_on?: string | null
+          subject_id: string
+          user_id?: string
+          verification?: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          compensation?: number
+          created_at?: string
+          deductible?: boolean
+          deduction_percent?: number
+          document_field?: string | null
+          document_id?: string | null
+          document_page?: number | null
+          due_on?: string | null
+          id?: string
+          kind?: string
+          nature?: string
+          notes?: string | null
+          paid_on?: string | null
+          subject_id?: string
+          user_id?: string
+          verification?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_entries_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_entries_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fiscal_mandates: {
+        Row: {
+          agency_type: string
+          company_id: string
+          created_at: string
+          document_id: string | null
+          id: string
+          relationship_key: string
+          subject_id: string
+          user_id: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          agency_type?: string
+          company_id: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          relationship_key?: string
+          subject_id: string
+          user_id?: string
+          valid_from: string
+          valid_until?: string | null
+        }
+        Update: {
+          agency_type?: string
+          company_id?: string
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          relationship_key?: string
+          subject_id?: string
+          user_id?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_mandates_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_mandates_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fiscal_mandates_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fiscal_profiles: {
+        Row: {
+          declaration_reference: Json | null
+          id: string
+          settings: Json
+          subject_id: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          declaration_reference?: Json | null
+          id?: string
+          settings?: Json
+          subject_id: string
+          user_id?: string
+          year: number
+        }
+        Update: {
+          declaration_reference?: Json | null
+          id?: string
+          settings?: Json
+          subject_id?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiscal_profiles_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fiscal_subjects: {
+        Row: {
+          created_at: string
+          id: string
+          legal_type: string
+          name: string
+          subject_key: string
+          tax_code: string | null
+          user_id: string
+          vat_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          legal_type?: string
+          name: string
+          subject_key: string
+          tax_code?: string | null
+          user_id?: string
+          vat_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          legal_type?: string
+          name?: string
+          subject_key?: string
+          tax_code?: string | null
+          user_id?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
       follow_up_regole: {
         Row: {
           attivo: boolean
@@ -2335,6 +2620,9 @@ export type Database = {
           descrizione: string | null
           estratto_id: string | null
           estratto_riga_id: string | null
+          fiscal_data: Json
+          fiscal_mandate_id: string | null
+          fiscal_subject_id: string | null
           id: string
           importo: number
           metodo_pagamento: string | null
@@ -2355,6 +2643,9 @@ export type Database = {
           descrizione?: string | null
           estratto_id?: string | null
           estratto_riga_id?: string | null
+          fiscal_data?: Json
+          fiscal_mandate_id?: string | null
+          fiscal_subject_id?: string | null
           id?: string
           importo?: number
           metodo_pagamento?: string | null
@@ -2375,6 +2666,9 @@ export type Database = {
           descrizione?: string | null
           estratto_id?: string | null
           estratto_riga_id?: string | null
+          fiscal_data?: Json
+          fiscal_mandate_id?: string | null
+          fiscal_subject_id?: string | null
           id?: string
           importo?: number
           metodo_pagamento?: string | null
@@ -2400,6 +2694,20 @@ export type Database = {
             columns: ["estratto_riga_id"]
             isOneToOne: false
             referencedRelation: "estratti_provvigioni_righe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimenti_provvigione_fiscal_mandate_id_fkey"
+            columns: ["fiscal_mandate_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_mandates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "movimenti_provvigione_fiscal_subject_id_fkey"
+            columns: ["fiscal_subject_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_subjects"
             referencedColumns: ["id"]
           },
         ]
@@ -2597,6 +2905,9 @@ export type Database = {
           deleted_at: string | null
           destinazione_consegna: string | null
           estratto_riga_id: string | null
+          fiscal_data: Json
+          fiscal_mandate_id: string | null
+          fiscal_subject_id: string | null
           id: string
           importo_provvigione_pagata: number
           metodo_pagamento_provvigione: string | null
@@ -2645,6 +2956,9 @@ export type Database = {
           deleted_at?: string | null
           destinazione_consegna?: string | null
           estratto_riga_id?: string | null
+          fiscal_data?: Json
+          fiscal_mandate_id?: string | null
+          fiscal_subject_id?: string | null
           id?: string
           importo_provvigione_pagata?: number
           metodo_pagamento_provvigione?: string | null
@@ -2693,6 +3007,9 @@ export type Database = {
           deleted_at?: string | null
           destinazione_consegna?: string | null
           estratto_riga_id?: string | null
+          fiscal_data?: Json
+          fiscal_mandate_id?: string | null
+          fiscal_subject_id?: string | null
           id?: string
           importo_provvigione_pagata?: number
           metodo_pagamento_provvigione?: string | null
@@ -2752,6 +3069,20 @@ export type Database = {
             columns: ["estratto_riga_id"]
             isOneToOne: false
             referencedRelation: "estratti_provvigioni_righe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordini_fiscal_mandate_id_fkey"
+            columns: ["fiscal_mandate_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_mandates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ordini_fiscal_subject_id_fkey"
+            columns: ["fiscal_subject_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_subjects"
             referencedColumns: ["id"]
           },
           {
@@ -3971,6 +4302,9 @@ export type Database = {
           data_scadenza: string
           estratto_id: string | null
           estratto_riga_id: string | null
+          fiscal_data: Json
+          fiscal_mandate_id: string | null
+          fiscal_subject_id: string | null
           id: string
           importo: number
           importo_provvigione_pagata: number
@@ -4005,6 +4339,9 @@ export type Database = {
           data_scadenza: string
           estratto_id?: string | null
           estratto_riga_id?: string | null
+          fiscal_data?: Json
+          fiscal_mandate_id?: string | null
+          fiscal_subject_id?: string | null
           id?: string
           importo?: number
           importo_provvigione_pagata?: number
@@ -4039,6 +4376,9 @@ export type Database = {
           data_scadenza?: string
           estratto_id?: string | null
           estratto_riga_id?: string | null
+          fiscal_data?: Json
+          fiscal_mandate_id?: string | null
+          fiscal_subject_id?: string | null
           id?: string
           importo?: number
           importo_provvigione_pagata?: number
@@ -4086,6 +4426,20 @@ export type Database = {
             columns: ["estratto_riga_id"]
             isOneToOne: false
             referencedRelation: "estratti_provvigioni_righe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scadenziario_fatture_fiscal_mandate_id_fkey"
+            columns: ["fiscal_mandate_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_mandates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scadenziario_fatture_fiscal_subject_id_fkey"
+            columns: ["fiscal_subject_id"]
+            isOneToOne: false
+            referencedRelation: "fiscal_subjects"
             referencedColumns: ["id"]
           },
           {
@@ -4639,6 +4993,15 @@ export type Database = {
         }
         Returns: string
       }
+      assign_fiscal_mandates: {
+        Args: {
+          p_agency_type?: string
+          p_company_ids: string[]
+          p_subject_id: string
+          p_valid_from: string
+        }
+        Returns: undefined
+      }
       calcola_provvigione_prevista: {
         Args: { p_ordine_id: string }
         Returns: number
@@ -4670,6 +5033,16 @@ export type Database = {
       }
       purge_cestino_expired: { Args: never; Returns: undefined }
       remove_commercial_proposal: { Args: { p_id: string }; Returns: undefined }
+      save_commission_receipt: {
+        Args: {
+          p_receipt: Json
+          p_receipt_id?: string
+          p_remove?: boolean
+          p_source: string
+          p_source_id: string
+        }
+        Returns: string
+      }
       trova_condizione_provvigione: {
         Args: {
           p_azienda_id: string
