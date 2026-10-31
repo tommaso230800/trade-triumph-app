@@ -1,0 +1,69 @@
+CREATE TABLE public.fiscal_subjects (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL DEFAULT auth.uid(), subject_key text NOT NULL, name text NOT NULL, legal_type text NOT NULL DEFAULT 'individual', tax_code text, vat_number text, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(user_id,subject_key));
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.fiscal_subjects TO authenticated; GRANT ALL ON public.fiscal_subjects TO service_role;
+ALTER TABLE public.fiscal_subjects ENABLE ROW LEVEL SECURITY;
+CREATE POLICY fiscal_subject_owner ON public.fiscal_subjects FOR ALL TO authenticated USING(user_id=auth.uid()) WITH CHECK(user_id=auth.uid());
+CREATE UNIQUE INDEX fiscal_subject_tax_identity ON public.fiscal_subjects(user_id,upper(regexp_replace(tax_code,'\s','','g'))) WHERE tax_code IS NOT NULL AND tax_code<>'';
+CREATE UNIQUE INDEX fiscal_subject_vat_identity ON public.fiscal_subjects(user_id,upper(regexp_replace(vat_number,'\s','','g'))) WHERE vat_number IS NOT NULL AND vat_number<>'';
+CREATE TABLE public.fiscal_profiles (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL DEFAULT auth.uid(), subject_id uuid NOT NULL REFERENCES public.fiscal_subjects(id), year integer NOT NULL, settings jsonb NOT NULL DEFAULT '{}'::jsonb, declaration_reference jsonb, UNIQUE(subject_id,year));
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.fiscal_profiles TO authenticated; GRANT ALL ON public.fiscal_profiles TO service_role;
+ALTER TABLE public.fiscal_profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY fiscal_profile_owner ON public.fiscal_profiles FOR ALL TO authenticated USING(user_id=auth.uid()) WITH CHECK(user_id=auth.uid() AND EXISTS(SELECT 1 FROM public.fiscal_subjects s WHERE s.id=subject_id AND s.user_id=auth.uid()));
+CREATE TABLE public.fiscal_mandates (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL DEFAULT auth.uid(), company_id uuid NOT NULL REFERENCES public.aziende(id), subject_id uuid NOT NULL REFERENCES public.fiscal_subjects(id), relationship_key uuid NOT NULL DEFAULT gen_random_uuid(), valid_from date NOT NULL, valid_until date, agency_type text NOT NULL DEFAULT 'da_verificare', document_id uuid REFERENCES public.documenti(id), created_at timestamptz NOT NULL DEFAULT now(), CHECK(valid_until IS NULL OR valid_until>=valid_from));
+GRANT SELECT ON public.fiscal_mandates TO authenticated; GRANT ALL ON public.fiscal_mandates TO service_role;
+ALTER TABLE public.fiscal_mandates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY fiscal_mandate_owner ON public.fiscal_mandates FOR SELECT TO authenticated USING(user_id=auth.uid());
+CREATE TABLE public.commission_receipts (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL DEFAULT auth.uid(), source text NOT NULL CHECK(source IN ('ordine','fattura','movimento')), source_id uuid NOT NULL, received_on date NOT NULL, gross_amount numeric NOT NULL CHECK(gross_amount>0), enasarco_withheld numeric, withholding numeric, vat numeric, stamp numeric, other_deductions numeric, bank_amount numeric, document_id uuid REFERENCES public.documenti(id), verification text NOT NULL DEFAULT 'dichiarato' CHECK(verification IN ('dichiarato','verificato','da_verificare')), request_id uuid NOT NULL DEFAULT gen_random_uuid(), notes text, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(user_id,request_id));
+GRANT SELECT ON public.commission_receipts TO authenticated; GRANT ALL ON public.commission_receipts TO service_role;
+ALTER TABLE public.commission_receipts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY commission_receipt_owner ON public.commission_receipts FOR SELECT TO authenticated USING(user_id=auth.uid());
+CREATE INDEX commission_receipt_source ON public.commission_receipts(user_id,source,source_id);
+CREATE TABLE public.fiscal_entries (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL DEFAULT auth.uid(), subject_id uuid NOT NULL REFERENCES public.fiscal_subjects(id), year integer NOT NULL, kind text NOT NULL, nature text NOT NULL DEFAULT 'altro', amount numeric NOT NULL CHECK(amount>=0), compensation numeric NOT NULL DEFAULT 0, due_on date, paid_on date, verification text NOT NULL DEFAULT 'da_verificare', deductible boolean NOT NULL DEFAULT false, deduction_percent numeric NOT NULL DEFAULT 100 CHECK(deduction_percent BETWEEN 0 AND 100), document_id uuid REFERENCES public.documenti(id), document_page integer, document_field text, notes text, created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.fiscal_entries TO authenticated; GRANT ALL ON public.fiscal_entries TO service_role;
+ALTER TABLE public.fiscal_entries ENABLE ROW LEVEL SECURITY;
+CREATE POLICY fiscal_entry_owner ON public.fiscal_entries FOR ALL TO authenticated USING(user_id=auth.uid()) WITH CHECK(user_id=auth.uid() AND EXISTS(SELECT 1 FROM public.fiscal_subjects s WHERE s.id=subject_id AND s.user_id=auth.uid()) AND (document_id IS NULL OR EXISTS(SELECT 1 FROM public.documenti d WHERE d.id=document_id AND d.user_id=auth.uid())));
+ALTER TABLE public.ordini ADD COLUMN fiscal_subject_id uuid REFERENCES public.fiscal_subjects(id), ADD COLUMN fiscal_mandate_id uuid REFERENCES public.fiscal_mandates(id), ADD COLUMN fiscal_data jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.scadenziario_fatture ADD COLUMN fiscal_subject_id uuid REFERENCES public.fiscal_subjects(id), ADD COLUMN fiscal_mandate_id uuid REFERENCES public.fiscal_mandates(id), ADD COLUMN fiscal_data jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.movimenti_provvigione ADD COLUMN fiscal_subject_id uuid REFERENCES public.fiscal_subjects(id), ADD COLUMN fiscal_mandate_id uuid REFERENCES public.fiscal_mandates(id), ADD COLUMN fiscal_data jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.documenti ADD COLUMN fiscal_subject_id uuid REFERENCES public.fiscal_subjects(id);
+CREATE OR REPLACE FUNCTION public.fiscal_source_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE d date; m public.fiscal_mandates; j jsonb; BEGIN
+ j:=to_jsonb(NEW); d:=COALESCE(NULLIF(NEW.fiscal_data->>'competence_from','')::date,NULLIF(j->>'data_ordine','')::date,NULLIF(j->>'data_fattura','')::date);
+ IF TG_OP='INSERT' AND NEW.fiscal_subject_id IS NULL AND d IS NOT NULL THEN SELECT * INTO m FROM public.fiscal_mandates WHERE company_id=NEW.azienda_id AND user_id=NEW.user_id AND valid_from<=d AND (valid_until IS NULL OR valid_until>=d) ORDER BY valid_from DESC LIMIT 1; NEW.fiscal_subject_id:=m.subject_id; NEW.fiscal_mandate_id:=m.id; END IF;
+ IF NEW.fiscal_subject_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.fiscal_subjects WHERE id=NEW.fiscal_subject_id AND user_id=NEW.user_id) THEN RAISE EXCEPTION 'Intestatario non accessibile'; END IF;
+ IF NEW.fiscal_mandate_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.fiscal_mandates WHERE id=NEW.fiscal_mandate_id AND user_id=NEW.user_id AND company_id=NEW.azienda_id AND subject_id=NEW.fiscal_subject_id) THEN RAISE EXCEPTION 'Mandato non coerente'; END IF;
+ IF NULLIF(NEW.fiscal_data->>'document_id','') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.documenti WHERE id=(NEW.fiscal_data->>'document_id')::uuid AND user_id=NEW.user_id) THEN RAISE EXCEPTION 'Documento non accessibile'; END IF;
+ RETURN NEW; END $$;
+CREATE TRIGGER fiscal_order_guard BEFORE INSERT OR UPDATE ON public.ordini FOR EACH ROW EXECUTE FUNCTION public.fiscal_source_guard();
+CREATE TRIGGER fiscal_invoice_guard BEFORE INSERT OR UPDATE ON public.scadenziario_fatture FOR EACH ROW EXECUTE FUNCTION public.fiscal_source_guard();
+CREATE TRIGGER fiscal_movement_guard BEFORE INSERT OR UPDATE ON public.movimenti_provvigione FOR EACH ROW EXECUTE FUNCTION public.fiscal_source_guard();
+CREATE OR REPLACE FUNCTION public.assign_fiscal_mandates(p_company_ids uuid[],p_subject_id uuid,p_valid_from date,p_agency_type text DEFAULT 'da_verificare') RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE c uuid; old_m public.fiscal_mandates; BEGIN
+ IF auth.uid() IS NULL OR p_valid_from IS NULL OR p_agency_type NOT IN ('mono','pluri','da_verificare') OR NOT EXISTS(SELECT 1 FROM public.fiscal_subjects WHERE id=p_subject_id AND user_id=auth.uid()) THEN RAISE EXCEPTION 'Dati intestazione non validi'; END IF;
+ FOREACH c IN ARRAY p_company_ids LOOP
+ PERFORM 1 FROM public.aziende WHERE id=c AND user_id=auth.uid() AND deleted_at IS NULL FOR UPDATE; IF NOT FOUND THEN RAISE EXCEPTION 'Azienda non accessibile'; END IF;
+ SELECT * INTO old_m FROM public.fiscal_mandates WHERE company_id=c AND user_id=auth.uid() ORDER BY valid_from DESC LIMIT 1;
+ IF old_m.id IS NOT NULL AND p_valid_from<=old_m.valid_from THEN RAISE EXCEPTION 'La decorrenza deve essere successiva all ultima intestazione'; END IF;
+ IF old_m.id IS NOT NULL AND old_m.valid_until IS NULL THEN UPDATE public.fiscal_mandates SET valid_until=p_valid_from-1 WHERE id=old_m.id; END IF;
+ INSERT INTO public.fiscal_mandates(user_id,company_id,subject_id,valid_from,agency_type,relationship_key) VALUES(auth.uid(),c,p_subject_id,p_valid_from,p_agency_type,COALESCE(old_m.relationship_key,gen_random_uuid()));
+ END LOOP; END $$;
+REVOKE ALL ON FUNCTION public.assign_fiscal_mandates(uuid[],uuid,date,text) FROM PUBLIC,anon; GRANT EXECUTE ON FUNCTION public.assign_fiscal_mandates(uuid[],uuid,date,text) TO authenticated;
+CREATE OR REPLACE FUNCTION public.save_commission_receipt(p_source text,p_source_id uuid,p_receipt jsonb,p_receipt_id uuid DEFAULT NULL,p_remove boolean DEFAULT false) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE t text; j jsonb; rid uuid; total numeric; BEGIN
+ IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Accedi per registrare un incasso'; END IF;
+ t:=CASE p_source WHEN 'ordine' THEN 'ordini' WHEN 'fattura' THEN 'scadenziario_fatture' WHEN 'movimento' THEN 'movimenti_provvigione' END; IF t IS NULL THEN RAISE EXCEPTION 'Fonte non valida'; END IF;
+ EXECUTE format('SELECT to_jsonb(x) FROM public.%I x WHERE id=$1 AND user_id=$2 FOR UPDATE',t) INTO j USING p_source_id,auth.uid(); IF j IS NULL OR j->>'deleted_at' IS NOT NULL THEN RAISE EXCEPTION 'Provvigione non accessibile'; END IF;
+ IF p_receipt_id IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.commission_receipts WHERE id=p_receipt_id AND user_id=auth.uid() AND source=p_source AND source_id=p_source_id) THEN RAISE EXCEPTION 'Incasso non accessibile'; END IF;
+ IF p_remove THEN DELETE FROM public.commission_receipts WHERE id=p_receipt_id AND user_id=auth.uid(); rid:=p_receipt_id;
+ ELSE
+ IF NULLIF(p_receipt->>'document_id','') IS NOT NULL AND NOT EXISTS(SELECT 1 FROM public.documenti WHERE id=(p_receipt->>'document_id')::uuid AND user_id=auth.uid()) THEN RAISE EXCEPTION 'Documento non accessibile'; END IF;
+ IF (p_receipt->>'received_on')::date>CURRENT_DATE OR NULLIF(p_receipt->>'received_on','') IS NULL THEN RAISE EXCEPTION 'Data incasso non valida'; END IF;
+ IF p_receipt_id IS NULL THEN
+ INSERT INTO public.commission_receipts(user_id,source,source_id,received_on,gross_amount,enasarco_withheld,withholding,vat,stamp,other_deductions,bank_amount,document_id,verification,request_id,notes) VALUES(auth.uid(),p_source,p_source_id,(p_receipt->>'received_on')::date,(p_receipt->>'gross_amount')::numeric,NULLIF(p_receipt->>'enasarco_withheld','')::numeric,NULLIF(p_receipt->>'withholding','')::numeric,NULLIF(p_receipt->>'vat','')::numeric,NULLIF(p_receipt->>'stamp','')::numeric,NULLIF(p_receipt->>'other_deductions','')::numeric,NULLIF(p_receipt->>'bank_amount','')::numeric,NULLIF(p_receipt->>'document_id','')::uuid,COALESCE(p_receipt->>'verification','dichiarato'),COALESCE(NULLIF(p_receipt->>'request_id','')::uuid,gen_random_uuid()),p_receipt->>'notes') ON CONFLICT(user_id,request_id) DO NOTHING RETURNING id INTO rid;
+ IF rid IS NULL THEN SELECT id INTO rid FROM public.commission_receipts WHERE user_id=auth.uid() AND request_id=(p_receipt->>'request_id')::uuid AND source=p_source AND source_id=p_source_id; IF rid IS NULL THEN RAISE EXCEPTION 'Tentativo incasso non coerente'; END IF; END IF;
+ ELSE UPDATE public.commission_receipts SET received_on=(p_receipt->>'received_on')::date,gross_amount=(p_receipt->>'gross_amount')::numeric,enasarco_withheld=NULLIF(p_receipt->>'enasarco_withheld','')::numeric,withholding=NULLIF(p_receipt->>'withholding','')::numeric,vat=NULLIF(p_receipt->>'vat','')::numeric,stamp=NULLIF(p_receipt->>'stamp','')::numeric,other_deductions=NULLIF(p_receipt->>'other_deductions','')::numeric,bank_amount=NULLIF(p_receipt->>'bank_amount','')::numeric,document_id=NULLIF(p_receipt->>'document_id','')::uuid,verification=COALESCE(p_receipt->>'verification','dichiarato'),notes=p_receipt->>'notes' WHERE id=p_receipt_id AND user_id=auth.uid(); rid:=p_receipt_id; END IF;
+ END IF;
+ SELECT COALESCE(sum(gross_amount),0) INTO total FROM public.commission_receipts WHERE user_id=auth.uid() AND source=p_source AND source_id=p_source_id;
+ EXECUTE format('UPDATE public.%I SET fiscal_data=jsonb_set(fiscal_data,''{receipts_managed}'',''true''::jsonb) WHERE id=$1',t) USING p_source_id;
+ IF p_source IN ('ordine','fattura') THEN EXECUTE format('UPDATE public.%I SET importo_provvigione_pagata=$1,data_incasso_provvigione=(SELECT max(received_on) FROM public.commission_receipts WHERE source=$2 AND source_id=$3 AND user_id=$4),stato_provvigione=CASE WHEN $1=0 THEN ''da_pagare'' ELSE ''parziale'' END WHERE id=$3',t) USING total,p_source,p_source_id,auth.uid(); ELSE UPDATE public.movimenti_provvigione SET stato=CASE WHEN total=0 THEN 'da_pagare' ELSE 'parziale' END WHERE id=p_source_id; END IF;
+ RETURN rid; END $$;
+REVOKE ALL ON FUNCTION public.save_commission_receipt(text,uuid,jsonb,uuid,boolean) FROM PUBLIC,anon; GRANT EXECUTE ON FUNCTION public.save_commission_receipt(text,uuid,jsonb,uuid,boolean) TO authenticated;

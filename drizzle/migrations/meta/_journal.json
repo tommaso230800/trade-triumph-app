@@ -71,6 +71,13 @@
       "when": 1793202062990,
       "tag": "0009_proposal_removal_and_document_associations",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793451606030,
+      "tag": "0010_fiscal_subjects_mandates_receipts",
+      "breakpoints": true
     }
   ]
 }
