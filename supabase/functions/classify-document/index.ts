@@ -96,11 +96,10 @@ Deno.serve(async (req) => {
       return response({ error: message }, status);
     };
 
-    // Manual or generated associations are authoritative and survive reanalysis.
-    if (doc.association_status === "manual" || doc.proposal_id) {
-      await db.from("documenti").update({ stato_elaborazione: "archiviato", errore_elaborazione: null }).eq("id", doc.id);
-      return response({ ok: true, preserved: true, message: "Associazioni manuali o generate conservate" });
-    }
+    // Manual or generated associations are authoritative and survive reanalysis:
+    // the scheda (titolo, riepilogo, keywords, testo) is still extracted, but
+    // company/customer/entity/category are never overwritten.
+    const preserveAssociations = doc.association_status === "manual" || !!doc.proposal_id;
 
     await db.from("documenti").update({ stato_elaborazione: "in_elaborazione", errore_elaborazione: null }).eq("id", doc.id);
 
