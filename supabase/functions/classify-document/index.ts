@@ -188,10 +188,18 @@ Deno.serve(async (req) => {
 
     const categoria = CATEGORIES.includes(parsed.categoria) ? parsed.categoria : TIPO_TO_CATEGORY[parsed.tipo] || "Altri documenti";
     const updates: Record<string, unknown> = {
-      association_status: reliable ? "automatic" : "review",
-      stato_elaborazione: reliable ? "archiviato" : "da_verificare",
+      stato_elaborazione: preserveAssociations ? "archiviato" : reliable ? "archiviato" : "da_verificare",
       errore_elaborazione: null,
-      association_details: {
+      titolo: typeof parsed.titolo === "string" && parsed.titolo ? parsed.titolo.slice(0, 200) : null,
+      riepilogo: typeof parsed.riepilogo === "string" && parsed.riepilogo ? parsed.riepilogo.slice(0, 2000) : null,
+      data_documento: /^\d{4}-\d{2}-\d{2}$/.test(parsed.data_documento || "") ? parsed.data_documento : null,
+      numero_documento: parsed.numero_documento ? String(parsed.numero_documento).slice(0, 100) : null,
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords.filter((k: unknown) => typeof k === "string").slice(0, 10) : null,
+      testo_estratto: text ? text.slice(0, 60000) : null,
+    };
+    if (!preserveAssociations) {
+      updates.association_status = reliable ? "automatic" : "review";
+      updates.association_details = {
         company: company.candidates,
         customer: customer.candidates,
         extracted_company: parsed.company,
@@ -202,42 +210,36 @@ Deno.serve(async (req) => {
             ? "Cliente destinatario assente o ambiguo nelle anagrafiche."
             : parsed.reason || "Identità insufficienti o ambigue",
         at: new Date().toISOString(),
-      },
-      classificazione_ai: { tipo: parsed.tipo, categoria, at: new Date().toISOString() },
-      titolo: typeof parsed.titolo === "string" && parsed.titolo ? parsed.titolo.slice(0, 200) : null,
-      riepilogo: typeof parsed.riepilogo === "string" && parsed.riepilogo ? parsed.riepilogo.slice(0, 2000) : null,
-      data_documento: /^\d{4}-\d{2}-\d{2}$/.test(parsed.data_documento || "") ? parsed.data_documento : null,
-      numero_documento: parsed.numero_documento ? String(parsed.numero_documento).slice(0, 100) : null,
-      keywords: Array.isArray(parsed.keywords) ? parsed.keywords.filter((k: unknown) => typeof k === "string").slice(0, 10) : null,
-      testo_estratto: text ? text.slice(0, 60000) : null,
-      category: categoria,
-      company_id: company.id,
-      customer_id: customer.id,
-    };
-    if (!doc.valid_from && /^\d{4}-\d{2}-\d{2}$/.test(parsed.valid_from || "")) updates.valid_from = parsed.valid_from;
-    if (!doc.valid_until && /^\d{4}-\d{2}-\d{2}$/.test(parsed.valid_until || "")) updates.valid_until = parsed.valid_until;
-    if (parsed.data_documento && !doc.reference_year && /^\d{4}/.test(parsed.data_documento)) {
-      updates.reference_year = Number(parsed.data_documento.slice(0, 4));
-    }
-    if (company.id) {
-      updates.entita = orderId ? "ordine" : "azienda";
-      updates.entita_id = orderId || company.id;
-    }
-    if (types.includes(parsed.tipo) && doc.tipo === "altro") updates.tipo = parsed.tipo;
+      };
+      updates.classificazione_ai = { tipo: parsed.tipo, categoria, at: new Date().toISOString() };
+      updates.category = categoria;
+      updates.company_id = company.id;
+      updates.customer_id = customer.id;
+      if (!doc.valid_from && /^\d{4}-\d{2}-\d{2}$/.test(parsed.valid_from || "")) updates.valid_from = parsed.valid_from;
+      if (!doc.valid_until && /^\d{4}-\d{2}-\d{2}$/.test(parsed.valid_until || "")) updates.valid_until = parsed.valid_until;
+      if (parsed.data_documento && !doc.reference_year && /^\d{4}/.test(parsed.data_documento)) {
+        updates.reference_year = Number(parsed.data_documento.slice(0, 4));
+      }
+      if (company.id) {
+        updates.entita = orderId ? "ordine" : "azienda";
+        updates.entita_id = orderId || company.id;
+      }
+      if (types.includes(parsed.tipo) && doc.tipo === "altro") updates.tipo = parsed.tipo;
 
-    // Version chain: same company + same document number links to the previous version.
-    if (company.id && updates.numero_documento) {
-      const { data: prev } = await db.from("documenti").select("id")
-        .eq("company_id", company.id).eq("numero_documento", updates.numero_documento)
-        .neq("id", doc.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(1);
-      if (prev?.length) updates.versione_di = prev[0].id;
+      // Version chain: same company + same document number links to the previous version.
+      if (company.id && updates.numero_documento) {
+        const { data: prev } = await db.from("documenti").select("id")
+          .eq("company_id", company.id).eq("numero_documento", updates.numero_documento)
+          .neq("id", doc.id).is("deleted_at", null).order("created_at", { ascending: false }).limit(1);
+        if (prev?.length) updates.versione_di = prev[0].id;
+      }
     }
 
-    const { data: updated, error: updateError } = await db.from("documenti").update(updates).eq("id", doc.id).neq("association_status", "manual").select("id");
+    const { data: updated, error: updateError } = await db.from("documenti").update(updates).eq("id", doc.id).select("id");
     if (updateError) throw updateError;
 
     // Multi-company links: one original document, visible in every pertinent folder.
-    if (Array.isArray(parsed.other_companies)) {
+    if (!preserveAssociations && Array.isArray(parsed.other_companies)) {
       for (const other of parsed.other_companies.slice(0, 5)) {
         if (!other?.name) continue;
         const match = matchWithAliases({ name: other.name }, companies, companyAliases, "azienda_id");
