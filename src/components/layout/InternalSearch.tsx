@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Search, Building2, Users, ShoppingCart, Package, ArrowUpRight } from "lucide-react";
+import { Search, Building2, Users, ShoppingCart, Package, ArrowUpRight, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -32,9 +32,11 @@ export function InternalSearch() {
         supabase.from("aziende").select("id,nome").ilike("nome", like).limit(15),
         supabase.from("ordini").select("id,codice,data_ordine,clienti(nome)").ilike("codice", like).limit(15),
         supabase.from("prodotti").select("id,nome,azienda_id").ilike("nome", like).limit(15),
+        supabase.from("documenti").select("id,titolo,nome_file,category").is("deleted_at", null)
+          .or(`titolo.ilike.${like},nome_file.ilike.${like},riepilogo.ilike.${like}`).limit(10),
       ]);
       for (const r of responses) if (r.error) throw r.error;
-      return { clienti: responses[0].data ?? [], aziende: responses[1].data ?? [], ordini: responses[2].data ?? [], prodotti: responses[3].data ?? [] };
+      return { clienti: responses[0].data ?? [], aziende: responses[1].data ?? [], ordini: responses[2].data ?? [], prodotti: responses[3].data ?? [], documenti: responses[4].data ?? [] };
     },
   });
   const go = (path: string) => { setOpen(false); setTerm(""); navigate(path); };
