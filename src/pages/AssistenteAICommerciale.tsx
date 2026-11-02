@@ -242,7 +242,26 @@ REGOLE FONDAMENTALI:
     setIsLoading(true);
 
     try {
-      const systemPrompt = buildSystemPrompt();
+      let systemPrompt = buildSystemPrompt();
+
+      // Memoria documentale: cerca nei documenti archiviati termini del messaggio
+      // e allega estratti con fonte. Se non c'è nulla, l'assistente deve dichiararlo.
+      try {
+        const terms = userMessage.toLowerCase().split(/\s+/).filter(t => t.length >= 4).slice(0, 5);
+        if (terms.length) {
+          const orFilter = terms.flatMap(t => [`titolo.ilike.%${t}%`, `riepilogo.ilike.%${t}%`]).join(",");
+          const { data: docMatches } = await supabase
+            .from("documenti")
+            .select("id,titolo,nome_file,category,data_documento,riepilogo,valid_from,valid_until")
+            .is("deleted_at", null)
+            .or(orFilter)
+            .limit(5);
+          if (docMatches?.length) {
+            systemPrompt += `\n\nDOCUMENTI ARCHIVIATI RILEVANTI (cita sempre il documento di origine e la sua data; se due documenti riportano condizioni diverse, mostra la differenza con le rispettive date; se l'informazione manca, dichiaralo):\n` +
+              docMatches.map(d => `- "${d.titolo || d.nome_file}" (${d.category || "documento"}, doc. ${d.data_documento || "data N/D"}${d.valid_from || d.valid_until ? `, validità ${d.valid_from || "…"}→${d.valid_until || "…"}` : ""}): ${d.riepilogo || "riepilogo non disponibile"}`).join("\n");
+          }
+        }
+      } catch { /* contesto documentale best-effort */ }
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-commercial-assistant`, {
         method: "POST",
