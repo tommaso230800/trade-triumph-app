@@ -1,5 +1,15 @@
 # Roadmap
 
+## Memoria attiva documenti (2 novembre)
+- [x] Cartelle virtuali per azienda con le 9 categorie; collegamenti multi-azienda senza duplicare il file; vista generale filtrabile
+- [x] Caricamento unico multiplo con coda per file: l'analisi continua anche se un file fallisce; stati In elaborazione/Archiviato/Da verificare/Errore con riprova
+- [x] Riconoscimento dal contenuto (PDF, immagini, fogli, testo) con ruoli fornitore/cliente/trasportatore; alias verificati salvati a ogni correzione manuale e riusati nei riconoscimenti successivi
+- [x] Scheda documento: titolo, riepilogo, data documento distinta dal caricamento, numero, validità, parole chiave, testo estratto; versioni collegate per stesso numero documento
+- [x] Ricerca nel contenuto dall'archivio e dalla ricerca interna (⌘K); assistente AI cita i documenti rilevanti con fonte e data
+- [x] Verificato: PDF Polara → "Proposta Commerciale Polara 2026" con riepilogo e keyword, associazione manuale preservata; 375px senza overflow; build OK
+- [ ] Analisi completa dell'archivio esistente: avviare "Analizza archivio" con conferma dell'utente (16 documenti, usa crediti AI)
+- [ ] OCR su scansioni senza testo e documenti Word: il riconoscimento visuale copre PDF/immagini, i Word restano da associare manualmente
+
 ## Fiscalità e netto (31 ottobre)
 - [x] Fonte condivisa paginata, nessun incasso presunto, dettagli originali e ricevute incrementali protette implementati; lettura autenticata verificata
 - [x] Quattro anagrafiche/profili persistenti; mandati con decorrenza, selezione multipla, anteprima e correzione storica esplicita implementati
