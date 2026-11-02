@@ -172,8 +172,11 @@ Deno.serve(async (req) => {
     for (const [table, match] of [["aziende_alias", company], ["clienti_alias", customer]] as const) {
       if (match.aliasUsed && match.id) {
         const col = table === "aziende_alias" ? "azienda_id" : "cliente_id";
-        await db.from(table).update({ match_count: undefined as never, ultimo_match: new Date().toISOString() })
-          .eq(col, match.id).eq("denominazione_alternativa", match.aliasUsed);
+        const { data: row } = await db.from(table).select("id,match_count")
+          .eq(col, match.id).eq("denominazione_alternativa", match.aliasUsed).limit(1).maybeSingle();
+        if (row) {
+          await db.from(table).update({ match_count: (row.match_count ?? 0) + 1, ultimo_match: new Date().toISOString() }).eq("id", row.id);
+        }
       }
     }
 
