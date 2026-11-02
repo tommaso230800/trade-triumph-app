@@ -92,6 +92,13 @@
       "when": 1793452052560,
       "tag": "0012_protect_managed_receipt_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793619313215,
+      "tag": "0013_documenti_memoria_attiva",
+      "breakpoints": true
     }
   ]
 }
