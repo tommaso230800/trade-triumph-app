@@ -52,7 +52,59 @@ export type Documento = {
   proposal_version: number | null;
   association_status: "automatic"|"manual"|"review";
   association_details: any;
+  titolo: string | null;
+  riepilogo: string | null;
+  data_documento: string | null;
+  numero_documento: string | null;
+  keywords: string[] | null;
+  testo_estratto: string | null;
+  stato_elaborazione: "in_elaborazione"|"archiviato"|"da_verificare"|"errore";
+  errore_elaborazione: string | null;
+  versione_di: string | null;
 };
+
+export const STATO_LABEL: Record<Documento["stato_elaborazione"], string> = {
+  in_elaborazione: "In elaborazione",
+  archiviato: "Archiviato",
+  da_verificare: "Da verificare",
+  errore: "Errore",
+};
+
+export const CATEGORIE_DOCUMENTO = [
+  "Ordini e proforme",
+  "Listini",
+  "Promozioni e canvass",
+  "Proposte commerciali",
+  "Volantini e locandine",
+  "Cataloghi e schede prodotto",
+  "Contratti e condizioni commerciali",
+  "Fatture e note di credito",
+  "Altri documenti",
+] as const;
+
+export const TIPO_TO_CATEGORIA: Record<string, string> = {
+  ordine_originale: "Ordini e proforme",
+  conferma_ordine: "Ordini e proforme",
+  listino: "Listini",
+  promo: "Promozioni e canvass",
+  contratto: "Contratti e condizioni commerciali",
+  accordo_provv: "Contratti e condizioni commerciali",
+  fattura: "Fatture e note di credito",
+  nota_credito: "Fatture e note di credito",
+};
+
+export type DocumentoAziendaLink = { id: string; documento_id: string; azienda_id: string; ruolo: string };
+
+export function useDocumentiAziende() {
+  return useQuery({
+    queryKey: ["documenti_aziende"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("documenti_aziende").select("id,documento_id,azienda_id,ruolo");
+      if (error) throw error;
+      return (data ?? []) as DocumentoAziendaLink[];
+    },
+  });
+}
 
 export const TIPO_LABEL: Record<DocumentoTipo, string> = {
   ordine_originale: "Ordine originale",
