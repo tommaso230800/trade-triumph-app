@@ -182,10 +182,12 @@ export function useUploadDocumento() {
         .upload(path, input.file, { contentType: input.file.type, upsert: false });
       if (upErr) throw upErr;
 
+      const willClassify = input.autoClassify !== false;
       const { data: row, error: insErr } = await supabase
         .from("documenti")
         .insert({
           association_status: input.generated?'automatic':input.autoClassify===false || input.entita_id || input.company_id || input.customer_id ? "manual" : "review",
+          stato_elaborazione: willClassify ? "in_elaborazione" : "archiviato",
           user_id: user.id,
           entita: input.entita,
           entita_id: input.entita_id ?? null,
@@ -211,8 +213,13 @@ export function useUploadDocumento() {
       if (insErr) { await supabase.storage.from('documenti').remove([path]); throw insErr; }
 
       // Auto-classifica in background (best-effort)
-      if (input.autoClassify !== false) {
-        const text=/\.(xlsx?|xlsm|csv)$/i.test(input.file.name)?await spreadsheetText(input.file).catch(()=>""):undefined;
+      if (willClassify) {
+        let text: string | undefined;
+        if (/\.(xlsx?|xlsm|csv)$/i.test(input.file.name)) text = await spreadsheetText(input.file).catch(() => "");
+        else if (/\.pdf$/i.test(input.file.name) || input.file.type === "application/pdf") {
+          const { readPdfText } = await import("@/lib/pdfDocumentText");
+          text = await readPdfText(input.file).catch(() => "");
+        }
         const {error:analysisError}=await supabase.functions.invoke("classify-document", { body: { documento_id: row.id, text } });
         if(analysisError)toast.warning("File salvato; associazioni da verificare.");
       }
