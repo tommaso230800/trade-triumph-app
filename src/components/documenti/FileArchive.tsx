@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAziende } from '@/hooks/useAziende';
 import { useClienti } from '@/hooks/useClienti';
 import {
@@ -74,6 +75,16 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
   const [preview, setPreview] = useState<{ url: string; type: string; name: string; blob?: Blob } | null>(null);
   const [queue, setQueue] = useState<UploadItem[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [searchParams] = useSearchParams();
+
+  // Deep link: /file-documenti?doc=<id> apre direttamente la scheda.
+  useEffect(() => {
+    const docId = searchParams.get('doc');
+    if (docId && docs.length) {
+      const found = docs.find(d => d.id === docId);
+      if (found) { setDetail(found); setView('tutti'); }
+    }
+  }, [searchParams, docs]);
 
   const companyName = (id: string | null) => companies.find(a => a.id === id)?.nome || '—';
   const customerName = (id: string | null) => clients.find(c => c.id === id)?.nome || '—';
