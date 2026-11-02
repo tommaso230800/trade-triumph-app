@@ -252,7 +252,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return response({ ok: true, associated: reliable, preserved: !updated?.length });
+    return response({ ok: true, associated: reliable, preserved: preserveAssociations || !updated?.length });
   } catch {
     if (docId) {
       try {
