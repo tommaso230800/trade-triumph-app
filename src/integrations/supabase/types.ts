@@ -351,6 +351,53 @@ export type Database = {
         }
         Relationships: []
       }
+      aziende_alias: {
+        Row: {
+          azienda_id: string
+          created_at: string
+          denominazione_alternativa: string
+          id: string
+          match_count: number
+          partita_iva: string | null
+          source: string
+          ultimo_match: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id: string
+          created_at?: string
+          denominazione_alternativa: string
+          id?: string
+          match_count?: number
+          partita_iva?: string | null
+          source?: string
+          ultimo_match?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          azienda_id?: string
+          created_at?: string
+          denominazione_alternativa?: string
+          id?: string
+          match_count?: number
+          partita_iva?: string | null
+          source?: string
+          ultimo_match?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aziende_alias_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brands: {
         Row: {
           azienda_id: string | null
@@ -1661,28 +1708,37 @@ export type Database = {
           company_id: string | null
           created_at: string
           customer_id: string | null
+          data_documento: string | null
           deleted_at: string | null
           dimensione: number | null
           entita: Database["public"]["Enums"]["documento_entita"]
           entita_id: string | null
+          errore_elaborazione: string | null
           fiscal_subject_id: string | null
           hash_sha256: string | null
           id: string
+          keywords: string[] | null
           mime_type: string | null
           nome_file: string
           note: string | null
+          numero_documento: string | null
           proposal_id: string | null
           proposal_version: number | null
           reference_year: number | null
+          riepilogo: string | null
+          stato_elaborazione: string
           storage_path: string
           suggerimenti_ai: Json | null
           tags: string[] | null
+          testo_estratto: string | null
           tipo: Database["public"]["Enums"]["documento_tipo"]
+          titolo: string | null
           updated_at: string
           user_id: string
           valid_from: string | null
           valid_until: string | null
           verificato: boolean
+          versione_di: string | null
         }
         Insert: {
           association_details?: Json
@@ -1692,28 +1748,37 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           customer_id?: string | null
+          data_documento?: string | null
           deleted_at?: string | null
           dimensione?: number | null
           entita?: Database["public"]["Enums"]["documento_entita"]
           entita_id?: string | null
+          errore_elaborazione?: string | null
           fiscal_subject_id?: string | null
           hash_sha256?: string | null
           id?: string
+          keywords?: string[] | null
           mime_type?: string | null
           nome_file: string
           note?: string | null
+          numero_documento?: string | null
           proposal_id?: string | null
           proposal_version?: number | null
           reference_year?: number | null
+          riepilogo?: string | null
+          stato_elaborazione?: string
           storage_path: string
           suggerimenti_ai?: Json | null
           tags?: string[] | null
+          testo_estratto?: string | null
           tipo?: Database["public"]["Enums"]["documento_tipo"]
+          titolo?: string | null
           updated_at?: string
           user_id: string
           valid_from?: string | null
           valid_until?: string | null
           verificato?: boolean
+          versione_di?: string | null
         }
         Update: {
           association_details?: Json
@@ -1723,28 +1788,37 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           customer_id?: string | null
+          data_documento?: string | null
           deleted_at?: string | null
           dimensione?: number | null
           entita?: Database["public"]["Enums"]["documento_entita"]
           entita_id?: string | null
+          errore_elaborazione?: string | null
           fiscal_subject_id?: string | null
           hash_sha256?: string | null
           id?: string
+          keywords?: string[] | null
           mime_type?: string | null
           nome_file?: string
           note?: string | null
+          numero_documento?: string | null
           proposal_id?: string | null
           proposal_version?: number | null
           reference_year?: number | null
+          riepilogo?: string | null
+          stato_elaborazione?: string
           storage_path?: string
           suggerimenti_ai?: Json | null
           tags?: string[] | null
+          testo_estratto?: string | null
           tipo?: Database["public"]["Enums"]["documento_tipo"]
+          titolo?: string | null
           updated_at?: string
           user_id?: string
           valid_from?: string | null
           valid_until?: string | null
           verificato?: boolean
+          versione_di?: string | null
         }
         Relationships: [
           {
@@ -1773,6 +1847,52 @@ export type Database = {
             columns: ["proposal_id"]
             isOneToOne: false
             referencedRelation: "commercial_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documenti_versione_di_fkey"
+            columns: ["versione_di"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documenti_aziende: {
+        Row: {
+          azienda_id: string
+          created_at: string
+          documento_id: string
+          id: string
+          ruolo: string
+        }
+        Insert: {
+          azienda_id: string
+          created_at?: string
+          documento_id: string
+          id?: string
+          ruolo?: string
+        }
+        Update: {
+          azienda_id?: string
+          created_at?: string
+          documento_id?: string
+          id?: string
+          ruolo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documenti_aziende_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documenti_aziende_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
             referencedColumns: ["id"]
           },
         ]

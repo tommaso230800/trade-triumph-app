@@ -52,7 +52,59 @@ export type Documento = {
   proposal_version: number | null;
   association_status: "automatic"|"manual"|"review";
   association_details: any;
+  titolo: string | null;
+  riepilogo: string | null;
+  data_documento: string | null;
+  numero_documento: string | null;
+  keywords: string[] | null;
+  testo_estratto: string | null;
+  stato_elaborazione: "in_elaborazione"|"archiviato"|"da_verificare"|"errore";
+  errore_elaborazione: string | null;
+  versione_di: string | null;
 };
+
+export const STATO_LABEL: Record<Documento["stato_elaborazione"], string> = {
+  in_elaborazione: "In elaborazione",
+  archiviato: "Archiviato",
+  da_verificare: "Da verificare",
+  errore: "Errore",
+};
+
+export const CATEGORIE_DOCUMENTO = [
+  "Ordini e proforme",
+  "Listini",
+  "Promozioni e canvass",
+  "Proposte commerciali",
+  "Volantini e locandine",
+  "Cataloghi e schede prodotto",
+  "Contratti e condizioni commerciali",
+  "Fatture e note di credito",
+  "Altri documenti",
+] as const;
+
+export const TIPO_TO_CATEGORIA: Record<string, string> = {
+  ordine_originale: "Ordini e proforme",
+  conferma_ordine: "Ordini e proforme",
+  listino: "Listini",
+  promo: "Promozioni e canvass",
+  contratto: "Contratti e condizioni commerciali",
+  accordo_provv: "Contratti e condizioni commerciali",
+  fattura: "Fatture e note di credito",
+  nota_credito: "Fatture e note di credito",
+};
+
+export type DocumentoAziendaLink = { id: string; documento_id: string; azienda_id: string; ruolo: string };
+
+export function useDocumentiAziende() {
+  return useQuery({
+    queryKey: ["documenti_aziende"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("documenti_aziende").select("id,documento_id,azienda_id,ruolo");
+      if (error) throw error;
+      return (data ?? []) as DocumentoAziendaLink[];
+    },
+  });
+}
 
 export const TIPO_LABEL: Record<DocumentoTipo, string> = {
   ordine_originale: "Ordine originale",
@@ -130,10 +182,12 @@ export function useUploadDocumento() {
         .upload(path, input.file, { contentType: input.file.type, upsert: false });
       if (upErr) throw upErr;
 
+      const willClassify = input.autoClassify !== false;
       const { data: row, error: insErr } = await supabase
         .from("documenti")
         .insert({
           association_status: input.generated?'automatic':input.autoClassify===false || input.entita_id || input.company_id || input.customer_id ? "manual" : "review",
+          stato_elaborazione: willClassify ? "in_elaborazione" : "archiviato",
           user_id: user.id,
           entita: input.entita,
           entita_id: input.entita_id ?? null,
@@ -159,8 +213,13 @@ export function useUploadDocumento() {
       if (insErr) { await supabase.storage.from('documenti').remove([path]); throw insErr; }
 
       // Auto-classifica in background (best-effort)
-      if (input.autoClassify !== false) {
-        const text=/\.(xlsx?|xlsm|csv)$/i.test(input.file.name)?await spreadsheetText(input.file).catch(()=>""):undefined;
+      if (willClassify) {
+        let text: string | undefined;
+        if (/\.(xlsx?|xlsm|csv)$/i.test(input.file.name)) text = await spreadsheetText(input.file).catch(() => "");
+        else if (/\.pdf$/i.test(input.file.name) || input.file.type === "application/pdf") {
+          const { readPdfText } = await import("@/lib/pdfDocumentText");
+          text = await readPdfText(input.file).catch(() => "");
+        }
         const {error:analysisError}=await supabase.functions.invoke("classify-document", { body: { documento_id: row.id, text } });
         if(analysisError)toast.warning("File salvato; associazioni da verificare.");
       }
@@ -180,6 +239,20 @@ export function useUpdateDocumento() {
     mutationFn: async ({ id, ...updates }: Partial<Documento> & { id: string }) => {
       const { error } = await supabase.from("documenti").update(updates).eq("id", id);
       if (error) throw error;
+      // Manual corrections become verified aliases that improve future recognition.
+      if (updates.association_status === "manual" && updates.company_id && updates.association_details?.extracted_company?.name) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const extracted = updates.association_details.extracted_company;
+          await supabase.from("aziende_alias").upsert({
+            user_id: user.id,
+            azienda_id: updates.company_id,
+            denominazione_alternativa: String(extracted.name).slice(0, 200),
+            partita_iva: extracted.vat ? String(extracted.vat).slice(0, 20) : null,
+            source: "correzione_manuale",
+          }, { onConflict: "azienda_id,denominazione_alternativa" });
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documenti"] });

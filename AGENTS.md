@@ -18,4 +18,5 @@
 
 - Persist proposal removal separately from immutable accepted snapshots; retain accepted conditions and shared archive/image references.
 - Match document identities from content against accessible records; manual association status is authoritative and must survive reanalysis.
+- Document archive is an active memory: virtual per-company folders (never physical paths), `documenti_aziende` links for multi-company visibility, verified aliases in `aziende_alias` learned from manual corrections, and `stato_elaborazione` as the single processing state.
 - Generate dedicated poster exports from saved proposal content, awaiting real image decoding and preserving aspect ratio.
