@@ -239,6 +239,20 @@ export function useUpdateDocumento() {
     mutationFn: async ({ id, ...updates }: Partial<Documento> & { id: string }) => {
       const { error } = await supabase.from("documenti").update(updates).eq("id", id);
       if (error) throw error;
+      // Manual corrections become verified aliases that improve future recognition.
+      if (updates.association_status === "manual" && updates.company_id && updates.association_details?.extracted_company?.name) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const extracted = updates.association_details.extracted_company;
+          await supabase.from("aziende_alias").upsert({
+            user_id: user.id,
+            azienda_id: updates.company_id,
+            denominazione_alternativa: String(extracted.name).slice(0, 200),
+            partita_iva: extracted.vat ? String(extracted.vat).slice(0, 20) : null,
+            source: "correzione_manuale",
+          }, { onConflict: "azienda_id,denominazione_alternativa" });
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["documenti"] });
