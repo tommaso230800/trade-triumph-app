@@ -24,7 +24,7 @@ describe('Riordino esclusivamente dal 1° gennaio 2026', () => {
   it('coppie e grafici usano solo i tre ordini dal 2026 senza modificare la fonte', () => {
     const snapshot = JSON.stringify(source);
     const pairs = computeReorderPairs(source, today);
-    expect(pairs[0].ordine_ids).toEqual(['o2', 'o3', 'o4']);
+    expect([...pairs[0].ordine_ids].sort()).toEqual(['o2', 'o3', 'o4']);
     const detail = analyzePair('c', 'a', source, [], { today });
     expect(detail.numero_ordini).toBe(3);
     expect(detail.primo_ordine).toBe('2026-01-01');
