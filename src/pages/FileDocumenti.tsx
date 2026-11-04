@@ -5,12 +5,12 @@ import { OneDriveExplorer } from '@/components/documenti/OneDriveExplorer';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDocumenti } from '@/hooks/useDocumenti';
-import { useOneDriveSync } from '@/hooks/useOneDriveSync';
+import { useOneDriveStatus } from '@/hooks/useOneDriveSync';
 import { FileText, FolderOpen, Sparkles, AlertTriangle, CloudUpload, RefreshCw } from 'lucide-react';
 
 export default function FileDocumenti() {
   const { data: documenti = [], isLoading: loadingDocs } = useDocumenti();
-  const { status, loading: loadingOd } = useOneDriveSync();
+  const { data: status, isLoading: loadingOd } = useOneDriveStatus();
 
   const stats = useMemo(() => {
     const trentaGiorniFa = new Date(Date.now() - 30 * 86400000).toISOString();
