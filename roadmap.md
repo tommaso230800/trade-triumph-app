@@ -1,5 +1,9 @@
 # Roadmap
 
+## Prevenzione errore GHILLI su tutto il portafoglio
+- [ ] Controllo aggiornato dei dati e di tutti i percorsi riordino
+- [ ] Test permanenti su esclusione delle ripartizioni per qualsiasi cliente/mandante e su storia insufficiente
+
 ## Correzione frequenze verificabili (4 novembre)
 - [x] Ricostruire GHILLI–Quattro Valli: 11 ripartizioni 2025 non documentate + 2 acquisti 2026, intervallo reale 144 gg; baseline 31 derivava dalle ripartizioni mensili
 - [x] Frequenza operativa adattiva, affidabilità, prodotti e avvisi condivisi; nessun ordine o intervento modificato
