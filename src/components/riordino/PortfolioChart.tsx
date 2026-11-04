@@ -1,3 +1,4 @@
+import { todayRome } from '@/lib/commercialProposal';
 import { useMemo } from "react";
 import {
   ResponsiveContainer,
@@ -27,7 +28,7 @@ export function PortfolioChart({ ordersByPair, aziendaFilter, tolleranza, mesi =
     const oggi = new Date();
     for (let m = mesi - 1; m >= 0; m--) {
       const fine = new Date(Date.UTC(oggi.getUTCFullYear(), oggi.getUTCMonth() - m + 1, 0));
-      const fineIso = fine.toISOString().slice(0, 10);
+      const fineIso = m === 0 ? todayRome() : fine.toISOString().slice(0, 10);
       const label = fine.toLocaleDateString("it-IT", { month: "short", year: "2-digit" });
       const p = { mese: label, regolari: 0, in_ritardo: 0, sospetti: 0, persistenti: 0 };
       for (const [key, orders] of Object.entries(ordersByPair)) {
@@ -40,7 +41,7 @@ export function PortfolioChart({ ordersByPair, aziendaFilter, tolleranza, mesi =
         if (analisi.rallentamento === "persistente") p.persistenti++;
         else if (analisi.rallentamento === "anomalo" || analisi.rallentamento === "in_recupero") p.sospetti++;
         else if (analisi.stato === "ritardo") p.in_ritardo++;
-        else p.regolari++;
+        else if (analisi.previsione_affidabile) p.regolari++;
       }
       punti.push(p);
     }

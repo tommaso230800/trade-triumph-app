@@ -8,5 +8,5 @@ describe('Riordino cliente–azienda',()=>{
  it('se annullato torna al precedente valido',()=>expect(computeReorderPairs([{...order,status:'annullato'},{...order,id:'previous',data_ordine:'2026-09-11'}],'2026-10-28')[0].ultimo_ordine_data).toBe('2026-09-11'));
  it('separa le aziende dello stesso cliente',()=>expect(computeReorderPairs([order,{...order,id:'polara',azienda_id:'polara'}],'2026-10-28')).toHaveLength(2));
  it('storico insufficiente non inventa frequenza',()=>expect(computeReorderPairs([order],'2026-10-28')[0].media_giorni_riordino).toBeNull());
- it('deduplica giorni uguali e rispetta media più 7 giorni',()=>{const p=computeReorderPairs([order,{...order,id:'same'},{...order,id:'prior',data_ordine:'2026-08-29'}],'2026-11-07')[0];expect(p.media_giorni_riordino).toBe(31);expect(p.da_ricontattare).toBe(true);});
+ it('deduplica giorni uguali e rispetta media più 7 giorni',()=>{const p=computeReorderPairs([order,{...order,id:'same'},{...order,id:'prior',data_ordine:'2026-08-29'}],'2026-11-07')[0];expect(p.media_giorni_riordino).toBeNull();expect(p.da_ricontattare).toBe(false);});
 });

@@ -1,3 +1,5 @@
+import { analyzePair, dayOf } from './reorderIntelligence';
+import { todayRome } from './commercialProposal';
 // Reorder Forecast Engine (per prodotto x cliente x azienda)
 // Deterministico. Nessuna dipendenza esterna.
 
@@ -31,6 +33,9 @@ export interface ProductForecast {
   urgenza: "critica" | "alta" | "media" | "bassa" | "futura";
   fatturato_medio: number;
   fatturato_totale: number;
+  frequenza_operativa: number | null;
+  affidabilita: string;
+  giorni_ritardo: number;
 }
 
 export interface ForecastKPIs {
@@ -70,7 +75,7 @@ function classificaUrgenza(giorni: number | null): ProductForecast["urgenza"] {
 
 export function computeReorderForecast(
   righe: RawRigaOrdine[],
-  today: Date = new Date()
+  today: Date = new Date(`${todayRome()}T00:00:00Z`)
 ): ProductForecast[] {
   // Filtra righe non-omaggio con dati validi
   const clean = righe.filter(
@@ -79,7 +84,7 @@ export function computeReorderForecast(
       r.cliente_id &&
       r.azienda_id &&
       r.prodotto_id &&
-      r.data_ordine &&
+      r.data_ordine && r.data_ordine.slice(0,10) <= today.toISOString().slice(0,10) &&
       (r.quantita_cartoni > 0 || r.quantita_pezzi > 0)
   );
 
@@ -88,7 +93,7 @@ export function computeReorderForecast(
   for (const r of clean) {
     const k = `${r.cliente_id}|${r.azienda_id}|${r.prodotto_id}`;
     if (!groups.has(k)) groups.set(k, []);
-    groups.get(k)!.push(r);
+    groups.get(k)?.push(r);
   }
 
   const out: ProductForecast[] = [];
@@ -112,7 +117,8 @@ export function computeReorderForecast(
     const primo_ordine = sortedDates[0];
     const ultimo_ordine = sortedDates[numero_ordini - 1];
     const ultimoData = new Date(ultimo_ordine);
-    const ultimaAgg = perDate.get(ultimo_ordine)!;
+    const ultimaAgg = perDate.get(ultimo_ordine);
+    if (!ultimaAgg) continue;
 
     // Intervalli in giorni
     const intervals: number[] = [];
@@ -125,20 +131,15 @@ export function computeReorderForecast(
         : 0;
     const deviazione_giorni = stddev(intervals);
 
-    const cartoniTot = sortedDates.reduce((s, d) => s + perDate.get(d)!.cartoni, 0);
-    const fatturato_totale = sortedDates.reduce((s, d) => s + perDate.get(d)!.totale, 0);
+    const cartoniTot = sortedDates.reduce((s, d) => s + (perDate.get(d)?.cartoni || 0), 0);
+    const fatturato_totale = sortedDates.reduce((s, d) => s + (perDate.get(d)?.totale || 0), 0);
     const media_cartoni = cartoniTot / numero_ordini;
     const fatturato_medio = fatturato_totale / numero_ordini;
 
-    let prossimo_riordino: string | null = null;
-    let giorni_al_riordino: number | null = null;
-    if (media_giorni > 0) {
-      const prossimoData = addDays(ultimoData, Math.round(media_giorni));
-      prossimo_riordino = prossimoData.toISOString().slice(0, 10);
-      giorni_al_riordino = daysBetween(today, prossimoData);
-    }
-
     const [cliente_id, azienda_id, prodotto_id] = key.split("|");
+    const stats = analyzePair(cliente_id, azienda_id, sortedDates.map((d,i) => ({id:`product-${i}`,data_ordine:d,totale:0,cartoni:0,pezzi:0})), [], {today:today.toISOString().slice(0,10)});
+    const prossimo_riordino = stats.prossimo_riordino_previsto;
+    const giorni_al_riordino = prossimo_riordino ? dayOf(prossimo_riordino) - dayOf(today.toISOString().slice(0,10)) : null;
     out.push({
       key,
       cliente_id,
@@ -154,7 +155,10 @@ export function computeReorderForecast(
       ultimo_prezzo: ultimaAgg.prezzo,
       prossimo_riordino,
       giorni_al_riordino,
-      urgenza: classificaUrgenza(giorni_al_riordino),
+      urgenza: stats.giorni_ritardo > 0 ? "critica" : giorni_al_riordino !== null && giorni_al_riordino <= 7 ? "alta" : classificaUrgenza(giorni_al_riordino),
+      frequenza_operativa: stats.frequenza_operativa,
+      affidabilita: stats.affidabilita,
+      giorni_ritardo: stats.giorni_ritardo,
       fatturato_medio,
       fatturato_totale,
     });
@@ -180,7 +184,7 @@ export function computeForecastKPIs(forecasts: ProductForecast[]): ForecastKPIs 
   for (const f of forecasts) {
     const g = f.giorni_al_riordino;
     if (g === null) continue;
-    if (g <= 0) in_rottura_oggi++;
+    if (f.giorni_ritardo > 0) in_rottura_oggi++;
     else if (g <= 7) in_rottura_7gg++;
     else if (g <= 30) in_rottura_30gg++;
 

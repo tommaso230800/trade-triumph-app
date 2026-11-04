@@ -35,10 +35,12 @@ interface Props {
 }
 
 export function FrequencyChart({ pair, height = 280 }: Props) {
+  const [selected, setSelected] = useState<number | null>(null);
   const [finestra, setFinestra] = useState<number>(0); // 0 = tutto lo storico
 
   const punti = useMemo(() => {
     const all = pair.intervalli.map((iv, i) => ({
+      ...iv,
       idx: i + 1,
       label: fmtD(iv.to_data),
       giorni: iv.giorni,
@@ -109,26 +111,12 @@ export function FrequencyChart({ pair, height = 280 }: Props) {
             {zone.map((z, i) => (
               <ReferenceArea key={i} x1={z.x1} x2={z.x2} fill="hsl(var(--destructive))" fillOpacity={0.08} />
             ))}
-            {pair.frequenza_abituale !== null && (
-              <ReferenceLine
-                y={pair.frequenza_abituale}
-                stroke="hsl(var(--primary))"
-                strokeDasharray="6 4"
-                strokeWidth={1.5}
-                label={{ value: `Abituale ${Math.round(pair.frequenza_abituale)} gg`, position: "insideTopLeft", fontSize: 10, fill: "hsl(var(--primary))" }}
-              />
-            )}
-            {pair.frequenza_abituale !== null && (
-              <ReferenceLine
-                y={pair.frequenza_abituale + pair.tolleranza}
-                stroke="hsl(var(--warning))"
-                strokeDasharray="3 3"
-                strokeWidth={1.5}
-                label={{ value: `Tolleranza ${Math.round(pair.frequenza_abituale + pair.tolleranza)} gg`, position: "insideBottomLeft", fontSize: 10, fill: "hsl(var(--warning))" }}
-              />
-            )}
+            <Line type="stepAfter" dataKey="frequenza_storica" stroke="hsl(var(--primary))" strokeDasharray="6 4" dot={false} name="Baseline storica disponibile" connectNulls={false} />
+            <Line type="stepAfter" dataKey="frequenza_recente" stroke="hsl(var(--info))" strokeDasharray="2 3" dot={false} name="Frequenza recente" />
+            <Line type="stepAfter" dataKey="frequenza_operativa" stroke="hsl(var(--success))" dot={false} name="Frequenza operativa" connectNulls={false} />
+            <Line type="stepAfter" dataKey="soglia_tolleranza" stroke="hsl(var(--warning))" strokeDasharray="3 3" dot={false} name="Operativa + tolleranza" connectNulls={false} />
             <Line
-              type="monotone"
+              type="linear"
               dataKey="giorni"
               stroke="hsl(var(--foreground))"
               strokeWidth={2}
@@ -137,6 +125,7 @@ export function FrequencyChart({ pair, height = 280 }: Props) {
                 return (
                   <circle
                     key={`${payload.idx}-${payload.giorni}`}
+                    onClick={() => setSelected(payload.idx)}
                     cx={cx}
                     cy={cy}
                     r={payload.stato === "regolare" ? 4 : 6}
@@ -146,19 +135,29 @@ export function FrequencyChart({ pair, height = 280 }: Props) {
                   />
                 );
               }}
-              activeDot={{ r: 7 }}
+              activeDot={{ r: 7, onClick: (_: unknown, props: any) => setSelected(props.payload.idx) }}
               name="Intervallo reale"
             />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
+      {selected !== null && (() => {
+        const iv = pair.intervalli[selected - 1];
+        if (!iv) return null;
+        return <div className="space-y-2 rounded-lg border border-border p-3 text-xs">
+          <p>{fmtD(iv.from_data)} → {fmtD(iv.to_data)} · <strong>{iv.giorni} giorni</strong></p>
+          {[...iv.from_ordine_ids, ...iv.to_ordine_ids].map(id => <Link key={id} className="block break-all text-primary underline" to={`/ordini?cliente=${pair.cliente_id}&azienda=${pair.azienda_id}&storico=1&ordine=${id}`}>Apri ordine {id}</Link>)}
+        </div>;
+      })()}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR.regolare }} /> Regolare</span>
         <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR.anomalo }} /> Anomalo</span>
         <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR.persistente }} /> Persistente</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-4" style={{ background: "hsl(var(--primary))" }} /> Frequenza abituale</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-4" style={{ background: "hsl(var(--warning))" }} /> Soglia tolleranza</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-4" style={{ background: "hsl(var(--primary))" }} /> Baseline storica</span>
+        <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-4" style={{ background: "hsl(var(--warning))" }} /> Operativa + tolleranza</span>
+        <span className="text-success">Frequenza operativa</span>
+        <span className="text-info">Frequenza recente</span>
       </div>
     </div>
   );

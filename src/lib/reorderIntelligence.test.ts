@@ -122,7 +122,8 @@ describe("Intelligence riordini — condizioni della specifica", () => {
     orders.push({ ...orders[2], id: "dup", totale: 500 });
     const p = analyzePair("c1", "a1", orders, [], { today: iso(dayOf(orders[4].data_ordine) + 10) });
     expect(p.intervalli.every((i) => i.giorni > 0)).toBe(true);
-    expect(p.numero_ordini).toBe(5);
+    expect(p.numero_ordini).toBe(6);
+    expect(p.numero_date).toBe(5);
   });
 
   it("tolleranza configurabile tra 5 e 7", () => {

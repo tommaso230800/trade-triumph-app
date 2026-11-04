@@ -330,6 +330,7 @@ export function analyzePair(
   if (prodotti.length > 0) { score += Math.min(20, prodotti.length * 10); motivi.push(`${prodotti.length} prodotti abituali non più riordinati`); }
   if (base.valore_medio_ordine > 0) { score += Math.min(20, base.valore_medio_ordine / 100); motivi.push(`valore medio ordine ${Math.round(base.valore_medio_ordine)} €`); }
   if (affidabilita === "bassa") { score = Math.round(score * 0.6); motivi.push("previsione a bassa affidabilità (storico variabile)"); }
+  if (rallentamento === "persistente") score = Math.max(score, 30);
   const priorita: Priorita = score >= 60 ? "alta" : score >= 30 ? "media" : "bassa";
   if (!motivi.length) motivi.push("nessun fattore di rischio rilevato");
 
