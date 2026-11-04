@@ -14,4 +14,4 @@ export interface ReorderAlert {
 
 export function useReorderTracking(){return useReorderPairs();}
 export function useReorderAlerts(){const query=useReorderPairs();return {...query,data:query.data?.filter(p=>p.da_ricontattare).map(p=>({...p,media_giorni_riordino:p.media_giorni_riordino||0})).sort((a,b)=>b.giorni_ritardo-a.giorni_ritardo)};}
-export function useClienteReorderTracking(clienteId?:string){const query=useReorderPairs();return {...query,data:query.data?.filter(p=>p.cliente_id===clienteId).map(p=>({...p,media_giorni_riordino:p.media_giorni_riordino||0}))};}
+export function useClienteReorderTracking(clienteId?:string){const query=useReorderPairs();return {...query,data:query.data?.filter(p=>p.cliente_id===clienteId)};}

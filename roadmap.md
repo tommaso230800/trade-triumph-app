@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Prevenzione errore GHILLI su tutto il portafoglio
-- [ ] Controllo aggiornato dei dati e di tutti i percorsi riordino
-- [ ] Test permanenti su esclusione delle ripartizioni per qualsiasi cliente/mandante e su storia insufficiente
+- [x] Dati aggiornati: 1193 ripartizioni coinvolgevano 101 coppie/65 clienti; ora escluse dalla cronologia. Ricalcolo 115 coppie: zero incoerenze. Analisi cliente–azienda allineata, scheda cliente rispetta ritardo oltre tolleranza e N/D.
+- [x] Test permanenti multi-cliente/multi-mandante su contaminazione e storico insufficiente; 134 test superati prima delle ultime correzioni, ripetere verifica finale.
 
 ## Correzione frequenze verificabili (4 novembre)
 - [x] Ricostruire GHILLI–Quattro Valli: 11 ripartizioni 2025 non documentate + 2 acquisti 2026, intervallo reale 144 gg; baseline 31 derivava dalle ripartizioni mensili
