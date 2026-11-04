@@ -8,7 +8,7 @@
 - [x] Ricerca nel contenuto dall'archivio e dalla ricerca interna (⌘K); assistente AI cita i documenti rilevanti con fonte e data
 - [x] Verificato: PDF Polara → "Proposta Commerciale Polara 2026" con riepilogo e keyword, associazione manuale preservata; 375px senza overflow; build OK
 - [ ] Analisi completa dell'archivio esistente: avviare "Analizza archivio" con conferma dell'utente (16 documenti, usa crediti AI)
-- [ ] OCR su scansioni senza testo e documenti Word: il riconoscimento visuale copre PDF/immagini, Word .docx ora letti automaticamente; .doc vecchi restano manuali
+- [x] OCR su scansioni (lettura visiva se il PDF non ha testo) e Word .docx
 
 ## Fiscalità e netto (31 ottobre)
 - [x] Fonte condivisa paginata, nessun incasso presunto, dettagli originali e ricevute incrementali protette implementati; lettura autenticata verificata
@@ -91,7 +91,7 @@
 - [x] Fase 2: account Microsoft 365 collegato (OneDrive business, 6,6/10 GB); credenziali verificate lato server
 - [x] Fase 3: funzione onedrive-sync distribuita — delta query, import con hash SHA-256 anti-duplicato, cestino logico (nessuna cancellazione distruttiva), anti-ciclo via etag, conflitti marcati, registro eventi, centro controllo in Impostazioni, push CRM→OneDrive con cartella per azienda (max 4 MB), badge e azioni OneDrive nell'archivio. Testata: status e browse OK (117 elementi radice)
 - [ ] Scelta cartella principale: l'utente la seleziona in Impostazioni → Microsoft OneDrive → Scegli cartella, poi prima sincronizzazione con anteprima
-- [ ] Fase 4: pipeline AI estesa (Word .docx FATTO; restano OCR scansioni, confidenza 90/70, elaborazione a blocchi)
+- [ ] Fase 4: pipeline AI estesa (Word e OCR scansioni FATTI; restano confidenza 90/70, elaborazione a blocchi)
 - [ ] Fase 5: collegamenti CRM (ordini, listini con revisione prezzi, proposte→Canvass, provvigioni)
 - [ ] Fase 6: ridisegno File e Documenti (KPI, vista cartelle/elenco, scheda dettaglio, ricerca AI)
 - [ ] Fase 7: test end-to-end senza cancellare/spostare file reali
