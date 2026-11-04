@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ReorderPairs } from "@/components/riordino/ReorderPairs";
+import { IntelligenceDashboard } from "@/components/riordino/IntelligenceDashboard";
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -131,9 +132,11 @@ export default function RiordinoForecast() {
                 Riordino
               </h1>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted-foreground">{dataUpdatedAt ? `Ultimo aggiornamento: ${new Date(dataUpdatedAt).toLocaleString('it-IT')}` : 'Aggiornamento non ancora disponibile'}</p><Button variant="outline" disabled={isFetching} onClick={()=>refetch()}><RefreshCw className="mr-2 h-4 w-4"/>{isFetching?'Aggiornamento…':'Aggiorna'}</Button></div>
+            <p className="text-xs text-muted-foreground">Intelligence commerciale sulle abitudini di acquisto dei clienti, calcolata sugli ordini reali.</p>
           </header>
           {isError && <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive p-4 text-sm">Non riesco ad aggiornare Riordino. Controlla la connessione e riprova.<Button variant="outline" onClick={()=>refetch()}>Riprova</Button></div>}
+
+          <IntelligenceDashboard/>
 
           <ReorderPairs/>
           <details><summary className="min-h-11 cursor-pointer text-base font-semibold">Previsioni per singolo prodotto</summary><div className="mt-4 space-y-6">
