@@ -1,4 +1,4 @@
-import { reorderExclusion } from "@/lib/reorderEligibility";
+import { reorderExclusion, REORDER_START_DATE } from "@/lib/reorderEligibility";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -21,7 +21,7 @@ export function useReorderForecast() {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["reorder_forecast_v1", user?.id],
+    queryKey: ["reorder_forecast_v1", user?.id, REORDER_START_DATE],
     enabled: !!user,
     staleTime: 60_000,
     refetchOnMount: 'always',

@@ -46,11 +46,11 @@ describe("computeReorderForecast", () => {
   it("classifica correttamente l'urgenza in base ai giorni al riordino previsto", () => {
     // ultimo ordine 10gg fa, cadenza media 10gg -> prossimo riordino oggi -> critica
     const righe = [
-      riga({ data_ordine: "2025-12-02" }),
-      riga({ data_ordine: "2025-12-12" }),
-      riga({ data_ordine: "2025-12-22" }),
+      riga({ data_ordine: "2026-01-02" }),
+      riga({ data_ordine: "2026-01-12" }),
+      riga({ data_ordine: "2026-01-22" }),
     ];
-    const [f] = computeReorderForecast(righe, new Date("2026-01-01"));
+    const [f] = computeReorderForecast(righe, new Date("2026-02-01"));
     expect(f.giorni_al_riordino).toBe(0);
     expect(f.urgenza).toBe("alta");
   });
@@ -67,14 +67,14 @@ describe("computeForecastKPIs", () => {
   it("aggrega correttamente rotture, clienti da contattare e fatturato potenziale", () => {
     const righe = [
       // cliente c1: cadenza 10gg, in rottura oggi -> critica
-      riga({ cliente_id: "c1", data_ordine: "2025-12-02" }),
-      riga({ cliente_id: "c1", data_ordine: "2025-12-12" }),
-      riga({ cliente_id: "c1", data_ordine: "2025-12-22" }),
+      riga({ cliente_id: "c1", data_ordine: "2026-01-02" }),
+      riga({ cliente_id: "c1", data_ordine: "2026-01-12" }),
+      riga({ cliente_id: "c1", data_ordine: "2026-01-22" }),
       // cliente c2: cadenza 60gg, riordino fra 30gg -> non urgente
-      riga({ cliente_id: "c2", prodotto_id: "p2", data_ordine: "2025-11-02" }),
+      riga({ cliente_id: "c2", prodotto_id: "p2", data_ordine: "2026-01-01" }),
       riga({ cliente_id: "c2", prodotto_id: "p2", data_ordine: "2026-01-01" }),
     ];
-    const forecasts = computeReorderForecast(righe, new Date("2026-01-08"));
+    const forecasts = computeReorderForecast(righe, new Date("2026-02-08"));
     const kpi = computeForecastKPIs(forecasts);
 
     expect(kpi.totale_prodotti_monitorati).toBe(2);
