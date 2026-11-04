@@ -1,5 +1,8 @@
 # Roadmap
 
+## Riordino dal 1° gennaio 2026
+- [ ] Applicare limite condiviso a coppie, prodotti, grafici e avvisi; test del confine incluso e degli anni successivi, senza modificare dati commerciali.
+
 ## Prevenzione errore GHILLI su tutto il portafoglio
 - [x] Dati aggiornati: 1193 ripartizioni coinvolgevano 101 coppie/65 clienti; ora escluse dalla cronologia. Ricalcolo 115 coppie: zero incoerenze. Analisi cliente–azienda allineata, scheda cliente rispetta ritardo oltre tolleranza e N/D.
 - [x] Test permanenti multi-cliente/multi-mandante su contaminazione e storico insufficiente; 134 test superati. Scheda GHILLI autenticata: 2 ordini, N/D, nessun falso ritardo; anteprima aggiornata dopo rilevazione moduli obsoleti, nessun errore runtime.

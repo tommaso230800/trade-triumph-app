@@ -1,4 +1,5 @@
 import { todayRome } from './commercialProposal';
+import { isReorderDateEligible } from './reorderEligibility';
 // Motore statistico Intelligence Riordini.
 // Deterministico, nessuna dipendenza esterna, nessun dato inventato.
 // Regole chiave:
@@ -166,7 +167,7 @@ export function analyzePair(
   // Un ordine per giorno: stesso giorno non crea falsi intervalli.
   const byDay = new Map<string, IntelligenceOrder>();
   const idsByDay = new Map<string, string[]>();
-  const unique = [...new Map(orders.map(o => [o.id, o])).values()].filter(o => Number.isFinite(dayOf(o.data_ordine)) && o.data_ordine.slice(0, 10) <= today);
+  const unique = [...new Map(orders.map(o => [o.id, o])).values()].filter(o => isReorderDateEligible(o.data_ordine) && Number.isFinite(dayOf(o.data_ordine)) && o.data_ordine.slice(0, 10) <= today);
   for (const o of unique) {
     idsByDay.set(o.data_ordine.slice(0, 10), [...(idsByDay.get(o.data_ordine.slice(0, 10)) || []), o.id]);
     const d = o.data_ordine.slice(0, 10);
@@ -369,7 +370,7 @@ function analyzeProdotti(
 ): ProdottoNonRiordinato[] {
   const byProdotto = new Map<string, Map<string, { cartoni: number }>>();
   for (const r of righe) {
-    if (r.is_omaggio || !r.prodotto_id || (r.quantita_cartoni <= 0 && r.quantita_pezzi <= 0) || r.data_ordine > today) continue;
+    if (r.is_omaggio || !r.prodotto_id || !isReorderDateEligible(r.data_ordine) || (r.quantita_cartoni <= 0 && r.quantita_pezzi <= 0) || r.data_ordine > today) continue;
     const d = r.data_ordine.slice(0, 10);
     if (!byProdotto.has(r.prodotto_id)) byProdotto.set(r.prodotto_id, new Map());
     const perDay = byProdotto.get(r.prodotto_id);

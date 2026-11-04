@@ -1,5 +1,11 @@
 import { todayRome } from './commercialProposal';
 
+export const REORDER_START_DATE = '2026-01-01';
+
+export function isReorderDateEligible(date: string): boolean {
+  return date.slice(0, 10) >= REORDER_START_DATE;
+}
+
 export interface ReorderSourceOrder {
   id: string; cliente_id: string | null; azienda_id: string | null;
   data_ordine: string | null; status: string; note?: string | null;
@@ -18,6 +24,7 @@ export function reorderExclusion(o: ReorderSourceOrder, today = todayRome()): st
   const date = o.data_ordine.slice(0, 10);
   const parsed = new Date(`${date}T00:00:00Z`);
   if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) return 'Data commerciale non valida';
+  if (!isReorderDateEligible(date)) return 'Fuori periodo riordino: prima del 1° gennaio 2026';
   if (date > today) return 'Data commerciale futura';
   return null;
 }

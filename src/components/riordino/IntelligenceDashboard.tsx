@@ -164,7 +164,7 @@ export function IntelligenceDashboard() {
           <p>{pairs.length} coppie · {pairs.reduce((n,p)=>n+p.numero_ordini,0)} ordini validi · {pairs.reduce((n,p)=>n+p.ordini_esclusi.length,0) + (data?.esclusiSenzaCoppia || 0)} esclusi dalla cronologia</p>
           {!!data?.esclusiSenzaCoppia && <p>{data.esclusiSenzaCoppia} ordini senza cliente o mandante: da verificare in Problematiche.</p>}
           <p>{pairs.filter(p=>!p.previsione_affidabile).length} previsioni non affidabili · {pairs.filter(p=>p.rallentamento==='persistente').length} cambiamenti persistenti</p>
-          <p className="text-xs text-muted-foreground">Le ripartizioni di fatturato 2025 ricostruite non attestano date di acquisto; restano negli Ordini e nei totali economici, ma non generano frequenze.</p>
+          <p className="text-xs text-muted-foreground">Periodo riordino: dal 1° gennaio 2026. Gli ordini precedenti restano negli Ordini e nei totali economici, ma sono esclusi da frequenze, volumi, grafici e previsioni.</p>
           {pairs.filter(p=>p.ordini_esclusi.length>0).map(p=><Button key={p.key} variant="ghost" className="h-auto min-h-11 w-full justify-start whitespace-normal text-left" onClick={()=>setDettaglio(p)}>{p.cliente_nome} · {p.azienda_nome} · {p.numero_ordini} validi / {p.ordini_esclusi.length} esclusi</Button>)}
         </div>
       </details>

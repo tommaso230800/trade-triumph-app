@@ -1,5 +1,6 @@
 import { analyzePair, dayOf } from './reorderIntelligence';
 import { todayRome } from './commercialProposal';
+import { isReorderDateEligible } from './reorderEligibility';
 // Reorder Forecast Engine (per prodotto x cliente x azienda)
 // Deterministico. Nessuna dipendenza esterna.
 
@@ -84,7 +85,7 @@ export function computeReorderForecast(
       r.cliente_id &&
       r.azienda_id &&
       r.prodotto_id &&
-      r.data_ordine && r.data_ordine.slice(0,10) <= today.toISOString().slice(0,10) &&
+      r.data_ordine && isReorderDateEligible(r.data_ordine) && r.data_ordine.slice(0,10) <= today.toISOString().slice(0,10) &&
       (r.quantita_cartoni > 0 || r.quantita_pezzi > 0)
   );
 
