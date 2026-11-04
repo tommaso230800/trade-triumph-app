@@ -5,6 +5,7 @@ import { reorderExclusion, type ReorderSourceOrder } from './reorderEligibility'
 export type ReorderOrder = ReorderSourceOrder & { totale: number | string | null };
 export const calendarDay=(date:string)=>Date.parse(`${date.slice(0,10)}T00:00:00Z`)/86400000;
 export function computeReorderPairs(orders:ReorderOrder[],today=todayRome()) {
+ // Every pair uses the same provenance checks and cadence as the intelligence view.
  const groups=new Map<string,ReorderOrder[]>();
  for(const o of orders) {
   if(reorderExclusion(o,today)) continue;
