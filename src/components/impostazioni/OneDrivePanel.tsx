@@ -58,12 +58,12 @@ function FolderPicker({ open, onClose, onPick }: { open: boolean; onClose: () =>
           )}
           <span className="truncate">{currentPath === "/" ? "/ (radice)" : currentPath}</span>
         </div>
-        <ScrollArea className="flex-1 min-h-[200px] max-h-[50dvh]">
+        <div className="flex-1 min-h-[200px] max-h-[55dvh] overflow-y-auto overscroll-contain -mx-1 px-1" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}>
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : (
             <div className="space-y-1">
-              {(data?.items ?? []).map((it) => (
+              {[...(data?.items ?? [])].sort((a, b) => Number(b.isFolder) - Number(a.isFolder) || a.name.localeCompare(b.name, "it")).map((it) => (
                 <button
                   key={it.id}
                   disabled={!it.isFolder}
@@ -78,7 +78,7 @@ function FolderPicker({ open, onClose, onPick }: { open: boolean; onClose: () =>
               {data?.items.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Cartella vuota</p>}
             </div>
           )}
-        </ScrollArea>
+        </div>
         <Button onClick={() => { onPick(current.id, currentPath); setStack([{ id: null, name: "OneDrive" }]); onClose(); }}>
           <FolderOpen className="mr-2 h-4 w-4" />
           Sincronizza questa cartella
