@@ -86,3 +86,11 @@
 - [x] Pagina Ordini: intestazione, barra filtri con filtri attivi, tabella computer, schede telefono
 - [x] Nuovo ordine: stepper, riepilogo laterale su computer, selettore prodotti dedicato, righe prodotto, conferma con "Modifica"
 - [x] iPhone: campi lunghi e menu di scelta dentro lo schermo, testo campi 16px, barra azioni in safe area
+
+## Integrazione OneDrive + memoria attiva AI (4 novembre)
+- [ ] Fase 2: collegare account Microsoft 365 con connettore OneDrive (scheda di connessione mostrata all'utente)
+- [ ] Fase 3: sincronizzazione bidirezionale (delta query, cestino logico, controllo duplicati/hash, registro eventi, centro controllo in Impostazioni)
+- [ ] Fase 4: pipeline AI estesa (OCR scansioni, Word, confidenza 90/70, elaborazione a blocchi)
+- [ ] Fase 5: collegamenti CRM (ordini, listini con revisione prezzi, proposte→Canvass, provvigioni)
+- [ ] Fase 6: ridisegno File e Documenti (KPI, vista cartelle/elenco, scheda dettaglio, ricerca AI)
+- [ ] Fase 7: test end-to-end senza cancellare/spostare file reali
