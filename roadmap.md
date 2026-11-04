@@ -90,8 +90,17 @@
 ## Integrazione OneDrive + memoria attiva AI (4 novembre)
 - [x] Fase 2: account Microsoft 365 collegato (OneDrive business, 6,6/10 GB); credenziali verificate lato server
 - [x] Fase 3: funzione onedrive-sync distribuita — delta query, import con hash SHA-256 anti-duplicato, cestino logico (nessuna cancellazione distruttiva), anti-ciclo via etag, conflitti marcati, registro eventi, centro controllo in Impostazioni, push CRM→OneDrive con cartella per azienda (max 4 MB), badge e azioni OneDrive nell'archivio. Testata: status e browse OK (117 elementi radice)
-- [ ] Scelta cartella principale: l'utente la seleziona in Impostazioni → Microsoft OneDrive → Scegli cartella, poi prima sincronizzazione con anteprima
+- [ ] Requisito sostituito: sincronizzare tutto il drive dalla radice, senza selezione cartelle
 - [ ] Fase 4: pipeline AI estesa (Word e OCR scansioni FATTI; restano confidenza 90/70, elaborazione a blocchi)
 - [ ] Fase 5: collegamenti CRM (ordini, listini con revisione prezzi, proposte→Canvass, provvigioni)
 - [ ] Fase 6: ridisegno File e Documenti (KPI, vista cartelle/elenco, scheda dettaglio, ricerca AI)
 - [ ] Fase 7: test end-to-end senza cancellare/spostare file reali
+
+## OneDrive totale — nuova specifica (4 novembre)
+- [ ] Autorizzazioni esplicite per connessione condivisa e consenso analisi dei documenti riservati
+- [ ] Indice completo file/cartelle, ID stabili e scansione delta riprendibile senza limite totale
+- [ ] Processo automatico ad app chiusa, avanzamento reale e riprova errori
+- [ ] File manager speculare: percorsi, elenco/griglia, caricamento, cartelle, rinomina, spostamento, sostituzione e cancellazione confermata
+- [ ] Versioni/conflitti, file grandi e accesso originali senza duplicazione permanente
+- [ ] Analisi automatica compatibile, collegamenti CRM virtuali e confronto listini approvato
+- [ ] Controllo integrità, conteggi reali e test delle 15 condizioni richieste
