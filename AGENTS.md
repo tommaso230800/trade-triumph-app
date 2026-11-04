@@ -21,3 +21,4 @@
 - Document archive is an active memory: virtual per-company folders (never physical paths), `documenti_aziende` links for multi-company visibility, verified aliases in `aziende_alias` learned from manual corrections, and `stato_elaborazione` as the single processing state.
 - Generate dedicated poster exports from saved proposal content, awaiting real image decoding and preserving aspect ratio.
 - Mirror OneDrive physical hierarchy by stable drive/item IDs in a server-managed index; keep CRM classification virtual, persist every delta checkpoint, and gate shared-connector access through an explicit allowlist.
+- L'intelligence riordini è calcolata dal motore statistico condiviso `reorderIntelligence.ts`: baseline storica (mediana) sempre separata dalla frequenza recente, tolleranza 5-7 gg, nessun allarme con storico insufficiente.
