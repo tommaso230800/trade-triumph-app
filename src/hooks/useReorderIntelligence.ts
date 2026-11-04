@@ -18,6 +18,9 @@ export interface EnrichedPair extends PairIntelligence {
 export interface ReorderIntelligenceData {
   pairs: EnrichedPair[];
   kpi: PortfolioKPIs;
+  // ordini grezzi per coppia: servono al grafico portafoglio per ricalcolare
+  // gli stati ai mesi passati senza nuove query
+  ordersByPair: Record<string, IntelligenceOrder[]>;
 }
 
 export function getTolleranza(): number {
@@ -57,7 +60,7 @@ export function useReorderIntelligence() {
         ordini.push(...(data || []));
         if (!data || data.length < 1000) break;
       }
-      if (!ordini.length) return { pairs: [], kpi: computePortfolioKPIs([]) };
+      if (!ordini.length) return { pairs: [], kpi: computePortfolioKPIs([]), ordersByPair: {} };
 
       const ordiniMap = new Map(ordini.map((o) => [o.id, o] as const));
       const ordineIds = ordini.map((o) => o.id);
