@@ -290,7 +290,7 @@ export default function RiordinoForecast() {
                       <tbody>
                         {filtered.slice(0, 300).map((f) => {
                           const badge = urgenzaBadge[f.urgenza];
-                          const ritardo = f.giorni_al_riordino !== null && f.giorni_al_riordino < 0;
+                          const ritardo = f.giorni_ritardo > 0;
                           return (
                             <tr key={f.key} className="border-b border-border/50 hover:bg-muted/30">
                               <td className="p-3">
@@ -316,12 +316,12 @@ export default function RiordinoForecast() {
                               </td>
                               <td className="p-3 text-right">{f.ultima_quantita_cartoni}</td>
                               <td className={`p-3 text-right ${ritardo ? "text-destructive font-semibold" : ""}`}>
-                                {fmtDate(f.prossimo_riordino)}
+                                {f.prossimo_riordino ? fmtDate(f.prossimo_riordino) : 'Previsione non affidabile'}
                                 {f.giorni_al_riordino !== null && (
                                   <div className="text-xs text-muted-foreground">
-                                    {f.giorni_al_riordino < 0
-                                      ? `${-f.giorni_al_riordino} gg di ritardo`
-                                      : `tra ${f.giorni_al_riordino} gg`}
+                                    {f.giorni_ritardo > 0
+                                      ? `${f.giorni_ritardo} gg di ritardo oltre tolleranza`
+                                      : f.giorni_al_riordino < 0 ? 'In tolleranza' : `tra ${f.giorni_al_riordino} gg`}
                                   </div>
                                 )}
                               </td>
