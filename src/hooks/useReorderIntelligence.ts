@@ -54,7 +54,7 @@ export function useReorderIntelligence() {
           .from("ordini")
           .select("id, cliente_id, azienda_id, data_ordine, status, totale")
           .is("deleted_at", null)
-          .not("status", "in", '("annullato","stand_by","bozza","da_confermare")')
+          .not("status", "in", '("annullato","stand_by")')
           .not("data_ordine", "is", null)
           .order("id")
           .range(from, from + 999);
