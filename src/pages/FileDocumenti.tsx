@@ -46,7 +46,7 @@ export default function FileDocumenti() {
           <StatCard icon={<RefreshCw className="h-4 w-4 text-warning" />} label="Nuovi (30 gg)" value={stats.nuovi} loading={loading} />
           <StatCard
             icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
-            label="Da verificare / errori"
+            label="Da verificare o in errore"
             value={stats.daVerificare + stats.errori + (od?.errori ?? 0) + (od?.conflitti ?? 0)}
             loading={loading}
             tone={stats.daVerificare + stats.errori + (od?.errori ?? 0) + (od?.conflitti ?? 0) > 0 ? 'destructive' : undefined}
