@@ -113,6 +113,10 @@ Deno.serve(async req => {
             else {const doc=await checked(db.from('documenti').insert({...fields,user_id:userId,entita:'generico',tipo:'altro',storage_path:`onedrive://${state.drive_id}/${i.id}`,stato_elaborazione:'da_verificare',association_status:'review'}).select('id').single());docId=doc.id;imported++;}
           }
           await checked(db.from('onedrive_items').upsert({user_id:userId,drive_id:state.drive_id,item_id:i.id,parent_id:i.parentReference?.id??null,name:i.name,is_folder:!!i.folder,size:i.size??0,mime_type:i.file?.mimeType??null,etag:i.eTag??null,web_url:i.webUrl??null,modified_at:i.lastModifiedDateTime??null,deleted:false,documento_id:docId,updated_at:new Date().toISOString()},{onConflict:'user_id,drive_id,item_id'}));
+          if(docId && access.ai_enabled && !state.ai_paused_reason && (!existing || existing.etag!==i.eTag) && (i.file?.mimeType==='application/pdf'||i.file?.mimeType?.startsWith('image/')||i.file?.mimeType?.startsWith('text/'))){
+            await checked(db.from('onedrive_jobs').upsert({user_id:userId,item_id:i.id,operation:'analyze',payload:{documentoId:docId},idempotency_key:`${userId}:analyze:${i.id}:${i.eTag}`},{onConflict:'idempotency_key',ignoreDuplicates:true}));
+          }
+
         }
         checkpoint=nextCheckpoint(page);
         await checked(db.from('onedrive_sync_state').update({cursor_next:checkpoint.next,delta_token:checkpoint.delta??state.delta_token,scan_status:checkpoint.complete?'complete':'running',scan_pages:(state.scan_pages??0)+1,ultima_sync_at:checkpoint.complete?new Date().toISOString():state.ultima_sync_at,ultimo_esito:checkpoint.complete?'ok':'in_corso',root_folder_path:'/',root_folder_id:null}).eq('user_id',userId));
@@ -124,6 +128,12 @@ Deno.serve(async req => {
           const p=job.payload;const headers:Record<string,string>={'Content-Type':'application/json'};if(p.etag)headers['If-Match']=p.etag;
           try {
             let result:any=null;
+            if(job.operation==='analyze') {
+              if(!access.ai_enabled || state.ai_paused_reason)continue;
+              const {data:credential}=await db.from('onedrive_worker_keys').select('token').eq('user_id',userId).single();
+              const response=await fetch(url+'/functions/v1/classify-document',{method:'POST',headers:{'Content-Type':'application/json','x-onedrive-worker':credential?.token??''},body:JSON.stringify({documento_id:p.documentoId,worker_user_id:userId})});
+              if(!response.ok){const detail=await response.text();if([402,403,429].includes(response.status)){await checked(db.from('onedrive_sync_state').update({ai_paused_reason:`Analisi sospesa [${response.status}]`}).eq('user_id',userId));state.ai_paused_reason=`[${response.status}]`;}throw new Error(`Analisi [${response.status}]: ${detail}`);}
+            }
             if(job.operation==='create_folder')result=await graphJson((p.folderId?itemPath(p.folderId):rootPath())+'/children',{method:'POST',headers,body:JSON.stringify({name:p.name,folder:{},'@microsoft.graph.conflictBehavior':'fail'})});
             if(job.operation==='rename'||job.operation==='move')result=await graphJson(itemPath(p.itemId),{method:'PATCH',headers,body:JSON.stringify(job.operation==='rename'?{name:p.name}:{parentReference:p.folderId?{id:p.folderId}:{path:'/drive/root:'}})});
             if(job.operation==='delete'){
