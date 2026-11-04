@@ -88,8 +88,9 @@
 - [x] iPhone: campi lunghi e menu di scelta dentro lo schermo, testo campi 16px, barra azioni in safe area
 
 ## Integrazione OneDrive + memoria attiva AI (4 novembre)
-- [ ] Fase 2: collegare account Microsoft 365 con connettore OneDrive (scheda di connessione mostrata all'utente)
-- [ ] Fase 3: sincronizzazione bidirezionale (delta query, cestino logico, controllo duplicati/hash, registro eventi, centro controllo in Impostazioni)
+- [x] Fase 2: account Microsoft 365 collegato (OneDrive business, 6,6/10 GB); credenziali verificate lato server
+- [x] Fase 3: funzione onedrive-sync distribuita — delta query, import con hash SHA-256 anti-duplicato, cestino logico (nessuna cancellazione distruttiva), anti-ciclo via etag, conflitti marcati, registro eventi, centro controllo in Impostazioni, push CRM→OneDrive con cartella per azienda (max 4 MB), badge e azioni OneDrive nell'archivio. Testata: status e browse OK (117 elementi radice)
+- [ ] Scelta cartella principale: l'utente la seleziona in Impostazioni → Microsoft OneDrive → Scegli cartella, poi prima sincronizzazione con anteprima
 - [ ] Fase 4: pipeline AI estesa (OCR scansioni, Word, confidenza 90/70, elaborazione a blocchi)
 - [ ] Fase 5: collegamenti CRM (ordini, listini con revisione prezzi, proposte→Canvass, provvigioni)
 - [ ] Fase 6: ridisegno File e Documenti (KPI, vista cartelle/elenco, scheda dettaglio, ricerca AI)
