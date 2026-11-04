@@ -3208,6 +3208,24 @@ export type Database = {
         }
         Relationships: []
       }
+      onedrive_worker_keys: {
+        Row: {
+          created_at: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          token?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_email_sends: {
         Row: {
           body: string
