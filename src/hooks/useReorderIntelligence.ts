@@ -43,6 +43,7 @@ export function useReorderIntelligence() {
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     queryFn: async (): Promise<ReorderIntelligenceData> => {
+     try {
       // 1. Ordini validi (esclude annullati/stand_by/bozze), paginati
       const ordini: Array<{
         id: string; cliente_id: string | null; azienda_id: string | null;
@@ -168,6 +169,10 @@ export function useReorderIntelligence() {
       }
 
       return { pairs: enriched, kpi: computePortfolioKPIs(enriched), ordersByPair, prodottiNomi };
+     } catch (e) {
+       console.error("reorder intelligence error", e);
+       throw e;
+     }
     },
   });
 }
