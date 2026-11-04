@@ -3139,6 +3139,7 @@ export type Database = {
       onedrive_sync_state: {
         Row: {
           account_email: string | null
+          ai_paused_reason: string | null
           created_at: string
           cursor_next: string | null
           delta_token: string | null
@@ -3162,6 +3163,7 @@ export type Database = {
         }
         Insert: {
           account_email?: string | null
+          ai_paused_reason?: string | null
           created_at?: string
           cursor_next?: string | null
           delta_token?: string | null
@@ -3185,6 +3187,7 @@ export type Database = {
         }
         Update: {
           account_email?: string | null
+          ai_paused_reason?: string | null
           created_at?: string
           cursor_next?: string | null
           delta_token?: string | null

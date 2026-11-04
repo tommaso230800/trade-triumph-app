@@ -1,0 +1,1 @@
+ALTER TABLE public.onedrive_sync_state ADD COLUMN ai_paused_reason text; CREATE INDEX onedrive_jobs_pending ON public.onedrive_jobs(user_id,status,next_attempt_at);
