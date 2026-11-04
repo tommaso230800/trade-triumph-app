@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Cloud, CloudOff, RefreshCw, FolderOpen, Folder, File, ChevronRight, ArrowLeft,
   Loader2, Pause, Play, AlertTriangle, CheckCircle2, Clock, History,
@@ -204,7 +203,7 @@ export function OneDrivePanel() {
       <Dialog open={logOpen} onOpenChange={setLogOpen}>
         <DialogContent className="max-h-[90dvh] flex flex-col">
           <DialogHeader><DialogTitle>Registro sincronizzazione</DialogTitle></DialogHeader>
-          <ScrollArea className="flex-1 max-h-[60dvh]">
+          <div className="flex-1 max-h-[60dvh] overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
             <div className="space-y-2">
               {(eventi ?? []).map((ev) => (
                 <div key={ev.id} className="flex items-start gap-2 rounded-lg border p-3 text-sm">
@@ -221,7 +220,7 @@ export function OneDrivePanel() {
               ))}
               {(!eventi || eventi.length === 0) && <p className="py-6 text-center text-sm text-muted-foreground">Nessuna attività registrata</p>}
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>
