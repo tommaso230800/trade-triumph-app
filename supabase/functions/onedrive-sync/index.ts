@@ -96,6 +96,9 @@ Deno.serve(async req => {
         // Bounded worker; cursor persisted per page, total archive size is unbounded.
         await checked(db.from('onedrive_sync_state').update({scan_status:'running',scan_error:null}).eq('user_id',userId));
         let path=state.cursor_next?graphLink(state.cursor_next):state.delta_token?graphLink(state.delta_token):rootPath()+'/delta?$top=100';
+        let checkpoint:{next:string|null;delta:string|null;complete:boolean}={next:null,delta:null,complete:false};
+        const started=Date.now();
+        for(let batch=0;batch<10 && Date.now()-started<45000;batch++){
         const page=await graphJson(path);
         for(const i of page.value??[]) {
           const existing=await checked(db.from('onedrive_items').select('*').eq('user_id',userId).eq('drive_id',state.drive_id).eq('item_id',i.id).maybeSingle());
@@ -111,8 +114,11 @@ Deno.serve(async req => {
           }
           await checked(db.from('onedrive_items').upsert({user_id:userId,drive_id:state.drive_id,item_id:i.id,parent_id:i.parentReference?.id??null,name:i.name,is_folder:!!i.folder,size:i.size??0,mime_type:i.file?.mimeType??null,etag:i.eTag??null,web_url:i.webUrl??null,modified_at:i.lastModifiedDateTime??null,deleted:false,documento_id:docId,updated_at:new Date().toISOString()},{onConflict:'user_id,drive_id,item_id'}));
         }
-        const checkpoint=nextCheckpoint(page);
+        checkpoint=nextCheckpoint(page);
         await checked(db.from('onedrive_sync_state').update({cursor_next:checkpoint.next,delta_token:checkpoint.delta??state.delta_token,scan_status:checkpoint.complete?'complete':'running',scan_pages:(state.scan_pages??0)+1,ultima_sync_at:checkpoint.complete?new Date().toISOString():state.ultima_sync_at,ultimo_esito:checkpoint.complete?'ok':'in_corso',root_folder_path:'/',root_folder_id:null}).eq('user_id',userId));
+        if(checkpoint.complete)break;
+        if(!checkpoint.next)break;path=graphLink(checkpoint.next);state.scan_pages=(state.scan_pages??0)+1;
+        }
         const jobs=await checked(db.from('onedrive_jobs').select('*').eq('user_id',userId).eq('status','pending').lte('next_attempt_at',new Date().toISOString()).order('created_at').limit(3));
         for(const job of jobs??[]) {
           const p=job.payload;const headers:Record<string,string>={'Content-Type':'application/json'};if(p.etag)headers['If-Match']=p.etag;
