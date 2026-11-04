@@ -111,3 +111,15 @@
 - [ ] Analisi completa con AI: attende consenso trattamento in Impostazioni; automatismo attuale per PDF/immagini/testo, Word/fogli da estendere lato server
 - [ ] Confronto listini, collegamenti fiscali verificati e ricerca a domande: non completati
 - [ ] Test scrittura file/upload/sostituzione/spostamento e iPhone reale: da completare; nessun documento commerciale modificato per prova
+
+## Restyling premium + Intelligence riordini (4 novembre)
+- [x] Motore statistico `reorderIntelligence.ts`: mediana/baseline separata dalla frequenza recente, tolleranza 5-7 gg, rallentamento anomalo/persistente/in recupero, calo volumi distinto, prodotti non riordinati (min. 3 acquisti), affidabilità, priorità con motivi
+- [x] 13 test sulle condizioni della specifica (regolare, ritardo, 50 gg, 50+52, permanenza dopo nuovo ordine, rientro progressivo, prodotto fermo, calo volumi, storico insufficiente); 116 test totali OK
+- [x] Grafici recharts: frequenza con baseline/tolleranza/zone anomale e tooltip, consumi con unità cartoni/pezzi/valore, portafoglio storico ricalcolato mese per mese, previsione con finestra e incertezza esplicita
+- [x] Pagina Riordino: 8 KPI cliccabili, centro allarmi a 6 sezioni con motivi numerici, card cliente-azienda con grafici/crea ordine, filtri combinabili, ricalcolo manuale, tolleranza configurabile
+- [x] File e documenti: dashboard compatta con numeri reali (OneDrive 2395 file/498 cartelle, CRM 2411, analisi AI 69, da verificare 2316)
+- [x] Locandine e proposte: dashboard stati cliccabile (bozza/inviata/accettata/rifiutata/scaduta) + conteggi per tipo
+- [x] Verificato: 390/1280 px senza overflow, dettaglio grafici iPhone OK, nessun dato fittizio, enum order_status corretto (no bozza/da_confermare)
+- [ ] Esportazione grafico in immagine/PDF: non implementata
+- [ ] Zoom temporale dei grafici: disponibile selezione ultimi 5/10/20/tutto, zoom a trascinamento non implementato
+- [ ] Storico persistente delle segnalazioni: gli stati passati sono ricalcolati on-demand, non archiviati in tabella
