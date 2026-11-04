@@ -155,7 +155,10 @@ export function useReorderIntelligence() {
           return b.giorni_ritardo - a.giorni_ritardo;
         });
 
-      return { pairs: enriched, kpi: computePortfolioKPIs(enriched) };
+      const ordersByPair: Record<string, IntelligenceOrder[]> = {};
+      for (const [key, orders] of pairOrders) ordersByPair[key] = orders;
+
+      return { pairs: enriched, kpi: computePortfolioKPIs(enriched), ordersByPair };
     },
   });
 }
