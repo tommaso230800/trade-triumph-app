@@ -1,3 +1,4 @@
+import { todayRome } from './commercialProposal';
 // Motore statistico Intelligence Riordini.
 // Deterministico, nessuna dipendenza esterna, nessun dato inventato.
 // Regole chiave:
@@ -45,6 +46,12 @@ export interface IntervalloPoint {
   stato: StatoIntervallo;
   scostamento_giorni: number;
   scostamento_pct: number;
+  from_ordine_ids: string[];
+  to_ordine_ids: string[];
+  frequenza_operativa: number | null;
+  frequenza_storica: number | null;
+  frequenza_recente: number | null;
+  soglia_tolleranza: number | null;
 }
 
 export interface ProdottoNonRiordinato {
@@ -76,7 +83,13 @@ export interface PairIntelligence {
   ultimo_ordine_id: string;
   intervalli: IntervalloPoint[];
   frequenza_abituale: number | null; // mediana storica (baseline)
-  frequenza_recente: number | null; // media ultimi 4 intervalli
+  frequenza_recente: number | null; // media ultimi due cicli completati
+  frequenza_operativa: number | null;
+  mediana_giorni: number | null;
+  numero_date: number;
+  ordini_analizzati: IntelligenceOrder[];
+  ordini_esclusi: Array<{ id: string; data_ordine: string | null; codice?: string; motivo: string }>;
+  previsione_affidabile: boolean;
   media_giorni: number | null;
   deviazione_giorni: number;
   tolleranza: number;
@@ -148,11 +161,14 @@ export function analyzePair(
   opts: IntelligenceOptions = {}
 ): PairIntelligence {
   const tolleranza = clampTolleranza(opts.tolleranza);
-  const today = opts.today || new Date().toISOString().slice(0, 10);
+  const today = opts.today || todayRome();
 
   // Un ordine per giorno: stesso giorno non crea falsi intervalli.
   const byDay = new Map<string, IntelligenceOrder>();
-  for (const o of orders) {
+  const idsByDay = new Map<string, string[]>();
+  const unique = [...new Map(orders.map(o => [o.id, o])).values()].filter(o => Number.isFinite(dayOf(o.data_ordine)) && o.data_ordine.slice(0, 10) <= today);
+  for (const o of unique) {
+    idsByDay.set(o.data_ordine.slice(0, 10), [...(idsByDay.get(o.data_ordine.slice(0, 10)) || []), o.id]);
     const d = o.data_ordine.slice(0, 10);
     const cur = byDay.get(d);
     if (!cur) byDay.set(d, { ...o, data_ordine: d });
@@ -169,7 +185,13 @@ export function analyzePair(
     key: `${cliente_id}|${azienda_id}`,
     cliente_id,
     azienda_id,
-    numero_ordini,
+    numero_ordini: unique.length,
+    numero_date: numero_ordini,
+    ordini_analizzati: unique.sort((a,b) => a.data_ordine.localeCompare(b.data_ordine) || a.id.localeCompare(b.id)),
+    ordini_esclusi: [],
+    frequenza_operativa: null,
+    mediana_giorni: null,
+    previsione_affidabile: false,
     primo_ordine: giorni[0]?.data_ordine || "",
     ultimo_ordine: giorni[numero_ordini - 1]?.data_ordine || "",
     ultimo_ordine_id: giorni[numero_ordini - 1]?.id || "",
@@ -199,42 +221,47 @@ export function analyzePair(
     priorita_motivi: [],
   };
 
-  if (numero_ordini < 3) return base; // storico insufficiente: nessun allarme
-
-  const rawIntervals: number[] = [];
-  for (let i = 1; i < giorni.length; i++) {
-    rawIntervals.push(dayOf(giorni[i].data_ordine) - dayOf(giorni[i - 1].data_ordine));
+  const rawIntervals = giorni.slice(1).map((g, i) => dayOf(g.data_ordine) - dayOf(giorni[i].data_ordine));
+  // Replay in chronological order. No future interval reclassifies an earlier point.
+  const history: number[] = [];
+  const anomalo: boolean[] = [];
+  const intervalli: IntervalloPoint[] = [];
+  let tail = 0;
+  let frozen = false;
+  for (let i = 0; i < rawIntervals.length; i++) {
+    const g = rawIntervals[i];
+    const priorBase = median(history);
+    const anomaly = history.length >= 3 && g > sogliaAnomalia(priorBase, stddev(history));
+    anomalo.push(anomaly);
+    tail = anomaly ? tail + 1 : 0;
+    if (tail >= 2) frozen = true;
+    if (!anomaly && !frozen) history.push(g);
+    const baseline = median(history);
+    const recent = mean(rawIntervals.slice(Math.max(0, i - 1), i + 1));
+    const operational = tail >= 2 ? mean(rawIntervals.slice(Math.max(0, i - Math.min(tail, 4) + 1), i + 1)) : baseline;
+    const usable = i >= 1 && tail !== 1 && stddev(tail >= 2 ? rawIntervals.slice(i - Math.min(tail,4) + 1,i + 1) : history) / operational <= 0.6;
+    intervalli.push({
+      from_data: giorni[i].data_ordine, to_data: giorni[i+1].data_ordine,
+      from_ordine_id: giorni[i].id, to_ordine_id: giorni[i+1].id,
+      from_ordine_ids: idsByDay.get(giorni[i].data_ordine) || [],
+      to_ordine_ids: idsByDay.get(giorni[i+1].data_ordine) || [],
+      giorni: g, stato: anomaly ? tail >= 2 ? 'persistente' : 'anomalo' : 'regolare',
+      scostamento_giorni: Math.round(g - (priorBase || baseline)),
+      scostamento_pct: priorBase ? Math.round((g / priorBase - 1) * 100) : 0,
+      frequenza_storica: i >= 1 ? baseline : null,
+      frequenza_recente: recent,
+      frequenza_operativa: usable ? Math.round(operational * 10) / 10 : null,
+      soglia_tolleranza: usable ? Math.round(operational) + tolleranza : null,
+    });
   }
-
-  // Baseline: mediana storica. Con almeno 6 intervalli esclude gli ultimi 2,
-  // così un rallentamento recente non riscrive subito la frequenza abituale.
-  const baselineSet = rawIntervals.length >= 6 ? rawIntervals.slice(0, -2) : rawIntervals;
-  const frequenza = median(baselineSet);
-  const deviazione = stddev(baselineSet);
-  const recenti = rawIntervals.slice(-4);
-  const frequenza_recente = mean(recenti);
+  base.intervalli = intervalli;
+  base.media_giorni = rawIntervals.length ? Math.round(mean(rawIntervals) * 10) / 10 : null;
+  base.mediana_giorni = rawIntervals.length ? median(rawIntervals) : null;
+  if (rawIntervals.length < 2) return base;
+  const frequenza = median(history);
+  const deviazione = stddev(history);
+  const frequenza_recente = mean(rawIntervals.slice(-2));
   const soglia = sogliaAnomalia(frequenza, deviazione);
-
-  // Classifica ogni intervallo; "persistente" = parte di una coda di 2+ anomali.
-  const anomalo = rawIntervals.map((g) => g > soglia);
-  const intervalli: IntervalloPoint[] = rawIntervals.map((g, i) => {
-    let stato: StatoIntervallo = "regolare";
-    if (anomalo[i]) {
-      const prev = i > 0 && anomalo[i - 1];
-      const next = i < anomalo.length - 1 && anomalo[i + 1];
-      stato = prev || next ? "persistente" : "anomalo";
-    }
-    return {
-      from_data: giorni[i].data_ordine,
-      to_data: giorni[i + 1].data_ordine,
-      from_ordine_id: giorni[i].id,
-      to_ordine_id: giorni[i + 1].id,
-      giorni: g,
-      stato,
-      scostamento_giorni: Math.round(g - frequenza),
-      scostamento_pct: frequenza > 0 ? Math.round(((g - frequenza) / frequenza) * 100) : 0,
-    };
-  });
 
   // Coda di anomalie consecutive e cicli regolari successivi.
   let codaAnomali = 0;
@@ -256,14 +283,20 @@ export function analyzePair(
   else if (codaAnomali === 1) rallentamento = "anomalo";
   else if (cicliRegolariDopo > 0 && cicliRegolariDopo < 2) rallentamento = "in_recupero";
 
-  // Stato riordino rispetto a oggi.
+  const activeIntervals = codaAnomali >= 2 ? rawIntervals.slice(-Math.min(codaAnomali, 4)) : history;
+  const operativa = codaAnomali >= 2 ? mean(activeIntervals) : frequenza;
+  const cv = operativa > 0 ? stddev(activeIntervals) / operativa : Infinity;
+  const reliable = codaAnomali !== 1 && cv <= 0.6 && activeIntervals.length >= 2;
+  let affidabilita: Affidabilita = 'bassa';
+  if (reliable && activeIntervals.length >= 7 && cv <= 0.4) affidabilita = 'alta';
+  else if (reliable && activeIntervals.length >= 4 && cv <= 0.6) affidabilita = 'media';
   const giorniDaUltimo = base.giorni_da_ultimo;
-  let stato: StatoRiordino = "regolare";
-  if (giorniDaUltimo > frequenza + tolleranza) stato = "ritardo";
-  else if (giorniDaUltimo > frequenza) stato = "tolleranza";
-
-  const prossimo = isoFromDay(dayOf(base.ultimo_ordine) + Math.round(frequenza));
-  const finestra = isoFromDay(dayOf(prossimo) + tolleranza);
+  const cadenceDays = Math.round(operativa);
+  const prossimo = reliable ? isoFromDay(dayOf(base.ultimo_ordine) + cadenceDays) : null;
+  const finestra = prossimo ? isoFromDay(dayOf(prossimo) + tolleranza) : null;
+  let stato: StatoRiordino = reliable ? 'regolare' : 'storico_insufficiente';
+  if (reliable && giorniDaUltimo > cadenceDays + tolleranza) stato = 'ritardo';
+  else if (reliable && giorniDaUltimo > cadenceDays) stato = 'tolleranza';
 
   // Calo dei volumi: media ultimi 3 ordini vs media storica precedente.
   let calo_volumi = false;
@@ -279,12 +312,6 @@ export function analyzePair(
     }
   }
 
-  // Affidabilità statistica.
-  const cv = frequenza > 0 ? deviazione / frequenza : 1;
-  let affidabilita: Affidabilita = "bassa";
-  if (numero_ordini >= 8 && cv <= 0.4) affidabilita = "alta";
-  else if (numero_ordini >= 5 && cv <= 0.6) affidabilita = "media";
-
   // Prodotti non riordinati: almeno 3 acquisti distinti, in ritardo oltre
   // la propria frequenza + tolleranza mentre il cliente compra altro.
   const prodotti = analyzeProdotti(righe, tolleranza, today, base.ultimo_ordine);
@@ -292,7 +319,7 @@ export function analyzePair(
   const variazione_recente_pct = frequenza > 0 ? Math.round(((frequenza_recente - frequenza) / frequenza) * 100) : null;
 
   // Priorità commerciale con spiegazione.
-  const giorni_ritardo = stato === "ritardo" ? Math.round(giorniDaUltimo - frequenza - tolleranza) : 0;
+  const giorni_ritardo = stato === "ritardo" ? Math.round(giorniDaUltimo - cadenceDays - tolleranza) : 0;
   const motivi: string[] = [];
   let score = 0;
   if (giorni_ritardo > 0) { score += Math.min(40, giorni_ritardo * 2); motivi.push(`${giorni_ritardo} giorni di ritardo oltre la tolleranza`); }
@@ -310,6 +337,8 @@ export function analyzePair(
     ...base,
     intervalli,
     frequenza_abituale: Math.round(frequenza * 10) / 10,
+    frequenza_operativa: reliable ? Math.round(operativa * 10) / 10 : null,
+    previsione_affidabile: reliable,
     frequenza_recente: Math.round(frequenza_recente * 10) / 10,
     media_giorni: Math.round(mean(rawIntervals) * 10) / 10,
     deviazione_giorni: Math.round(deviazione * 10) / 10,
@@ -339,10 +368,11 @@ function analyzeProdotti(
 ): ProdottoNonRiordinato[] {
   const byProdotto = new Map<string, Map<string, { cartoni: number }>>();
   for (const r of righe) {
-    if (r.is_omaggio || !r.prodotto_id) continue;
+    if (r.is_omaggio || !r.prodotto_id || (r.quantita_cartoni <= 0 && r.quantita_pezzi <= 0) || r.data_ordine > today) continue;
     const d = r.data_ordine.slice(0, 10);
     if (!byProdotto.has(r.prodotto_id)) byProdotto.set(r.prodotto_id, new Map());
-    const perDay = byProdotto.get(r.prodotto_id)!;
+    const perDay = byProdotto.get(r.prodotto_id);
+    if (!perDay) continue;
     const cur = perDay.get(d) || { cartoni: 0 };
     cur.cartoni += r.quantita_cartoni || 0;
     perDay.set(d, cur);
@@ -354,11 +384,12 @@ function analyzeProdotti(
     if (dates.length < 3) continue; // un acquisto occasionale non è un'abitudine
     const intervals: number[] = [];
     for (let i = 1; i < dates.length; i++) intervals.push(dayOf(dates[i]) - dayOf(dates[i - 1]));
-    const frequenza = median(intervals);
-    if (frequenza <= 0) continue;
+    const stats = analyzePair('product', prodotto_id, dates.map((d,i) => ({ id: `p${i}`, data_ordine:d, totale:0,cartoni:0,pezzi:0 })), [], { today, tolleranza });
+    const frequenza = stats.frequenza_operativa;
+    if (!stats.previsione_affidabile || !frequenza) continue;
     const ultimo = dates[dates.length - 1];
     const giorniSenza = dayOf(today) - dayOf(ultimo);
-    const ritardo = Math.round(giorniSenza - frequenza - tolleranza);
+    const ritardo = Math.round(giorniSenza - Math.round(frequenza) - tolleranza);
     // segnala solo se il prodotto è in ritardo E il cliente ha continuato
     // ad ordinare altro dopo l'ultimo acquisto di questo prodotto
     if (ritardo > 0 && ultimo < ultimoOrdinePair) {
@@ -390,7 +421,7 @@ export interface PortfolioKPIs {
 }
 
 export function computePortfolioKPIs(pairs: PairIntelligence[], today?: string): PortfolioKPIs {
-  const t = today || new Date().toISOString().slice(0, 10);
+  const t = today || todayRome();
   const kpi: PortfolioKPIs = {
     clienti_monitorati: 0,
     riordini_previsti_30gg: 0,
@@ -410,7 +441,7 @@ export function computePortfolioKPIs(pairs: PairIntelligence[], today?: string):
     if (p.rallentamento === "persistente") kpi.rallentamenti_persistenti++;
     kpi.prodotti_non_riordinati += p.prodotti_non_riordinati.length;
     if (p.calo_volumi) kpi.calo_volumi++;
-    if (p.frequenza_abituale && p.giorni_da_ultimo > p.frequenza_abituale * 2) kpi.inattivita_prolungata++;
+    if (p.previsione_affidabile && p.frequenza_operativa && p.giorni_da_ultimo > p.frequenza_operativa * 2) kpi.inattivita_prolungata++;
   }
   return kpi;
 }
