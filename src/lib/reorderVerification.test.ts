@@ -4,14 +4,14 @@ import { computeReorderPairs } from './reorderPairs';
 import { reorderExclusion } from './reorderEligibility';
 import { computeReorderForecast } from './reorderForecastEngine';
 
-const orders = (intervals: number[], start = '2022-01-01'): IntelligenceOrder[] => {
+const orders = (intervals: number[], start = '2026-01-01'): IntelligenceOrder[] => {
   let d = dayOf(start);
   return [0, ...intervals].map((gap,i) => {
     d += gap;
     return {id:`o${i}`,data_ordine:new Date(d*86400000).toISOString().slice(0,10),totale:100,cartoni:1,pezzi:1};
   });
 };
-const opts = {today:'2026-11-04'};
+const opts = {today:'2030-11-04'};
 describe('Correzione frequenze — A–F', () => {
   it.each(['cliente-a', 'cliente-b', 'ghilli'])('ripartizioni mensili non contaminano nessuna mandante di %s', (cliente_id) => {
     const real = orders([144], '2026-02-26').map(o=>({...o,cliente_id,azienda_id:'mandante-a',status:'completato'}));
@@ -82,9 +82,9 @@ describe('Correzione frequenze — A–F', () => {
   });
   it('E: intero storico per ID non dipende da filtri UI; stesso importo non è duplicato', () => {
     const source=orders([150,150,150]).map(o=>({...o,cliente_id:'c',azienda_id:'a',status:'completato'}));
-    const baseline=computeReorderPairs(source,'2026-11-04');
+    const baseline=computeReorderPairs(source,'2030-11-04');
     const other={...source[0],id:'other',azienda_id:'other'};
-    expect(computeReorderPairs([...source,other],'2026-11-04').find(p=>p.azienda_id==='a')).toEqual(baseline[0]);
+    expect(computeReorderPairs([...source,other],'2030-11-04').find(p=>p.azienda_id==='a')).toEqual(baseline[0]);
     expect(baseline[0].numero_ordini).toBe(4);
     expect(baseline[0].media_giorni_riordino).toBe(150);
   });
@@ -96,13 +96,13 @@ describe('Correzione frequenze — A–F', () => {
     expect(JSON.stringify(source)).toBe(before);
   });
   it('solo il marker di ripartizione ricostruita è escluso, non storico valido senza righe', () => {
-    const o={id:'x',cliente_id:'c',azienda_id:'a',data_ordine:'2025-01-15',status:'completato',note:'Storico importato da fattura'};
+    const o={id:'x',cliente_id:'c',azienda_id:'a',data_ordine:'2026-01-15',status:'completato',note:'Storico importato da fattura'};
     expect(reorderExclusion(o,'2026-11-04')).toBeNull();
     expect(reorderExclusion({...o,note:'Storico 2025 ricostruito'},'2026-11-04')).not.toBeNull();
     for (const status of ['bozza','da_confermare','annullato','stand_by']) expect(reorderExclusion({...o,status},'2026-11-04')).not.toBeNull();
   });
   it('ritardo positivo solo dopo data prevista più sei giorni', () => {
-    const source=orders([145,145,145], '2025-05-11');
+    const source=orders([145,145,145], '2026-05-11');
     const last=source[3].data_ordine;
     const onDay=(n:number)=>new Date((dayOf(last)+n)*86400000).toISOString().slice(0,10);
     expect(analyzePair('c','a',source,[],{today:onDay(151)}).giorni_ritardo).toBe(0);
