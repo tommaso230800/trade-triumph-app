@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Cloud, CloudOff, RefreshCw, FolderOpen, Folder, File, ChevronRight, ArrowLeft,
   Loader2, Pause, Play, AlertTriangle, CheckCircle2, Clock, History,
@@ -58,12 +57,12 @@ function FolderPicker({ open, onClose, onPick }: { open: boolean; onClose: () =>
           )}
           <span className="truncate">{currentPath === "/" ? "/ (radice)" : currentPath}</span>
         </div>
-        <ScrollArea className="flex-1 min-h-[200px] max-h-[50dvh]">
+        <div className="flex-1 min-h-[200px] max-h-[55dvh] overflow-y-auto overscroll-contain -mx-1 px-1" style={{ WebkitOverflowScrolling: "touch", touchAction: "pan-y" }}>
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : (
             <div className="space-y-1">
-              {(data?.items ?? []).map((it) => (
+              {[...(data?.items ?? [])].sort((a, b) => Number(b.isFolder) - Number(a.isFolder) || a.name.localeCompare(b.name, "it")).map((it) => (
                 <button
                   key={it.id}
                   disabled={!it.isFolder}
@@ -78,7 +77,7 @@ function FolderPicker({ open, onClose, onPick }: { open: boolean; onClose: () =>
               {data?.items.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Cartella vuota</p>}
             </div>
           )}
-        </ScrollArea>
+        </div>
         <Button onClick={() => { onPick(current.id, currentPath); setStack([{ id: null, name: "OneDrive" }]); onClose(); }}>
           <FolderOpen className="mr-2 h-4 w-4" />
           Sincronizza questa cartella
@@ -204,7 +203,7 @@ export function OneDrivePanel() {
       <Dialog open={logOpen} onOpenChange={setLogOpen}>
         <DialogContent className="max-h-[90dvh] flex flex-col">
           <DialogHeader><DialogTitle>Registro sincronizzazione</DialogTitle></DialogHeader>
-          <ScrollArea className="flex-1 max-h-[60dvh]">
+          <div className="flex-1 max-h-[60dvh] overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
             <div className="space-y-2">
               {(eventi ?? []).map((ev) => (
                 <div key={ev.id} className="flex items-start gap-2 rounded-lg border p-3 text-sm">
@@ -221,7 +220,7 @@ export function OneDrivePanel() {
               ))}
               {(!eventi || eventi.length === 0) && <p className="py-6 text-center text-sm text-muted-foreground">Nessuna attività registrata</p>}
             </div>
-          </ScrollArea>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>
