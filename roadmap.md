@@ -90,17 +90,24 @@
 ## Integrazione OneDrive + memoria attiva AI (4 novembre)
 - [x] Fase 2: account Microsoft 365 collegato (OneDrive business, 6,6/10 GB); credenziali verificate lato server
 - [x] Fase 3: funzione onedrive-sync distribuita — delta query, import con hash SHA-256 anti-duplicato, cestino logico (nessuna cancellazione distruttiva), anti-ciclo via etag, conflitti marcati, registro eventi, centro controllo in Impostazioni, push CRM→OneDrive con cartella per azienda (max 4 MB), badge e azioni OneDrive nell'archivio. Testata: status e browse OK (117 elementi radice)
-- [ ] Requisito sostituito: sincronizzare tutto il drive dalla radice, senza selezione cartelle
+- [x] Requisito sostituito: intero drive dalla radice, senza selezione cartelle; prima scansione completata (29 pagine)
 - [ ] Fase 4: pipeline AI estesa (Word e OCR scansioni FATTI; restano confidenza 90/70, elaborazione a blocchi)
 - [ ] Fase 5: collegamenti CRM (ordini, listini con revisione prezzi, proposte→Canvass, provvigioni)
 - [ ] Fase 6: ridisegno File e Documenti (KPI, vista cartelle/elenco, scheda dettaglio, ricerca AI)
 - [ ] Fase 7: test end-to-end senza cancellare/spostare file reali
 
 ## OneDrive totale — nuova specifica (4 novembre)
-- [ ] Autorizzazioni esplicite per connessione condivisa e consenso analisi dei documenti riservati
-- [ ] Indice completo file/cartelle, ID stabili e scansione delta riprendibile senza limite totale
-- [ ] Processo automatico ad app chiusa, avanzamento reale e riprova errori
+- [x] Autorizzazioni esplicite per connessione condivisa e consenso analisi dei documenti riservati; accesso limitato al titolare amministratore già configurato
+- [x] Indice completo file/cartelle, ID stabili e scansione delta riprendibile senza limite totale: 2.395 file / 498 cartelle, nessun cursore pendente, zero duplicati
+- [x] Controllo automatico ogni ora configurato, avanzamento reale e riprova errori; esecuzione pianificata ad app chiusa ancora da osservare
 - [ ] File manager speculare: percorsi, elenco/griglia, caricamento, cartelle, rinomina, spostamento, sostituzione e cancellazione confermata
 - [ ] Versioni/conflitti, file grandi e accesso originali senza duplicazione permanente
 - [ ] Analisi automatica compatibile, collegamenti CRM virtuali e confronto listini approvato
 - [ ] Controllo integrità, conteggi reali e test delle 15 condizioni richieste
+- [x] File manager: radice e cartelle reali paginati, elenco/griglia, ricerca nomi, download originali, creazione/rinomina/spostamento accodati, conferma eliminazione file e versioni Microsoft
+- [x] Verifiche reali: cartella prova creata/rinominata/eliminata (prima del blocco conservativo sulle cartelle), Polara 30 elementi, 320/375/430 senza overflow; 13 test superati
+- [ ] Caricamenti/sostituzioni riprendibili oltre 20 MB: serve percorso upload-session compatibile con il gateway, non documentato nella guida disponibile
+- [ ] Notifiche Microsoft e rinnovo: non attivate; controllo orario come fallback esplicito
+- [ ] Analisi completa con AI: attende consenso trattamento in Impostazioni; automatismo attuale per PDF/immagini/testo, Word/fogli da estendere lato server
+- [ ] Confronto listini, collegamenti fiscali verificati e ricerca a domande: non completati
+- [ ] Test scrittura file/upload/sostituzione/spostamento e iPhone reale: da completare; nessun documento commerciale modificato per prova
