@@ -43,6 +43,7 @@ export function useReorderIntelligence() {
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     queryFn: async (): Promise<ReorderIntelligenceData> => {
+     try {
       // 1. Ordini validi (esclude annullati/stand_by/bozze), paginati
       const ordini: Array<{
         id: string; cliente_id: string | null; azienda_id: string | null;
@@ -53,7 +54,7 @@ export function useReorderIntelligence() {
           .from("ordini")
           .select("id, cliente_id, azienda_id, data_ordine, status, totale")
           .is("deleted_at", null)
-          .not("status", "in", '("annullato","stand_by","bozza","da_confermare")')
+          .not("status", "in", '("annullato","stand_by")')
           .not("data_ordine", "is", null)
           .order("id")
           .range(from, from + 999);
@@ -168,6 +169,10 @@ export function useReorderIntelligence() {
       }
 
       return { pairs: enriched, kpi: computePortfolioKPIs(enriched), ordersByPair, prodottiNomi };
+     } catch (e) {
+       console.error("reorder intelligence error", e);
+       throw e;
+     }
     },
   });
 }
