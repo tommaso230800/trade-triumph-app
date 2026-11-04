@@ -11,6 +11,8 @@ export const queryClient = new QueryClient({
   mutationCache: new MutationCache({ onSuccess: () => {
     queryClient.invalidateQueries({queryKey:['fiscal-commissions']});
     queryClient.invalidateQueries({queryKey:['fiscal-entries']});
+    queryClient.invalidateQueries({queryKey:['reorder_intelligence_v1']});
+    queryClient.invalidateQueries({queryKey:['reorder_forecast_v1']});
   }}),
   defaultOptions: {
     queries: {

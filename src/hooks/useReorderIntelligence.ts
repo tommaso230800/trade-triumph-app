@@ -1,3 +1,4 @@
+import { reorderExclusion } from "@/lib/reorderEligibility";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -22,6 +23,7 @@ export interface ReorderIntelligenceData {
   // gli stati ai mesi passati senza nuove query
   ordersByPair: Record<string, IntelligenceOrder[]>;
   prodottiNomi: Record<string, string>;
+  esclusiSenzaCoppia?: number;
 }
 
 export function getTolleranza(): number {
@@ -47,15 +49,12 @@ export function useReorderIntelligence() {
       // 1. Ordini validi (esclude annullati/stand_by/bozze), paginati
       const ordini: Array<{
         id: string; cliente_id: string | null; azienda_id: string | null;
-        data_ordine: string | null; status: string; totale: number | string | null;
+        data_ordine: string | null; status: string; totale: number | string | null; note: string | null; deleted_at: string | null; codice: string;
       }> = [];
       for (let from = 0; ; from += 1000) {
         const { data, error } = await supabase
           .from("ordini")
-          .select("id, cliente_id, azienda_id, data_ordine, status, totale")
-          .is("deleted_at", null)
-          .not("status", "in", '("annullato","stand_by")')
-          .not("data_ordine", "is", null)
+          .select("id, cliente_id, azienda_id, data_ordine, status, totale, note, deleted_at, codice")
           .order("id")
           .range(from, from + 999);
         if (error) throw error;
@@ -64,8 +63,9 @@ export function useReorderIntelligence() {
       }
       if (!ordini.length) return { pairs: [], kpi: computePortfolioKPIs([]), ordersByPair: {}, prodottiNomi: {} };
 
-      const ordiniMap = new Map(ordini.map((o) => [o.id, o] as const));
-      const ordineIds = ordini.map((o) => o.id);
+      const excluded = ordini.filter(o => reorderExclusion(o));
+      const valid = ordini.filter(o => !reorderExclusion(o));
+      const ordineIds = valid.map((o) => o.id);
 
       // 2. Righe paginate (per volumi e prodotti non riordinati)
       const righeAll: any[] = [];
@@ -91,17 +91,17 @@ export function useReorderIntelligence() {
       const righeByOrdine = new Map<string, any[]>();
       for (const r of righeAll) {
         if (!righeByOrdine.has(r.ordine_id)) righeByOrdine.set(r.ordine_id, []);
-        righeByOrdine.get(r.ordine_id)!.push(r);
+        righeByOrdine.get(r.ordine_id)?.push(r);
       }
 
-      for (const o of ordini) {
+      for (const o of valid) {
         if (!o.cliente_id || !o.azienda_id || !o.data_ordine) continue;
         const key = `${o.cliente_id}|${o.azienda_id}`;
         const righe = righeByOrdine.get(o.id) || [];
         const cartoni = righe.reduce((s, r) => s + (Number(r.quantita_cartoni) || 0), 0);
         const pezzi = righe.reduce((s, r) => s + (Number(r.quantita_pezzi) || 0), 0);
         if (!pairOrders.has(key)) pairOrders.set(key, []);
-        pairOrders.get(key)!.push({
+        pairOrders.get(key)?.push({
           id: o.id,
           data_ordine: o.data_ordine.slice(0, 10),
           totale: Number(o.totale) || 0,
@@ -110,7 +110,7 @@ export function useReorderIntelligence() {
         });
         if (!pairRighe.has(key)) pairRighe.set(key, []);
         for (const r of righe) {
-          pairRighe.get(key)!.push({
+          pairRighe.get(key)?.push({
             prodotto_id: r.prodotto_id,
             data_ordine: o.data_ordine.slice(0, 10),
             ordine_id: o.id,
@@ -122,11 +122,16 @@ export function useReorderIntelligence() {
         }
       }
 
+      for (const o of excluded) {
+        if (o.cliente_id && o.azienda_id && !pairOrders.has(`${o.cliente_id}|${o.azienda_id}`)) pairOrders.set(`${o.cliente_id}|${o.azienda_id}`, []);
+      }
       const tolleranza = getTolleranza();
       const pairs: PairIntelligence[] = [];
       for (const [key, orders] of pairOrders) {
         const [cliente_id, azienda_id] = key.split("|");
-        pairs.push(analyzePair(cliente_id, azienda_id, orders, pairRighe.get(key) || [], { tolleranza }));
+        const result = analyzePair(cliente_id, azienda_id, orders, pairRighe.get(key) || [], { tolleranza });
+        result.ordini_esclusi = excluded.filter(o => o.cliente_id === cliente_id && o.azienda_id === azienda_id).sort((a,b)=>(a.data_ordine || '').localeCompare(b.data_ordine || '')).map(o => ({ id:o.id, codice:o.codice, data_ordine:o.data_ordine, motivo:reorderExclusion(o) || '' }));
+        pairs.push(result);
       }
 
       // 4. Enrichment nomi
@@ -168,7 +173,7 @@ export function useReorderIntelligence() {
         for (const p of prods || []) prodottiNomi[p.id] = p.codice ? `${p.nome} (${p.codice})` : p.nome;
       }
 
-      return { pairs: enriched, kpi: computePortfolioKPIs(enriched), ordersByPair, prodottiNomi };
+      return { pairs: enriched, kpi: computePortfolioKPIs(enriched), ordersByPair, prodottiNomi, esclusiSenzaCoppia: excluded.filter(o=>!o.cliente_id || !o.azienda_id).length };
      } catch (e) {
        console.error("reorder intelligence error", e);
        throw e;

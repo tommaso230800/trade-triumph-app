@@ -1,3 +1,4 @@
+import { reorderExclusion } from "@/lib/reorderEligibility";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
@@ -27,10 +28,10 @@ export function useReorderForecast() {
     refetchOnWindowFocus: true,
     queryFn: async () => {
       // 1. Ordini validi (esclude annullati/stand_by)
-      const ordini: Array<{id:string;cliente_id:string|null;azienda_id:string|null;data_ordine:string|null;status:string}> = [];
+      const ordini: Array<{id:string;cliente_id:string|null;azienda_id:string|null;data_ordine:string|null;status:string; note:string|null; deleted_at:string|null}> = [];
       for (let from=0;;from+=1000) {
-        const {data,error}=await supabase.from('ordini').select('id, cliente_id, azienda_id, data_ordine, status').is('deleted_at',null).not('status','in','("annullato","stand_by")').not('data_ordine','is',null).order('id').range(from,from+999);
-        if(error)throw error;ordini.push(...(data || []));if(!data||data.length<1000)break;
+        const {data,error}=await supabase.from('ordini').select('id, cliente_id, azienda_id, data_ordine, status, note, deleted_at').is('deleted_at',null).not('status','in','("annullato","stand_by")').not('data_ordine','is',null).order('id').range(from,from+999);
+        if(error)throw error;ordini.push(...(data || []).filter(o => !reorderExclusion(o)));if(!data||data.length<1000)break;
       }
       if (!ordini || ordini.length === 0) {
         return { forecasts: [] as EnrichedForecast[], kpi: computeForecastKPIs([]) };

@@ -208,6 +208,7 @@ const Ordini = () => {
       (o) =>
         (!clienteFilter || o.cliente_id === clienteFilter) &&
         (!aziendaFilter || o.azienda_id === aziendaFilter) &&
+        (!searchParams.get('ordine') || o.id === searchParams.get('ordine')) &&
         (searchParams.get('storico')==='1' || (o.data_ordine || o.created_at || "").startsWith(prefix))
     );
   }, [ordini, clienteFilter, aziendaFilter, periodo, searchParams]);
@@ -326,6 +327,9 @@ const Ordini = () => {
     clienteFilter !== "" ||
     aziendaFilter !== "";
   const resetFilters = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('storico'); next.delete('ordine'); next.delete('cliente'); next.delete('azienda');
+    setSearchParams(next, { replace: true });
     setSearchTerm("");
     setStatusFilter("tutti");
     resetPeriodo();
@@ -338,7 +342,7 @@ const Ordini = () => {
   const clienteNome = clienteFilter ? clienti?.find((c) => c.id === clienteFilter)?.nome : null;
   const aziendaNome = aziendaFilter ? aziende?.find((a) => a.id === aziendaFilter)?.nome : null;
   const contestoLabel = hasActiveFilters
-    ? ["Fatturato", clienteNome, aziendaNome, periodoLabel(periodo)].filter(Boolean).join(" · ")
+    ? ["Fatturato", clienteNome, aziendaNome, searchParams.get('storico') === '1' ? 'Storico completo' : periodoLabel(periodo)].filter(Boolean).join(" · ")
     : null;
 
   // Selezione multipla: "visibili" = tutti gli ordini che passano i filtri

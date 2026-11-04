@@ -78,7 +78,7 @@ export function IntelligenceDashboard() {
       case "persistenti": list = list.filter((p) => p.rallentamento === "persistente"); break;
       case "prodotti": list = list.filter((p) => p.prodotti_non_riordinati.length > 0); break;
       case "volumi": list = list.filter((p) => p.calo_volumi); break;
-      case "inattivita": list = list.filter((p) => p.frequenza_abituale && p.giorni_da_ultimo > p.frequenza_abituale * 2); break;
+      case "inattivita": list = list.filter((p) => p.previsione_affidabile && p.frequenza_operativa && p.giorni_da_ultimo > p.frequenza_operativa * 2); break;
     }
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -158,6 +158,16 @@ export function IntelligenceDashboard() {
         <KpiBtn icon={<PauseCircle className="h-4 w-4 text-muted-foreground" />} label="Inattività" value={kpi?.inattivita_prolungata} active={filtro === "inattivita"} onClick={() => setFiltro("inattivita")} loading={isLoading} />
       </div>
 
+      <details className="rounded-lg border border-border p-4">
+        <summary className="min-h-11 cursor-pointer text-sm font-semibold">Report verifica frequenze</summary>
+        <div className="space-y-2 text-sm">
+          <p>{pairs.length} coppie · {pairs.reduce((n,p)=>n+p.numero_ordini,0)} ordini validi · {pairs.reduce((n,p)=>n+p.ordini_esclusi.length,0) + (data?.esclusiSenzaCoppia || 0)} esclusi dalla cronologia</p>
+          {!!data?.esclusiSenzaCoppia && <p>{data.esclusiSenzaCoppia} ordini senza cliente o mandante: da verificare in Problematiche.</p>}
+          <p>{pairs.filter(p=>!p.previsione_affidabile).length} previsioni non affidabili · {pairs.filter(p=>p.rallentamento==='persistente').length} cambiamenti persistenti</p>
+          <p className="text-xs text-muted-foreground">Le ripartizioni di fatturato 2025 ricostruite non attestano date di acquisto; restano negli Ordini e nei totali economici, ma non generano frequenze.</p>
+          {pairs.filter(p=>p.ordini_esclusi.length>0).map(p=><Button key={p.key} variant="ghost" className="h-auto min-h-11 w-full justify-start whitespace-normal text-left" onClick={()=>setDettaglio(p)}>{p.cliente_nome} · {p.azienda_nome} · {p.numero_ordini} validi / {p.ordini_esclusi.length} esclusi</Button>)}
+        </div>
+      </details>
       {/* Grafico portafoglio */}
       <Card className="surface-noir">
         <CardHeader className="pb-2">
@@ -324,9 +334,11 @@ function PairCard({ pair, onApri, onOrdina }: { pair: EnrichedPair; onApri: () =
         <span className={`text-right tabular-nums ${pair.variazione_recente_pct !== null && pair.variazione_recente_pct > 30 ? "text-warning" : ""}`}>
           {pair.frequenza_recente !== null ? `${Math.round(pair.frequenza_recente)} gg` : "N/D"}
         </span>
+        <span className="text-muted-foreground">Frequenza operativa</span>
+        <span className="text-right tabular-nums">{pair.frequenza_operativa ?? "N/D"} gg</span>
         <span className="text-muted-foreground">Prossimo previsto</span>
         <span className={`text-right tabular-nums ${pair.giorni_ritardo > 0 ? "font-semibold text-destructive" : ""}`}>
-          {fmtD(pair.prossimo_riordino_previsto)}
+          {pair.prossimo_riordino_previsto ? fmtD(pair.prossimo_riordino_previsto) : "Previsione non affidabile"}
         </span>
         {pair.prodotti_non_riordinati.length > 0 && (
           <>
@@ -355,7 +367,7 @@ function CentroAllarmi({ pairs, onApri }: { pairs: EnrichedPair[]; onApri: (p: E
       {
         id: "ritardo", titolo: "Clienti in ritardo", tone: "warning" as const,
         items: valide.filter((p) => p.stato === "ritardo"),
-        motivo: (p: EnrichedPair) => `${p.giorni_ritardo} gg oltre la tolleranza (frequenza ${Math.round(p.frequenza_abituale || 0)} gg, ultimo ordine ${fmtD(p.ultimo_ordine)})`,
+        motivo: (p: EnrichedPair) => `${p.giorni_ritardo} gg oltre la tolleranza (frequenza ${Math.round(p.frequenza_operativa || 0)} gg operativi, ultimo ordine ${fmtD(p.ultimo_ordine)})`,
       },
       {
         id: "sospetti", titolo: "Clienti sospetti", tone: "warning" as const,
@@ -379,7 +391,7 @@ function CentroAllarmi({ pairs, onApri }: { pairs: EnrichedPair[]; onApri: (p: E
       },
       {
         id: "inattivita", titolo: "Inattività prolungata", tone: "muted" as const,
-        items: valide.filter((p) => p.frequenza_abituale && p.giorni_da_ultimo > p.frequenza_abituale * 2),
+        items: valide.filter((p) => p.previsione_affidabile && p.frequenza_operativa && p.giorni_da_ultimo > p.frequenza_operativa * 2),
         motivo: (p: EnrichedPair) => `${p.giorni_da_ultimo} gg senza ordini, oltre il doppio della frequenza abituale`,
       },
     ].filter((s) => s.items.length > 0);

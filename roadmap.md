@@ -1,5 +1,11 @@
 # Roadmap
 
+## Correzione frequenze verificabili (4 novembre)
+- [x] Ricostruire GHILLI–Quattro Valli: 11 ripartizioni 2025 non documentate + 2 acquisti 2026, intervallo reale 144 gg; baseline 31 derivava dalle ripartizioni mensili
+- [x] Frequenza operativa adattiva, affidabilità, prodotti e avvisi condivisi; nessun ordine o intervento modificato
+- [x] Trasparenza cronologia/intervalli/esclusioni, grafico con riferimenti temporali e collegamenti per ID; report in Riordino
+- [x] Test A–F e ricalcolo read-only: 1653 ordini / 1384 righe / 115 coppie, 428 validi, 1193 ripartizioni escluse solo dalla cronologia, 30 annullati e 2 senza coppia; zero incoerenze, 127 test OK; verifica autenticata GHILLI e 320/375/430 px
+
 ## Memoria attiva documenti (2 novembre)
 - [x] Cartelle virtuali per azienda con le 9 categorie; collegamenti multi-azienda senza duplicare il file; vista generale filtrabile
 - [x] Caricamento unico multiplo con coda per file: l'analisi continua anche se un file fallisce; stati In elaborazione/Archiviato/Da verificare/Errore con riprova

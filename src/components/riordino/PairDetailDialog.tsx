@@ -38,7 +38,7 @@ export function PairDetailDialog({ pair, onClose, onOrdina, prodottiNomi }: Prop
             <span className="text-sm font-normal text-muted-foreground">· {pair.azienda_nome}</span>
           </DialogTitle>
           <DialogDescription>
-            {pair.numero_ordini} ordini dal {fmtD(pair.primo_ordine)} · {AFFIDABILITA_LABEL[pair.affidabilita]}
+            {pair.numero_ordini} ordini · {pair.numero_date} date dal {fmtD(pair.primo_ordine)} · {AFFIDABILITA_LABEL[pair.affidabilita]}
           </DialogDescription>
         </DialogHeader>
 
@@ -52,13 +52,13 @@ export function PairDetailDialog({ pair, onClose, onOrdina, prodottiNomi }: Prop
               tone={sospetto ? "warning" : undefined}
             />
             <Kpi
-              label="Rallentamento"
-              value={pair.variazione_recente_pct !== null ? `${pair.variazione_recente_pct > 0 ? "+" : ""}${pair.variazione_recente_pct}%` : "N/D"}
+              label="Frequenza operativa"
+              value={pair.frequenza_operativa !== null ? `${pair.frequenza_operativa} gg` : "N/D"}
               tone={pair.variazione_recente_pct !== null && pair.variazione_recente_pct > 30 ? "destructive" : undefined}
             />
             <Kpi
               label="Prossimo riordino"
-              value={fmtD(pair.prossimo_riordino_previsto)}
+              value={pair.prossimo_riordino_previsto ? fmtD(pair.prossimo_riordino_previsto) : "Previsione non affidabile"}
               sub={pair.giorni_ritardo > 0 ? `${pair.giorni_ritardo} gg di ritardo` : undefined}
               tone={pair.giorni_ritardo > 0 ? "destructive" : undefined}
             />
@@ -149,6 +149,25 @@ export function PairDetailDialog({ pair, onClose, onOrdina, prodottiNomi }: Prop
             </TabsContent>
           </Tabs>
 
+          <details className="mt-4 rounded-lg border border-border p-3">
+            <summary className="min-h-11 cursor-pointer text-sm font-semibold">Come è stata calcolata questa frequenza?</summary>
+            <div className="space-y-3 text-xs">
+              <p>{pair.numero_ordini} ordini validi, {pair.numero_date} giornate · {fmtD(pair.primo_ordine)} → {fmtD(pair.ultimo_ordine)}</p>
+              <p>Media osservata: {pair.media_giorni ?? 'N/D'} gg · Mediana completa: {pair.mediana_giorni ?? 'N/D'} gg · Variabilità baseline: {pair.deviazione_giorni} gg</p>
+              <p>Storica: {pair.frequenza_abituale ?? 'N/D'} gg · Recente (ultimi due intervalli): {pair.frequenza_recente ?? 'N/D'} gg · Operativa: {pair.frequenza_operativa ?? 'N/D'} gg · Tolleranza: {pair.tolleranza} gg</p>
+              <p>{AFFIDABILITA_LABEL[pair.affidabilita]} · {pair.previsione_affidabile ? 'Previsione = ultima data + frequenza operativa arrotondata; ritardo oltre la tolleranza.' : 'Previsione non affidabile; nessun ritardo certo.'}</p>
+              <ol className="space-y-2">
+                {pair.ordini_analizzati.map(o => <li key={o.id} className="break-words"><Link className="text-primary underline" to={`/ordini?cliente=${pair.cliente_id}&azienda=${pair.azienda_id}&storico=1&ordine=${o.id}`}>{fmtD(o.data_ordine)} · {o.id}</Link></li>)}
+              </ol>
+              <ol className="space-y-2">
+                {pair.intervalli.map(iv => <li key={`${iv.from_data}-${iv.to_data}`}>{fmtD(iv.from_data)} → {fmtD(iv.to_data)}: <strong className="tabular-nums">{iv.giorni} giorni</strong> · {iv.stato}</li>)}
+              </ol>
+              <p className="font-semibold">Ordini esclusi: {pair.ordini_esclusi.length}</p>
+              {pair.ordini_esclusi.map(o => <p key={o.id} className="break-words">{o.codice || o.id} · {fmtD(o.data_ordine)} · {o.motivo}</p>)}
+              {!pair.intervalli.length && <p>Nessun intervallo completato.</p>}
+            </div>
+          </details>
+
           {/* Priorità e motivi */}
           <div className="mt-4 rounded-lg border border-border p-3">
             <p className="text-sm font-semibold">
@@ -172,7 +191,7 @@ export function PairDetailDialog({ pair, onClose, onOrdina, prodottiNomi }: Prop
             <ShoppingCart className="h-3.5 w-3.5" /> Crea ordine
           </Button>
           <Button asChild size="sm" variant="outline">
-            <Link to={`/ordini?cliente=${pair.cliente_id}&azienda=${pair.azienda_id}`}>Visualizza ordini</Link>
+            <Link to={`/ordini?cliente=${pair.cliente_id}&azienda=${pair.azienda_id}&storico=1`}>Visualizza ordini</Link>
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link to={`/clienti/${pair.cliente_id}`}>Apri cliente</Link>
