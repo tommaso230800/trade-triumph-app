@@ -26,7 +26,6 @@ import {
   Search,
   Phone,
   ShoppingCart,
-  RefreshCw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -46,7 +45,7 @@ const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
 
 export default function RiordinoForecast() {
-  const { data, isLoading, isError, isFetching, refetch, dataUpdatedAt } = useReorderForecast();
+  const { data, isLoading, isError, refetch } = useReorderForecast();
   const [tab, setTab] = useState<"tutti" | "critica" | "alta" | "media">("critica");
   const [search, setSearch] = useState("");
   const [aziendaFilter, setAziendaFilter] = useState<string>("all");
