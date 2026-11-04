@@ -21,6 +21,7 @@ export interface ReorderIntelligenceData {
   // ordini grezzi per coppia: servono al grafico portafoglio per ricalcolare
   // gli stati ai mesi passati senza nuove query
   ordersByPair: Record<string, IntelligenceOrder[]>;
+  prodottiNomi: Record<string, string>;
 }
 
 export function getTolleranza(): number {
@@ -60,7 +61,7 @@ export function useReorderIntelligence() {
         ordini.push(...(data || []));
         if (!data || data.length < 1000) break;
       }
-      if (!ordini.length) return { pairs: [], kpi: computePortfolioKPIs([]), ordersByPair: {} };
+      if (!ordini.length) return { pairs: [], kpi: computePortfolioKPIs([]), ordersByPair: {}, prodottiNomi: {} };
 
       const ordiniMap = new Map(ordini.map((o) => [o.id, o] as const));
       const ordineIds = ordini.map((o) => o.id);
@@ -158,7 +159,15 @@ export function useReorderIntelligence() {
       const ordersByPair: Record<string, IntelligenceOrder[]> = {};
       for (const [key, orders] of pairOrders) ordersByPair[key] = orders;
 
-      return { pairs: enriched, kpi: computePortfolioKPIs(enriched), ordersByPair };
+      // nomi dei prodotti non riordinati (per il dettaglio)
+      const prodIds = [...new Set(enriched.flatMap((p) => p.prodotti_non_riordinati.map((x) => x.prodotto_id)))];
+      const prodottiNomi: Record<string, string> = {};
+      if (prodIds.length) {
+        const { data: prods } = await supabase.from("prodotti").select("id, nome, codice").in("id", prodIds);
+        for (const p of prods || []) prodottiNomi[p.id] = p.codice ? `${p.nome} (${p.codice})` : p.nome;
+      }
+
+      return { pairs: enriched, kpi: computePortfolioKPIs(enriched), ordersByPair, prodottiNomi };
     },
   });
 }
