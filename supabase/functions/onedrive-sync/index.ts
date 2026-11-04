@@ -12,7 +12,7 @@ async function graph(path: string, init: RequestInit = {}) {
   return response;
 }
 async function graphJson(path: string, init: RequestInit = {}) { return (await graph(path,init)).json(); }
-const schema=z.object({action:z.enum(['status','browse','configure','pull','push','suspend','resume','download','create_folder','rename','move','delete','versions','integrity','retry','ai_consent','worker']),folderId:z.string().max(256).nullable().optional(),itemId:z.string().min(1).max(256).optional(),documentoId:z.string().uuid().optional(),name:z.string().max(255).optional(),etag:z.string().max(512).optional(),confirmed:z.boolean().optional(),enabled:z.boolean().optional(),userId:z.string().uuid().optional(),offset:z.number().int().min(0).optional(),search:z.string().max(200).optional(),rootFolderId:z.string().nullable().optional(),rootFolderPath:z.string().optional()});
+const schema=z.object({action:z.enum(['status','browse','configure','pull','push','suspend','resume','download','create_folder','rename','move','delete','versions','integrity','retry','ai_consent','reanalyze','worker']),folderId:z.string().max(256).nullable().optional(),itemId:z.string().min(1).max(256).optional(),documentoId:z.string().uuid().optional(),name:z.string().max(255).optional(),etag:z.string().max(512).optional(),confirmed:z.boolean().optional(),enabled:z.boolean().optional(),userId:z.string().uuid().optional(),offset:z.number().int().min(0).optional(),search:z.string().max(200).optional(),rootFolderId:z.string().nullable().optional(),rootFolderPath:z.string().optional()});
 Deno.serve(async req => {
   if(req.method==='OPTIONS') return new Response('ok',{headers:corsHeaders});
   try {
@@ -66,6 +66,13 @@ Deno.serve(async req => {
       return json({items:filtered.slice(offset,offset+200).map(i=>({id:i.id,name:i.name,isFolder:!!i.folder,size:i.size??0,childCount:i.folder?.childCount??0,modified:i.lastModifiedDateTime??null,etag:i.eTag,webUrl:i.webUrl,mimeType:i.file?.mimeType})),total:filtered.length,nextOffset:offset+200<filtered.length?offset+200:null});
     }
     if(b.action==='ai_consent') {if(b.enabled)await checked(db.from('onedrive_sync_state').update({ai_paused_reason:null}).eq('user_id',userId));await checked(db.from('onedrive_access').update({ai_enabled:b.enabled===true}).eq('user_id',userId));return json({ok:true});}
+    if(b.action==='reanalyze') {
+      if(!access.ai_enabled)return json({error:'Autorizza prima l’analisi AI dei documenti'},403);
+      const docs=await checked(db.from('documenti').select('id,onedrive_item_id,onedrive_etag,mime_type').eq('user_id',userId).not('onedrive_item_id','is',null).is('deleted_at',null).neq('sync_stato','eliminato_remoto').order('id').range(b.offset??0,(b.offset??0)+199));
+      const jobs=docs.filter((d:any)=>d.mime_type==='application/pdf'||d.mime_type?.startsWith('image/')||d.mime_type?.startsWith('text/')).map((d:any)=>({user_id:userId,item_id:d.onedrive_item_id,operation:'analyze',payload:{documentoId:d.id},idempotency_key:`${userId}:analyze:${d.onedrive_item_id}:${d.onedrive_etag}`}));
+      if(jobs.length)await checked(db.from('onedrive_jobs').upsert(jobs,{onConflict:'idempotency_key',ignoreDuplicates:true}));
+      return json({ok:true,queued:jobs.length,nextOffset:docs.length===200?(b.offset??0)+200:null});
+    }
     if(b.action==='suspend'||b.action==='resume'){await checked(db.from('onedrive_sync_state').update({stato:b.action==='suspend'?'sospesa':'attiva'}).eq('user_id',userId));return json({ok:true});}
     if(b.action==='integrity')return json({ok:true,conteggi:await counts(),complete:state?.scan_status==='complete',error:state?.scan_error??null});
     if(b.action==='retry'){await checked(db.from('onedrive_jobs').update({status:'pending',next_attempt_at:new Date().toISOString()}).eq('user_id',userId).eq('status','error'));return json({ok:true});}
@@ -156,6 +163,8 @@ Deno.serve(async req => {
             if(job.operation==='create_folder')result=await graphJson((p.folderId?itemPath(p.folderId):rootPath())+'/children',{method:'POST',headers,body:JSON.stringify({name:p.name,folder:{},'@microsoft.graph.conflictBehavior':'fail'})});
             if(job.operation==='rename'||job.operation==='move')result=await graphJson(itemPath(p.itemId),{method:'PATCH',headers,body:JSON.stringify(job.operation==='rename'?{name:p.name}:{parentReference:p.folderId?{id:p.folderId}:{path:'/drive/root:'}})});
             if(job.operation==='delete'){
+              const remote=await graphJson(itemPath(p.itemId)+'?$select=id,folder');
+              if(remote.folder)throw new Error('Per sicurezza elimina le cartelle con contenuto direttamente da OneDrive; la rimozione sarà rilevata dal gestionale');
               const doc=await checked(db.from('onedrive_items').select('documento_id').eq('user_id',userId).eq('item_id',p.itemId).maybeSingle());
               if(doc?.documento_id){const record=await checked(db.from('documenti').select('proposal_id,storage_path').eq('id',doc.documento_id).single());if(record.proposal_id)throw new Error('Documento di proposta protetto: conserva lo storico originale');}
               await graph(itemPath(p.itemId),{method:'DELETE',headers});
