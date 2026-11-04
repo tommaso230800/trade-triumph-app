@@ -104,7 +104,9 @@ Deno.serve(async (req) => {
     await db.from("documenti").update({ stato_elaborazione: "in_elaborazione", errore_elaborazione: null }).eq("id", doc.id);
 
     const media: unknown[] = [];
-    let text = input.data.text || "";
+    let text = (input.data.text || "").trim();
+    // Scansioni: PDF con pochissimo testo reale vanno letti visivamente (OCR)
+    if (text.replace(/\s+/g, "").length < 40) text = "";
     if (!text && doc.mime_type?.startsWith("text/")) {
       const { data, error } = await db.storage.from("documenti").download(doc.storage_path);
       if (error || !data) return fail("File non disponibile");
