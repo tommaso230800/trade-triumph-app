@@ -1722,6 +1722,11 @@ export type Database = {
           nome_file: string
           note: string | null
           numero_documento: string | null
+          onedrive_drive_id: string | null
+          onedrive_etag: string | null
+          onedrive_item_id: string | null
+          onedrive_modified_at: string | null
+          onedrive_web_url: string | null
           proposal_id: string | null
           proposal_version: number | null
           reference_year: number | null
@@ -1729,6 +1734,8 @@ export type Database = {
           stato_elaborazione: string
           storage_path: string
           suggerimenti_ai: Json | null
+          sync_origine: string | null
+          sync_stato: string
           tags: string[] | null
           testo_estratto: string | null
           tipo: Database["public"]["Enums"]["documento_tipo"]
@@ -1762,6 +1769,11 @@ export type Database = {
           nome_file: string
           note?: string | null
           numero_documento?: string | null
+          onedrive_drive_id?: string | null
+          onedrive_etag?: string | null
+          onedrive_item_id?: string | null
+          onedrive_modified_at?: string | null
+          onedrive_web_url?: string | null
           proposal_id?: string | null
           proposal_version?: number | null
           reference_year?: number | null
@@ -1769,6 +1781,8 @@ export type Database = {
           stato_elaborazione?: string
           storage_path: string
           suggerimenti_ai?: Json | null
+          sync_origine?: string | null
+          sync_stato?: string
           tags?: string[] | null
           testo_estratto?: string | null
           tipo?: Database["public"]["Enums"]["documento_tipo"]
@@ -1802,6 +1816,11 @@ export type Database = {
           nome_file?: string
           note?: string | null
           numero_documento?: string | null
+          onedrive_drive_id?: string | null
+          onedrive_etag?: string | null
+          onedrive_item_id?: string | null
+          onedrive_modified_at?: string | null
+          onedrive_web_url?: string | null
           proposal_id?: string | null
           proposal_version?: number | null
           reference_year?: number | null
@@ -1809,6 +1828,8 @@ export type Database = {
           stato_elaborazione?: string
           storage_path?: string
           suggerimenti_ai?: Json | null
+          sync_origine?: string | null
+          sync_stato?: string
           tags?: string[] | null
           testo_estratto?: string | null
           tipo?: Database["public"]["Enums"]["documento_tipo"]
@@ -2935,6 +2956,104 @@ export type Database = {
           promo_id?: string | null
           quantita?: number
           unita?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      onedrive_sync_eventi: {
+        Row: {
+          created_at: string
+          dettagli: Json | null
+          documento_id: string | null
+          errore: string | null
+          id: string
+          origine: string
+          stato: string
+          tentativi: number
+          tipo_evento: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dettagli?: Json | null
+          documento_id?: string | null
+          errore?: string | null
+          id?: string
+          origine?: string
+          stato?: string
+          tentativi?: number
+          tipo_evento: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dettagli?: Json | null
+          documento_id?: string | null
+          errore?: string | null
+          id?: string
+          origine?: string
+          stato?: string
+          tentativi?: number
+          tipo_evento?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onedrive_sync_eventi_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onedrive_sync_state: {
+        Row: {
+          account_email: string | null
+          created_at: string
+          delta_token: string | null
+          documenti_sincronizzati: number
+          drive_id: string | null
+          drive_name: string | null
+          id: string
+          root_folder_id: string | null
+          root_folder_path: string | null
+          stato: string
+          ultima_sync_at: string | null
+          ultimo_esito: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_email?: string | null
+          created_at?: string
+          delta_token?: string | null
+          documenti_sincronizzati?: number
+          drive_id?: string | null
+          drive_name?: string | null
+          id?: string
+          root_folder_id?: string | null
+          root_folder_path?: string | null
+          stato?: string
+          ultima_sync_at?: string | null
+          ultimo_esito?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_email?: string | null
+          created_at?: string
+          delta_token?: string | null
+          documenti_sincronizzati?: number
+          drive_id?: string | null
+          drive_name?: string | null
+          id?: string
+          root_folder_id?: string | null
+          root_folder_path?: string | null
+          stato?: string
+          ultima_sync_at?: string | null
+          ultimo_esito?: string | null
           updated_at?: string
           user_id?: string
         }

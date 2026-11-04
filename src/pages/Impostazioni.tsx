@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IntegrityCheckPanel } from "@/components/metrics/IntegrityCheckPanel";
+import { OneDrivePanel } from "@/components/impostazioni/OneDrivePanel";
 
 const Impostazioni = () => {
   const { user } = useAuth();
@@ -418,6 +419,9 @@ const Impostazioni = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Integrazione Microsoft OneDrive — centro di controllo sincronizzazione */}
+        <OneDrivePanel />
 
         {/* Integrity Check — Fase 1.5 */}
         <IntegrityCheckPanel />

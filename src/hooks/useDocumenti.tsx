@@ -61,6 +61,13 @@ export type Documento = {
   stato_elaborazione: "in_elaborazione"|"archiviato"|"da_verificare"|"errore";
   errore_elaborazione: string | null;
   versione_di: string | null;
+  onedrive_item_id: string | null;
+  onedrive_drive_id: string | null;
+  onedrive_web_url: string | null;
+  onedrive_etag: string | null;
+  onedrive_modified_at: string | null;
+  sync_stato: "locale"|"sincronizzato"|"solo_riferimento"|"conflitto"|"eliminato_remoto";
+  sync_origine: "lovable"|"onedrive"|null;
 };
 
 export const STATO_LABEL: Record<Documento["stato_elaborazione"], string> = {

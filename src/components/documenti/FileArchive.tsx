@@ -19,7 +19,9 @@ import { Badge } from '@/components/ui/badge';
 import {
   Upload, Download, Eye, Pencil, Plus, Trash2, RefreshCw, X, FolderOpen, Folder,
   FileText, AlertTriangle, CheckCircle2, Loader2, ChevronRight, ArrowLeft,
+  Cloud, CloudUpload, ExternalLink,
 } from 'lucide-react';
+import { useOneDrivePush } from '@/hooks/useOneDriveSync';
 import { toast } from 'sonner';
 import { OrderPdfPreview } from '@/components/ordini/OrderPdfPreview';
 
@@ -210,6 +212,41 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
     );
   }
 
+  function SyncBadge({ d }: { d: Documento }) {
+    if (d.sync_stato === 'sincronizzato')
+      return <Badge variant="secondary" className="whitespace-normal"><Cloud className="mr-1 h-3 w-3" />OneDrive</Badge>;
+    if (d.sync_stato === 'conflitto')
+      return <Badge variant="destructive" className="whitespace-normal"><AlertTriangle className="mr-1 h-3 w-3" />Conflitto OneDrive</Badge>;
+    if (d.sync_stato === 'eliminato_remoto')
+      return <Badge variant="outline" className="whitespace-normal">Eliminato su OneDrive</Badge>;
+    if (d.sync_stato === 'solo_riferimento')
+      return <Badge variant="outline" className="whitespace-normal"><Cloud className="mr-1 h-3 w-3" />Solo riferimento OneDrive</Badge>;
+    return null;
+  }
+
+  function OneDriveActions({ d, iconOnly }: { d: Documento; iconOnly?: boolean }) {
+    const push = useOneDrivePush();
+    const canPush = !d.onedrive_item_id && !d.storage_path.startsWith('onedrive://');
+    return (
+      <>
+        {d.onedrive_web_url && (
+          <Button aria-label={`Apri ${d.nome_file} in OneDrive`} size={iconOnly ? 'icon' : 'default'} variant="outline"
+            onClick={() => window.open(d.onedrive_web_url!, '_blank', 'noopener')}>
+            <ExternalLink className={iconOnly ? 'h-4 w-4' : 'mr-2 h-4 w-4'} />{!iconOnly && 'Apri in OneDrive'}
+          </Button>
+        )}
+        {canPush && (
+          <Button aria-label={`Carica ${d.nome_file} su OneDrive`} size={iconOnly ? 'icon' : 'default'} variant="outline"
+            disabled={push.isPending}
+            onClick={() => push.mutate({ documentoId: d.id })}>
+            {push.isPending ? <Loader2 className={iconOnly ? 'h-4 w-4 animate-spin' : 'mr-2 h-4 w-4 animate-spin'} /> : <CloudUpload className={iconOnly ? 'h-4 w-4' : 'mr-2 h-4 w-4'} />}
+            {!iconOnly && 'Invia a OneDrive'}
+          </Button>
+        )}
+      </>
+    );
+  }
+
   function DocRow({ d }: { d: Documento }) {
     return (
       <article className="flex min-w-0 items-start gap-3 rounded-lg border p-4" key={d.id}>
@@ -223,6 +260,7 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
           </button>
           <div className="my-2 flex flex-wrap gap-2">
             <StatoBadge d={d} />
+            <SyncBadge d={d} />
             {d.association_status === 'review' && <Badge variant="outline" className="whitespace-normal">Associazione da verificare</Badge>}
             {d.versione_di && <Badge variant="secondary">Nuova versione</Badge>}
           </div>
@@ -240,6 +278,7 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
             <Button aria-label={`Anteprima ${d.nome_file}`} size="icon" variant="outline" onClick={() => open(d)}><Eye className="h-4 w-4" /></Button>
             <Button aria-label={`Scarica ${d.nome_file}`} size="icon" variant="outline" onClick={() => open(d, true)}><Download className="h-4 w-4" /></Button>
             <Button aria-label={`Modifica ${d.nome_file}`} size="icon" variant="ghost" onClick={() => setEditing({ ...d })}><Pencil className="h-4 w-4" /></Button>
+            <OneDriveActions d={d} iconOnly />
             {(d.stato_elaborazione === 'errore' || d.stato_elaborazione === 'da_verificare') && (
               <Button aria-label={`Rianalizza ${d.nome_file}`} size="icon" variant="ghost"
                 onClick={async () => { try { await analyzeOne(d); await refetch(); toast.success('Analisi completata'); } catch { toast.error('Analisi non riuscita. Riprova.'); } }}>
@@ -426,6 +465,7 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 <StatoBadge d={detail} />
+                <SyncBadge d={detail} />
                 <Badge variant="secondary">{categoriaOf(detail)}</Badge>
                 {detail.versione_di && <Badge variant="secondary">Nuova versione di un documento esistente</Badge>}
               </div>
@@ -448,6 +488,7 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
                 <Button variant="outline" onClick={() => open(detail)}><Eye className="mr-2 h-4 w-4" />Anteprima</Button>
                 <Button variant="outline" onClick={() => open(detail, true)}><Download className="mr-2 h-4 w-4" />Scarica</Button>
                 <Button variant="outline" onClick={() => { setEditing({ ...detail }); setDetail(null); }}><Pencil className="mr-2 h-4 w-4" />Correggi</Button>
+                <OneDriveActions d={detail} />
                 {(detail.stato_elaborazione === 'errore' || detail.stato_elaborazione === 'da_verificare') && (
                   <Button variant="outline" onClick={async () => { try { await analyzeOne(detail); await refetch(); setDetail(null); toast.success('Analisi completata'); } catch { toast.error('Analisi non riuscita. Riprova.'); } }}>
                     <RefreshCw className="mr-2 h-4 w-4" />Riprova analisi
