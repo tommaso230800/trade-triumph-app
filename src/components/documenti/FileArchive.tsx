@@ -39,7 +39,7 @@ function categoriaOf(d: Documento): string {
 }
 
 async function extractText(d: Documento): Promise<string | undefined> {
-  if (!/\.(xlsx?|xlsm|csv|pdf)$/i.test(d.nome_file)) return undefined;
+  if (!/\.(xlsx?|xlsm|csv|pdf|docx)$/i.test(d.nome_file)) return undefined;
   const url = await getDocumentoSignedUrl(d.storage_path);
   const blob = await (await fetch(url)).blob();
   const file = new File([blob], d.nome_file, { type: d.mime_type || undefined });
@@ -47,7 +47,8 @@ async function extractText(d: Documento): Promise<string | undefined> {
     const { readPdfText } = await import('@/lib/pdfDocumentText');
     return readPdfText(file).catch(() => '');
   }
-  const { spreadsheetText } = await import('@/lib/documentText');
+  const { spreadsheetText, wordText, isWordFile } = await import('@/lib/documentText');
+  if (isWordFile(d.nome_file)) return wordText(file).catch(() => '');
   return spreadsheetText(file).catch(() => '');
 }
 
