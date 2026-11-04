@@ -37,6 +37,7 @@ export function useOneDriveStatus() {
     queryKey: ["onedrive-status"],
     queryFn: () => invokeOneDrive<OneDriveStatus>({ action: "status" }),
     retry: 1,
+    refetchInterval: 15000,
   });
 }
 
@@ -83,7 +84,7 @@ export function useOneDriveConfigure() {
 
 export function useOneDrivePull() {
   return useSyncMutation<Record<string, never>>("pull", (r) =>
-    r.busy ? "Sincronizzazione già in corso" : r.troncato ? `Scansione in corso: ${r.conteggi?.sincronizzati ?? 0} file acquisiti` : `Scansione completata: ${r.conteggi?.sincronizzati ?? 0} file, ${r.conteggi?.cartelle ?? 0} cartelle`);
+    r.busy ? "Sincronizzazione già in corso" : r.troncato ? `Scansione in corso: ${r.conteggi?.sincronizzati ?? 0} file acquisiti` : r.conteggi?.errori || r.conteggi?.pendenti || r.conteggi?.conflitti ? "Scansione completata; ci sono operazioni da risolvere" : `Scansione completata: ${r.conteggi?.sincronizzati ?? 0} file, ${r.conteggi?.cartelle ?? 0} cartelle`);
 }
 
 export function useOneDrivePush() {
