@@ -2961,6 +2961,134 @@ export type Database = {
         }
         Relationships: []
       }
+      onedrive_access: {
+        Row: {
+          ai_enabled: boolean
+          can_write: boolean
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_enabled?: boolean
+          can_write?: boolean
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_enabled?: boolean
+          can_write?: boolean
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      onedrive_items: {
+        Row: {
+          deleted: boolean
+          documento_id: string | null
+          drive_id: string
+          etag: string | null
+          id: string
+          is_folder: boolean
+          item_id: string
+          mime_type: string | null
+          modified_at: string | null
+          name: string
+          parent_id: string | null
+          size: number
+          updated_at: string
+          user_id: string
+          web_url: string | null
+        }
+        Insert: {
+          deleted?: boolean
+          documento_id?: string | null
+          drive_id: string
+          etag?: string | null
+          id?: string
+          is_folder?: boolean
+          item_id: string
+          mime_type?: string | null
+          modified_at?: string | null
+          name: string
+          parent_id?: string | null
+          size?: number
+          updated_at?: string
+          user_id: string
+          web_url?: string | null
+        }
+        Update: {
+          deleted?: boolean
+          documento_id?: string | null
+          drive_id?: string
+          etag?: string | null
+          id?: string
+          is_folder?: boolean
+          item_id?: string
+          mime_type?: string | null
+          modified_at?: string | null
+          name?: string
+          parent_id?: string | null
+          size?: number
+          updated_at?: string
+          user_id?: string
+          web_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onedrive_items_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documenti"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onedrive_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          error: string | null
+          id: string
+          idempotency_key: string
+          item_id: string | null
+          next_attempt_at: string
+          operation: string
+          payload: Json
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          idempotency_key: string
+          item_id?: string | null
+          next_attempt_at?: string
+          operation: string
+          payload?: Json
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          id?: string
+          idempotency_key?: string
+          item_id?: string | null
+          next_attempt_at?: string
+          operation?: string
+          payload?: Json
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       onedrive_sync_eventi: {
         Row: {
           created_at: string
@@ -3011,15 +3139,23 @@ export type Database = {
       onedrive_sync_state: {
         Row: {
           account_email: string | null
+          ai_paused_reason: string | null
           created_at: string
+          cursor_next: string | null
           delta_token: string | null
           documenti_sincronizzati: number
           drive_id: string | null
           drive_name: string | null
           id: string
+          lease_until: string | null
           root_folder_id: string | null
           root_folder_path: string | null
+          scan_error: string | null
+          scan_pages: number
+          scan_status: string
           stato: string
+          subscription_expires_at: string | null
+          subscription_id: string | null
           ultima_sync_at: string | null
           ultimo_esito: string | null
           updated_at: string
@@ -3027,15 +3163,23 @@ export type Database = {
         }
         Insert: {
           account_email?: string | null
+          ai_paused_reason?: string | null
           created_at?: string
+          cursor_next?: string | null
           delta_token?: string | null
           documenti_sincronizzati?: number
           drive_id?: string | null
           drive_name?: string | null
           id?: string
+          lease_until?: string | null
           root_folder_id?: string | null
           root_folder_path?: string | null
+          scan_error?: string | null
+          scan_pages?: number
+          scan_status?: string
           stato?: string
+          subscription_expires_at?: string | null
+          subscription_id?: string | null
           ultima_sync_at?: string | null
           ultimo_esito?: string | null
           updated_at?: string
@@ -3043,18 +3187,44 @@ export type Database = {
         }
         Update: {
           account_email?: string | null
+          ai_paused_reason?: string | null
           created_at?: string
+          cursor_next?: string | null
           delta_token?: string | null
           documenti_sincronizzati?: number
           drive_id?: string | null
           drive_name?: string | null
           id?: string
+          lease_until?: string | null
           root_folder_id?: string | null
           root_folder_path?: string | null
+          scan_error?: string | null
+          scan_pages?: number
+          scan_status?: string
           stato?: string
+          subscription_expires_at?: string | null
+          subscription_id?: string | null
           ultima_sync_at?: string | null
           ultimo_esito?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      onedrive_worker_keys: {
+        Row: {
+          created_at: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          token?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          token?: string
           user_id?: string
         }
         Relationships: []
@@ -5253,6 +5423,7 @@ export type Database = {
         Args: { p_id: string; p_tipo: string }
         Returns: undefined
       }
+      claim_onedrive_sync: { Args: { p_user_id: string }; Returns: boolean }
       correct_fiscal_attributions: {
         Args: { p_items: Json; p_mandate_id: string }
         Returns: number

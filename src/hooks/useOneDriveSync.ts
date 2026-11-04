@@ -8,12 +8,13 @@ export type OneDriveStatus = {
   state: {
     id: string; root_folder_id: string | null; root_folder_path: string | null;
     stato: "attiva" | "sospesa" | "errore"; ultima_sync_at: string | null; ultimo_esito: string | null;
-    documenti_sincronizzati: number;
+    documenti_sincronizzati: number; scan_status?: string; scan_pages?: number; scan_error?: string | null;
   } | null;
-  conteggi: { sincronizzati: number; in_elaborazione: number; errori: number; conflitti: number };
+  conteggi: { sincronizzati: number; cartelle: number; pendenti: number; in_elaborazione: number; errori: number; conflitti: number };
+  access: { can_write: boolean; ai_enabled: boolean };
 };
 
-export type OneDriveItem = { id: string; name: string; isFolder: boolean; size: number; childCount: number; modified: string | null };
+export type OneDriveItem = { id: string; name: string; isFolder: boolean; size: number; childCount: number; modified: string | null; etag?: string; webUrl?: string; mimeType?: string };
 
 export type SyncEvento = {
   id: string; documento_id: string | null; origine: string; tipo_evento: string;
@@ -21,7 +22,7 @@ export type SyncEvento = {
   dettagli: { nome?: string } | null;
 };
 
-async function invoke<T>(body: Record<string, unknown>): Promise<T> {
+export async function invokeOneDrive<T>(body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke("onedrive-sync", { body });
   if (error) {
     const details = error instanceof FunctionsHttpError ? await error.context.text() : error.message;
@@ -34,15 +35,16 @@ async function invoke<T>(body: Record<string, unknown>): Promise<T> {
 export function useOneDriveStatus() {
   return useQuery({
     queryKey: ["onedrive-status"],
-    queryFn: () => invoke<OneDriveStatus>({ action: "status" }),
+    queryFn: () => invokeOneDrive<OneDriveStatus>({ action: "status" }),
     retry: 1,
+    refetchInterval: 15000,
   });
 }
 
 export function useOneDriveBrowse(folderId: string | null, enabled: boolean) {
   return useQuery({
     queryKey: ["onedrive-browse", folderId],
-    queryFn: () => invoke<{ items: OneDriveItem[] }>({ action: "browse", folderId }),
+    queryFn: () => invokeOneDrive<{ items: OneDriveItem[] }>({ action: "browse", folderId }),
     enabled,
   });
 }
@@ -65,7 +67,7 @@ export function useOneDriveEventi() {
 function useSyncMutation<TArgs extends Record<string, unknown>>(action: string, successMsg: string | ((r: any) => string)) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (args: TArgs) => invoke<any>({ action, ...args }),
+    mutationFn: (args: TArgs) => invokeOneDrive<any>({ action, ...args }),
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["onedrive-status"] });
       qc.invalidateQueries({ queryKey: ["onedrive-eventi"] });
@@ -82,11 +84,11 @@ export function useOneDriveConfigure() {
 
 export function useOneDrivePull() {
   return useSyncMutation<Record<string, never>>("pull", (r) =>
-    `Sincronizzazione completata: ${r.importati} nuovi, ${r.aggiornati} aggiornati, ${r.duplicati} duplicati, ${r.errori} errori`);
+    r.busy ? "Sincronizzazione già in corso" : r.troncato ? `Scansione in corso: ${r.conteggi?.sincronizzati ?? 0} file acquisiti` : r.conteggi?.errori || r.conteggi?.pendenti || r.conteggi?.conflitti ? "Scansione completata; ci sono operazioni da risolvere" : `Scansione completata: ${r.conteggi?.sincronizzati ?? 0} file, ${r.conteggi?.cartelle ?? 0} cartelle`);
 }
 
 export function useOneDrivePush() {
-  return useSyncMutation<{ documentoId: string }>("push", "Documento caricato su OneDrive");
+  return useSyncMutation<{ documentoId: string }>("push", "Trasferimento accodato");
 }
 
 export function useOneDriveSuspend() {

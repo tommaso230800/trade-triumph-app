@@ -1,382 +1,202 @@
-// Sincronizzazione bidirezionale OneDrive <-> archivio documenti CRM.
-// Azioni: status | browse | configure | pull | push | suspend | resume
-// Regole: nessuna cancellazione distruttiva automatica, niente cicli infiniti
-// (etag registrato dopo il push), duplicati rilevati via SHA-256.
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { createClient } from "npm:@supabase/supabase-js@2";
-
-const GATEWAY = "https://connector-gateway.lovable.dev/microsoft_onedrive";
-const MAX_DOWNLOAD = 20 * 1024 * 1024; // 20 MB: oltre si indicizza solo il riferimento
-const MAX_UPLOAD = 4 * 1024 * 1024; // limite upload semplice Graph
-
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { createClient } from 'npm:@supabase/supabase-js@2';
+import { z } from 'npm:zod@3';
+import { graphLink, nextCheckpoint, validName } from './protocol.ts';
+const GATEWAY = 'https://connector-gateway.lovable.dev/microsoft_onedrive';
+const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {status, headers:{...corsHeaders,'Content-Type':'application/json'}});
 async function graph(path: string, init: RequestInit = {}) {
-  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  const connKey = Deno.env.get("MICROSOFT_ONEDRIVE_API_KEY");
-  if (!lovableKey || !connKey) throw new Error("Credenziali connettore OneDrive mancanti");
-  const headers = new Headers(init.headers);
-  headers.set("Authorization", `Bearer ${lovableKey}`);
-  headers.set("X-Connection-Api-Key", connKey);
-  const res = await fetch(`${GATEWAY}${path}`, { ...init, headers });
-  return res;
+  const key = Deno.env.get('LOVABLE_API_KEY'), connector = Deno.env.get('MICROSOFT_ONEDRIVE_API_KEY');
+  if (!key || !connector) throw new Error('Connessione Microsoft non configurata');
+  const response = await fetch(GATEWAY + path, {...init,headers:{...Object.fromEntries(new Headers(init.headers)),Authorization:`Bearer ${key}`,'X-Connection-Api-Key':connector}});
+  if (!response.ok) { const details=await response.text(); throw new Error(`Microsoft [${response.status}]: ${details}`); }
+  return response;
 }
-
-async function graphJson(path: string, init: RequestInit = {}) {
-  const res = await graph(path, init);
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Microsoft Graph [${res.status}]: ${body}`);
-  }
-  return res.json();
-}
-
-// Riscrive nextLink/deltaLink assoluti verso il gateway
-function rewriteLink(link: string): string {
-  const u = new URL(link);
-  if (u.hostname !== "graph.microsoft.com") throw new Error(`Host Graph imprevisto: ${u.hostname}`);
-  // Il gateway include già /v1.0 nel base path
-  return u.pathname.replace(/^\/v1\.0/, "") + u.search;
-}
-
-async function sha256Hex(buf: ArrayBuffer): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function safeName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
-}
-
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-
+async function graphJson(path: string, init: RequestInit = {}) { return (await graph(path,init)).json(); }
+const schema=z.object({action:z.enum(['status','browse','configure','pull','push','suspend','resume','download','create_folder','rename','move','delete','versions','integrity','retry','ai_consent','reanalyze','worker','resolve_conflict']),folderId:z.string().max(256).nullable().optional(),itemId:z.string().min(1).max(256).optional(),documentoId:z.string().uuid().optional(),jobId:z.string().uuid().optional(),resolution:z.enum(['remote','local']).optional(),name:z.string().max(255).optional(),etag:z.string().max(512).optional(),confirmed:z.boolean().optional(),enabled:z.boolean().optional(),userId:z.string().uuid().optional(),offset:z.number().int().min(0).optional(),search:z.string().max(200).optional(),rootFolderId:z.string().nullable().optional(),rootFolderPath:z.string().optional()});
+Deno.serve(async req => {
+  if(req.method==='OPTIONS') return new Response('ok',{headers:corsHeaders});
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return json({ error: "Non autenticato" }, 401);
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authErr } = await userClient.auth.getUser();
-    if (authErr || !user) return json({ error: "Sessione non valida" }, 401);
-
-    const admin = createClient(supabaseUrl, serviceKey);
-    const body = await req.json().catch(() => ({}));
-    const action = String(body.action || "status");
-
-    const logEvento = async (e: {
-      documento_id?: string | null; origine?: string; tipo_evento: string;
-      stato?: string; tentativi?: number; errore?: string | null; dettagli?: unknown;
-    }) => {
-      await admin.from("onedrive_sync_eventi").insert({
-        user_id: user.id,
-        documento_id: e.documento_id ?? null,
-        origine: e.origine ?? "onedrive",
-        tipo_evento: e.tipo_evento,
-        stato: e.stato ?? "completato",
-        tentativi: e.tentativi ?? 0,
-        errore: e.errore ?? null,
-        dettagli: e.dettagli ?? null,
-      });
+    const input=schema.safeParse(await req.json()); if(!input.success)return json({error:'Richiesta OneDrive non valida'},400);
+    const b=input.data;
+    const url=Deno.env.get('SUPABASE_URL'),service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),anon=Deno.env.get('SUPABASE_ANON_KEY');
+    if(!url||!service||!anon)return json({error:'Servizio non configurato'},503);
+    const db=createClient(url,service);
+    let userId:string;
+    if(b.action==='worker') {
+      if(!b.userId)return json({error:'Utente mancante'},400);
+      const {data:key}=await db.from('onedrive_worker_keys').select('token').eq('user_id',b.userId).maybeSingle();
+      if(!key || req.headers.get('x-onedrive-worker')!==key.token)return json({error:'Non autorizzato'},401);
+      userId=b.userId;
+    } else {
+      const client=createClient(url,anon,{global:{headers:{Authorization:req.headers.get('Authorization')||''}}});
+      const {data:{user},error}=await client.auth.getUser();
+      if(error||!user)return json({error:'Accedi per usare OneDrive'},401); userId=user.id;
+    }
+    const {data:access}=await db.from('onedrive_access').select('*').eq('user_id',userId).maybeSingle();
+    if(!access)return json({error:'Questo account non è autorizzato al OneDrive aziendale'},403);
+    const checked=async (query:PromiseLike<any>)=>{const r=await query;if(r.error)throw new Error(r.error.message);return r.data;};
+    const log=async(tipo:string,stato='completato',errore:string|null=null,dettagli:unknown=null)=>checked(db.from('onedrive_sync_eventi').insert({user_id:userId,tipo_evento:tipo,stato,errore,dettagli}));
+    let state=await checked(db.from('onedrive_sync_state').select('*').eq('user_id',userId).maybeSingle());
+    const drivePath=state?.drive_id?`/drives/${encodeURIComponent(state.drive_id)}`:'/me/drive';
+    const itemPath=(id:string)=>`${drivePath}/items/${encodeURIComponent(id)}`;
+    const rootPath=()=>`${drivePath}/root`;
+    const counts=async()=>{
+      const count=async(table:string,filter:(q:any)=>any)=>{const r=await filter(db.from(table).select('id',{count:'exact',head:true}).eq('user_id',userId));if(r.error)throw new Error(r.error.message);return r.count??0;};
+      const [files,folders,errors,conflicts,analysis,pending]=await Promise.all([
+        count('onedrive_items',q=>q.eq('deleted',false).eq('is_folder',false)),count('onedrive_items',q=>q.eq('deleted',false).eq('is_folder',true)),count('onedrive_jobs',q=>q.eq('status','error')),count('onedrive_jobs',q=>q.eq('status','conflict')),count('documenti',q=>q.eq('stato_elaborazione','in_elaborazione').is('deleted_at',null)),count('onedrive_jobs',q=>q.eq('status','pending'))]);
+      return {sincronizzati:files,cartelle:folders,errori:errors,conflitti:conflicts,in_elaborazione:analysis,pendenti:pending};
     };
-
-    const getState = async () => {
-      const { data } = await admin.from("onedrive_sync_state").select("*").eq("user_id", user.id).maybeSingle();
-      return data;
-    };
-
-    // ---------- STATUS ----------
-    if (action === "status") {
-      const drive = await graphJson("/me/drive?$select=id,name,driveType,quota,owner");
-      const state = await getState();
-      const { count: sincronizzati } = await admin.from("documenti").select("id", { count: "exact", head: true })
-        .eq("user_id", user.id).not("onedrive_item_id", "is", null).is("deleted_at", null);
-      const { count: inElaborazione } = await admin.from("documenti").select("id", { count: "exact", head: true })
-        .eq("user_id", user.id).eq("stato_elaborazione", "in_elaborazione").is("deleted_at", null);
-      const { count: errori } = await admin.from("onedrive_sync_eventi").select("id", { count: "exact", head: true })
-        .eq("user_id", user.id).eq("stato", "errore");
-      const { count: conflitti } = await admin.from("documenti").select("id", { count: "exact", head: true })
-        .eq("user_id", user.id).eq("sync_stato", "conflitto").is("deleted_at", null);
-      return json({
-        drive: {
-          id: drive.id, name: drive.name, type: drive.driveType,
-          email: drive.owner?.user?.email ?? null,
-          quota: drive.quota ?? null,
-        },
-        state,
-        conteggi: { sincronizzati: sincronizzati ?? 0, in_elaborazione: inElaborazione ?? 0, errori: errori ?? 0, conflitti: conflitti ?? 0 },
-      });
+    if(b.action==='status') {
+      const drive=await graphJson('/me/drive?$select=id,name,driveType,quota,owner');
+      return json({drive:{id:drive.id,name:drive.name,type:drive.driveType,email:drive.owner?.user?.email??null,quota:drive.quota??null},state:state?{stato:state.stato,ultima_sync_at:state.ultima_sync_at,ultimo_esito:state.ultimo_esito,scan_status:state.scan_status,scan_pages:state.scan_pages,scan_error:state.scan_error,root_folder_path:'/',documenti_sincronizzati:state.documenti_sincronizzati}:null,conteggi:await counts(),access:{can_write:access.can_write,ai_enabled:access.ai_enabled}});
     }
-
-    // ---------- BROWSE (esplora cartelle) ----------
-    if (action === "browse") {
-      const folderId = body.folderId ? String(body.folderId) : null;
-      const path = folderId
-        ? `/me/drive/items/${encodeURIComponent(folderId)}/children?$select=id,name,folder,file,size,lastModifiedDateTime&$top=200`
-        : `/me/drive/root/children?$select=id,name,folder,file,size,lastModifiedDateTime&$top=200`;
-      const data = await graphJson(path);
-      const items = (data.value ?? []).map((it: any) => ({
-        id: it.id, name: it.name, isFolder: !!it.folder,
-        size: it.size ?? 0, childCount: it.folder?.childCount ?? 0,
-        modified: it.lastModifiedDateTime ?? null,
-      }));
-      items.sort((a: any, b: any) => (b.isFolder - a.isFolder) || a.name.localeCompare(b.name));
-      return json({ items });
+    if(b.action==='configure' || !state && ['pull','browse'].includes(b.action)) {
+      const drive=await graphJson('/me/drive?$select=id,name,owner');
+      state=await checked(db.from('onedrive_sync_state').upsert({user_id:userId,drive_id:drive.id,drive_name:drive.name,account_email:drive.owner?.user?.email??null,root_folder_id:null,root_folder_path:'/',delta_token:null,cursor_next:null,scan_status:'idle',scan_pages:0,stato:'attiva'},{onConflict:'user_id'}).select('*').single());
+      if(b.action==='configure')return json({ok:true,rootFolderPath:'/'});
     }
-
-    // ---------- CONFIGURE (cartella principale) ----------
-    if (action === "configure") {
-      const rootFolderId = body.rootFolderId ? String(body.rootFolderId) : null;
-      const rootFolderPath = String(body.rootFolderPath || "/");
-      const drive = await graphJson("/me/drive?$select=id,name,owner");
-      const existing = await getState();
-      const row = {
-        user_id: user.id,
-        drive_id: drive.id,
-        drive_name: drive.name,
-        account_email: drive.owner?.user?.email ?? null,
-        root_folder_id: rootFolderId,
-        root_folder_path: rootFolderPath,
-        delta_token: null, // reset: la prossima pull fa scansione completa
-        stato: "attiva",
-        updated_at: new Date().toISOString(),
-      };
-      if (existing) {
-        await admin.from("onedrive_sync_state").update(row).eq("user_id", user.id);
-      } else {
-        await admin.from("onedrive_sync_state").insert(row);
-      }
-      await logEvento({ tipo_evento: "configurazione", dettagli: { rootFolderPath } });
-      return json({ ok: true, rootFolderPath });
+    if(b.action==='browse') {
+      // Live paginated browsing keeps every format accessible before initial indexing completes.
+      let path=(b.folderId?itemPath(b.folderId):rootPath())+'/children?$top=200&$select=id,name,folder,file,size,lastModifiedDateTime,eTag,webUrl,parentReference';
+      const items:any[]=[];
+      while(path){const page=await graphJson(path);items.push(...(page.value??[]));path=page['@odata.nextLink']?graphLink(page['@odata.nextLink']):'';}
+      items.sort((a,c)=>Number(!!c.folder)-Number(!!a.folder)||a.name.localeCompare(c.name,'it'));
+      const filtered=b.search?items.filter(i=>i.name.toLocaleLowerCase().includes(String(b.search).toLocaleLowerCase())):items;
+      const offset=b.offset??0;
+      return json({items:filtered.slice(offset,offset+200).map(i=>({id:i.id,name:i.name,isFolder:!!i.folder,size:i.size??0,childCount:i.folder?.childCount??0,modified:i.lastModifiedDateTime??null,etag:i.eTag,webUrl:i.webUrl,mimeType:i.file?.mimeType})),total:filtered.length,nextOffset:offset+200<filtered.length?offset+200:null});
     }
-
-    // ---------- SUSPEND / RESUME ----------
-    if (action === "suspend" || action === "resume") {
-      const stato = action === "suspend" ? "sospesa" : "attiva";
-      await admin.from("onedrive_sync_state").update({ stato, updated_at: new Date().toISOString() }).eq("user_id", user.id);
-      await logEvento({ tipo_evento: action === "suspend" ? "sospensione" : "ripresa" });
-      return json({ ok: true, stato });
+    if(b.action==='ai_consent') {if(b.enabled)await checked(db.from('onedrive_sync_state').update({ai_paused_reason:null}).eq('user_id',userId));await checked(db.from('onedrive_access').update({ai_enabled:b.enabled===true}).eq('user_id',userId));return json({ok:true});}
+    if(b.action==='reanalyze') {
+      if(!access.ai_enabled)return json({error:'Autorizza prima l’analisi AI dei documenti'},403);
+      const docs=await checked(db.from('documenti').select('id,onedrive_item_id,onedrive_etag,mime_type').eq('user_id',userId).not('onedrive_item_id','is',null).is('deleted_at',null).neq('sync_stato','eliminato_remoto').order('id').range(b.offset??0,(b.offset??0)+199));
+      const jobs=docs.filter((d:any)=>d.mime_type==='application/pdf'||d.mime_type?.startsWith('image/')||d.mime_type?.startsWith('text/')).map((d:any)=>({user_id:userId,item_id:d.onedrive_item_id,operation:'analyze',payload:{documentoId:d.id},idempotency_key:`${userId}:analyze:${d.onedrive_item_id}:${d.onedrive_etag}`}));
+      if(jobs.length)await checked(db.from('onedrive_jobs').upsert(jobs,{onConflict:'idempotency_key',ignoreDuplicates:true}));
+      return json({ok:true,queued:jobs.length,nextOffset:docs.length===200?(b.offset??0)+200:null});
     }
-
-    // ---------- PULL (OneDrive -> CRM, delta query) ----------
-    if (action === "pull") {
-      const state = await getState();
-      if (!state?.root_folder_id) return json({ error: "Cartella OneDrive non configurata" }, 400);
-      if (state.stato === "sospesa") return json({ error: "Sincronizzazione sospesa" }, 400);
-
-      let nextPath: string | null = state.delta_token
-        ? rewriteLink(state.delta_token)
-        : `/me/drive/items/${encodeURIComponent(state.root_folder_id)}/delta?$select=id,name,folder,file,size,lastModifiedDateTime,eTag,parentReference,deleted&$top=200`;
-
-      let importati = 0, aggiornati = 0, duplicati = 0, saltati = 0, errori = 0;
-      let deltaLink: string | null = null;
-      let pages = 0;
-
-      while (nextPath && pages < 25) {
-        pages++;
-        const data = await graphJson(nextPath);
-        for (const item of data.value ?? []) {
-          try {
-            if (item.folder) continue; // le cartelle non diventano documenti
-            if (item.deleted) {
-              // Cestino logico: mai cancellazione distruttiva automatica
-              const { data: doc } = await admin.from("documenti").select("id")
-                .eq("user_id", user.id).eq("onedrive_item_id", item.id).maybeSingle();
-              if (doc) {
-                await admin.from("documenti").update({ sync_stato: "eliminato_remoto" }).eq("id", doc.id);
-                await logEvento({ documento_id: doc.id, tipo_evento: "eliminato_remoto", dettagli: { nome: item.name } });
-              }
-              continue;
-            }
-
-            const etag = item.eTag ?? null;
-            const { data: existing } = await admin.from("documenti").select("*")
-              .eq("user_id", user.id).eq("onedrive_item_id", item.id).is("deleted_at", null).maybeSingle();
-
-            // Anti-ciclo: se l'etag corrisponde a quello registrato (es. dopo un nostro push), salta
-            if (existing && existing.onedrive_etag === etag) { saltati++; continue; }
-
-            // Conflitto: modificato in locale dopo l'ultima sincronizzazione e cambiato anche in remoto
-            if (existing && existing.sync_origine === "lovable" && existing.onedrive_etag && existing.onedrive_etag !== etag) {
-              const localMod = new Date(existing.updated_at).getTime();
-              const remoteMod = new Date(item.lastModifiedDateTime).getTime();
-              if (localMod > remoteMod) {
-                await admin.from("documenti").update({ sync_stato: "conflitto" }).eq("id", existing.id);
-                await logEvento({ documento_id: existing.id, tipo_evento: "conflitto", dettagli: { nome: item.name } });
-                saltati++;
-                continue;
-              }
-            }
-
-            const size = item.size ?? 0;
-            let buf: ArrayBuffer | null = null;
-            let hash: string | null = null;
-            if (size <= MAX_DOWNLOAD) {
-              const res = await graph(`/me/drive/items/${encodeURIComponent(item.id)}/content`);
-              if (res.ok) {
-                buf = await res.arrayBuffer();
-                hash = await sha256Hex(buf);
-              }
-            }
-
-            // Duplicato per contenuto: stesso hash di un altro documento
-            if (hash) {
-              const { data: dup } = await admin.from("documenti").select("id")
-                .eq("user_id", user.id).eq("hash_sha256", hash).is("deleted_at", null)
-                .neq("id", existing?.id ?? "00000000-0000-0000-0000-000000000000").limit(1).maybeSingle();
-              if (dup) {
-                duplicati++;
-                await logEvento({ documento_id: dup.id, tipo_evento: "duplicato", dettagli: { nome: item.name, item_id: item.id } });
-                continue;
-              }
-            }
-
-            let storagePath = existing?.storage_path ?? null;
-            if (buf) {
-              storagePath = `${user.id}/onedrive/${item.id}-${safeName(item.name)}`;
-              const { error: upErr } = await admin.storage.from("documenti").upload(storagePath, buf, {
-                contentType: item.file?.mimeType ?? "application/octet-stream",
-                upsert: true,
-              });
-              if (upErr) throw new Error(`Storage: ${upErr.message}`);
-            }
-
-            const fields = {
-              nome_file: item.name,
-              mime_type: item.file?.mimeType ?? null,
-              dimensione: size,
-              hash_sha256: hash,
-              onedrive_item_id: item.id,
-              onedrive_drive_id: state.drive_id,
-              onedrive_etag: etag,
-              onedrive_modified_at: item.lastModifiedDateTime ?? null,
-              sync_stato: buf ? "sincronizzato" : "solo_riferimento",
-              sync_origine: "onedrive",
-              updated_at: new Date().toISOString(),
-            };
-
-            if (existing) {
-              await admin.from("documenti").update({ ...fields, ...(storagePath ? { storage_path: storagePath } : {}) }).eq("id", existing.id);
-              aggiornati++;
-              await logEvento({ documento_id: existing.id, tipo_evento: "aggiornato", dettagli: { nome: item.name } });
-            } else {
-              const parentPath: string = item.parentReference?.path ?? "";
-              const { data: inserted, error: insErr } = await admin.from("documenti").insert({
-                ...fields,
-                user_id: user.id,
-                entita: "generico",
-                tipo: "altro",
-                storage_path: storagePath ?? `onedrive://${item.id}`,
-                association_status: "review",
-                stato_elaborazione: "da_verificare",
-                tags: [],
-                note: `Importato da OneDrive (${parentPath.replace(/^\/drive\/root:/, "") || "/"})`,
-              }).select("id").single();
-              if (insErr) throw new Error(insErr.message);
-              importati++;
-              await logEvento({ documento_id: inserted.id, tipo_evento: "importato", dettagli: { nome: item.name } });
-            }
-          } catch (e) {
-            errori++;
-            await logEvento({ tipo_evento: "importato", stato: "errore", errore: e instanceof Error ? e.message : String(e), dettagli: { nome: item?.name } });
+    if(b.action==='suspend'||b.action==='resume'){await checked(db.from('onedrive_sync_state').update({stato:b.action==='suspend'?'sospesa':'attiva'}).eq('user_id',userId));return json({ok:true});}
+    if(b.action==='resolve_conflict') {
+      if(!access.can_write||!b.jobId||!b.resolution)return json({error:'Scelta non valida'},400);
+      const job=await checked(db.from('onedrive_jobs').select('*').eq('id',b.jobId).eq('user_id',userId).eq('status','conflict').single());
+      if(b.resolution==='remote'){await checked(db.from('onedrive_jobs').update({status:'cancelled'}).eq('id',job.id));return json({ok:true});}
+      if(b.confirmed!==true)return json({error:'Conferma la nuova modifica dopo aver controllato la versione Microsoft'},400);
+      const item=await graphJson(itemPath(job.item_id));
+      await checked(db.from('onedrive_jobs').update({status:'pending',payload:{...job.payload,etag:item.eTag},error:null,next_attempt_at:new Date().toISOString()}).eq('id',job.id));
+      return json({ok:true});
+    }
+    if(b.action==='integrity')return json({ok:true,conteggi:await counts(),complete:state?.scan_status==='complete',error:state?.scan_error??null});
+    if(b.action==='retry'){await checked(db.from('onedrive_jobs').update({status:'pending',next_attempt_at:new Date().toISOString()}).eq('user_id',userId).eq('status','error'));return json({ok:true});}
+    if(['download','versions'].includes(b.action)) {
+      if(!b.itemId)return json({error:'File mancante'},400);
+      if(b.action==='versions')return json(await graphJson(itemPath(b.itemId)+'/versions'));
+      const item=await graphJson(itemPath(b.itemId));
+      if(!item['@microsoft.graph.downloadUrl'])return json({error:'Microsoft non rende disponibile il contenuto di questo elemento'},404);
+      return json({url:item['@microsoft.graph.downloadUrl']});
+    }
+    // Write operations carry stable item ID + ETag and are persisted before executing.
+    if(['create_folder','rename','move','delete','push'].includes(b.action)) {
+      if(!access.can_write)return json({error:'Accesso OneDrive in sola lettura'},403);
+      if(b.action==='delete' && b.confirmed!==true)return json({error:'Conferma la cancellazione su OneDrive'},400);
+      if(['create_folder','rename'].includes(b.action) && (!b.name||!validName(b.name)))return json({error:'Nome non valido'},400);
+      if(['rename','move','delete'].includes(b.action) && (!b.itemId||!b.etag))return json({error:'Elemento o versione mancanti: aggiorna la cartella'},400);
+      if(b.action==='push'&&!b.documentoId)return json({error:'Documento mancante'},400);
+      const job=await checked(db.from('onedrive_jobs').insert({user_id:userId,item_id:b.itemId??null,operation:b.action,payload:b,idempotency_key:`${userId}:${b.action}:${b.itemId??b.documentoId??b.name}:${b.folderId??'root'}:${b.etag??'new'}`}).select('*').single());
+      return json({ok:true,queued:true,jobId:job.id});
+    }
+    if(b.action==='pull'||b.action==='worker') {
+      if(!state)return json({error:'Avvia la sincronizzazione dalla pagina Impostazioni'},400);
+      if(state.stato==='sospesa')return json({ok:true,suspended:true});
+      const {data:locked,error:lockError}=await db.rpc('claim_onedrive_sync',{p_user_id:userId});
+      if(lockError)throw lockError;if(!locked)return json({ok:true,busy:true});
+      let imported=0,updated=0;
+      try {
+        // Bounded worker; cursor persisted per page, total archive size is unbounded.
+        await checked(db.from('onedrive_sync_state').update({scan_status:'running',scan_error:null}).eq('user_id',userId));
+        let path=state.cursor_next?graphLink(state.cursor_next):state.delta_token?graphLink(state.delta_token):rootPath()+'/delta?$top=100';
+        let checkpoint:{next:string|null;delta:string|null;complete:boolean}={next:null,delta:null,complete:false};
+        const started=Date.now();
+        for(let batch=0;batch<10 && Date.now()-started<45000;batch++){
+        const page=await graphJson(path);
+        const values=(page.value??[]).filter((i:any)=>!i.root);
+        const ids=values.map((i:any)=>i.id);
+        const existingItems=ids.length?await checked(db.from('onedrive_items').select('*').eq('user_id',userId).eq('drive_id',state.drive_id).in('item_id',ids)):[];
+        const existingDocs=ids.length?await checked(db.from('documenti').select('*').eq('user_id',userId).eq('onedrive_drive_id',state.drive_id).in('onedrive_item_id',ids)):[];
+        const itemsById=new Map(existingItems.map((i:any)=>[i.item_id,i]));
+        const docsById=new Map(existingDocs.map((d:any)=>[d.onedrive_item_id,d]));
+        const documents:any[]=[],index:any[]=[],analysis:any[]=[];
+        for(const i of values){
+          const old:any=itemsById.get(i.id),doc:any=docsById.get(i.id);
+          if(i.deleted){
+            if(old)index.push({...old,deleted:true,updated_at:new Date().toISOString()});
+            if(doc)documents.push({...doc,sync_stato:'eliminato_remoto'});
+            continue;
           }
+          let docId=doc?.id??null;
+          if(!i.folder){
+            docId=docId??crypto.randomUUID();
+            const changed=!old||old.etag!==i.eTag;
+            if(changed){
+              const fields={nome_file:i.name,dimensione:i.size??0,mime_type:i.file?.mimeType??null,onedrive_item_id:i.id,onedrive_drive_id:state.drive_id,onedrive_etag:i.eTag??null,onedrive_web_url:i.webUrl??null,onedrive_modified_at:i.lastModifiedDateTime??null,sync_stato:'solo_riferimento',sync_origine:'onedrive',storage_path:`onedrive://${state.drive_id}/${i.id}`,updated_at:new Date().toISOString()};
+              documents.push({...doc,id:docId,...fields,user_id:userId,entita:doc?.entita??'generico',tipo:doc?.tipo??'altro',stato_elaborazione:doc?.stato_elaborazione??'da_verificare',association_status:doc?.association_status??'review'});
+              if(doc)updated++;else imported++;
+              if(access.ai_enabled&&!state.ai_paused_reason&&(i.file?.mimeType==='application/pdf'||i.file?.mimeType?.startsWith('image/')||i.file?.mimeType?.startsWith('text/')))analysis.push({user_id:userId,item_id:i.id,operation:'analyze',payload:{documentoId:docId},idempotency_key:`${userId}:analyze:${i.id}:${i.eTag}`});
+            }
+          }
+          index.push({id:old?.id??crypto.randomUUID(),user_id:userId,drive_id:state.drive_id,item_id:i.id,parent_id:i.parentReference?.id??null,name:i.name,is_folder:!!i.folder,size:i.size??0,mime_type:i.file?.mimeType??null,etag:i.eTag??null,web_url:i.webUrl??null,modified_at:i.lastModifiedDateTime??null,deleted:false,documento_id:docId,updated_at:new Date().toISOString()});
         }
-        if (data["@odata.nextLink"]) nextPath = rewriteLink(data["@odata.nextLink"]);
-        else { deltaLink = data["@odata.deltaLink"] ?? null; nextPath = null; }
-      }
-
-      await admin.from("onedrive_sync_state").update({
-        delta_token: deltaLink ?? state.delta_token,
-        ultima_sync_at: new Date().toISOString(),
-        ultimo_esito: errori > 0 ? "parziale" : "ok",
-        documenti_sincronizzati: (state.documenti_sincronizzati ?? 0) + importati,
-        updated_at: new Date().toISOString(),
-      }).eq("user_id", user.id);
-
-      return json({ ok: true, importati, aggiornati, duplicati, saltati, errori, pagine: pages, troncato: !!nextPath });
-    }
-
-    // ---------- PUSH (CRM -> OneDrive) ----------
-    if (action === "push") {
-      const documentoId = String(body.documentoId || "");
-      if (!documentoId) return json({ error: "documentoId mancante" }, 400);
-      const state = await getState();
-      if (!state?.root_folder_id) return json({ error: "Cartella OneDrive non configurata" }, 400);
-
-      const { data: doc, error: docErr } = await admin.from("documenti").select("*")
-        .eq("id", documentoId).eq("user_id", user.id).single();
-      if (docErr || !doc) return json({ error: "Documento non trovato" }, 404);
-      if (doc.storage_path?.startsWith("onedrive://")) return json({ error: "Documento presente solo come riferimento OneDrive" }, 400);
-
-      const { data: fileData, error: dlErr } = await admin.storage.from("documenti").download(doc.storage_path);
-      if (dlErr || !fileData) return json({ error: `File non leggibile: ${dlErr?.message}` }, 400);
-      const buf = await fileData.arrayBuffer();
-      if (buf.byteLength > MAX_UPLOAD) {
-        await logEvento({ documento_id: doc.id, origine: "lovable", tipo_evento: "caricato", stato: "errore", errore: "File oltre 4 MB: upload automatico non supportato" });
-        return json({ error: "File oltre 4 MB: caricamento automatico non supportato per ora" }, 400);
-      }
-
-      // Cartella di destinazione: root / <nome azienda> se collegata
-      let parentId = state.root_folder_id;
-      if (doc.company_id) {
-        const { data: az } = await admin.from("aziende").select("nome").eq("id", doc.company_id).maybeSingle();
-        if (az?.nome) {
-          const folderName = az.nome.slice(0, 80);
-          const created = await graphJson(`/me/drive/items/${encodeURIComponent(state.root_folder_id)}/children`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: folderName, folder: {}, "@microsoft.graph.conflictBehavior": "fail" }),
-          }).catch(async () => {
-            // Esiste già: la cerco
-            const list = await graphJson(`/me/drive/items/${encodeURIComponent(state.root_folder_id)}/children?$select=id,name,folder&$top=200`);
-            return (list.value ?? []).find((it: any) => it.folder && it.name.toLowerCase() === folderName.toLowerCase());
-          });
-          if (created?.id) parentId = created.id;
+        // Upsert each row only once even if Graph repeats an item within a page.
+        const unique=(rows:any[],key:string)=>[...new Map(rows.map(r=>[r[key],r])).values()];
+        // Keep inserts and existing updates separate so omitted defaults are never cleared.
+        const fresh=documents.filter(d=>!existingDocs.some((old:any)=>old.id===d.id));
+        const modified=documents.filter(d=>existingDocs.some((old:any)=>old.id===d.id));
+        if(fresh.length)await checked(db.from('documenti').upsert(unique(fresh,'id'),{onConflict:'id'}));
+        if(modified.length)await checked(db.from('documenti').upsert(unique(modified,'id'),{onConflict:'id'}));
+        if(index.length)await checked(db.from('onedrive_items').upsert(unique(index,'item_id'),{onConflict:'user_id,drive_id,item_id'}));
+        if(analysis.length)await checked(db.from('onedrive_jobs').upsert(analysis,{onConflict:'idempotency_key',ignoreDuplicates:true}));
+        checkpoint=nextCheckpoint(page);
+        await checked(db.from('onedrive_sync_state').update({cursor_next:checkpoint.next,delta_token:checkpoint.delta??state.delta_token,scan_status:checkpoint.complete?'complete':'running',scan_pages:(state.scan_pages??0)+1,ultima_sync_at:checkpoint.complete?new Date().toISOString():state.ultima_sync_at,ultimo_esito:checkpoint.complete?'ok':'in_corso',root_folder_path:'/',root_folder_id:null}).eq('user_id',userId));
+        if(checkpoint.complete)break;
+        if(!checkpoint.next)break;path=graphLink(checkpoint.next);state.scan_pages=(state.scan_pages??0)+1;
         }
-      }
-
-      const uploadPath = `/me/drive/items/${encodeURIComponent(parentId)}:/${encodeURIComponent(doc.nome_file)}:/content`;
-      const upRes = await graph(uploadPath, {
-        method: "PUT",
-        headers: { "Content-Type": doc.mime_type ?? "application/octet-stream" },
-        body: buf,
-      });
-      if (!upRes.ok) {
-        const errBody = await upRes.text();
-        await logEvento({ documento_id: doc.id, origine: "lovable", tipo_evento: "caricato", stato: "errore", errore: `Graph [${upRes.status}]: ${errBody.slice(0, 300)}` });
-        return json({ error: `Caricamento OneDrive fallito [${upRes.status}]` }, 502);
-      }
-      const uploaded = await upRes.json();
-
-      await admin.from("documenti").update({
-        onedrive_item_id: uploaded.id,
-        onedrive_drive_id: state.drive_id,
-        onedrive_web_url: uploaded.webUrl ?? null,
-        onedrive_etag: uploaded.eTag ?? null,
-        onedrive_modified_at: uploaded.lastModifiedDateTime ?? null,
-        sync_stato: "sincronizzato",
-        sync_origine: "lovable",
-        updated_at: new Date().toISOString(),
-      }).eq("id", doc.id);
-      await logEvento({ documento_id: doc.id, origine: "lovable", tipo_evento: "caricato", dettagli: { nome: doc.nome_file } });
-
-      return json({ ok: true, webUrl: uploaded.webUrl ?? null });
+        let jobErrors=0;
+        const jobs=await checked(db.from('onedrive_jobs').select('*').eq('user_id',userId).eq('status','pending').lte('next_attempt_at',new Date().toISOString()).order('created_at').limit(1));
+        for(const job of jobs??[]) {
+          const p=job.payload;const headers:Record<string,string>={'Content-Type':'application/json'};if(p.etag)headers['If-Match']=p.etag;
+          try {
+            let result:any=null;
+            if(job.operation==='analyze') {
+              if(!access.ai_enabled || state.ai_paused_reason)continue;
+              const {data:credential}=await db.from('onedrive_worker_keys').select('token').eq('user_id',userId).single();
+              const response=await fetch(url+'/functions/v1/classify-document',{method:'POST',headers:{'Content-Type':'application/json','x-onedrive-worker':credential?.token??''},body:JSON.stringify({documento_id:p.documentoId,worker_user_id:userId})});
+              if(!response.ok){const detail=await response.text();if([402,403,429].includes(response.status)){await checked(db.from('onedrive_sync_state').update({ai_paused_reason:`Analisi sospesa [${response.status}]`}).eq('user_id',userId));state.ai_paused_reason=`[${response.status}]`;}throw new Error(`Analisi [${response.status}]: ${detail}`);}
+            }
+            if(job.operation==='create_folder')result=await graphJson((p.folderId?itemPath(p.folderId):rootPath())+'/children',{method:'POST',headers,body:JSON.stringify({name:p.name,folder:{},'@microsoft.graph.conflictBehavior':'fail'})});
+            if(job.operation==='rename'||job.operation==='move')result=await graphJson(itemPath(p.itemId),{method:'PATCH',headers,body:JSON.stringify(job.operation==='rename'?{name:p.name}:{parentReference:p.folderId?{id:p.folderId}:{path:'/drive/root:'}})});
+            if(job.operation==='delete'){
+              const remote=await graphJson(itemPath(p.itemId)+'?$select=id,folder');
+              if(remote.folder)throw new Error('Per sicurezza elimina le cartelle con contenuto direttamente da OneDrive; la rimozione sarà rilevata dal gestionale');
+              const doc=await checked(db.from('onedrive_items').select('documento_id').eq('user_id',userId).eq('item_id',p.itemId).maybeSingle());
+              if(doc?.documento_id){const record=await checked(db.from('documenti').select('proposal_id,storage_path').eq('id',doc.documento_id).single());if(record.proposal_id)throw new Error('Documento di proposta protetto: conserva lo storico originale');}
+              await graph(itemPath(p.itemId),{method:'DELETE',headers});
+              await checked(db.from('onedrive_items').update({deleted:true}).eq('user_id',userId).eq('item_id',p.itemId));
+            }
+            if(job.operation==='push') {
+              const doc=await checked(db.from('documenti').select('*').eq('id',p.documentoId).eq('user_id',userId).single());
+              if(doc.storage_path.startsWith('onedrive://'))throw new Error('Originale già presente in OneDrive');
+              const {data:file,error}=await db.storage.from('documenti').download(doc.storage_path);if(error||!file)throw new Error('File locale non disponibile');
+              if(file.size>20*1024*1024)throw new Error('Questo trasferimento supera 20 MB: caricamento a blocchi non ancora disponibile; usa OneDrive e il file sarà visibile nel gestionale');
+              const target=doc.onedrive_item_id?itemPath(doc.onedrive_item_id)+'/content':(p.folderId?itemPath(p.folderId):rootPath())+`:/${encodeURIComponent(doc.nome_file)}:/content?@microsoft.graph.conflictBehavior=fail`;
+              result=await graphJson(target,{method:'PUT',headers:{'Content-Type':doc.mime_type||'application/octet-stream',...(doc.onedrive_etag?{'If-Match':doc.onedrive_etag}:{})},body:file});
+              await checked(db.from('documenti').update({onedrive_item_id:result.id,onedrive_drive_id:state.drive_id,onedrive_etag:result.eTag,onedrive_web_url:result.webUrl,sync_stato:'sincronizzato',sync_origine:'lovable'}).eq('id',doc.id));
+            }
+            await checked(db.from('onedrive_jobs').update({status:'done',error:null,attempts:job.attempts+1,updated_at:new Date().toISOString()}).eq('id',job.id));
+            await log(job.operation,'completato',null,{nome:p.name??result?.name});
+          }catch(e){jobErrors++;const error=e instanceof Error?e.message:String(e);await checked(db.from('onedrive_jobs').update({status:error.includes('[412]')?'conflict':'error',error,attempts:job.attempts+1}).eq('id',job.id));await log(job.operation,'errore',error);}
+        }
+        const totals=await counts();
+        return json({ok:true,importati:imported,aggiornati:updated,duplicati:0,errori:jobErrors,troncato:!checkpoint.complete,complete:checkpoint.complete,conteggi:totals});
+      }catch(e){const error=e instanceof Error?e.message:String(e);await db.from('onedrive_sync_state').update({scan_status:'error',scan_error:error}).eq('user_id',userId);await log('sincronizzazione','errore',error);throw e;}
+      finally{await db.from('onedrive_sync_state').update({lease_until:null}).eq('user_id',userId);}
     }
-
-    return json({ error: `Azione sconosciuta: ${action}` }, 400);
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("onedrive-sync error:", msg);
-    return json({ error: msg }, 500);
-  }
+    return json({error:'Azione non disponibile'},400);
+  }catch(e){const error=e instanceof Error?e.message:String(e);console.error('OneDrive:',error);return json({error},500);}
 });

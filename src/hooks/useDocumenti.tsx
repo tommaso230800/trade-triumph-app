@@ -287,6 +287,13 @@ export function useDeleteDocumento() {
 }
 
 export async function getDocumentoSignedUrl(storage_path: string, expiresIn = 3600) {
+  if (storage_path.startsWith('onedrive://')) {
+    const { invokeOneDrive } = await import('@/hooks/useOneDriveSync');
+    const itemId = storage_path.split('/').at(-1);
+    if (!itemId) throw new Error('Riferimento OneDrive non valido');
+    const result = await invokeOneDrive<{ url: string }>({ action: 'download', itemId });
+    return result.url;
+  }
   const { data, error } = await supabase.storage
     .from("documenti")
     .createSignedUrl(storage_path, expiresIn);

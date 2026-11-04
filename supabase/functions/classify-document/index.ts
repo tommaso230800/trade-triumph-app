@@ -1,6 +1,8 @@
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
+import { generateChatCompletion, GatewayError, type GeminiChatMessage } from "npm:@lovable.dev/ai-gateway@0.1.11";
+import type {} from "./generated/models.d.ts";
 import { matchIdentity, type Entity, type Identity } from "./matching.ts";
 
 const response = (body: unknown, status = 200) =>
@@ -80,15 +82,25 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   let docId: string | null = null;
   try {
-    const input = z.object({ documento_id: z.string().uuid(), text: z.string().max(180000).optional() }).safeParse(await req.json());
+    const input = z.object({ documento_id: z.string().uuid(), text: z.string().max(180000).optional(), worker_user_id: z.string().uuid().optional() }).safeParse(await req.json());
     if (!input.success) return response({ error: "Documento non valido" }, 400);
     docId = input.data.documento_id;
     const url = Deno.env.get("SUPABASE_URL"), key = Deno.env.get("SUPABASE_ANON_KEY"), aiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!url || !key || !aiKey) return response({ error: "Analisi non configurata" }, 503);
-    const db = createClient(url, key, { global: { headers: { Authorization: req.headers.get("Authorization") || "" } } });
-    const { data: { user }, error: authError } = await db.auth.getUser();
-    if (authError || !user) return response({ error: "Accedi per analizzare i file" }, 401);
-    const { data: doc, error } = await db.from("documenti").select("*").eq("id", docId).is("deleted_at", null).single();
+    const service = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    let workerId: string | null = null;
+    if (input.data.worker_user_id && service) {
+      const admin = createClient(url, service);
+      const { data: secret } = await admin.from('onedrive_worker_keys').select('token').eq('user_id',input.data.worker_user_id).maybeSingle();
+      const { data: access } = await admin.from('onedrive_access').select('ai_enabled').eq('user_id',input.data.worker_user_id).maybeSingle();
+      if (!secret || req.headers.get('x-onedrive-worker') !== secret.token || !access?.ai_enabled) return response({error:'Analisi non autorizzata'},403);
+      workerId = input.data.worker_user_id;
+    }
+    const db = createClient(url, workerId && service ? service : key, { global: { headers: workerId ? {} : { Authorization: req.headers.get("Authorization") || "" } } });
+    const auth = workerId ? null : await db.auth.getUser();
+    const user = workerId ? {id:workerId} : auth?.data.user;
+    if (!user) return response({ error: "Accedi per analizzare i file" }, 401);
+    const { data: doc, error } = await db.from("documenti").select("*").eq("id", docId).eq("user_id",user.id).is("deleted_at", null).single();
     if (error || !doc) return response({ error: "Documento non accessibile" }, 404);
 
     const fail = async (message: string, status = 500) => {
@@ -103,17 +115,24 @@ Deno.serve(async (req) => {
 
     await db.from("documenti").update({ stato_elaborazione: "in_elaborazione", errore_elaborazione: null }).eq("id", doc.id);
 
-    const media: unknown[] = [];
+    const media: Exclude<GeminiChatMessage["content"], string | null | undefined> = [];
+    const readFile = async () => {
+      if (!doc.storage_path.startsWith("onedrive://")) return db.storage.from("documenti").download(doc.storage_path);
+      const conn=Deno.env.get("MICROSOFT_ONEDRIVE_API_KEY");
+      const r=await fetch(`https://connector-gateway.lovable.dev/microsoft_onedrive/drives/${encodeURIComponent(doc.onedrive_drive_id)}/items/${encodeURIComponent(doc.onedrive_item_id)}/content`,{headers:{Authorization:`Bearer ${aiKey}`,"X-Connection-Api-Key":conn??""}});
+      if(!r.ok)return {data:null,error:new Error(`Microsoft [${r.status}]: ${await r.text()}`)};
+      return {data:await r.blob(),error:null};
+    };
     let text = (input.data.text || "").trim();
     // Scansioni: PDF con pochissimo testo reale vanno letti visivamente (OCR)
     if (text.replace(/\s+/g, "").length < 40) text = "";
     if (!text && doc.mime_type?.startsWith("text/")) {
-      const { data, error } = await db.storage.from("documenti").download(doc.storage_path);
+      const { data, error } = await readFile();
       if (error || !data) return fail("File non disponibile");
       text = (await data.text()).slice(0, 180000);
     }
     if (!text && (doc.mime_type === "application/pdf" || doc.mime_type?.startsWith("image/"))) {
-      const { data, error } = await db.storage.from("documenti").download(doc.storage_path);
+      const { data, error } = await readFile();
       if (error || !data) return fail("File non disponibile");
       if (data.size > 20 * 1024 * 1024) return fail("Il file supera 20 MB. Associazioni da verificare.", 400);
       const bytes = new Uint8Array(await data.arrayBuffer());
@@ -128,23 +147,20 @@ Deno.serve(async (req) => {
     }
     if (!text && !media.length) return fail("Formato non leggibile automaticamente. Associa il file manualmente.", 400);
 
-    const ai = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": aiKey },
-      body: JSON.stringify({
+    let result;
+    try {
+      result = await generateChatCompletion({
         model: "google/gemini-3-flash-preview",
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: [{ type: "text", text: `Nome file (indizio): ${doc.nome_file}\nContenuto: ${text}` }, ...media] },
         ],
-      }),
-    });
-    if (!ai.ok) {
-      const detail = await ai.json().catch(() => ({}));
-      return fail(detail.message || detail.error?.message || "Analisi temporaneamente non disponibile", ai.status);
+      });
+    } catch (e) {
+      if(e instanceof GatewayError) return fail(e.message,e.httpStatus??500);
+      throw e;
     }
-    const result = await ai.json();
     const raw = result.choices?.[0]?.message?.content;
     if (!raw) return fail("Il documento non è stato riconosciuto", 422);
     const parsed = JSON.parse(raw);
@@ -152,7 +168,7 @@ Deno.serve(async (req) => {
     async function entities(table: "aziende" | "clienti") {
       const all: Entity[] = [];
       for (let from = 0; ; from += 1000) {
-        const { data, error } = await db.from(table).select("*").is("deleted_at", null).order("id").range(from, from + 999);
+        const { data, error } = await db.from(table).select("*").eq("user_id",user.id).is("deleted_at", null).order("id").range(from, from + 999);
         if (error) throw error;
         all.push(...data);
         if (data.length < 1000) return all;
@@ -161,8 +177,8 @@ Deno.serve(async (req) => {
     const [companies, customers, companyAliases, customerAliases] = await Promise.all([
       entities("aziende"),
       entities("clienti"),
-      db.from("aziende_alias").select("azienda_id,denominazione_alternativa,partita_iva").then((r) => r.data ?? []),
-      db.from("clienti_alias").select("cliente_id,denominazione_alternativa,partita_iva").then((r) => r.data ?? []),
+      db.from("aziende_alias").select("azienda_id,denominazione_alternativa,partita_iva").eq("user_id",user.id).then((r) => r.data ?? []),
+      db.from("clienti_alias").select("cliente_id,denominazione_alternativa,partita_iva").eq("user_id",user.id).then((r) => r.data ?? []),
     ]);
 
     const company = matchWithAliases(parsed.company || {}, companies, companyAliases, "azienda_id");
@@ -183,7 +199,7 @@ Deno.serve(async (req) => {
 
     let orderId: string | null = null;
     if (parsed.order_code && company.id && customer.id) {
-      const { data, error } = await db.from("ordini").select("id").eq("codice", String(parsed.order_code)).eq("azienda_id", company.id).eq("cliente_id", customer.id).is("deleted_at", null);
+      const { data, error } = await db.from("ordini").select("id").eq("user_id",user.id).eq("codice", String(parsed.order_code)).eq("azienda_id", company.id).eq("cliente_id", customer.id).is("deleted_at", null);
       if (error) throw error;
       if (data?.length === 1) orderId = data[0].id;
     }
