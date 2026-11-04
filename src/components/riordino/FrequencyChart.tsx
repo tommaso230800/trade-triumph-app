@@ -99,7 +99,7 @@ export function FrequencyChart({ pair, height = 280 }: Props) {
         <ResponsiveContainer>
           <ComposedChart data={punti} margin={{ top: 8, right: 8, bottom: 4, left: -18 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-            <XAxis dataKey="idx" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} />
+            <XAxis dataKey="idx" tickFormatter={(idx) => punti.find(p=>p.idx===idx)?.label || ''} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickLine={false} />
             <YAxis
               tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
               tickLine={false}
@@ -125,6 +125,10 @@ export function FrequencyChart({ pair, height = 280 }: Props) {
                 return (
                   <circle
                     key={`${payload.idx}-${payload.giorni}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Intervallo ${payload.giorni} giorni dal ${payload.from_data} al ${payload.to_data}`}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelected(payload.idx); }}
                     onClick={() => setSelected(payload.idx)}
                     cx={cx}
                     cy={cy}
@@ -174,7 +178,8 @@ function FrequencyTooltip({ active, payload, pair }: any) {
       </p>
       <div className="mt-2 space-y-0.5">
         <p>Giorni tra gli ordini: <span className="font-semibold tabular-nums">{p.giorni}</span></p>
-        <p>Frequenza abituale: <span className="tabular-nums">{Math.round(pair.frequenza_abituale || 0)} gg</span></p>
+        <p>Baseline disponibile: <span className="tabular-nums">{p.frequenza_storica ?? 'N/D'} gg</span></p>
+        <p>Operativa disponibile: <span className="tabular-nums">{p.frequenza_operativa ?? 'N/D'} gg</span></p>
         <p>
           Scostamento:{" "}
           <span className={`tabular-nums ${p.scostamento_giorni > 0 ? "text-warning" : "text-success"}`}>

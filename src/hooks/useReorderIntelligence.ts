@@ -23,6 +23,7 @@ export interface ReorderIntelligenceData {
   // gli stati ai mesi passati senza nuove query
   ordersByPair: Record<string, IntelligenceOrder[]>;
   prodottiNomi: Record<string, string>;
+  esclusiSenzaCoppia?: number;
 }
 
 export function getTolleranza(): number {
@@ -129,7 +130,7 @@ export function useReorderIntelligence() {
       for (const [key, orders] of pairOrders) {
         const [cliente_id, azienda_id] = key.split("|");
         const result = analyzePair(cliente_id, azienda_id, orders, pairRighe.get(key) || [], { tolleranza });
-        result.ordini_esclusi = excluded.filter(o => o.cliente_id === cliente_id && o.azienda_id === azienda_id).map(o => ({ id:o.id, codice:o.codice, data_ordine:o.data_ordine, motivo:reorderExclusion(o) || '' }));
+        result.ordini_esclusi = excluded.filter(o => o.cliente_id === cliente_id && o.azienda_id === azienda_id).sort((a,b)=>(a.data_ordine || '').localeCompare(b.data_ordine || '')).map(o => ({ id:o.id, codice:o.codice, data_ordine:o.data_ordine, motivo:reorderExclusion(o) || '' }));
         pairs.push(result);
       }
 
@@ -172,7 +173,7 @@ export function useReorderIntelligence() {
         for (const p of prods || []) prodottiNomi[p.id] = p.codice ? `${p.nome} (${p.codice})` : p.nome;
       }
 
-      return { pairs: enriched, kpi: computePortfolioKPIs(enriched), ordersByPair, prodottiNomi };
+      return { pairs: enriched, kpi: computePortfolioKPIs(enriched), ordersByPair, prodottiNomi, esclusiSenzaCoppia: excluded.filter(o=>!o.cliente_id || !o.azienda_id).length };
      } catch (e) {
        console.error("reorder intelligence error", e);
        throw e;
