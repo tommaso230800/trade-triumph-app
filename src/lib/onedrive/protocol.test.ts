@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { graphLink, itemKey, nextCheckpoint, validName } from './protocol';
+import { graphLink, itemKey, nextCheckpoint, validName } from '../../../supabase/functions/onedrive-sync/protocol';
 describe('OneDrive whole-drive protocol', () => {
   it('follows root pagination and preserves its token', () => expect(graphLink('https://graph.microsoft.com/v1.0/me/drive/root/delta?$skiptoken=abc')).toBe('/me/drive/root/delta?$skiptoken=abc'));
   it('does not declare a partial scan complete', () => expect(nextCheckpoint({'@odata.nextLink':'next'})).toEqual({next:'next',delta:null,complete:false}));
