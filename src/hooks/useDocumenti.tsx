@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { spreadsheetText } from "@/lib/documentText";
+import { spreadsheetText, wordText, isWordFile } from "@/lib/documentText";
 
 export type DocumentoTipo =
   | "ordine_originale"
@@ -223,6 +223,7 @@ export function useUploadDocumento() {
       if (willClassify) {
         let text: string | undefined;
         if (/\.(xlsx?|xlsm|csv)$/i.test(input.file.name)) text = await spreadsheetText(input.file).catch(() => "");
+        else if (isWordFile(input.file.name)) text = await wordText(input.file).catch(() => "");
         else if (/\.pdf$/i.test(input.file.name) || input.file.type === "application/pdf") {
           const { readPdfText } = await import("@/lib/pdfDocumentText");
           text = await readPdfText(input.file).catch(() => "");
