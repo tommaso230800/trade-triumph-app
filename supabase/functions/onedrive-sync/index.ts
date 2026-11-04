@@ -12,7 +12,7 @@ async function graph(path: string, init: RequestInit = {}) {
   return response;
 }
 async function graphJson(path: string, init: RequestInit = {}) { return (await graph(path,init)).json(); }
-const schema=z.object({action:z.enum(['status','browse','configure','pull','push','suspend','resume','download','create_folder','rename','move','delete','versions','integrity','retry','ai_consent','reanalyze','worker']),folderId:z.string().max(256).nullable().optional(),itemId:z.string().min(1).max(256).optional(),documentoId:z.string().uuid().optional(),name:z.string().max(255).optional(),etag:z.string().max(512).optional(),confirmed:z.boolean().optional(),enabled:z.boolean().optional(),userId:z.string().uuid().optional(),offset:z.number().int().min(0).optional(),search:z.string().max(200).optional(),rootFolderId:z.string().nullable().optional(),rootFolderPath:z.string().optional()});
+const schema=z.object({action:z.enum(['status','browse','configure','pull','push','suspend','resume','download','create_folder','rename','move','delete','versions','integrity','retry','ai_consent','reanalyze','worker','resolve_conflict']),folderId:z.string().max(256).nullable().optional(),itemId:z.string().min(1).max(256).optional(),documentoId:z.string().uuid().optional(),jobId:z.string().uuid().optional(),resolution:z.enum(['remote','local']).optional(),name:z.string().max(255).optional(),etag:z.string().max(512).optional(),confirmed:z.boolean().optional(),enabled:z.boolean().optional(),userId:z.string().uuid().optional(),offset:z.number().int().min(0).optional(),search:z.string().max(200).optional(),rootFolderId:z.string().nullable().optional(),rootFolderPath:z.string().optional()});
 Deno.serve(async req => {
   if(req.method==='OPTIONS') return new Response('ok',{headers:corsHeaders});
   try {
@@ -74,6 +74,15 @@ Deno.serve(async req => {
       return json({ok:true,queued:jobs.length,nextOffset:docs.length===200?(b.offset??0)+200:null});
     }
     if(b.action==='suspend'||b.action==='resume'){await checked(db.from('onedrive_sync_state').update({stato:b.action==='suspend'?'sospesa':'attiva'}).eq('user_id',userId));return json({ok:true});}
+    if(b.action==='resolve_conflict') {
+      if(!access.can_write||!b.jobId||!b.resolution)return json({error:'Scelta non valida'},400);
+      const job=await checked(db.from('onedrive_jobs').select('*').eq('id',b.jobId).eq('user_id',userId).eq('status','conflict').single());
+      if(b.resolution==='remote'){await checked(db.from('onedrive_jobs').update({status:'cancelled'}).eq('id',job.id));return json({ok:true});}
+      if(b.confirmed!==true)return json({error:'Conferma la nuova modifica dopo aver controllato la versione Microsoft'},400);
+      const item=await graphJson(itemPath(job.item_id));
+      await checked(db.from('onedrive_jobs').update({status:'pending',payload:{...job.payload,etag:item.eTag},error:null,next_attempt_at:new Date().toISOString()}).eq('id',job.id));
+      return json({ok:true});
+    }
     if(b.action==='integrity')return json({ok:true,conteggi:await counts(),complete:state?.scan_status==='complete',error:state?.scan_error??null});
     if(b.action==='retry'){await checked(db.from('onedrive_jobs').update({status:'pending',next_attempt_at:new Date().toISOString()}).eq('user_id',userId).eq('status','error'));return json({ok:true});}
     if(['download','versions'].includes(b.action)) {
@@ -149,7 +158,7 @@ Deno.serve(async req => {
         if(!checkpoint.next)break;path=graphLink(checkpoint.next);state.scan_pages=(state.scan_pages??0)+1;
         }
         let jobErrors=0;
-        const jobs=await checked(db.from('onedrive_jobs').select('*').eq('user_id',userId).eq('status','pending').lte('next_attempt_at',new Date().toISOString()).order('created_at').limit(3));
+        const jobs=await checked(db.from('onedrive_jobs').select('*').eq('user_id',userId).eq('status','pending').lte('next_attempt_at',new Date().toISOString()).order('created_at').limit(1));
         for(const job of jobs??[]) {
           const p=job.payload;const headers:Record<string,string>={'Content-Type':'application/json'};if(p.etag)headers['If-Match']=p.etag;
           try {
