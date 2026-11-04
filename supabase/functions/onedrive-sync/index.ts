@@ -100,24 +100,42 @@ Deno.serve(async req => {
         const started=Date.now();
         for(let batch=0;batch<10 && Date.now()-started<45000;batch++){
         const page=await graphJson(path);
-        for(const i of page.value??[]) {
-          const existing=await checked(db.from('onedrive_items').select('*').eq('user_id',userId).eq('drive_id',state.drive_id).eq('item_id',i.id).maybeSingle());
-          if(i.deleted){if(existing){await checked(db.from('onedrive_items').update({deleted:true}).eq('id',existing.id));if(existing.documento_id)await checked(db.from('documenti').update({sync_stato:'eliminato_remoto'}).eq('id',existing.documento_id).eq('user_id',userId));}continue;}
-          // Graph root itself is not counted as a child folder.
-          if(i.root)continue;
-          let docId=existing?.documento_id??null;
-          if(!i.folder) {
-            if(!docId){const old=await checked(db.from('documenti').select('id').eq('user_id',userId).eq('onedrive_drive_id',state.drive_id).eq('onedrive_item_id',i.id).limit(1).maybeSingle());docId=old?.id??null;}
-            const fields={nome_file:i.name,dimensione:i.size??0,mime_type:i.file?.mimeType??null,onedrive_item_id:i.id,onedrive_drive_id:state.drive_id,onedrive_etag:i.eTag??null,onedrive_web_url:i.webUrl??null,onedrive_modified_at:i.lastModifiedDateTime??null,sync_stato:'solo_riferimento',sync_origine:'onedrive',updated_at:new Date().toISOString()};
-            if(docId){await checked(db.from('documenti').update({...fields,...(existing?.etag!==i.eTag?{storage_path:`onedrive://${state.drive_id}/${i.id}`}:{})}).eq('id',docId).eq('user_id',userId));if(existing?.etag!==i.eTag)updated++;}
-            else {const doc=await checked(db.from('documenti').insert({...fields,user_id:userId,entita:'generico',tipo:'altro',storage_path:`onedrive://${state.drive_id}/${i.id}`,stato_elaborazione:'da_verificare',association_status:'review'}).select('id').single());docId=doc.id;imported++;}
+        const values=(page.value??[]).filter((i:any)=>!i.root);
+        const ids=values.map((i:any)=>i.id);
+        const existingItems=ids.length?await checked(db.from('onedrive_items').select('*').eq('user_id',userId).eq('drive_id',state.drive_id).in('item_id',ids)):[];
+        const existingDocs=ids.length?await checked(db.from('documenti').select('*').eq('user_id',userId).eq('onedrive_drive_id',state.drive_id).in('onedrive_item_id',ids)):[];
+        const itemsById=new Map(existingItems.map((i:any)=>[i.item_id,i]));
+        const docsById=new Map(existingDocs.map((d:any)=>[d.onedrive_item_id,d]));
+        const documents:any[]=[],index:any[]=[],analysis:any[]=[];
+        for(const i of values){
+          const old:any=itemsById.get(i.id),doc:any=docsById.get(i.id);
+          if(i.deleted){
+            if(old)index.push({...old,deleted:true,updated_at:new Date().toISOString()});
+            if(doc)documents.push({...doc,sync_stato:'eliminato_remoto'});
+            continue;
           }
-          await checked(db.from('onedrive_items').upsert({user_id:userId,drive_id:state.drive_id,item_id:i.id,parent_id:i.parentReference?.id??null,name:i.name,is_folder:!!i.folder,size:i.size??0,mime_type:i.file?.mimeType??null,etag:i.eTag??null,web_url:i.webUrl??null,modified_at:i.lastModifiedDateTime??null,deleted:false,documento_id:docId,updated_at:new Date().toISOString()},{onConflict:'user_id,drive_id,item_id'}));
-          if(docId && access.ai_enabled && !state.ai_paused_reason && (!existing || existing.etag!==i.eTag) && (i.file?.mimeType==='application/pdf'||i.file?.mimeType?.startsWith('image/')||i.file?.mimeType?.startsWith('text/'))){
-            await checked(db.from('onedrive_jobs').upsert({user_id:userId,item_id:i.id,operation:'analyze',payload:{documentoId:docId},idempotency_key:`${userId}:analyze:${i.id}:${i.eTag}`},{onConflict:'idempotency_key',ignoreDuplicates:true}));
+          let docId=doc?.id??null;
+          if(!i.folder){
+            docId=docId??crypto.randomUUID();
+            const changed=!old||old.etag!==i.eTag;
+            if(changed){
+              const fields={nome_file:i.name,dimensione:i.size??0,mime_type:i.file?.mimeType??null,onedrive_item_id:i.id,onedrive_drive_id:state.drive_id,onedrive_etag:i.eTag??null,onedrive_web_url:i.webUrl??null,onedrive_modified_at:i.lastModifiedDateTime??null,sync_stato:'solo_riferimento',sync_origine:'onedrive',storage_path:`onedrive://${state.drive_id}/${i.id}`,updated_at:new Date().toISOString()};
+              documents.push({...doc,id:docId,...fields,user_id:userId,entita:doc?.entita??'generico',tipo:doc?.tipo??'altro',stato_elaborazione:doc?.stato_elaborazione??'da_verificare',association_status:doc?.association_status??'review'});
+              if(doc)updated++;else imported++;
+              if(access.ai_enabled&&!state.ai_paused_reason&&(i.file?.mimeType==='application/pdf'||i.file?.mimeType?.startsWith('image/')||i.file?.mimeType?.startsWith('text/')))analysis.push({user_id:userId,item_id:i.id,operation:'analyze',payload:{documentoId:docId},idempotency_key:`${userId}:analyze:${i.id}:${i.eTag}`});
+            }
           }
-
+          index.push({id:old?.id??crypto.randomUUID(),user_id:userId,drive_id:state.drive_id,item_id:i.id,parent_id:i.parentReference?.id??null,name:i.name,is_folder:!!i.folder,size:i.size??0,mime_type:i.file?.mimeType??null,etag:i.eTag??null,web_url:i.webUrl??null,modified_at:i.lastModifiedDateTime??null,deleted:false,documento_id:docId,updated_at:new Date().toISOString()});
         }
+        // Upsert each row only once even if Graph repeats an item within a page.
+        const unique=(rows:any[],key:string)=>[...new Map(rows.map(r=>[r[key],r])).values()];
+        // Keep inserts and existing updates separate so omitted defaults are never cleared.
+        const fresh=documents.filter(d=>!existingDocs.some((old:any)=>old.id===d.id));
+        const modified=documents.filter(d=>existingDocs.some((old:any)=>old.id===d.id));
+        if(fresh.length)await checked(db.from('documenti').upsert(unique(fresh,'id'),{onConflict:'id'}));
+        if(modified.length)await checked(db.from('documenti').upsert(unique(modified,'id'),{onConflict:'id'}));
+        if(index.length)await checked(db.from('onedrive_items').upsert(unique(index,'item_id'),{onConflict:'user_id,drive_id,item_id'}));
+        if(analysis.length)await checked(db.from('onedrive_jobs').upsert(analysis,{onConflict:'idempotency_key',ignoreDuplicates:true}));
         checkpoint=nextCheckpoint(page);
         await checked(db.from('onedrive_sync_state').update({cursor_next:checkpoint.next,delta_token:checkpoint.delta??state.delta_token,scan_status:checkpoint.complete?'complete':'running',scan_pages:(state.scan_pages??0)+1,ultima_sync_at:checkpoint.complete?new Date().toISOString():state.ultima_sync_at,ultimo_esito:checkpoint.complete?'ok':'in_corso',root_folder_path:'/',root_folder_id:null}).eq('user_id',userId));
         if(checkpoint.complete)break;
