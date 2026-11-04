@@ -312,10 +312,9 @@ const ClienteDettaglio = () => {
             </h3>
             <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {reorderData.map((rt: any) => {
-                const oggi = new Date();
                 const previsto = rt.prossimo_riordino_previsto ? new Date(rt.prossimo_riordino_previsto) : null;
-                const inRitardo = previsto && oggi > previsto;
-                const giorniRitardo = previsto ? Math.max(0, Math.floor((oggi.getTime() - previsto.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+                const giorniRitardo = rt.giorni_ritardo;
+                const inRitardo = giorniRitardo > 0;
 
                 return (
                   <div
@@ -332,7 +331,7 @@ const ClienteDettaglio = () => {
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground space-y-1">
-                      <p>Media riordino: <span className="font-semibold text-foreground">{Math.round(rt.media_giorni_riordino)} giorni</span></p>
+                      <p>Frequenza operativa: <span className="font-semibold text-foreground">{rt.media_giorni_riordino == null ? 'N/D — storico insufficiente' : `${Math.round(rt.media_giorni_riordino)} giorni`}</span></p>
                       <p>Ordini totali: {rt.numero_ordini}</p>
                       {rt.ultimo_ordine_data && (
                         <p>Ultimo ordine: {format(new Date(rt.ultimo_ordine_data), "d MMM yyyy", { locale: it })}</p>

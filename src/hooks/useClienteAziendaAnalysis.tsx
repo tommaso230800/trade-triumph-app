@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
-import { differenceInDays, parseISO, format, startOfYear, subDays } from "date-fns";
+import { todayRome } from "@/lib/commercialProposal";
+import { reorderExclusion } from "@/lib/reorderEligibility";
+import { analyzePair } from "@/lib/reorderIntelligence";
+import { getTolleranza } from "./useReorderIntelligence";
 
 export interface OrdineStorico {
   id: string;
@@ -79,25 +82,26 @@ export function useClienteAziendaAnalysis(clienteId?: string, aziendaId?: string
     queryFn: async (): Promise<ClienteAziendaAnalysisResult | null> => {
       if (!clienteId || !aziendaId) return null;
 
-      const oggi = new Date();
+      const today = todayRome();
+      const oggi = new Date(`${today}T00:00:00`);
       const annoCorrente = oggi.getFullYear();
       const annoPrecedente = annoCorrente - 1;
       const inizioAnnoCorrente = `${annoCorrente}-01-01`;
       const inizioAnnoPrecedente = `${annoPrecedente}-01-01`;
       const fineAnnoPrecedente = `${annoPrecedente}-12-31`;
 
-      // Fetch tutti gli ordini per calcolare periodicità (ultimi 2 anni)
-      const dueAnniFA = subDays(oggi, 730);
-      const { data: tuttiOrdini, error: ordiniError } = await supabase
-        .from("ordini")
-        .select("id, data_ordine, totale, prodotti")
-        .eq("cliente_id", clienteId)
-        .eq("azienda_id", aziendaId)
-        .not("status","in","(annullato,stand_by)")
-        .gte("data_ordine", format(dueAnniFA, "yyyy-MM-dd"))
-        .order("data_ordine", { ascending: true });
-
-      if (ordiniError) throw ordiniError;
+      // Financial totals retain their existing source; chronology has explicit eligibility.
+      const tuttiOrdini = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase.from("ordini")
+          .select("id, cliente_id, azienda_id, status, note, deleted_at, data_ordine, totale, prodotti")
+          .eq("cliente_id", clienteId).eq("azienda_id", aziendaId)
+          .not("status", "in", "(annullato,stand_by)")
+          .order("id").range(from, from + 999);
+        if (error) throw error;
+        tuttiOrdini.push(...(data || []));
+        if (!data || data.length < 1000) break;
+      }
 
       // Separa ordini per anno
       const ordiniAnnoCorrente = (tuttiOrdini || []).filter(
@@ -107,47 +111,20 @@ export function useClienteAziendaAnalysis(clienteId?: string, aziendaId?: string
         o => o.data_ordine && o.data_ordine >= inizioAnnoPrecedente && o.data_ordine <= fineAnnoPrecedente
       );
 
-      // Calcola intervalli tra ordini
-      const intervalliOrdini: number[] = [];
-      const ordiniOrdinati = [...(tuttiOrdini || [])].sort(
-        (a, b) => new Date(a.data_ordine!).getTime() - new Date(b.data_ordine!).getTime()
-      );
-
-      for (let i = 1; i < ordiniOrdinati.length; i++) {
-        const dataPrec = parseISO(ordiniOrdinati[i - 1].data_ordine!);
-        const dataCorr = parseISO(ordiniOrdinati[i].data_ordine!);
-        const giorni = differenceInDays(dataCorr, dataPrec);
-        if (giorni > 0 && giorni < 180) { // Ignora intervalli anomali
-          intervalliOrdini.push(giorni);
-        }
-      }
-
-      // Calcola periodicità media
-      const periodicitaMediaGiorni = intervalliOrdini.length > 0
-        ? Math.round(intervalliOrdini.reduce((a, b) => a + b, 0) / intervalliOrdini.length)
-        : 0;
-
+      const valid = tuttiOrdini.filter(o => !reorderExclusion(o, today));
+      const cadence = analyzePair(clienteId, aziendaId, valid.map(o => ({
+        id:o.id, data_ordine:o.data_ordine || '', totale:Number(o.totale) || 0, cartoni:0, pezzi:0,
+      })), [], {today, tolleranza:getTolleranza()});
+      const intervalliOrdini = cadence.intervalli.map(iv=>iv.giorni);
+      const periodicitaMediaGiorni = cadence.frequenza_operativa || 0;
       const stdDevPeriodicita = calcStdDev(intervalliOrdini);
-
-      // Stima rotazione = periodicità media (le scorte durano quanto l'intervallo medio)
       const stimaRotazioneGiorni = periodicitaMediaGiorni;
-
-      // Ultimo ordine
-      const ultimoOrdine = ordiniOrdinati.length > 0 
-        ? ordiniOrdinati[ordiniOrdinati.length - 1].data_ordine 
-        : null;
-
-      // Giorni dall'ultimo ordine
-      const giorniDalUltimoOrdine = ultimoOrdine 
-        ? differenceInDays(oggi, parseISO(ultimoOrdine))
-        : 999;
-
-      // Soglia alert: periodicità + 7 giorni
-      const sogliaAlertGiorni = periodicitaMediaGiorni > 0 ? periodicitaMediaGiorni + 7 : 45;
-
-      // Controllo fuori ciclo
-      const fuoriCicloRiordino = giorniDalUltimoOrdine > sogliaAlertGiorni;
-      const giorniFuoriCiclo = fuoriCicloRiordino ? giorniDalUltimoOrdine - sogliaAlertGiorni : 0;
+      const ultimoOrdine = cadence.ultimo_ordine || null;
+      const giorniDalUltimoOrdine = cadence.giorni_da_ultimo;
+      const sogliaAlertGiorni = cadence.previsione_affidabile
+        ? Math.round(periodicitaMediaGiorni) + cadence.tolleranza : 0;
+      const fuoriCicloRiordino = cadence.giorni_ritardo > 0;
+      const giorniFuoriCiclo = cadence.giorni_ritardo;
 
       // Metriche fatturato
       const fatturatoAnnoCorrente = ordiniAnnoCorrente.reduce((sum, o) => sum + (o.totale || 0), 0);
@@ -222,7 +199,7 @@ export function useClienteAziendaAnalysis(clienteId?: string, aziendaId?: string
       } else if (variazionePercentuale < -5) {
         riskLevel = "medium";
         alertMessage = `📉 Fatturato in calo: ${variazionePercentuale.toFixed(1)}%`;
-      } else if (giorniDalUltimoOrdine > sogliaAlertGiorni - 3) {
+      } else if (cadence.previsione_affidabile && giorniDalUltimoOrdine > sogliaAlertGiorni - 3) {
         riskLevel = "medium";
         alertMessage = `⏰ Ordine in scadenza: ${sogliaAlertGiorni - giorniDalUltimoOrdine} giorni al fuori ciclo.`;
       }

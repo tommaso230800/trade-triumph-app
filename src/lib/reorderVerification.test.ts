@@ -13,6 +13,33 @@ const orders = (intervals: number[], start = '2022-01-01'): IntelligenceOrder[] 
 };
 const opts = {today:'2026-11-04'};
 describe('Correzione frequenze — A–F', () => {
+  it.each(['cliente-a', 'cliente-b', 'ghilli'])('ripartizioni mensili non contaminano nessuna mandante di %s', (cliente_id) => {
+    const real = orders([144], '2026-02-26').map(o=>({...o,cliente_id,azienda_id:'mandante-a',status:'completato'}));
+    const reconstructed = Array.from({length:11},(_,i)=>({
+      id:`reconstructed-${i}`,cliente_id,azienda_id:'mandante-a',status:'completato',
+      data_ordine:`2025-${String(i+1).padStart(2,'0')}-15`,totale:100,note:'Storico 2025 ricostruito',
+    }));
+    const other = orders([150,150,150]).map(o=>({...o,id:`other-${o.id}`,cliente_id,azienda_id:'mandante-b',status:'completato'}));
+    const source=[...real,...reconstructed,...other];
+    const before=JSON.stringify(source);
+    const result=computeReorderPairs(source,opts.today);
+    const pair=result.find(p=>p.azienda_id==='mandante-a');
+    expect(pair?.ordine_ids.sort()).toEqual(real.map(o=>o.id).sort());
+    expect(pair?.numero_ordini).toBe(2);
+    expect(pair?.media_giorni_riordino).toBeNull();
+    expect(pair?.prossimo_riordino_previsto).toBeNull();
+    expect(pair?.giorni_ritardo).toBe(0);
+    expect(result.find(p=>p.azienda_id==='mandante-b')?.media_giorni_riordino).toBe(150);
+    expect(JSON.stringify(source)).toBe(before);
+  });
+  it.each([30,144,150,365])('un unico intervallo di %i giorni non genera allarmi per nessuna coppia', (interval) => {
+    const source=orders([interval]);
+    const p=analyzePair('qualsiasi-cliente','qualsiasi-mandante',source,[],opts);
+    expect(p.prossimo_riordino_previsto).toBeNull();
+    expect(p.previsione_affidabile).toBe(false);
+    expect(p.giorni_ritardo).toBe(0);
+    expect(p.stato).toBe('storico_insufficiente');
+  });
   it('A: GHILLI due acquisti reali distano 144 giorni, non sono una frequenza consolidata', () => {
     const real = orders([144], '2026-02-26');
     expect(real[1].data_ordine).toBe('2026-07-20');
