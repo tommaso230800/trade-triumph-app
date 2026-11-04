@@ -65,7 +65,7 @@ Deno.serve(async req => {
       const offset=b.offset??0;
       return json({items:filtered.slice(offset,offset+200).map(i=>({id:i.id,name:i.name,isFolder:!!i.folder,size:i.size??0,childCount:i.folder?.childCount??0,modified:i.lastModifiedDateTime??null,etag:i.eTag,webUrl:i.webUrl,mimeType:i.file?.mimeType})),total:filtered.length,nextOffset:offset+200<filtered.length?offset+200:null});
     }
-    if(b.action==='ai_consent') {await checked(db.from('onedrive_access').update({ai_enabled:b.enabled===true}).eq('user_id',userId));return json({ok:true});}
+    if(b.action==='ai_consent') {if(b.enabled)await checked(db.from('onedrive_sync_state').update({ai_paused_reason:null}).eq('user_id',userId));await checked(db.from('onedrive_access').update({ai_enabled:b.enabled===true}).eq('user_id',userId));return json({ok:true});}
     if(b.action==='suspend'||b.action==='resume'){await checked(db.from('onedrive_sync_state').update({stato:b.action==='suspend'?'sospesa':'attiva'}).eq('user_id',userId));return json({ok:true});}
     if(b.action==='integrity')return json({ok:true,conteggi:await counts(),complete:state?.scan_status==='complete',error:state?.scan_error??null});
     if(b.action==='retry'){await checked(db.from('onedrive_jobs').update({status:'pending',next_attempt_at:new Date().toISOString()}).eq('user_id',userId).eq('status','error'));return json({ok:true});}
@@ -83,7 +83,7 @@ Deno.serve(async req => {
       if(['create_folder','rename'].includes(b.action) && (!b.name||!validName(b.name)))return json({error:'Nome non valido'},400);
       if(['rename','move','delete'].includes(b.action) && (!b.itemId||!b.etag))return json({error:'Elemento o versione mancanti: aggiorna la cartella'},400);
       if(b.action==='push'&&!b.documentoId)return json({error:'Documento mancante'},400);
-      const job=await checked(db.from('onedrive_jobs').insert({user_id:userId,item_id:b.itemId??null,operation:b.action,payload:b,idempotency_key:`${userId}:${b.action}:${b.itemId??b.documentoId??b.name}:${b.etag??b.folderId??'root'}`}).select('*').single());
+      const job=await checked(db.from('onedrive_jobs').insert({user_id:userId,item_id:b.itemId??null,operation:b.action,payload:b,idempotency_key:`${userId}:${b.action}:${b.itemId??b.documentoId??b.name}:${b.folderId??'root'}:${b.etag??'new'}`}).select('*').single());
       return json({ok:true,queued:true,jobId:job.id});
     }
     if(b.action==='pull'||b.action==='worker') {
@@ -109,7 +109,7 @@ Deno.serve(async req => {
           if(!i.folder) {
             if(!docId){const old=await checked(db.from('documenti').select('id').eq('user_id',userId).eq('onedrive_drive_id',state.drive_id).eq('onedrive_item_id',i.id).limit(1).maybeSingle());docId=old?.id??null;}
             const fields={nome_file:i.name,dimensione:i.size??0,mime_type:i.file?.mimeType??null,onedrive_item_id:i.id,onedrive_drive_id:state.drive_id,onedrive_etag:i.eTag??null,onedrive_web_url:i.webUrl??null,onedrive_modified_at:i.lastModifiedDateTime??null,sync_stato:'solo_riferimento',sync_origine:'onedrive',updated_at:new Date().toISOString()};
-            if(docId){await checked(db.from('documenti').update(fields).eq('id',docId).eq('user_id',userId));if(existing?.etag!==i.eTag)updated++;}
+            if(docId){await checked(db.from('documenti').update({...fields,...(existing?.etag!==i.eTag?{storage_path:`onedrive://${state.drive_id}/${i.id}`}:{})}).eq('id',docId).eq('user_id',userId));if(existing?.etag!==i.eTag)updated++;}
             else {const doc=await checked(db.from('documenti').insert({...fields,user_id:userId,entita:'generico',tipo:'altro',storage_path:`onedrive://${state.drive_id}/${i.id}`,stato_elaborazione:'da_verificare',association_status:'review'}).select('id').single());docId=doc.id;imported++;}
           }
           await checked(db.from('onedrive_items').upsert({user_id:userId,drive_id:state.drive_id,item_id:i.id,parent_id:i.parentReference?.id??null,name:i.name,is_folder:!!i.folder,size:i.size??0,mime_type:i.file?.mimeType??null,etag:i.eTag??null,web_url:i.webUrl??null,modified_at:i.lastModifiedDateTime??null,deleted:false,documento_id:docId,updated_at:new Date().toISOString()},{onConflict:'user_id,drive_id,item_id'}));
@@ -123,6 +123,7 @@ Deno.serve(async req => {
         if(checkpoint.complete)break;
         if(!checkpoint.next)break;path=graphLink(checkpoint.next);state.scan_pages=(state.scan_pages??0)+1;
         }
+        let jobErrors=0;
         const jobs=await checked(db.from('onedrive_jobs').select('*').eq('user_id',userId).eq('status','pending').lte('next_attempt_at',new Date().toISOString()).order('created_at').limit(3));
         for(const job of jobs??[]) {
           const p=job.payload;const headers:Record<string,string>={'Content-Type':'application/json'};if(p.etag)headers['If-Match']=p.etag;
@@ -146,16 +147,17 @@ Deno.serve(async req => {
               const doc=await checked(db.from('documenti').select('*').eq('id',p.documentoId).eq('user_id',userId).single());
               if(doc.storage_path.startsWith('onedrive://'))throw new Error('Originale già presente in OneDrive');
               const {data:file,error}=await db.storage.from('documenti').download(doc.storage_path);if(error||!file)throw new Error('File locale non disponibile');
-              if(file.size>250*1024*1024)throw new Error('File oltre il caricamento semplice Microsoft (250 MB): usa OneDrive per questo trasferimento');
+              if(file.size>20*1024*1024)throw new Error('Questo trasferimento supera 20 MB: caricamento a blocchi non ancora disponibile; usa OneDrive e il file sarà visibile nel gestionale');
               const target=doc.onedrive_item_id?itemPath(doc.onedrive_item_id)+'/content':(p.folderId?itemPath(p.folderId):rootPath())+`:/${encodeURIComponent(doc.nome_file)}:/content?@microsoft.graph.conflictBehavior=fail`;
               result=await graphJson(target,{method:'PUT',headers:{'Content-Type':doc.mime_type||'application/octet-stream',...(doc.onedrive_etag?{'If-Match':doc.onedrive_etag}:{})},body:file});
               await checked(db.from('documenti').update({onedrive_item_id:result.id,onedrive_drive_id:state.drive_id,onedrive_etag:result.eTag,onedrive_web_url:result.webUrl,sync_stato:'sincronizzato',sync_origine:'lovable'}).eq('id',doc.id));
             }
             await checked(db.from('onedrive_jobs').update({status:'done',error:null,attempts:job.attempts+1,updated_at:new Date().toISOString()}).eq('id',job.id));
             await log(job.operation,'completato',null,{nome:p.name??result?.name});
-          }catch(e){const error=e instanceof Error?e.message:String(e);await checked(db.from('onedrive_jobs').update({status:error.includes('[412]')?'conflict':'error',error,attempts:job.attempts+1}).eq('id',job.id));await log(job.operation,'errore',error);}
+          }catch(e){jobErrors++;const error=e instanceof Error?e.message:String(e);await checked(db.from('onedrive_jobs').update({status:error.includes('[412]')?'conflict':'error',error,attempts:job.attempts+1}).eq('id',job.id));await log(job.operation,'errore',error);}
         }
-        return json({ok:true,importati:imported,aggiornati:updated,duplicati:0,errori:0,troncato:!checkpoint.complete,complete:checkpoint.complete,conteggi:await counts()});
+        const totals=await counts();
+        return json({ok:true,importati:imported,aggiornati:updated,duplicati:0,errori:jobErrors,troncato:!checkpoint.complete,complete:checkpoint.complete,conteggi:totals});
       }catch(e){const error=e instanceof Error?e.message:String(e);await db.from('onedrive_sync_state').update({scan_status:'error',scan_error:error}).eq('user_id',userId);await log('sincronizzazione','errore',error);throw e;}
       finally{await db.from('onedrive_sync_state').update({lease_until:null}).eq('user_id',userId);}
     }
