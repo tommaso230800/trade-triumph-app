@@ -1,5 +1,11 @@
 # Roadmap
 
+## Correzione frequenze verificabili (4 novembre)
+- [ ] Ricostruire GHILLI–Quattro Valli e verificare provenienza dei 13 ordini
+- [ ] Correggere frequenza operativa, affidabilità, prodotti e avvisi condivisi
+- [ ] Trasparenza cronologia/intervalli/esclusioni e grafico con riferimenti reali
+- [ ] Test A–F, ricalcolo globale read-only e report con verifica autenticata
+
 ## Memoria attiva documenti (2 novembre)
 - [x] Cartelle virtuali per azienda con le 9 categorie; collegamenti multi-azienda senza duplicare il file; vista generale filtrabile
 - [x] Caricamento unico multiplo con coda per file: l'analisi continua anche se un file fallisce; stati In elaborazione/Archiviato/Da verificare/Errore con riprova
