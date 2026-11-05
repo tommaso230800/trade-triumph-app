@@ -409,6 +409,30 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
     setSelectedProdotto("");
   };
 
+  const addProdottoToOrder = (id: string = selectedProdotto) => {
+    if (!id) return;
+    const prodotto = prodottiAzienda.find((p) => p.id === id);
+    if (!prodotto) return;
+    addProdottoObjectToOrder(prodotto);
+  };
+
+  // Creazione rapida dal selettore: richiede l'azienda, poi il prodotto
+  // salvato nel catalogo viene aggiunto subito come riga modificabile.
+  const openQuickProduct = () => {
+    if (!formData.azienda_id) {
+      toast.error("Seleziona prima l'azienda dell'ordine per creare un nuovo prodotto.");
+      return;
+    }
+    setPickerOpen(false);
+    setQuickProductOpen(true);
+  };
+
+  const handleQuickProductSaved = (prodotto: Prodotto) => {
+    setQuickProductOpen(false);
+    addProdottoObjectToOrder(prodotto);
+    toast.success(`"${prodotto.nome}" aggiunto al catalogo e all'ordine. Ora imposta quantità, prezzo e sconti.`);
+  };
+
   const updateRiga = (index: number, field: keyof RigaOrdine, value: number | string | boolean) => {
     const updated = [...righeOrdine];
     updated[index] = { ...updated[index], [field]: value } as RigaOrdine;
