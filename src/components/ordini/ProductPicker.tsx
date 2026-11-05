@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, PackageSearch, Plus, Search, X } from "lucide-react";
+import { Check, PackagePlus, PackageSearch, Plus, Search, X } from "lucide-react";
 import { formatCurrency } from "./ordiniShared";
 
 export interface ProductPickerItem {
@@ -21,11 +21,13 @@ interface ProductPickerProps {
   products: ProductPickerItem[];
   inOrder: Set<string>;
   onPick: (id: string) => void;
+  /** Apre la creazione rapida prodotto senza uscire dall'ordine. */
+  onCreateNew?: () => void;
 }
 
 /** Selettore prodotti: a tutto schermo su iPhone, finestra centrata su iPad/Mac.
  *  Ricerca in alto, elenco scorrevole, descrizioni su più righe, prezzo separato. */
-export function ProductPicker({ open, onOpenChange, products, inOrder, onPick }: ProductPickerProps) {
+export function ProductPicker({ open, onOpenChange, products, inOrder, onPick, onCreateNew }: ProductPickerProps) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
@@ -108,6 +110,14 @@ export function ProductPicker({ open, onOpenChange, products, inOrder, onPick }:
             </ul>
           )}
         </div>
+
+        {onCreateNew && (
+          <div className="shrink-0 border-t border-order-line bg-order-paper px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+            <Button type="button" variant="outline" className="h-12 w-full gap-2 rounded-lg border-dashed border-order-line bg-order-surface font-semibold text-order-ink hover:bg-order-paper-deep" onClick={onCreateNew}>
+              <PackagePlus className="h-4 w-4" /> Nuovo prodotto
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -48,7 +48,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
-import { useProdotti } from "@/hooks/useProdotti";
+import { useProdotti, type Prodotto } from "@/hooks/useProdotti";
 import { useBrands } from "@/hooks/useBrands";
 import { useCanvassAttive, type Canvass } from "@/hooks/useCanvass";
 import { useClientProductHistory } from "@/hooks/useClientProductHistory";
@@ -65,6 +65,7 @@ import type { ProformaData } from "./ProformaDialog";
 import { OrdineRigaEditor } from "./OrdineRigaEditor";
 import { PromozioniAttiveAlert } from "./PromozioniAttiveAlert";
 import { ProductPicker } from "./ProductPicker";
+import { NuovoProdottoRapidoDialog } from "./NuovoProdottoRapidoDialog";
 import { formatCurrency, parseDecimalInput, TIPI_PAGAMENTO } from "./ordiniShared";
 
 type RigaOrdine = {
@@ -125,6 +126,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
   // scelta l'ordine prosegue automaticamente.
   const [pendingSubmit, setPendingSubmit] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [quickProductOpen, setQuickProductOpen] = useState(false);
 
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
@@ -390,11 +392,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
     };
   };
 
-  const addProdottoToOrder = (id: string = selectedProdotto) => {
-    if (!id) return;
-    const prodotto = prodottiAzienda.find((p) => p.id === id);
-    if (!prodotto) return;
-
+  const addProdottoObjectToOrder = (prodotto: Prodotto) => {
     const newRiga = buildRiga(prodotto);
 
     const availablePromo = promozioniRilevanti.find((promo) =>
@@ -409,6 +407,30 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
 
     setRigheOrdine((prev) => [...prev, newRiga]);
     setSelectedProdotto("");
+  };
+
+  const addProdottoToOrder = (id: string = selectedProdotto) => {
+    if (!id) return;
+    const prodotto = prodottiAzienda.find((p) => p.id === id);
+    if (!prodotto) return;
+    addProdottoObjectToOrder(prodotto);
+  };
+
+  // Creazione rapida dal selettore: richiede l'azienda, poi il prodotto
+  // salvato nel catalogo viene aggiunto subito come riga modificabile.
+  const openQuickProduct = () => {
+    if (!formData.azienda_id) {
+      toast.error("Seleziona prima l'azienda dell'ordine per creare un nuovo prodotto.");
+      return;
+    }
+    setPickerOpen(false);
+    setQuickProductOpen(true);
+  };
+
+  const handleQuickProductSaved = (prodotto: Prodotto) => {
+    setQuickProductOpen(false);
+    addProdottoObjectToOrder(prodotto);
+    toast.success(`"${prodotto.nome}" aggiunto al catalogo e all'ordine. Ora imposta quantità, prezzo e sconti.`);
   };
 
   const updateRiga = (index: number, field: keyof RigaOrdine, value: number | string | boolean) => {
@@ -879,14 +901,14 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
                   </Button>
                 )}
               </div>
-              {prodottiAzienda.length === 0 && <p className="text-sm text-order-muted">Nessun prodotto disponibile per questo fornitore.</p>}
+              {prodottiAzienda.length === 0 && <p className="text-sm text-order-muted">Nessun prodotto in catalogo per questo fornitore: aprilo e usa “Nuovo prodotto”.</p>}
 
               {righeOrdine.length === 0 ? (
                 <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-order-line p-6 text-center">
                   <ShoppingBag className="mb-3 h-6 w-6 text-order-muted" />
                   <p className="text-sm font-semibold">L’ordine è ancora vuoto</p>
                   <p className="mt-1 text-xs text-order-muted">Aggiungi i prodotti con la ricerca qui sopra.</p>
-                  <Button type="button" className="mt-4 h-11 gap-2 rounded-lg bg-order-ink text-primary-foreground hover:bg-order-ink/90" onClick={() => setPickerOpen(true)} disabled={prodottiAzienda.length === 0}>
+                  <Button type="button" className="mt-4 h-11 gap-2 rounded-lg bg-order-ink text-primary-foreground hover:bg-order-ink/90" onClick={() => setPickerOpen(true)}>
                     <Plus className="h-4 w-4" /> Aggiungi prodotto
                   </Button>
                 </div>
@@ -1034,6 +1056,16 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
       products={pickerProducts}
       inOrder={prodottiIdsInOrdine}
       onPick={(id) => addProdottoToOrder(id)}
+      onCreateNew={openQuickProduct}
+    />
+
+    <NuovoProdottoRapidoDialog
+      open={quickProductOpen}
+      onOpenChange={setQuickProductOpen}
+      aziendaId={formData.azienda_id}
+      aziendaNome={aziende?.find((a) => a.id === formData.azienda_id)?.nome}
+      existingProducts={prodottiAzienda}
+      onSaved={handleQuickProductSaved}
     />
 
       <AlertDialog open={priceConfirmIndex !== null} onOpenChange={(v) => !v && priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
