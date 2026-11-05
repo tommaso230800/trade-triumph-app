@@ -48,7 +48,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useClienti } from "@/hooks/useClienti";
 import { useAziende } from "@/hooks/useAziende";
-import { useProdotti } from "@/hooks/useProdotti";
+import { useProdotti, type Prodotto } from "@/hooks/useProdotti";
 import { useBrands } from "@/hooks/useBrands";
 import { useCanvassAttive, type Canvass } from "@/hooks/useCanvass";
 import { useClientProductHistory } from "@/hooks/useClientProductHistory";
@@ -65,6 +65,7 @@ import type { ProformaData } from "./ProformaDialog";
 import { OrdineRigaEditor } from "./OrdineRigaEditor";
 import { PromozioniAttiveAlert } from "./PromozioniAttiveAlert";
 import { ProductPicker } from "./ProductPicker";
+import { NuovoProdottoRapidoDialog } from "./NuovoProdottoRapidoDialog";
 import { formatCurrency, parseDecimalInput, TIPI_PAGAMENTO } from "./ordiniShared";
 
 type RigaOrdine = {
@@ -125,6 +126,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
   // scelta l'ordine prosegue automaticamente.
   const [pendingSubmit, setPendingSubmit] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [quickProductOpen, setQuickProductOpen] = useState(false);
 
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
