@@ -901,7 +901,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
                   </Button>
                 )}
               </div>
-              {prodottiAzienda.length === 0 && <p className="text-sm text-order-muted">Nessun prodotto disponibile per questo fornitore.</p>}
+              {prodottiAzienda.length === 0 && <p className="text-sm text-order-muted">Nessun prodotto in catalogo per questo fornitore: aprilo e usa “Nuovo prodotto”.</p>}
 
               {righeOrdine.length === 0 ? (
                 <div className="flex min-h-48 flex-col items-center justify-center rounded-xl border border-dashed border-order-line p-6 text-center">
