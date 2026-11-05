@@ -908,7 +908,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
                   <ShoppingBag className="mb-3 h-6 w-6 text-order-muted" />
                   <p className="text-sm font-semibold">L’ordine è ancora vuoto</p>
                   <p className="mt-1 text-xs text-order-muted">Aggiungi i prodotti con la ricerca qui sopra.</p>
-                  <Button type="button" className="mt-4 h-11 gap-2 rounded-lg bg-order-ink text-primary-foreground hover:bg-order-ink/90" onClick={() => setPickerOpen(true)} disabled={prodottiAzienda.length === 0}>
+                  <Button type="button" className="mt-4 h-11 gap-2 rounded-lg bg-order-ink text-primary-foreground hover:bg-order-ink/90" onClick={() => setPickerOpen(true)}>
                     <Plus className="h-4 w-4" /> Aggiungi prodotto
                   </Button>
                 </div>
