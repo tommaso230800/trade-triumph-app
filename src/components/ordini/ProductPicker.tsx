@@ -21,11 +21,13 @@ interface ProductPickerProps {
   products: ProductPickerItem[];
   inOrder: Set<string>;
   onPick: (id: string) => void;
+  /** Apre la creazione rapida prodotto senza uscire dall'ordine. */
+  onCreateNew?: () => void;
 }
 
 /** Selettore prodotti: a tutto schermo su iPhone, finestra centrata su iPad/Mac.
  *  Ricerca in alto, elenco scorrevole, descrizioni su più righe, prezzo separato. */
-export function ProductPicker({ open, onOpenChange, products, inOrder, onPick }: ProductPickerProps) {
+export function ProductPicker({ open, onOpenChange, products, inOrder, onPick, onCreateNew }: ProductPickerProps) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
