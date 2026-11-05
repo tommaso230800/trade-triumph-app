@@ -392,11 +392,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
     };
   };
 
-  const addProdottoToOrder = (id: string = selectedProdotto) => {
-    if (!id) return;
-    const prodotto = prodottiAzienda.find((p) => p.id === id);
-    if (!prodotto) return;
-
+  const addProdottoObjectToOrder = (prodotto: Prodotto) => {
     const newRiga = buildRiga(prodotto);
 
     const availablePromo = promozioniRilevanti.find((promo) =>
