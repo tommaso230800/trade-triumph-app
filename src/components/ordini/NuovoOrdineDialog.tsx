@@ -1056,6 +1056,16 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
       products={pickerProducts}
       inOrder={prodottiIdsInOrdine}
       onPick={(id) => addProdottoToOrder(id)}
+      onCreateNew={openQuickProduct}
+    />
+
+    <NuovoProdottoRapidoDialog
+      open={quickProductOpen}
+      onOpenChange={setQuickProductOpen}
+      aziendaId={formData.azienda_id}
+      aziendaNome={aziende?.find((a) => a.id === formData.azienda_id)?.nome}
+      existingProducts={prodottiAzienda}
+      onSaved={handleQuickProductSaved}
     />
 
       <AlertDialog open={priceConfirmIndex !== null} onOpenChange={(v) => !v && priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
