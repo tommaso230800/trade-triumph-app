@@ -110,6 +110,14 @@ export function ProductPicker({ open, onOpenChange, products, inOrder, onPick, o
             </ul>
           )}
         </div>
+
+        {onCreateNew && (
+          <div className="shrink-0 border-t border-order-line bg-order-paper px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+            <Button type="button" variant="outline" className="h-12 w-full gap-2 rounded-lg border-dashed border-order-line bg-order-surface font-semibold text-order-ink hover:bg-order-paper-deep" onClick={onCreateNew}>
+              <PackagePlus className="h-4 w-4" /> Nuovo prodotto
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
