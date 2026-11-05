@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, PackageSearch, Plus, Search, X } from "lucide-react";
+import { Check, PackagePlus, PackageSearch, Plus, Search, X } from "lucide-react";
 import { formatCurrency } from "./ordiniShared";
 
 export interface ProductPickerItem {

@@ -108,9 +108,9 @@ export function NuovoProdottoRapidoDialog({ open, onOpenChange, aziendaId, azien
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6" style={{ WebkitOverflowScrolling: "touch" }}>
           {duplicate && (
-            <div className="rounded-lg border border-order-amber/40 bg-order-amber/10 p-3">
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-order-amber" />
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold">Forse esiste già</p>
                   <p className="mt-0.5 break-words text-xs text-order-muted">
