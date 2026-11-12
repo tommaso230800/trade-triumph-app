@@ -168,18 +168,18 @@ export default function StatisticheProdotti() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Azienda</Label>
-              <SearchableSelect value={f.azienda} onValueChange={(v) => set({ azienda: v, prodotto: "" })} placeholder="Tutte le aziende" searchPlaceholder="Cerca azienda…"
-                options={[{ value: "", label: "Tutte le aziende" }, ...(aziende ?? []).map((a) => ({ value: a.id, label: a.nome }))]} />
+              <SearchableSelect value={f.azienda || "__all"} onValueChange={(v) => set({ azienda: v === "__all" ? "" : v, prodotto: "" })} placeholder="Tutte le aziende" searchPlaceholder="Cerca azienda…"
+                options={[{ value: "__all", label: "Tutte le aziende" }, ...(aziende ?? []).map((a) => ({ value: a.id, label: a.nome }))]} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Cliente</Label>
-              <SearchableSelect value={f.cliente} onValueChange={(v) => set({ cliente: v })} placeholder="Tutti i clienti" searchPlaceholder="Cerca cliente…"
-                options={[{ value: "", label: "Tutti i clienti" }, ...(clienti ?? []).map((c) => ({ value: c.id, label: c.nome }))]} />
+              <SearchableSelect value={f.cliente || "__all"} onValueChange={(v) => set({ cliente: v === "__all" ? "" : v })} placeholder="Tutti i clienti" searchPlaceholder="Cerca cliente…"
+                options={[{ value: "__all", label: "Tutti i clienti" }, ...(clienti ?? []).map((c) => ({ value: c.id, label: c.nome }))]} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Prodotto</Label>
-              <SearchableSelect value={f.prodotto} onValueChange={(v) => set({ prodotto: v })} placeholder="Tutti i prodotti" searchPlaceholder="Cerca prodotto…"
-                options={[{ value: "", label: "Tutti i prodotti" }, ...(catalogo ?? []).map((p) => ({ value: p.id, label: p.nome, searchTerms: [p.codice ?? ""] }))]} />
+              <SearchableSelect value={f.prodotto || "__all"} onValueChange={(v) => set({ prodotto: v === "__all" ? "" : v })} placeholder="Tutti i prodotti" searchPlaceholder="Cerca prodotto…"
+                options={[{ value: "__all", label: "Tutti i prodotti" }, ...(catalogo ?? []).map((p) => ({ value: p.id, label: p.nome, searchTerms: [p.codice ?? ""] }))]} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Ordina per</Label>
