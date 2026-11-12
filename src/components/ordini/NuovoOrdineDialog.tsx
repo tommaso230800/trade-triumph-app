@@ -46,7 +46,7 @@ import {
   SlidersHorizontal,
   CloudOff,
   CloudUpload,
-  CloudCheck,
+  CircleCheck,
   AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";

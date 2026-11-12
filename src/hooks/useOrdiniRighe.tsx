@@ -14,6 +14,8 @@ export type OrdineRiga = {
   sc2: number;
   sc3: number;
   is_omaggio?: boolean;
+  /** Confezione registrata al momento della vendita. */
+  pezzi_per_cartone?: number | null;
   created_at: string;
   prodotti?: { nome: string; pezzi_per_cartone: number; prezzo_listino: number } | null;
 };
