@@ -183,6 +183,13 @@
       "when": 1794507477066,
       "tag": "0025_notification_center_push",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794508174781,
+      "tag": "0026_notifica_inviato_punto_finale",
+      "breakpoints": true
     }
   ]
 }
