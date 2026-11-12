@@ -153,6 +153,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
   const submitLock = useRef(false);
   const dirtyRef = useRef(false);
   const restoredRef = useRef<string | null>(null);
+  const skipAutosave = useRef(false);
   const queryClient = useQueryClient();
 
   const { data: clienti } = useClienti();
@@ -217,6 +218,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
     const p = draft.payload as unknown as DraftPayload | null;
     if (!p || p.v !== 1) return;
     restoredRef.current = draft.id;
+    skipAutosave.current = true;
+    dirtyRef.current = true;
     setDraftId(draft.id);
     setFormData({ ...emptyFormData(), ...p.formData });
     setRigheOrdine(p.righe ?? []);
@@ -248,7 +251,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
   useEffect(() => {
     if (!open) return;
     if (!hasContent) return;
-    if (restoredRef.current && saveState === "saved" && !dirtyRef.current) return;
+    if (skipAutosave.current) { skipAutosave.current = false; return; }
     dirtyRef.current = true;
     const t = setTimeout(() => { void persistDraft(); }, 1200);
     return () => clearTimeout(t);
