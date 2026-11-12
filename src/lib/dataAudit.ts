@@ -47,7 +47,7 @@ async function fetchAllOrdini(): Promise<any[]> {
     const { data, error } = await supabase
       .from("ordini")
       .select(
-        "id, codice, status, totale, data_ordine, data_conferma, created_at, cliente_id, azienda_id, clienti(nome), aziende(nome), ordini_righe(quantita_pezzi, quantita_cartoni, prezzo_unitario, sc1, sc2, sc3, is_omaggio, prodotti(pezzi_per_cartone))"
+        "id, codice, status, totale, data_ordine, data_conferma, created_at, cliente_id, azienda_id, clienti(nome), aziende(nome), ordini_righe(quantita_pezzi, quantita_cartoni, pezzi_per_cartone, prezzo_unitario, sc1, sc2, sc3, is_omaggio, prodotti(nome, pezzi_per_cartone))"
       )
       .order("data_ordine", { ascending: false })
       .range(from, from + PAGE - 1);
@@ -179,6 +179,30 @@ export async function runDataAudit(): Promise<IssueDraft[]> {
         causa_verificata: false,
       });
     }
+  }
+
+  // 4) Righe dove i "pezzi sfusi" sono esattamente cartoni × pezzi per cartone:
+  //    probabile totale pezzi salvato nel campo sfusi, che raddoppierebbe i pezzi.
+  for (const o of ordini) {
+    const sospette = (o.ordini_righe ?? []).filter((r: any) => {
+      const c = Number(r.quantita_cartoni) || 0;
+      const q = Number(r.quantita_pezzi) || 0;
+      const ppc = Number(r.pezzi_per_cartone) || Number(r.prodotti?.pezzi_per_cartone) || 0;
+      return c > 0 && ppc > 1 && q === c * ppc;
+    });
+    if (!sospette.length) continue;
+    issues.push({
+      ...base(o),
+      fingerprint: `sfusi_come_totale:${o.id}`,
+      tipo: "Pezzi sfusi uguali al totale dei cartoni",
+      gravita: "media",
+      descrizione: `${sospette.length} ${sospette.length === 1 ? "riga ha" : "righe hanno"} pezzi sfusi pari a cartoni × pezzi per cartone (${sospette.map((r: any) => r.prodotti?.nome ?? "prodotto").slice(0, 3).join(", ")}): i pezzi risultano contati due volte.`,
+      valore_rilevato: sospette.map((r: any) => `${r.quantita_cartoni} ct + ${r.quantita_pezzi} pz`).slice(0, 3).join(" · "),
+      valore_atteso: "Pezzi sfusi a 0 se l'ordine è solo a cartoni",
+      differenza: null,
+      causa: "Ipotesi: importazione che ha scritto il totale pezzi nel campo dei pezzi sfusi. Correggere la riga dopo aver controllato l'ordine originale.",
+      causa_verificata: false,
+    });
   }
 
   return issues;
