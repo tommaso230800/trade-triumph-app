@@ -5,7 +5,8 @@ export type PosterOffer = { mode:'price'|'gift'|'combined'; previous_price:strin
 export type ProposalContent = { poster?:PosterOffer; rows: ProposalRow[]; promotions: ProposalPromotion[]; rewards: ProposalReward[]; reward_rules: string; reward_cumulative?: boolean; loading: string; payment: string; discounts: string; notes: string; contact: string; logo: string; show_images: boolean; attachment_ids: string[] };
 export const emptyProposalContent = (): ProposalContent => ({ rows: [], promotions: [], rewards: [], reward_rules: '', loading: '', payment: '', discounts: '', notes: '', contact: 'Tommaso Salti · Agenzia Mazzi Group · 331 7328488', logo: '', show_images: false, attachment_ids: [] });
 export const euro = (n: number) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n);
-export const todayRome = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date());
+export { todayRome } from '../../supabase/functions/_shared/reorder/rome.ts';
+import { todayRome } from '../../supabase/functions/_shared/reorder/rome.ts';
 export function decimalPrice(value:string):number|null { const v=value.trim().replace(',','.');return /^(?:\d+(?:\.\d*)?|\.\d+)$/.test(v)&&Number.isFinite(Number(v))?Number(v):null; }
 export function validateProposalExport(p:{kind:string;content:ProposalContent}) {
  if(!p.content.rows.length)throw new Error('Seleziona almeno un prodotto prima di esportare.');
