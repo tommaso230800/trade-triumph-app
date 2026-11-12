@@ -285,93 +285,9 @@ const Impostazioni = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-3 p-4 sm:p-6 pt-0 sm:pt-0">
-            {/* Push system permission + test */}
-            <div className="p-3 sm:p-4 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
-              <div className="flex items-start gap-3">
-                <div className="h-9 w-9 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
-                  <BellRing className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-sm sm:text-base">Notifiche del dispositivo</p>
-                    <Badge
-                      variant={pushPermission === "granted" ? "default" : pushPermission === "denied" ? "destructive" : "secondary"}
-                      className="text-[10px] uppercase tracking-wide"
-                    >
-                      {pushPermission === "granted" ? "Attive" : pushPermission === "denied" ? "Negate" : pushPermission === "unsupported" ? "Non supportate" : "Non attive"}
-                    </Badge>
-                  </div>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                    {isNativeApp() ? "App nativa: notifiche push e locali" : "Browser: usa l'API Notification del sistema"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  onClick={handleEnablePush}
-                  disabled={pushBusy || pushPermission === "granted" || pushPermission === "unsupported"}
-                  className="gap-2 h-10 flex-1"
-                  size="sm"
-                >
-                  {pushBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
-                  {pushPermission === "granted" ? "Permesso concesso" : "Richiedi permesso"}
-                </Button>
-                <Button
-                  onClick={handleSendTest}
-                  disabled={pushBusy || pushPermission === "denied" || pushPermission === "unsupported"}
-                  variant="outline"
-                  className="gap-2 h-10 flex-1"
-                  size="sm"
-                >
-                  <Send className="h-4 w-4" />
-                  Invia notifica di test
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-3 sm:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors touch-target">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm sm:text-base">Notifiche Email</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Ricevi aggiornamenti via email</p>
-              </div>
-              <Switch
-                checked={notifications.email}
-                onCheckedChange={(checked) => setNotifications({ ...notifications, email: checked })}
-              />
-            </div>
-            <div className="flex items-center justify-between p-3 sm:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors touch-target">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm sm:text-base">Notifiche Push</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Ricevi notifiche sul dispositivo</p>
-              </div>
-              <Switch
-                checked={notifications.push}
-                onCheckedChange={(checked) => setNotifications({ ...notifications, push: checked })}
-              />
-            </div>
-            <div className="flex items-center justify-between p-3 sm:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors touch-target">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm sm:text-base">Nuovi Ordini</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Avvisi per nuovi ordini ricevuti</p>
-              </div>
-              <Switch
-                checked={notifications.ordini}
-                onCheckedChange={(checked) => setNotifications({ ...notifications, ordini: checked })}
-              />
-            </div>
-            <div className="flex items-center justify-between p-3 sm:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors touch-target">
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm sm:text-base">Promemoria</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">Ricorda scadenze e appuntamenti</p>
-              </div>
-              <Switch
-                checked={notifications.promemoria}
-                onCheckedChange={(checked) => setNotifications({ ...notifications, promemoria: checked })}
-              />
-            </div>
-            <Button onClick={handleSaveNotifications} variant="outline" className="gap-2 h-11 sm:h-12 w-full sm:w-auto mt-2">
-              <Save className="h-4 w-4" />
-              Salva Preferenze
+            <p className="text-sm text-muted-foreground">Avvisi su nuovi ordini, ordini inviati e riordini in ritardo, con attivazione dei dispositivi e notifica di prova.</p>
+            <Button asChild className="h-11 w-full gap-2 sm:w-auto">
+              <Link to="/notifiche"><BellRing className="h-4 w-4" />Apri Centro notifiche</Link>
             </Button>
           </CardContent>
         </Card>
