@@ -1,5 +1,14 @@
 # Roadmap
 
+## Centro notifiche e notifiche push (12 novembre)
+- [ ] Archivio notifiche per utente, letture sincronizzate, preferenze per categoria
+- [ ] Dispositivi: attivazione su tocco, stati, prova, invio a tutti i dispositivi abilitati
+- [ ] Nuovo ordine: avviso unico al salvataggio confermato, apertura dettaglio ordine
+- [ ] Ordine inviato: avviso solo dopo esito positivo Gmail, nessun duplicato
+- [ ] Riordino in ritardo: stesso calcolo della pagina Riordino, tolleranza condivisa, un avviso per ciclo, controllo programmato Europe/Rome
+- [ ] Campanella con non lette, voce menu, Diagnostica notifiche
+- [ ] Verifiche: importo, invio fallito, riordino, duplicati, accesso protetto; prove su dispositivi reali da fare con l’utente
+
 ## Agenzia condivisa, accesso username, ordini ed email (12 novembre)
 - [ ] Backup: non creato in automatico; consigliata esportazione manuale prima di altre modifiche strutturali (serve azione del titolare)
 - [x] Struttura agenzia: membri, proprietario dati, regole di accesso condivise; colleghi vedono gli stessi ordini (Gabriele 466 ordini 2026, Tommaso 468 incl. 2 di account esterni visibili solo all’amministratore)
