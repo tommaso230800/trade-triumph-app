@@ -25,10 +25,8 @@ const MONTHS = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "L
 const eur = (v: number) => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(v);
 const num = (v: number) => new Intl.NumberFormat("it-IT", { maximumFractionDigits: 0 }).format(v);
 const fmtDate = (iso: string) => iso.split("-").reverse().join("/");
-const todayIso = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+// Oggi nel fuso dell'agenzia (Europe/Rome), indipendente dal fuso del dispositivo.
+const todayIso = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
 interface Filters {
   year: number; compareYear: number | "none"; mode: PeriodMode; month: number; from: string; to: string;
@@ -36,16 +34,18 @@ interface Filters {
 }
 
 const defaultFilters = (): Filters => {
-  const y = new Date().getFullYear();
-  return { year: y, compareYear: defaultCompareYear(y), mode: "ytd", month: new Date().getMonth() + 1, from: `${y}-01-01`, to: todayIso(), azienda: "", cliente: "", prodotto: "", includeUnsold: false, sort: "fatturato", dir: "desc" };
+  const [y, m] = todayIso().split("-").map(Number);
+  return { year: y, compareYear: defaultCompareYear(y), mode: "ytd", month: m, from: `${y}-01-01`, to: todayIso(), azienda: "", cliente: "", prodotto: "", includeUnsold: false, sort: "fatturato", dir: "desc" };
 };
 
 function loadFilters(): Filters {
   const base = defaultFilters();
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    // Year and comparison always restart from the current year, so a new year never shows stale defaults.
-    return saved ? { ...base, ...saved, year: base.year, compareYear: base.compareYear } : base;
+    // Filters persist; year and comparison restart only when the calendar year has changed since saving.
+    if (!saved) return base;
+    const sameYear = saved.savedYear === base.year;
+    return { ...base, ...saved, year: sameYear ? saved.year ?? base.year : base.year, compareYear: sameYear ? saved.compareYear ?? base.compareYear : base.compareYear };
   } catch {
     return base;
   }
@@ -65,10 +65,12 @@ function VarBadge({ v, money }: { v: Variation; money?: boolean }) {
 
 export default function StatisticheProdotti() {
   const [f, setF] = useState<Filters>(loadFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const activeFilterCount = [f.azienda, f.cliente, f.prodotto].filter(Boolean).length + (f.includeUnsold ? 1 : 0);
   const [search, setSearch] = useState("");
   const [visible, setVisible] = useState(PAGE);
   const set = (patch: Partial<Filters>) => { setF((prev) => ({ ...prev, ...patch })); setVisible(PAGE); };
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(f)); }, [f]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...f, savedYear: Number(todayIso().slice(0, 4)) })); }, [f]);
 
   const years = useOrderYears();
   const { data: aziende } = useAziende();
@@ -117,9 +119,13 @@ export default function StatisticheProdotti() {
           actions={<Button variant="outline" className="h-11 gap-2" onClick={() => { setF(defaultFilters()); setSearch(""); }}><RotateCcw className="h-4 w-4" /> Azzera filtri</Button>}
         />
 
-        {/* Filtri */}
+        {/* Filtri: richiudibili su telefono, sempre aperti da tablet in su */}
         <section className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <button type="button" className="flex min-h-11 w-full items-center justify-between text-left text-sm font-semibold sm:hidden" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((o) => !o)}>
+            <span>Filtri{activeFilterCount > 0 ? ` · ${activeFilterCount} attivi` : ""}</span>
+            <span className="text-xs font-normal text-muted-foreground">{filtersOpen ? "Chiudi" : "Modifica"}</span>
+          </button>
+          <div className={`${filtersOpen ? "grid" : "hidden"} gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-4`}>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Anno</Label>
               <Select value={String(f.year)} onValueChange={(v) => set({ year: Number(v), compareYear: f.compareYear === "none" ? "none" : defaultCompareYear(Number(v)) })}>
@@ -231,7 +237,7 @@ export default function StatisticheProdotti() {
         {coverage.data && coverage.data.ordini_senza_righe > 0 && (
           <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-            <span>{coverage.data.ordini_senza_righe} ordini del periodo ({eur(coverage.data.valore_senza_righe)}) non hanno il dettaglio prodotto: il loro valore non è attribuibile alle referenze. Valore ordini del periodo: {eur(coverage.data.valore_ordini)}.</span>
+            <span>{coverage.data.ordini_senza_righe === 1 ? "1 ordine del periodo" : `${coverage.data.ordini_senza_righe} ordini del periodo`} ({eur(coverage.data.valore_senza_righe)}) {coverage.data.ordini_senza_righe === 1 ? "non ha" : "non hanno"} il dettaglio prodotto: il loro valore non è attribuibile alle referenze. Valore ordini del periodo: {eur(coverage.data.valore_ordini)}.</span>
           </div>
         )}
         {prevRange && !prevCoverage.isLoading && !previousAvailable && (
@@ -339,9 +345,9 @@ function DesktopRow({ r, previousAvailable }: { r: MergedProductRow; previousAva
       </td>
       <td className="px-3 py-3 text-muted-foreground">{r.codice ?? "—"}</td>
       <td className="px-3 py-3 text-muted-foreground">{r.azienda_nome ?? "—"}</td>
-      <td className="px-3 py-3 text-right tabular-nums"><p className="font-semibold">{eur(r.fatturato)}</p>{cmp && <><p className="text-xs text-muted-foreground">prec. {previousAvailable ? eur(r.prev!.fatturato) : "N/D"}</p><VarBadge v={variation(r.fatturato, r.prev!.fatturato, previousAvailable)} money /></>}</td>
-      <td className="px-3 py-3 text-right tabular-nums"><p className="font-semibold">{num(r.cartoni)}</p>{cmp && <><p className="text-xs text-muted-foreground">prec. {previousAvailable ? num(r.prev!.cartoni) : "N/D"}</p><VarBadge v={variation(r.cartoni, r.prev!.cartoni, previousAvailable)} /></>}</td>
-      <td className="px-3 py-3 text-right tabular-nums"><p className="font-semibold">{num(r.pezzi)}</p>{cmp && <><p className="text-xs text-muted-foreground">prec. {previousAvailable ? num(r.prev!.pezzi) : "N/D"}</p><VarBadge v={variation(r.pezzi, r.prev!.pezzi, previousAvailable)} /></>}</td>
+      <td className="px-3 py-3 text-right tabular-nums"><p className="font-semibold">{eur(r.fatturato)}</p>{cmp && <><p className="text-xs text-muted-foreground">prec. {previousAvailable ? eur(r.prev!.fatturato) : "N/D"}</p>{previousAvailable && <VarBadge v={variation(r.fatturato, r.prev!.fatturato, previousAvailable)} money />}</>}</td>
+      <td className="px-3 py-3 text-right tabular-nums"><p className="font-semibold">{num(r.cartoni)}</p>{cmp && <><p className="text-xs text-muted-foreground">prec. {previousAvailable ? num(r.prev!.cartoni) : "N/D"}</p>{previousAvailable && <VarBadge v={variation(r.cartoni, r.prev!.cartoni, previousAvailable)} />}</>}</td>
+      <td className="px-3 py-3 text-right tabular-nums"><p className="font-semibold">{num(r.pezzi)}</p>{cmp && <><p className="text-xs text-muted-foreground">prec. {previousAvailable ? num(r.prev!.pezzi) : "N/D"}</p>{previousAvailable && <VarBadge v={variation(r.pezzi, r.prev!.pezzi, previousAvailable)} />}</>}</td>
       <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{r.omaggio_pezzi > 0 ? num(r.omaggio_pezzi) : "—"}</td>
     </tr>
   );
@@ -364,7 +370,7 @@ function MobileRow({ r, previousAvailable }: { r: MergedProductRow; previousAvai
         {r.omaggio_pezzi > 0 && <span className="text-muted-foreground">{num(r.omaggio_pezzi)} pz omaggio</span>}
       </div>
       {r.righe_senza_confezione > 0 && <p className="mt-1 text-xs font-medium text-warning">Pezzi incompleti: manca pezzi per cartone</p>}
-      {r.prev && <div className="mt-1"><VarBadge v={variation(r.fatturato, r.prev.fatturato, previousAvailable)} money /></div>}
+      {r.prev && previousAvailable && <div className="mt-1"><VarBadge v={variation(r.fatturato, r.prev.fatturato, previousAvailable)} money /></div>}
       {open && r.prev && (
         <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3 text-xs">
           {(["fatturato", "cartoni", "pezzi"] as const).map((k) => (

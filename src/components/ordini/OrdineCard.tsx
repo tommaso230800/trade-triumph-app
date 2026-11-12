@@ -215,6 +215,7 @@ export function OrdineCard({
                   <Button
                     variant="outline"
                     size="icon"
+                    aria-label="Altre azioni"
                     className="touch-target shrink-0 border-scatto-line bg-transparent text-scatto-ink hover:bg-scatto-bg"
                   >
                     <MoreHorizontal className="h-4 w-4" />

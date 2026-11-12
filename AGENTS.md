@@ -22,3 +22,9 @@
 - Generate dedicated poster exports from saved proposal content, awaiting real image decoding and preserving aspect ratio.
 - Mirror OneDrive physical hierarchy by stable drive/item IDs in a server-managed index; keep CRM classification virtual, persist every delta checkpoint, and gate shared-connector access through an explicit allowlist.
 - All reorder consumers use the same eligibility and chronological cadence replay; exclude explicitly reconstructed revenue allocations from chronology only, preserve historical baseline, adapt operational cadence after repeated shifts, and expose original IDs and exclusions without modifying commercial records.
+- Agency members share one data owner: rows are rewritten to the owner by trigger and read through member-to-member RLS, while the acting user is kept in created_by/updated_by/sent_by, so colleagues see the same archive without losing authorship.
+- Staff sign in by case-insensitive username through the agency-auth function mapped to internal auth identities, so no email is needed and lockout is enforced server-side.
+- Order drafts live in their own table and become orders only on explicit save, so they never enter KPI, statistics, reorder or commissions.
+- Order recipients come from the per-company address book and the single agency sender is enforced in the email function, so no client setting can send from another mailbox.
+- Order form and proforma share one cartons/pieces/gifts calculation and rows snapshot pieces-per-carton at sale, so later catalog edits cannot change past documents.
+- Product statistics are computed by database functions that allocate saved order totals over net non-gift rows, so product sums reconcile with order revenue and missing detail is reported separately.

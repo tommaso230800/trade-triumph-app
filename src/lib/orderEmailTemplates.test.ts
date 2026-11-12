@@ -22,7 +22,7 @@ describe('Invio ordini Europe/Rome', () => {
   });
   it('oggetto usa cliente e giorno invio italiano, anche dopo mezzanotte locale', () => {
     const c = romeEmailContext('Bar Centrale', '', new Date('2026-10-26T23:30:00Z'));
-    expect(renderEmailTemplate(DEFAULT_ORDER_SUBJECT, c)).toBe('Ordine Bar Centrale – 27/10/2026');
+    expect(renderEmailTemplate(DEFAULT_ORDER_SUBJECT, c)).toBe('Ordine – Bar Centrale – 27/10/2026');
   });
   it('testo mantiene spazi tra paragrafi e aggiunge firma', () => {
     const c = romeEmailContext('', 'Firma agenzia', new Date('2026-10-27T09:00:00Z'));

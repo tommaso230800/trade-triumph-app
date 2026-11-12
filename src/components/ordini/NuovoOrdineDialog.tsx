@@ -46,7 +46,7 @@ import {
   SlidersHorizontal,
   CloudOff,
   CloudUpload,
-  CloudCheck,
+  CircleCheck,
   AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -153,6 +153,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
   const submitLock = useRef(false);
   const dirtyRef = useRef(false);
   const restoredRef = useRef<string | null>(null);
+  const skipAutosave = useRef(false);
   const queryClient = useQueryClient();
 
   const { data: clienti } = useClienti();
@@ -217,6 +218,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
     const p = draft.payload as unknown as DraftPayload | null;
     if (!p || p.v !== 1) return;
     restoredRef.current = draft.id;
+    skipAutosave.current = true;
+    dirtyRef.current = true;
     setDraftId(draft.id);
     setFormData({ ...emptyFormData(), ...p.formData });
     setRigheOrdine(p.righe ?? []);
@@ -248,7 +251,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
   useEffect(() => {
     if (!open) return;
     if (!hasContent) return;
-    if (restoredRef.current && saveState === "saved" && !dirtyRef.current) return;
+    if (skipAutosave.current) { skipAutosave.current = false; return; }
     dirtyRef.current = true;
     const t = setTimeout(() => { void persistDraft(); }, 1200);
     return () => clearTimeout(t);
@@ -839,11 +842,20 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
   const selectedCliente = clienti?.find((c) => c.id === formData.cliente_id);
   const clienteStatusLabel = selectedCliente?.status === "premium" ? "Premium" : selectedCliente?.status === "nuovo" ? "Nuovo" : "Standard";
   const steps = [
-    { label: "Cliente", icon: UserRound },
-    { label: "Prodotti", icon: PackagePlus },
-    { label: "Conferma", icon: ReceiptText },
+    { label: "Cliente e azienda", short: "Cliente", icon: UserRound },
+    { label: "Prodotti e quantità", short: "Prodotti", icon: PackagePlus },
+    { label: "Condizioni e consegna", short: "Condizioni", icon: SlidersHorizontal },
+    { label: "Riepilogo e invio", short: "Riepilogo", icon: ReceiptText },
   ];
-  const canGoTo = (index: number) => index === 0 || (index === 1 && !!formData.azienda_id) || (index === 2 && righeOrdine.length > 0);
+  const LAST_STEP = steps.length - 1;
+  const canGoTo = (index: number) => index === 0 || (!!formData.azienda_id && (index === 1 || righeOrdine.length > 0));
+  const qty = orderTotals(righeOrdine.map((r) => ({ ...r, pezzi_per_cartone: r.pezzi_per_cartone })));
+  const nf = (n: number) => n.toLocaleString("it-IT");
+  const saveBadge =
+    saveState === "saving" ? { icon: CloudUpload, text: "Salvataggio in corso", cls: "text-order-muted" }
+    : saveState === "saved" ? { icon: CircleCheck, text: "Bozza salvata", cls: "text-success" }
+    : saveState === "error" ? { icon: CloudOff, text: "Errore di salvataggio", cls: "text-destructive" }
+    : null;
   const subtotaleRighe = righeOrdine.reduce((sum, r) => sum + rigaSubtotale(r), 0);
   const totale = calcolaTotale();
   const scontoPct = parseDecimalInput(formData.sconto);
@@ -866,6 +878,33 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
       <span className="text-xs font-semibold tabular-nums text-order-muted">{n}</span>
       <h3 className="text-base font-semibold">{title}</h3>
       {hint && <span className="ml-auto text-xs text-order-muted">{hint}</span>}
+    </div>
+  );
+
+  const TotalsStrip = ({ compact }: { compact?: boolean }) => (
+    <div className={`grid grid-cols-3 gap-2 ${compact ? "" : "gap-3"}`} aria-live="polite">
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-order-ink">Cartoni totali</p>
+        <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight tracking-tight tabular-nums text-order-ink`}>{nf(qty.cartoni)}</p>
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-order-ink">Pezzi totali</p>
+        <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight tracking-tight tabular-nums ${qty.completo ? "text-order-ink" : "text-warning"}`}>{nf(qty.pezzi)}{!qty.completo && "*"}</p>
+      </div>
+      <div className="min-w-0 text-right">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-order-ink">Totale ordine</p>
+        <p className={`${compact ? "text-xl" : "text-3xl"} truncate font-bold leading-tight tracking-tight tabular-nums text-order-blue`}>{formatCurrency(totale)}</p>
+      </div>
+    </div>
+  );
+
+  const QtyNotes = () => (
+    <div className="space-y-1 text-xs text-order-muted">
+      <p className="tabular-nums">{qty.referenze} {qty.referenze === 1 ? "referenza" : "referenze"}{qty.pezziSfusi > 0 ? ` · di cui ${nf(qty.pezziSfusi)} pz sfusi` : ""} · omaggi esclusi dai totali venduti</p>
+      {(qty.omaggioCartoni > 0 || qty.omaggioPezzi > 0) && (
+        <p className="tabular-nums text-success">Omaggi: {nf(qty.omaggioCartoni)} ct · {nf(qty.omaggioPezzi)} pz — da consegnare in tutto {nf(qty.daConsegnarePezzi)} pz</p>
+      )}
+      {!qty.completo && <p className="text-warning">* Pezzi per cartone mancanti su {qty.righeSenzaConfezione} {qty.righeSenzaConfezione === 1 ? "riga" : "righe"}: totale pezzi incompleto.</p>}
     </div>
   );
 
@@ -898,14 +937,23 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
             <div className="min-w-0">
               <DialogTitle className="text-xl font-bold sm:text-2xl">Nuovo ordine</DialogTitle>
               <DialogDescription className="mt-0.5 truncate text-xs text-order-muted sm:text-sm">
-                {selectedClienteName || "Nessun cliente"}{selectedAziendaName ? ` · ${selectedAziendaName}` : ""}
+                {selectedClienteName || "Nessun cliente"}{selectedAziendaName ? ` · ${selectedAziendaName}` : ""} · {format(new Date(`${formData.data_ordine}T12:00:00`), "dd/MM/yyyy")}
               </DialogDescription>
+              <p className="mt-0.5 text-[11px] text-order-muted">N. ordine assegnato al salvataggio</p>
             </div>
-            <div className="shrink-0 text-right lg:hidden">
-              <p className="text-[11px] text-order-muted">Totale</p>
-              <p className="text-lg font-bold tabular-nums text-order-blue sm:text-xl">{formatCurrency(totale)}</p>
-            </div>
+            {saveBadge && (
+              <span className={`flex shrink-0 items-center gap-1 text-xs font-medium ${saveBadge.cls}`} role="status">
+                <saveBadge.icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{saveBadge.text}</span>
+              </span>
+            )}
           </div>
+          {saveState === "error" && (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs">
+              <span className="text-destructive">Bozza non salvata. I dati restano nel modulo.</span>
+              <Button type="button" variant="outline" size="sm" className="h-9" onClick={() => void persistDraft()}>Riprova</Button>
+            </div>
+          )}
 
           <ol className="flex items-center gap-2" aria-label="Avanzamento ordine">
             {steps.map((step, index) => {
@@ -932,8 +980,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                     >
                       {complete ? <Check className="h-3.5 w-3.5" /> : index + 1}
                     </span>
-                    <span className={`truncate text-sm ${active ? "font-semibold text-order-ink" : complete ? "text-order-ink" : "text-order-muted"}`}>
-                      {step.label}
+                    <span className={`truncate text-sm ${active ? "font-semibold text-order-ink" : complete ? "text-order-ink" : "text-order-muted"} ${active ? "" : "hidden sm:inline"}`}>
+                      <span className="lg:hidden">{step.short}</span><span className="hidden lg:inline">{step.label}</span>
                     </span>
                   </button>
                   {index < steps.length - 1 && <span className={`h-px flex-1 ${complete ? "bg-order-blue/40" : "bg-order-line"}`} />}
@@ -1000,15 +1048,6 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                 </div>
               </div>
 
-              <div>
-                <SectionTitle n="03" title="Pagamento" />
-                <div className="rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:p-5">
-                  <Select value={formData.tipo_pagamento} onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}>
-                    <SelectTrigger className={fieldCls} aria-label="Tipo pagamento"><SelectValue /></SelectTrigger>
-                    <SelectContent>{TIPI_PAGAMENTO.map((tipo) => <SelectItem key={tipo} value={tipo} className="min-h-11">{tipo}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-              </div>
             </section>
 
             {/* ── 2. Prodotti ────────────────────────────── */}
@@ -1048,12 +1087,13 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                 <div className="space-y-3">
                   <div className="flex items-baseline justify-between px-1 text-xs text-order-muted">
                     <span>{righeOrdine.length} righe{omaggiCount > 0 ? ` · ${omaggiCount} omaggi` : ""}</span>
-                    <span className="tabular-nums">{calcolaProdottiTotali()} pezzi</span>
+                    {showProblems && righeConProblemi.length > 0 && <span className="flex items-center gap-1 font-medium text-destructive"><AlertTriangle className="h-3 w-3" /> {righeConProblemi.length} da correggere</span>}
                   </div>
                   {righeOrdine.map((riga, index) => (
                     <OrdineRigaEditor
                       key={`${riga.prodotto_id}-${index}`}
-                      prodottoNome={riga.prodotto_nome} formato={riga.formato} pezziPerCartone={riga.pezzi_per_cartone}
+                      prodottoNome={riga.prodotto_nome} prodottoCodice={riga.prodotto_codice} formato={riga.formato} pezziPerCartone={riga.pezzi_per_cartone}
+                      problems={showProblems ? problemsOf(riga) : problemsOf(riga).filter((p) => p === "Pezzi per cartone da completare")}
                       strati={riga.strati} cartoniPerStrato={riga.cartoni_per_strato} isOmaggio={riga.is_omaggio}
                       prezzoUnitario={riga.prezzo_unitario} quantitaPezzi={riga.quantita_pezzi} quantitaCartoni={riga.quantita_cartoni}
                       sc1={riga.sc1} sc2={riga.sc2} sc3={riga.sc3} subtotale={rigaSubtotale(riga)}
@@ -1061,7 +1101,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                       onBlurPrezzo={() => handlePrezzoBlur(index)} onChangePrezzo={(v) => updateRiga(index, "prezzo_unitario", v)}
                       onChangeQuantitaPezzi={(v) => updateRiga(index, "quantita_pezzi", v)} onChangeQuantitaCartoni={(v) => updateRiga(index, "quantita_cartoni", v)}
                       onChangeSc1={(v) => updateRiga(index, "sc1", v)} onChangeSc2={(v) => updateRiga(index, "sc2", v)} onChangeSc3={(v) => updateRiga(index, "sc3", v)}
-                      onRemove={() => removeRiga(index)} onAddOmaggio={riga.is_omaggio ? undefined : () => addOmaggioFromRiga(index)}
+                      onRemove={() => setRemoveIndex(index)} onAddOmaggio={riga.is_omaggio ? undefined : () => addOmaggioFromRiga(index)}
                     />
                   ))}
                   <Button type="button" variant="outline" className="h-12 w-full gap-2 rounded-xl border-dashed border-order-line bg-transparent text-order-ink hover:bg-order-surface" onClick={() => setPickerOpen(true)}>
@@ -1071,8 +1111,41 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
               )}
             </section>
 
-            {/* ── 3. Conferma ────────────────────────────── */}
-            <section className={currentStep === 2 ? "space-y-4" : "hidden"}>
+            {/* ── 3. Condizioni, pagamento e consegna ─────── */}
+            <section className={currentStep === 2 ? "space-y-6" : "hidden"}>
+              <div>
+                <SectionTitle n="01" title="Pagamento e sconti" />
+                <div className="grid min-w-0 grid-cols-2 gap-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:p-5">
+                  <div className="col-span-2 min-w-0 space-y-1.5">
+                    <Label className="text-xs text-order-muted">Pagamento</Label>
+                    <Select value={formData.tipo_pagamento} onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}>
+                      <SelectTrigger className={fieldCls} aria-label="Tipo pagamento"><SelectValue /></SelectTrigger>
+                      <SelectContent>{TIPI_PAGAMENTO.map((tipo) => <SelectItem key={tipo} value={tipo} className="min-h-11">{tipo}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="min-w-0 space-y-1.5"><Label htmlFor="no-sconto" className="text-xs text-order-muted">Sconto in fattura %</Label><Input id="no-sconto" type="text" inputMode="decimal" className={`${fieldCls} text-right tabular-nums`} value={formData.sconto} onChange={(e) => setFormData({ ...formData, sconto: e.target.value })} placeholder="0" /></div>
+                  <div className="min-w-0 space-y-1.5"><Label htmlFor="no-merce" className="text-xs text-order-muted">Sconto merce €</Label><Input id="no-merce" type="text" inputMode="decimal" className={`${fieldCls} text-right tabular-nums`} value={formData.sconto_merce} onChange={(e) => setFormData({ ...formData, sconto_merce: e.target.value })} placeholder="0,00" /></div>
+                  {(parseDecimalInput(formData.sconto) < 0 || parseDecimalInput(formData.sconto) >= 100) && <p className="col-span-2 text-xs text-destructive">Lo sconto in fattura deve essere tra 0 e 99,99%.</p>}
+                  <div className="col-span-2 min-w-0 space-y-1.5"><Label htmlFor="no-cond" className="text-xs text-order-muted">Condizioni commerciali</Label><Textarea id="no-cond" className="min-h-20 rounded-lg border-order-line bg-order-paper text-base sm:text-sm" value={formData.condizioni_commerciali} onChange={(e) => setFormData({ ...formData, condizioni_commerciali: e.target.value })} placeholder="Es. promo in corso, premi, accordi particolari" /></div>
+                </div>
+              </div>
+              <div>
+                <SectionTitle n="02" title="Consegna" hint="Facoltativo" />
+                <div className="grid min-w-0 gap-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:grid-cols-2 sm:p-5">
+                  <div className="min-w-0 space-y-1.5"><Label htmlFor="no-cons-data" className="text-xs text-order-muted">Data consegna prevista</Label><div className="min-w-0 overflow-hidden"><Input id="no-cons-data" type="date" className={`${fieldCls} block min-w-0 max-w-full appearance-none text-left`} value={formData.data_consegna_prevista} onChange={(e) => setFormData({ ...formData, data_consegna_prevista: e.target.value })} /></div></div>
+                  <div className="min-w-0 space-y-1.5"><Label htmlFor="no-cons-dest" className="text-xs text-order-muted">Destinazione</Label><Input id="no-cons-dest" className={fieldCls} value={formData.destinazione_consegna} onChange={(e) => setFormData({ ...formData, destinazione_consegna: e.target.value })} placeholder="Se diversa dalla sede del cliente" /></div>
+                  <div className="min-w-0 space-y-1.5 sm:col-span-2"><Label htmlFor="no-cons-note" className="text-xs text-order-muted">Note di consegna</Label><Input id="no-cons-note" className={fieldCls} value={formData.note_consegna} onChange={(e) => setFormData({ ...formData, note_consegna: e.target.value })} placeholder="Orari, scarico, referente" /></div>
+                  <div className="min-w-0 space-y-1.5 sm:col-span-2"><Label htmlFor="no-note" className="text-xs text-order-muted">Note per il fornitore</Label><Textarea id="no-note" className="min-h-20 rounded-lg border-order-line bg-order-paper text-base sm:text-sm" value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Indicazioni riportate sulla proforma" /></div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 4. Riepilogo e invio ───────────────────── */}
+            <section className={currentStep === 3 ? "space-y-4" : "hidden"}>
+              <div className="rounded-xl border border-order-blue/30 bg-order-surface p-4 shadow-sm sm:p-5">
+                <TotalsStrip />
+                <div className="mt-3"><QtyNotes /></div>
+              </div>
               <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                 <ReviewBlock title="Cliente" step={0}>
                   <p className="break-words text-sm font-semibold leading-snug">{selectedClienteName || "Nessun cliente"}</p>
@@ -1097,6 +1170,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                           {r.quantita_cartoni > 0 && r.quantita_pezzi > 0 && " + "}
                           {r.quantita_pezzi > 0 && `${r.quantita_pezzi} pz`}
                           {r.quantita_cartoni === 0 && r.quantita_pezzi === 0 && "Quantità 0"}
+                          {r.pezzi_per_cartone > 0 ? ` · ${nf(r.quantita_pezzi + r.quantita_cartoni * r.pezzi_per_cartone)} pz` : r.quantita_cartoni > 0 ? " · pezzi N/D" : ""}
                           {!r.is_omaggio && ` · ${r.prezzo_unitario} €/pz`}
                         </p>
                       </div>
@@ -1108,14 +1182,16 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                 </ul>
               </ReviewBlock>
 
-              <div className="min-w-0 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm">
-                <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-order-muted">Condizioni finali</h4>
-                <div className="grid min-w-0 grid-cols-2 gap-3">
-                  <div className="min-w-0 space-y-1.5"><Label className="text-xs text-order-muted">Sconto in fattura %</Label><Input type="text" inputMode="decimal" className={`${fieldCls} text-right tabular-nums`} value={formData.sconto} onChange={(e) => setFormData({ ...formData, sconto: e.target.value })} placeholder="0" /></div>
-                  <div className="min-w-0 space-y-1.5"><Label className="text-xs text-order-muted">Sconto merce €</Label><Input type="text" inputMode="decimal" className={`${fieldCls} text-right tabular-nums`} value={formData.sconto_merce} onChange={(e) => setFormData({ ...formData, sconto_merce: e.target.value })} placeholder="0,00" /></div>
-                  <div className="col-span-2 min-w-0 space-y-1.5"><Label className="text-xs text-order-muted">Note</Label><Textarea className="min-h-24 rounded-lg border-order-line bg-order-paper text-base sm:text-sm" value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Indicazioni per consegna o fornitore…" /></div>
+              <ReviewBlock title="Condizioni e consegna" step={2}>
+                <div className="space-y-1 text-sm">
+                  <p>{formData.tipo_pagamento}</p>
+                  {formData.condizioni_commerciali.trim() && <p className="whitespace-pre-wrap text-order-muted">{formData.condizioni_commerciali}</p>}
+                  {formData.data_consegna_prevista && <p className="text-order-muted">Consegna prevista {format(new Date(`${formData.data_consegna_prevista}T12:00:00`), "dd/MM/yyyy")}</p>}
+                  {formData.destinazione_consegna.trim() && <p className="text-order-muted">{formData.destinazione_consegna}</p>}
+                  {formData.note_consegna.trim() && <p className="text-order-muted">{formData.note_consegna}</p>}
+                  {formData.note.trim() && <p className="whitespace-pre-wrap text-order-muted">Note: {formData.note}</p>}
                 </div>
-              </div>
+              </ReviewBlock>
 
               <div className="space-y-2 rounded-xl border border-order-blue/30 bg-order-surface p-4 shadow-sm lg:hidden">
                 <SummaryRow label="Subtotale righe" value={formatCurrency(subtotaleRighe)} />
@@ -1138,9 +1214,10 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                 <p className="mt-2 break-words text-sm font-semibold leading-snug">{selectedClienteName || "Nessun cliente"}</p>
                 <p className="mt-0.5 break-words text-xs text-order-muted">{selectedAziendaName || "Fornitore da scegliere"}</p>
               </div>
-              <div className="space-y-2">
-                <SummaryRow label="Righe" value={`${righeOrdine.length}${omaggiCount ? ` (${omaggiCount} omaggi)` : ""}`} />
-                <SummaryRow label="Pezzi" value={String(calcolaProdottiTotali())} />
+              <div className="space-y-4">
+                <div><p className="text-[11px] font-bold uppercase tracking-wide">Cartoni totali</p><p className="text-4xl font-bold tracking-tight tabular-nums">{nf(qty.cartoni)}</p></div>
+                <div><p className="text-[11px] font-bold uppercase tracking-wide">Pezzi totali</p><p className={`text-4xl font-bold tracking-tight tabular-nums ${qty.completo ? "" : "text-warning"}`}>{nf(qty.pezzi)}{!qty.completo && "*"}</p></div>
+                <QtyNotes />
                 <SummaryRow label="Pagamento" value={formData.tipo_pagamento} />
               </div>
               <div className="space-y-2 border-t border-order-line pt-4">
@@ -1156,6 +1233,12 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
           </aside>
         </div>
 
+        {/* Totali sempre visibili su telefono e tablet, sopra i pulsanti */}
+        {currentStep > 0 && currentStep < LAST_STEP && (
+          <div className="shrink-0 border-t border-order-line bg-order-paper px-4 py-2.5 sm:px-6 lg:hidden">
+            <TotalsStrip compact />
+          </div>
+        )}
         {/* Barra azioni fissa, rispetta la safe area */}
         <div className="shrink-0 border-t border-order-line bg-order-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-6 sm:pb-4">
           <DialogFooter className="flex flex-row items-center gap-2 sm:justify-between sm:space-x-0">
@@ -1164,17 +1247,15 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
             ) : (
               <Button variant="outline" className="h-11 rounded-lg border-order-line" onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}><ChevronLeft className="h-4 w-4" />Indietro</Button>
             )}
-            <div className="hidden min-w-0 flex-1 text-center text-xs tabular-nums text-order-muted sm:block lg:hidden">
-              {righeOrdine.length} righe · {calcolaProdottiTotali()} pezzi
-            </div>
-            {currentStep < 2 ? (
-              <Button className="h-11 flex-1 rounded-lg bg-order-ink text-primary-foreground hover:bg-order-ink/90 sm:flex-none sm:px-6" onClick={() => setCurrentStep((step) => Math.min(2, step + 1))} disabled={currentStep === 0 ? !formData.azienda_id : righeOrdine.length === 0}>
-                {currentStep === 0 ? "Scegli prodotti" : "Rivedi ordine"}<ChevronRight className="h-4 w-4" />
+            <div className="hidden min-w-0 flex-1 sm:block" />
+            {currentStep < LAST_STEP ? (
+              <Button className="h-11 flex-1 rounded-lg bg-order-ink text-primary-foreground hover:bg-order-ink/90 sm:flex-none sm:px-6" onClick={() => setCurrentStep((step) => Math.min(LAST_STEP, step + 1))} disabled={currentStep === 0 ? !formData.azienda_id : righeOrdine.length === 0}>
+                {currentStep === 0 ? "Prodotti" : currentStep === 1 ? "Condizioni" : "Riepilogo"}<ChevronRight className="h-4 w-4" />
               </Button>
             ) : (
               <Button className="h-11 flex-1 gap-2 rounded-lg bg-order-blue font-semibold text-primary-foreground hover:bg-order-blue/90 sm:flex-none sm:px-6" onClick={handleSubmit} disabled={isSubmitting || righeOrdine.length === 0}>
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                <span className="truncate">Crea ordine · {formatCurrency(totale)}</span>
+                <span className="truncate">{isSubmitting ? "Salvataggio in corso…" : `Crea ordine · ${formatCurrency(totale)}`}</span>
               </Button>
             )}
           </DialogFooter>
@@ -1199,6 +1280,43 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
       existingProducts={prodottiAzienda}
       onSaved={handleQuickProductSaved}
     />
+
+      <AlertDialog open={removeIndex !== null} onOpenChange={(v) => !v && setRemoveIndex(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminare la riga?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {removeIndex !== null && <>«{righeOrdine[removeIndex]?.prodotto_nome}»{righeOrdine[removeIndex]?.is_omaggio ? " (omaggio)" : ""} sarà tolto dall'ordine. Il prodotto resta nel catalogo.</>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-11">Annulla</AlertDialogCancel>
+            <AlertDialogAction className="h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => removeIndex !== null && removeRiga(removeIndex)}>Elimina riga</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={exitConfirm} onOpenChange={setExitConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Uscire dall'ordine?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {saveState === "saved"
+                ? "La bozza è salvata: la ritrovi in Ordini → Bozze e puoi riprenderla quando vuoi. Non viene conteggiata in statistiche e KPI."
+                : saveState === "error"
+                  ? "L'ultima modifica non è stata salvata. Se esci ora potresti perderla."
+                  : "Salvataggio della bozza in corso…"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+            <AlertDialogCancel className="h-11">Continua l'ordine</AlertDialogCancel>
+            {saveState === "error" && <Button variant="outline" className="h-11" onClick={() => void persistDraft()}>Riprova salvataggio</Button>}
+            <AlertDialogAction className="h-11" disabled={saveState === "saving"} onClick={() => { setExitConfirm(false); closeNow(); }}>
+              {saveState === "error" ? "Esci senza salvare" : "Esci, la bozza resta"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={priceConfirmIndex !== null} onOpenChange={(v) => !v && priceConfirmIndex !== null && closePriceConfirm(priceConfirmIndex)}>
         <AlertDialogContent>
