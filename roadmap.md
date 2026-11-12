@@ -1,5 +1,21 @@
 # Roadmap
 
+## Agenzia condivisa, accesso username, ordini ed email (12 novembre)
+- [ ] Backup: segnalare backup giornalieri + export manuale consigliato prima delle modifiche
+- [ ] Struttura agenzia: membri, proprietario dati, policy condivise e protezione utenti estranei
+- [ ] Login username/password reale con protezione tentativi, logout, cambio password, recupero
+- [ ] Account Gabriele, Andrea, Tommaso (collegato all’esistente) con password iniziali
+- [ ] Funzioni backend e archivio file condivisi tra i tre utenti
+- [ ] Ordini: autore/modifica/invio registrati, controllo versione contro sovrascritture
+- [ ] Mittente unico agenziamazzigroup@gmail.com per tutti, stati invio e anti-doppio invio
+- [ ] Rimuovere Locandine e proposte + Fiscalità e netto (menu, mobile, dashboard, ricerca, vecchi link)
+- [ ] Modulo ordine in 4 sezioni, CARTONI/PEZZI TOTALI evidenti, pezzi sfusi, omaggi, bozze, uscita protetta
+- [ ] Rubrica email per azienda + autocompletamento A/CC con chip e anti-duplicati
+- [ ] Analytics: rimuovere “Sconto merce/ordine”
+- [ ] Statistiche prodotti (tutti, filtri, totali server-side) + confronto annuale dinamico
+- [ ] Verifiche desktop/iPhone e report finale
+
+
 ## Riordino dal 1° gennaio 2026
 - [x] Limite condiviso applicato a coppie, prodotti, grafici e avvisi; cache distinta per periodo. 47 test superati, compresi 1° gennaio incluso, esclusione 2025 e anni successivi; compilazione automatica OK. Nessun dato commerciale modificato. Verifica autenticata live non disponibile: accesso gestito non corrisponde all’utente richiedente.
 
