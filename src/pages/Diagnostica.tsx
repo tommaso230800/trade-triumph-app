@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, AlertCircle, CheckCircle2, ShieldOff, Loader2, Database } from "lucide-react";
 import { format } from "date-fns";
+import { NotificationDiagnostics } from "@/components/notifiche/NotificationDiagnostics";
 
 export default function Diagnostica() {
   const isAdmin = useIsAdmin();
@@ -58,6 +59,8 @@ export default function Diagnostica() {
             <p className="text-xs text-muted-foreground">Postgres + RLS</p>
           </Card>
         </div>
+
+        <NotificationDiagnostics />
 
         <Card className="surface-noir">
           <div className="p-4 border-b border-border">
