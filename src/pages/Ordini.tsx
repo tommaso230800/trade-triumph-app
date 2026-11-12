@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { OrdineDettaglioNotifica } from "@/components/ordini/OrdineDettaglioNotifica";
 import { toast } from "sonner";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -596,6 +597,13 @@ const Ordini = () => {
         />
 
         <ProformaDialog open={isProformaOpen} onOpenChange={setIsProformaOpen} data={proformaData} />
+
+        <OrdineDettaglioNotifica
+          ordineId={searchParams.get("ordine")}
+          onClose={() => { const next = new URLSearchParams(searchParams); next.delete("ordine"); setSearchParams(next, { replace: true }); }}
+          onShowProforma={handleShowProforma}
+          onEdit={openEditDialog}
+        />
 
         <ImportPDFDialog
           open={isImportPDFOpen}
