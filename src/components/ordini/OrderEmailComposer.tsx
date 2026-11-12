@@ -115,7 +115,7 @@ export function OrderEmailComposer({ prepared, onClose }: { prepared: PreparedOr
     }
   };
   const disabled = busy || finished || uncertain;
-  const statusLabel = finished ? 'Inviato' : uncertain ? 'In invio' : busy ? 'In invio' : error && attempt.current ? 'In preparazione' : 'In preparazione';
+  const statusLabel = finished ? 'Inviato' : uncertain || busy ? 'In invio' : 'In preparazione';
   const confirmBook = async () => {
     if (!bookDraft || !aziendaId) return;
     try {
