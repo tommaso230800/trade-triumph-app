@@ -57,6 +57,10 @@ export type ProformaData = {
   sconto_merce: number;
   totale: number;
   note?: string;
+  condizioni_commerciali?: string | null;
+  data_consegna_prevista?: string | null;
+  destinazione_consegna?: string | null;
+  note_consegna?: string | null;
   righe: ProformaRigaOrdine[];
   promozioni_applicate?: PromoApplicata[];
 };

@@ -185,6 +185,10 @@ export function useCreateOrdine() {
       sconto_merce?: number;
       tipo_pagamento?: string;
       data_ordine?: string;
+      condizioni_commerciali?: string | null;
+      data_consegna_prevista?: string | null;
+      destinazione_consegna?: string | null;
+      note_consegna?: string | null;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
