@@ -1,20 +1,20 @@
 # Roadmap
 
 ## Agenzia condivisa, accesso username, ordini ed email (12 novembre)
-- [ ] Backup: segnalare backup giornalieri + export manuale consigliato prima delle modifiche
-- [ ] Struttura agenzia: membri, proprietario dati, policy condivise e protezione utenti estranei
-- [ ] Login username/password reale con protezione tentativi, logout, cambio password, recupero
-- [ ] Account Gabriele, Andrea, Tommaso (collegato all’esistente) con password iniziali
-- [ ] Funzioni backend e archivio file condivisi tra i tre utenti
-- [ ] Ordini: autore/modifica/invio registrati, controllo versione contro sovrascritture
-- [ ] Mittente unico agenziamazzigroup@gmail.com per tutti, stati invio e anti-doppio invio
-- [ ] Rimuovere Locandine e proposte + Fiscalità e netto (menu, mobile, dashboard, ricerca, vecchi link)
-- [ ] Modulo ordine in 4 sezioni, CARTONI/PEZZI TOTALI evidenti, pezzi sfusi, omaggi, bozze, uscita protetta
-- [ ] Rubrica email per azienda + autocompletamento A/CC con chip e anti-duplicati
-- [ ] Analytics: rimuovere “Sconto merce/ordine”
-- [ ] Statistiche prodotti (tutti, filtri, totali server-side) + confronto annuale dinamico
-- [ ] Verifiche desktop/iPhone e report finale
-
+- [ ] Backup: non creato in automatico; consigliata esportazione manuale prima di altre modifiche strutturali (serve azione del titolare)
+- [x] Struttura agenzia: membri, proprietario dati, regole di accesso condivise; colleghi vedono gli stessi ordini (Gabriele 466 ordini 2026, Tommaso 468 incl. 2 di account esterni visibili solo all’amministratore)
+- [x] Login username/password (maiuscole indifferenti nello username), blocco tentativi, logout, cambio password, recupero; provato accesso Gabriele su iPhone
+- [x] Account Gabriele, Andrea, Tommaso (collegato all’esistente)
+- [x] Funzioni di invio email, OneDrive, archivio e import prodotti puntano ai dati condivisi
+- [x] Ordini: autore/modifica registrati, controllo versione
+- [ ] Mittente unico agenziamazzigroup@gmail.com: blocco attivo e visibile; serve collegare la casella dell’agenzia (ora collegata tommasosalti@gmail.com)
+- [x] Rimossi Locandine e proposte + Fiscalità e netto da menu, ricerca e collegamenti; storico conservato
+- [x] Modulo ordine in 4 sezioni, CARTONI/PEZZI TOTALI in evidenza, sfusi, omaggi, bozze automatiche, uscita protetta, conferma eliminazione, controlli righe; verificato 390px e computer
+- [x] Rubrica email per azienda + suggerimenti A/CC con chip e anti-duplicati; verificata composizione senza invio
+- [x] Analytics: rimosso “Sconto merce/ordine”
+- [x] Statistiche prodotti con filtri, totali dal database e confronto dinamico; 2026 riconciliato (937.742,68 € su righe + 480,85 € senza dettaglio)
+- [x] Controllo dati: nuova segnalazione righe con pezzi sfusi pari al totale cartoni (14 ordini storici da verificare)
+- [ ] Invio email reale di prova: richiede casella agenzia collegata e destinatario autorizzato
 
 ## Riordino dal 1° gennaio 2026
 - [x] Limite condiviso applicato a coppie, prodotti, grafici e avvisi; cache distinta per periodo. 47 test superati, compresi 1° gennaio incluso, esclusione 2025 e anni successivi; compilazione automatica OK. Nessun dato commerciale modificato. Verifica autenticata live non disponibile: accesso gestito non corrisponde all’utente richiedente.
