@@ -5580,6 +5580,57 @@ export type Database = {
         }
         Returns: undefined
       }
+      order_years: {
+        Args: never
+        Returns: {
+          anno: number
+          ordini: number
+          ordini_con_righe: number
+        }[]
+      }
+      product_sales_coverage: {
+        Args: {
+          p_azienda_id?: string
+          p_cliente_id?: string
+          p_from: string
+          p_to: string
+        }
+        Returns: {
+          ordini_con_righe: number
+          ordini_inclusi: number
+          ordini_senza_righe: number
+          valore_con_righe: number
+          valore_ordini: number
+          valore_senza_righe: number
+        }[]
+      }
+      product_sales_stats: {
+        Args: {
+          p_azienda_id?: string
+          p_cliente_id?: string
+          p_from: string
+          p_prodotto_id?: string
+          p_to: string
+        }
+        Returns: {
+          attivo: boolean
+          azienda_id: string
+          azienda_nome: string
+          cartoni: number
+          codice: string
+          fatturato: number
+          formato: string
+          nome: string
+          omaggio_cartoni: number
+          omaggio_pezzi: number
+          ordini: number
+          pezzi: number
+          pezzi_sfusi: number
+          prodotto_id: string
+          righe: number
+          righe_senza_confezione: number
+        }[]
+      }
       purge_cestino_expired: { Args: never; Returns: undefined }
       remove_commercial_proposal: { Args: { p_id: string }; Returns: undefined }
       save_commission_receipt: {
