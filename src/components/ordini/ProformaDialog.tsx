@@ -14,6 +14,7 @@ import { OrderEmailComposer, OrderEmailHistory, type PreparedOrderEmail } from "
 import { useOrderEmailHistory } from "@/hooks/useOrderEmail";
 import { loadOrderEmailSnapshot } from "@/lib/orderEmailSnapshot";
 import { toast } from "sonner";
+import { orderTotals } from "@/lib/orderTotals";
 
 export type ProformaRigaOrdine = {
   prodotto_codice?: string;
@@ -187,6 +188,7 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
   }, 0);
 
   const scontoPercentuale = subtotale * (data.sconto / 100);
+  const qty = orderTotals(data.righe);
 
   return (
     <>
@@ -334,6 +336,25 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
             </Table>
           </div>
 
+          {/* Cartoni e pezzi: stessi totali del modulo ordine */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-lg border border-gray-200 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Cartoni totali</p>
+              <p className="text-2xl font-bold tabular-nums text-gray-900">{qty.cartoni.toLocaleString("it-IT")}</p>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Pezzi totali</p>
+              <p className="text-2xl font-bold tabular-nums text-gray-900">{qty.pezzi.toLocaleString("it-IT")}{!qty.completo && " *"}</p>
+              {qty.pezziSfusi > 0 && <p className="text-xs text-gray-500">di cui {qty.pezziSfusi.toLocaleString("it-IT")} sfusi</p>}
+            </div>
+            <div className="rounded-lg border border-gray-200 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Omaggi</p>
+              <p className="text-2xl font-bold tabular-nums text-gray-900">{qty.omaggioCartoni.toLocaleString("it-IT")} <span className="text-sm font-medium">ct</span></p>
+              <p className="text-xs text-gray-500">{qty.omaggioPezzi.toLocaleString("it-IT")} pz · da consegnare {qty.daConsegnarePezzi.toLocaleString("it-IT")} pz</p>
+            </div>
+          </div>
+          {!qty.completo && <p className="text-xs text-gray-600">* Pezzi per cartone mancanti su {qty.righeSenzaConfezione} {qty.righeSenzaConfezione === 1 ? "riga" : "righe"}: il totale pezzi non è completo.</p>}
+
           {/* Totals */}
           <div className="flex justify-end">
             <div className="w-80 space-y-2">
@@ -382,6 +403,17 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
                   </p>
                 ))}
               </div>
+            </div>
+          )}
+
+          {(data.condizioni_commerciali || data.data_consegna_prevista || data.destinazione_consegna || data.note_consegna) && (
+            <div className="grid gap-3 rounded-lg bg-gray-50 p-4 sm:grid-cols-2">
+              {data.condizioni_commerciali && <div><h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">Condizioni commerciali</h3><p className="whitespace-pre-wrap text-sm text-gray-700">{data.condizioni_commerciali}</p></div>}
+              {(data.data_consegna_prevista || data.destinazione_consegna || data.note_consegna) && <div><h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">Consegna</h3>
+                {data.data_consegna_prevista && <p className="text-sm text-gray-700">Prevista il {format(parseLocalDate(data.data_consegna_prevista) ?? new Date(data.data_consegna_prevista), "dd/MM/yyyy")}</p>}
+                {data.destinazione_consegna && <p className="whitespace-pre-wrap text-sm text-gray-700">{data.destinazione_consegna}</p>}
+                {data.note_consegna && <p className="whitespace-pre-wrap text-sm text-gray-700">{data.note_consegna}</p>}
+              </div>}
             </div>
           )}
 

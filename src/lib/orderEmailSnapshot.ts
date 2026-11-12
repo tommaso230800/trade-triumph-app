@@ -21,7 +21,7 @@ export async function loadOrderEmailSnapshot(orderId: string): Promise<{ data: P
     ordine_id: o.id, azienda_id: o.azienda_id, codice: o.codice || `ORD-${o.id.slice(0, 8)}`, created_at: o.created_at, data_ordine: o.data_ordine,
     cliente_nome: c?.nome || 'N/D', cliente_indirizzo: c?.indirizzo, cliente_citta: c?.citta, cliente_cap: c?.cap, cliente_piva: c?.partita_iva,
     azienda_nome: a?.nome || 'N/D', azienda_indirizzo: a?.indirizzo, azienda_citta: a?.citta,
-    tipo_pagamento: o.tipo_pagamento || 'N/D', sconto: Number(o.sconto) || 0, sconto_merce: Number(o.sconto_merce) || 0, totale: Number(o.totale), note: o.note,
+    tipo_pagamento: o.tipo_pagamento || 'N/D', sconto: Number(o.sconto) || 0, sconto_merce: Number(o.sconto_merce) || 0, totale: Number(o.totale), note: o.note, condizioni_commerciali: o.condizioni_commerciali, data_consegna_prevista: o.data_consegna_prevista, destinazione_consegna: o.destinazione_consegna, note_consegna: o.note_consegna,
     righe: (o.ordini_righe || []).map((r: any) => ({ prodotto_codice: r.prodotti?.codice, prodotto_nome: r.prodotti?.nome || 'N/D', prodotto_brand: r.prodotti?.brands?.name,
       prezzo_unitario: Number(r.prezzo_unitario), quantita_pezzi: r.quantita_pezzi, quantita_cartoni: r.quantita_cartoni, pezzi_per_cartone: Number(r.pezzi_per_cartone) || r.prodotti?.pezzi_per_cartone || 1,
       sc1: Number(r.sc1) || 0, sc2: Number(r.sc2) || 0, sc3: Number(r.sc3) || 0, is_omaggio: !!r.is_omaggio }))
