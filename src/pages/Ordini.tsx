@@ -60,6 +60,8 @@ import { OrdiniSelectionBar } from "@/components/ordini/OrdiniSelectionBar";
 import type { OrdiniTableRow } from "@/components/ordini/ordiniShared";
 import type { OrdineCardAction } from "@/components/ordini/OrdineCard";
 import { NuovoOrdineDialog } from "@/components/ordini/NuovoOrdineDialog";
+import { OrderDraftsPanel } from "@/components/ordini/OrderDraftsPanel";
+import type { OrderDraftRow } from "@/hooks/useOrderDrafts";
 import { ModificaOrdineDialog } from "@/components/ordini/ModificaOrdineDialog";
 import { ProformaDialog, type ProformaData } from "@/components/ordini/ProformaDialog";
 import { ImportPDFDialog } from "@/components/ordini/ImportPDFDialog";
@@ -81,6 +83,7 @@ const Ordini = () => {
   const [aziendaFilter, setAziendaFilter] = useState("");
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [resumeDraft, setResumeDraft] = useState<OrderDraftRow | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingOrdine, setEditingOrdine] = useState<Ordine | null>(null);
   const [isProformaOpen, setIsProformaOpen] = useState(false);
@@ -496,6 +499,11 @@ const Ordini = () => {
           />
 
           <OrdiniStatsRow stats={stats} mom={mom} isLoading={isLoading} />
+          <OrderDraftsPanel
+            clientNames={new Map((clienti ?? []).map((c) => [c.id, c.nome] as [string, string]))}
+            companyNames={new Map((aziende ?? []).map((a) => [a.id, a.nome] as [string, string]))}
+            onResume={(d) => { setResumeDraft(d); setIsDialogOpen(true); }}
+          />
 
           <DashCard title="Ordini attivi" icon={<ShoppingCart className="h-4 w-4" />} bodyClassName="p-3 sm:p-4">
           <OrdiniList
@@ -570,7 +578,8 @@ const Ordini = () => {
 
         <NuovoOrdineDialog
           open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
+          onOpenChange={(v) => { setIsDialogOpen(v); if (!v) setResumeDraft(null); }}
+          draft={resumeDraft}
           onOrderCreated={(data) => {
             setProformaData(data);
             setIsProformaOpen(true);
