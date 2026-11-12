@@ -1,3 +1,4 @@
+import { toNumber, orderRevenue as sharedOrderRevenue } from "../../supabase/functions/_shared/reorder/revenue.ts";
 /**
  * Motore metriche centralizzato — FASE 1.2
  * -----------------------------------------
@@ -55,10 +56,7 @@ export type RigaLike = {
 // ordini "da confermare" vengono contati in modo uniforme in tutta l'app.
 const EXCLUDED_STATUSES = new Set(["stand_by", "annullato"]);
 
-const num = (v: unknown): number => {
-  const n = typeof v === "number" ? v : parseFloat(String(v ?? "0"));
-  return Number.isFinite(n) ? n : 0;
-};
+const num = toNumber;
 
 /** Data economica di riferimento di un ordine (YYYY-MM-DD or ISO).
  *  Si usa la DATA D'ORDINE: è il momento in cui il cliente ordina, ed è la
@@ -74,7 +72,7 @@ export const isCounted = (o: OrdineLike): boolean => {
 };
 
 /** Fatturato ordine — Opzione A: sempre `ordini.totale`. */
-export const orderRevenue = (o: OrdineLike): number => num(o.totale);
+export const orderRevenue = (o: OrdineLike): number => sharedOrderRevenue(o);
 
 /** Pezzi totali di una riga: pezzi sfusi + cartoni convertiti in pezzi. */
 const rigaPezziTotali = (r: RigaLike): number =>

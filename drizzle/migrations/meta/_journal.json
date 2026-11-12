@@ -176,6 +176,20 @@
       "when": 1794505661843,
       "tag": "0024_agency_functions_revoke_anon",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794507477066,
+      "tag": "0025_notification_center_push",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794508174781,
+      "tag": "0026_notifica_inviato_punto_finale",
+      "breakpoints": true
     }
   ]
 }

@@ -11,7 +11,7 @@ const pages = [
   ["Dashboard", "/"], ["Ordini", "/ordini"], ["Analytics", "/analytics"], ["Statistiche prodotti", "/statistiche"], ["Pannello dati", "/pannello-dati"],
   ["Provvigioni", "/provvigioni"], ["Clienti", "/clienti"], ["Aziende", "/aziende"], ["Canvass/PFA", "/canvass"],
   ["Riordino", "/riordino"], ["Intelligenza", "/intelligenza-commerciale"], ["Prepara Visita", "/prepara-visita"],
-  ["AI Commerciale", "/ai-commerciale"], ["Impostazioni", "/impostazioni"], ["Problematiche", "/impostazioni/problematiche"], ["Diagnostica", "/diagnostica"],
+  ["AI Commerciale", "/ai-commerciale"], ["Impostazioni", "/impostazioni"], ["Problematiche", "/impostazioni/problematiche"], ["Diagnostica", "/diagnostica"], ["Centro notifiche", "/notifiche"],
 ];
 export function InternalSearch() {
   const [open, setOpen] = useState(false);
@@ -43,7 +43,7 @@ export function InternalSearch() {
   const matchedPages = pages.filter(([name]) => name.toLocaleLowerCase("it").includes(term.toLocaleLowerCase("it")));
   const total = Object.values(results.data ?? {}).reduce((n, list) => n + list.length, 0);
   return <>
-    <Button variant="outline" onClick={() => setOpen(true)} className="mb-6 h-11 w-full justify-start gap-2 text-muted-foreground lg:w-80" aria-label="Ricerca interna">
+    <Button variant="outline" onClick={() => setOpen(true)} className="h-11 w-full justify-start gap-2 text-muted-foreground lg:w-80" aria-label="Ricerca interna">
       <Search className="h-4 w-4 shrink-0" /> Cerca nel CRM
     </Button>
     <Dialog open={open} onOpenChange={setOpen}>

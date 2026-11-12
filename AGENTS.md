@@ -28,3 +28,5 @@
 - Order recipients come from the per-company address book and the single agency sender is enforced in the email function, so no client setting can send from another mailbox.
 - Order form and proforma share one cartons/pieces/gifts calculation and rows snapshot pieces-per-carton at sale, so later catalog edits cannot change past documents.
 - Product statistics are computed by database functions that allocate saved order totals over net non-gift rows, so product sums reconcile with order revenue and missing detail is reported separately.
+- Notifications are written once per event by database triggers/jobs into a per-user outbox, then fanned out to every enabled Web Push device by a scheduled dispatcher, so history, dedupe and retries never depend on the browser that triggered them.
+- Reorder alerts run the same shared reorder engine and the owner-level tolerance setting as the Riordino page, so alerts and the page always agree.

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { kickPushDispatch } from "@/lib/webPush";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -205,6 +206,8 @@ export function useCreateOrdine() {
       queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
       queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
+      // The database records the "new order" notification; deliver it now (scheduled run is the backup).
+      kickPushDispatch();
       toast.success("Ordine creato con successo!");
     },
     onError: (error) => {
@@ -298,6 +301,7 @@ export function useConfermaOrdineDaStandBy() {
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_yoy"] });
+      kickPushDispatch();
       toast.success("Ordine confermato e conteggiato nei KPI");
     },
     onError: (error) => toast.error("Errore: " + error.message),

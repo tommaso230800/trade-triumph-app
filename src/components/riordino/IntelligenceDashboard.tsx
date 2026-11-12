@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
   Search, RefreshCw, ShoppingCart, BarChart3, Clock, PauseCircle, SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useReorderTolerance } from "@/hooks/useReorderTolerance";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useReorderIntelligence, getTolleranza, setTolleranza, type EnrichedPair,
@@ -51,6 +52,8 @@ export function IntelligenceDashboard() {
   const [affidabilitaFilter, setAffidabilitaFilter] = useState("all");
   const [ordinamento, setOrdinamento] = useState<"ritardo" | "rallentamento" | "valore" | "priorita">("priorita");
   const [tolleranza, setTolleranzaState] = useState(getTolleranza());
+  const sharedTolerance = useReorderTolerance();
+  useEffect(() => { if (sharedTolerance.data) setTolleranzaState(sharedTolerance.data); }, [sharedTolerance.data]);
   const [dettaglio, setDettaglio] = useState<EnrichedPair | null>(null);
   const [ordinaPrefill, setOrdinaPrefill] = useState<OrdinePrefill | null>(null);
   const queryClient = useQueryClient();
@@ -106,9 +109,15 @@ export function IntelligenceDashboard() {
 
   const cambiaTolleranza = (v: string) => {
     const t = Number(v);
-    setTolleranza(t);
     setTolleranzaState(t);
-    queryClient.invalidateQueries({ queryKey: ["reorder_intelligence_v1"] });
+    setTolleranza(t)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["riordino_tolleranza"] });
+        queryClient.invalidateQueries({ queryKey: ["reorder_intelligence_v1"] });
+        queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+        toast.success(`Tolleranza ${t} giorni salvata per tutta l’agenzia`);
+      })
+      .catch(() => toast.error("Tolleranza non salvata. Riprova."));
   };
 
   if (isError) {
