@@ -252,6 +252,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         <span className="truncate text-sm">Impostazioni</span>
       </Link>
       <NavItemComponent item={{ name: "Pannello dati", href: "/pannello-dati", icon: Activity }} />
+      <NavItemComponent item={{ name: "Centro notifiche", href: "/notifiche", icon: Bell }} />
       <Link
         to="/diagnostica"
         onClick={closeMobile}

@@ -31,6 +31,7 @@ const AssistenteAICommerciale = lazy(() => import("./pages/AssistenteAICommercia
 const RiordinoForecast = lazy(() => import("./pages/RiordinoForecast"));
 const IntelligenzaCommerciale = lazy(() => import("./pages/IntelligenzaCommerciale"));
 const Diagnostica = lazy(() => import("./pages/Diagnostica"));
+const CentroNotifiche = lazy(() => import("./pages/CentroNotifiche"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 const Problematiche = lazy(() => import("./pages/Problematiche"));
 const PannelloDati = lazy(() => import("./pages/PannelloDati"));
@@ -87,6 +88,7 @@ const App = () => (
                 <Route path="/impostazioni" element={<Impostazioni />} />
                 <Route path="/impostazioni/problematiche" element={<Problematiche />} />
                 <Route path="/diagnostica" element={<Diagnostica />} />
+                <Route path="/notifiche" element={<CentroNotifiche />} />
                 <Route path="/prepara-visita" element={<PreparaVisita />} />
                 <Route path="/mappa" element={<MappaClienti />} />
                 <Route path="*" element={<NotFound />} />
