@@ -2,6 +2,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@3';
 import { graphLink, nextCheckpoint, validName } from './protocol.ts';
+import { resolveDataOwner } from '../_shared/agency.ts';
 const GATEWAY = 'https://connector-gateway.lovable.dev/microsoft_onedrive';
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), {status, headers:{...corsHeaders,'Content-Type':'application/json'}});
 async function graph(path: string, init: RequestInit = {}) {
@@ -30,7 +31,7 @@ Deno.serve(async req => {
     } else {
       const client=createClient(url,anon,{global:{headers:{Authorization:req.headers.get('Authorization')||''}}});
       const {data:{user},error}=await client.auth.getUser();
-      if(error||!user)return json({error:'Accedi per usare OneDrive'},401); userId=user.id;
+      if(error||!user)return json({error:'Accedi per usare OneDrive'},401); userId=await resolveDataOwner(db,user.id);
     }
     const {data:access}=await db.from('onedrive_access').select('*').eq('user_id',userId).maybeSingle();
     if(!access)return json({error:'Questo account non è autorizzato al OneDrive aziendale'},403);

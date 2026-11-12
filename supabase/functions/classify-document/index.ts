@@ -98,8 +98,11 @@ Deno.serve(async (req) => {
     }
     const db = createClient(url, workerId && service ? service : key, { global: { headers: workerId ? {} : { Authorization: req.headers.get("Authorization") || "" } } });
     const auth = workerId ? null : await db.auth.getUser();
-    const user = workerId ? {id:workerId} : auth?.data.user;
-    if (!user) return response({ error: "Accedi per analizzare i file" }, 401);
+    const authUser = workerId ? {id:workerId} : auth?.data.user;
+    if (!authUser) return response({ error: "Accedi per analizzare i file" }, 401);
+    // Agency members share one archive owned by the agency data owner.
+    const ownerLookup = await db.rpc('agency_data_owner', { _uid: authUser.id });
+    const user = { id: (ownerLookup.data as string | null) ?? authUser.id };
     const { data: doc, error } = await db.from("documenti").select("*").eq("id", docId).eq("user_id",user.id).is("deleted_at", null).single();
     if (error || !doc) return response({ error: "Documento non accessibile" }, 404);
 
