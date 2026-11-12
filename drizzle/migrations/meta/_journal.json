@@ -169,6 +169,13 @@
       "when": 1794504481672,
       "tag": "0023_ordini_bozze",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794505661843,
+      "tag": "0024_agency_functions_revoke_anon",
+      "breakpoints": true
     }
   ]
 }
