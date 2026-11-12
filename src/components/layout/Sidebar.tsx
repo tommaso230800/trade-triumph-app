@@ -19,6 +19,7 @@ import {
   FileText,
   PieChart,
   FolderOpen,
+  Bell,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
