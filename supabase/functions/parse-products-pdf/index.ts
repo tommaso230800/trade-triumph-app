@@ -177,6 +177,8 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) return jsonResponse({ error: "Non autenticato" }, 401);
     const admin = createClient(supabaseUrl, serviceKey);
+    const { data: ownerData } = await admin.rpc("agency_data_owner", { _uid: user.id });
+    const ownerId = (ownerData as string | null) ?? user.id;
 
     const body = await req.json();
     const action = String(body.action ?? "");
@@ -197,7 +199,7 @@ serve(async (req) => {
       if (totalPages < 1) return jsonResponse({ error: "Il PDF non contiene pagine" }, 400);
 
       const jobId = crypto.randomUUID();
-      const storagePath = `${user.id}/${jobId}.pdf`;
+      const storagePath = `${ownerId}/${jobId}.pdf`;
       const { error: upError } = await admin.storage.from(BUCKET).upload(storagePath, bytes, {
         contentType: "application/pdf",
         upsert: true,
@@ -210,7 +212,7 @@ serve(async (req) => {
       }
       const { error: insError } = await admin.from("product_import_jobs").insert({
         id: jobId,
-        user_id: user.id,
+        user_id: ownerId,
         azienda_id: aziendaId,
         file_name: String(fileName ?? "listino.pdf"),
         storage_path: storagePath,
@@ -227,7 +229,7 @@ serve(async (req) => {
       if (!jobId) return jsonResponse({ error: "jobId obbligatorio" }, 400);
       const { data: job, error: jobError } = await admin.from("product_import_jobs").select("*").eq("id", jobId).single();
       if (jobError || !job) return jsonResponse({ error: "Lavoro non trovato" }, 404);
-      if (job.user_id !== user.id) {
+      if (job.user_id !== ownerId) {
         const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin");
         if (!roles?.length) return jsonResponse({ error: "Non autorizzato" }, 403);
       }
@@ -255,7 +257,7 @@ serve(async (req) => {
               const hash = await sha256(`${p.codice ?? ""}|${p.nome ?? ""}|${p.formato ?? ""}|${p.prezzo_listino ?? ""}`);
               rows.push({
                 job_id: jobId,
-                user_id: user.id,
+                user_id: ownerId,
                 azienda_id: job.azienda_id,
                 page: Number(p.pagina) || chunk.from,
                 data: p,

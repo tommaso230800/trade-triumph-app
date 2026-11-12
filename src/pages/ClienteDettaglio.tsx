@@ -418,7 +418,6 @@ const ClienteDettaglio = () => {
         </div>
 
         {id && <ListinoPersonalizzatoSection clienteId={id} />}
-        <Button variant="outline" asChild><Link to={`/proposte?cliente=${id}`}>Proposte commerciali</Link></Button>
         <AcceptedConditions customerId={id}/>
         <section className="space-y-4"><h2 className="text-base font-semibold">File e documenti cliente</h2><FileArchive customerId={id}/></section>
 

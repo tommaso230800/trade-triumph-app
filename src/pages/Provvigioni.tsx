@@ -352,7 +352,6 @@ const Provvigioni = () => {
           <div className="space-y-1">
             <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink">Provvigioni</h1>
             <p className="text-sm text-scatto-muted">Centro di controllo economico — filtra, analizza, gestisci pagamenti</p>
-            <Button asChild variant="outline" className="mt-2"><Link to="/fiscalita-netto">Fiscalità e netto</Link></Button>
           </div>
         </div>
 
@@ -786,7 +785,7 @@ const Provvigioni = () => {
                               )}
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-bold text-scatto-ink">{r.aziendaNome}</p>
-                                <Button variant="ghost" size="sm" className="h-auto p-0 text-xs whitespace-normal" onClick={()=>setFiscalDetail(fiscalSource.data?.find(c=>c.id===r.id)??null)}>{fiscal.subjects.data?.find(s=>s.id===fiscalSource.data?.find(c=>c.id===r.id)?.subjectId)?.name??'Da assegnare'} · Dettaglio fiscale</Button>
+                                <Button variant="ghost" size="sm" className="h-auto p-0 text-xs whitespace-normal" onClick={()=>setFiscalDetail(fiscalSource.data?.find(c=>c.id===r.id)??null)}>{fiscal.subjects.data?.find(s=>s.id===fiscalSource.data?.find(c=>c.id===r.id)?.subjectId)?.name??'Da assegnare'} · Intestatario</Button>
                                 <p className="text-xs leading-snug text-scatto-muted">
                                   {r.clienteNome} · {r.numero} · {r.data?format(new Date(r.data), "dd/MM/yy"):"N/D"}
                                 </p>
@@ -904,7 +903,7 @@ const Provvigioni = () => {
                                   />
                                 )}
                               </TableCell>
-                              <TableCell className="text-sm text-scatto-muted">{r.data?format(new Date(r.data), "dd/MM/yy"):'N/D'}<Button variant="ghost" size="sm" className="block h-auto p-0 text-xs" onClick={()=>setFiscalDetail(fiscalSource.data?.find(c=>c.id===r.id)??null)}>{fiscal.subjects.data?.find(s=>s.id===fiscalSource.data?.find(c=>c.id===r.id)?.subjectId)?.name??'Da assegnare'} · Fiscalità</Button></TableCell>
+                              <TableCell className="text-sm text-scatto-muted">{r.data?format(new Date(r.data), "dd/MM/yy"):'N/D'}<Button variant="ghost" size="sm" className="block h-auto p-0 text-xs" onClick={()=>setFiscalDetail(fiscalSource.data?.find(c=>c.id===r.id)??null)}>{fiscal.subjects.data?.find(s=>s.id===fiscalSource.data?.find(c=>c.id===r.id)?.subjectId)?.name??'Da assegnare'} · Intestatario</Button></TableCell>
                               <TableCell className="font-mono text-xs text-scatto-muted">{r.numero}</TableCell>
                               <TableCell className="text-sm font-medium text-scatto-ink">{r.aziendaNome}</TableCell>
                               <TableCell className="text-sm text-scatto-ink">{r.clienteNome}</TableCell>

@@ -3,6 +3,10 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { ORDER_EMAIL_SELECT, orderEmailVersion } from '../_shared/orderEmailSnapshot.ts';
 import { encodeUtf8Base64, foldBase64, decodePdfBase64 } from './encoding.ts';
+import { resolveDataOwner } from '../_shared/agency.ts';
+
+/** Every agency profile sends orders from this single authorised mailbox. */
+const AGENCY_SENDER = 'agenziamazzigroup@gmail.com';
 
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/google_mail/gmail/v1';
 const email = z.string().email().max(254).refine(v => !/[\r\n]/.test(v));
@@ -34,44 +38,64 @@ Deno.serve(async req => {
     if (!parsed.success) return json({ error: 'Controlla destinatari, oggetto e allegato.' }, 400);
     const input = parsed.data;
     const admin = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
+    const ownerId = await resolveDataOwner(admin, user.id);
     if (input.action === 'pdf') {
-      const { data: row, error } = await client.from('order_email_sends').select('pdf_path').eq('id', input.sendId).eq('user_id', user.id).single();
+      const { data: row, error } = await client.from('order_email_sends').select('pdf_path').eq('id', input.sendId).eq('user_id', ownerId).single();
       if (error || !row) return json({ error: 'Invio non trovato.' }, 404);
       const { data, error: signedError } = await admin.storage.from('documenti').createSignedUrl(row.pdf_path, 300);
       if (signedError) return json({ error: 'Copia del PDF non disponibile.' }, 500);
       return json({ url: data.signedUrl });
     }
-    const { data: order, error: orderError } = await client.from('ordini').select(ORDER_EMAIL_SELECT).eq('id', input.orderId).eq('user_id', user.id).single();
+    const { data: order, error: orderError } = await client.from('ordini').select(ORDER_EMAIL_SELECT).eq('id', input.orderId).eq('user_id', ownerId).single();
     if (orderError || !order) return json({ error: 'Ordine non trovato o non autorizzato.' }, 404);
     const version = await orderEmailVersion(order);
     const gatewayKey = Deno.env.get('LOVABLE_API_KEY');
-    const connectionKey = Deno.env.get('GOOGLE_MAIL_API_KEY');
-    if (!gatewayKey || !connectionKey) return json({ error: 'Collega Gmail per inviare gli ordini.' }, 503);
-    const headers = { Authorization: `Bearer ${gatewayKey}`, 'X-Connection-Api-Key': connectionKey, 'Content-Type': 'application/json' };
-    const profile = await fetch(`${GATEWAY_URL}/users/me/profile`, { headers });
-    if (!profile.ok) {
-      const details = await profile.text();
-      console.error(`Gmail profile [${profile.status}]: ${details}`);
-      return json({ error: 'Gmail non disponibile. Verifica il collegamento.', status: profile.status, details }, profile.status);
+    // Pick the linked Gmail connection that is actually the agency mailbox.
+    const candidates = ['AGENCY_GOOGLE_MAIL_API_KEY', 'GOOGLE_MAIL_API_KEY_1', 'GOOGLE_MAIL_API_KEY_2', 'GOOGLE_MAIL_API_KEY']
+      .map((name) => Deno.env.get(name)).filter((v, i, all): v is string => !!v && all.indexOf(v) === i);
+    if (!gatewayKey || candidates.length === 0) return json({ error: 'Collega Gmail per inviare gli ordini.' }, 503);
+    let headers: Record<string, string> | null = null;
+    let sender: { emailAddress?: string } = {};
+    let lastFailure: { status: number; details: string } | null = null;
+    for (const connectionKey of candidates) {
+      const candidateHeaders = { Authorization: `Bearer ${gatewayKey}`, 'X-Connection-Api-Key': connectionKey, 'Content-Type': 'application/json' };
+      const profile = await fetch(`${GATEWAY_URL}/users/me/profile`, { headers: candidateHeaders });
+      if (!profile.ok) {
+        lastFailure = { status: profile.status, details: await profile.text() };
+        console.error(`Gmail profile [${lastFailure.status}]: ${lastFailure.details}`);
+        continue;
+      }
+      const candidateSender = await profile.json();
+      if (!headers || String(candidateSender.emailAddress ?? '').toLowerCase() === AGENCY_SENDER) {
+        headers = candidateHeaders;
+        sender = candidateSender;
+      }
+      if (String(candidateSender.emailAddress ?? '').toLowerCase() === AGENCY_SENDER) break;
     }
-    const sender = await profile.json();
+    if (!headers) {
+      return json({ error: 'Gmail non disponibile. Verifica il collegamento.', status: lastFailure?.status, details: lastFailure?.details }, lastFailure?.status ?? 503);
+    }
     if (!sender.emailAddress) return json({ error: 'Mittente Gmail non disponibile.' }, 502);
-    if (input.action === 'snapshot') return json({ order, version, senderEmail: sender.emailAddress });
+    const senderAuthorised = String(sender.emailAddress).toLowerCase() === AGENCY_SENDER;
+    if (input.action !== 'snapshot' && !senderAuthorised) {
+      return json({ error: `Invio bloccato: la casella collegata è ${sender.emailAddress}, ma gli ordini devono partire da ${AGENCY_SENDER}. Collega la casella dell’agenzia.`, senderEmail: sender.emailAddress, requiredSender: AGENCY_SENDER }, 412);
+    }
+    if (input.action === 'snapshot') return json({ order, version, senderEmail: sender.emailAddress, requiredSender: AGENCY_SENDER, senderAuthorised });
     // A stable attempt ID is claimed before any call that can send mail.
-    const { data: existing } = await admin.from('order_email_sends').select('*').eq('id', input.attemptId).eq('user_id', user.id).maybeSingle();
+    const { data: existing } = await admin.from('order_email_sends').select('*').eq('id', input.attemptId).eq('user_id', ownerId).maybeSingle();
     if (existing) return json({ send: existing, duplicate: true });
     if (version !== input.version) return json({ error: 'L’ordine è stato modificato. Chiudi e riapri la composizione per aggiornare il PDF.' }, 409);
     const bytes = decodePdfBase64(input.pdf);
     if (new TextDecoder().decode(bytes.subarray(0, 5)) !== '%PDF-' || bytes.length > 12000000) return json({ error: 'Il PDF non è valido o supera 12 MB.' }, 400);
-    const path = `${user.id}/order-email/${input.attemptId}/${input.filename}`;
+    const path = `${ownerId}/order-email/${input.attemptId}/${input.filename}`;
     const { data: send, error: claimError } = await admin.from('order_email_sends').insert({
-      id: input.attemptId, user_id: user.id, ordine_id: order.id, to_addresses: input.to, cc_addresses: input.cc,
+      id: input.attemptId, user_id: ownerId, sent_by: user.id, ordine_id: order.id, to_addresses: input.to, cc_addresses: input.cc,
       subject: input.subject, body: input.body, sender_name: input.senderName, reply_to: input.replyTo,
       pdf_path: path, pdf_filename: input.filename, order_version: version, status: 'sending'
     }).select().single();
     if (claimError) {
       if (claimError.code === '23505') {
-        const { data: duplicate } = await admin.from('order_email_sends').select('*').eq('id', input.attemptId).eq('user_id', user.id).single();
+        const { data: duplicate } = await admin.from('order_email_sends').select('*').eq('id', input.attemptId).eq('user_id', ownerId).single();
         return json({ send: duplicate, duplicate: true });
       }
       return json({ error: 'Impossibile registrare l’invio. Nessuna email inviata.' }, 500);

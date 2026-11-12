@@ -67,7 +67,6 @@ export function exportKPIToCSV(d: KPIExportData) {
   rows.push(`Confronto;Fatturato anno precedente;${d.yoyPrevFatturato.toFixed(2)}`);
   rows.push(`Sconti;Sconto cascata medio %;${d.scontoCascataMedio.toFixed(2)}`);
   rows.push(`Sconti;Sconto globale medio %;${d.scontoMedio.toFixed(2)}`);
-  rows.push(`Sconti;Sconto merce medio €/ordine;${d.scontoMerceMedio.toFixed(2)}`);
   rows.push(`Margine;Costo acquisto totale;${d.costoAcquistoTotale.toFixed(2)}`);
   rows.push(`Margine;Utile lordo;${d.utileLordo.toFixed(2)}`);
   rows.push(`Margine;Margine %;${d.marginePercentuale.toFixed(2)}`);
@@ -208,7 +207,6 @@ export function exportKPIToPDF(d: KPIExportData) {
     ["Margine %", fmtPct(d.marginePercentuale)],
     ["Sconto cascata medio", fmtPct(d.scontoCascataMedio)],
     ["Sconto globale medio", fmtPct(d.scontoMedio)],
-    ["Sconto merce medio €/ord.", fmtEUR(d.scontoMerceMedio)],
   ];
   margRows.forEach((r, i) => {
     const col = i % 2;

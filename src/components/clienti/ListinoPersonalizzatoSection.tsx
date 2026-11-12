@@ -229,7 +229,7 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
                     <p className="tabular-nums font-semibold">{formatCurrency(resolved.price)}</p>
                     <p className="text-[10px] text-muted-foreground">{PRICE_SOURCE_LABELS[resolved.source]}</p>
                     {custom?.valid_from&&<p className="text-xs text-muted-foreground">Dal {custom.valid_from}</p>}
-                    {custom?.proposal_id&&<Link className="text-xs text-primary underline" to={`/proposte?id=${custom.proposal_id}`}>Proposta di origine</Link>}
+                    {custom?.proposal_id&&<span className="text-xs text-muted-foreground">Da proposta accettata</span>}
                   </div>
                 </div>
 

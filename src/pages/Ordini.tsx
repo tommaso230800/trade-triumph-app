@@ -184,7 +184,7 @@ const Ordini = () => {
           prezzo_unitario: Number(r.prezzo_unitario),
           quantita_pezzi: r.quantita_pezzi,
           quantita_cartoni: r.quantita_cartoni,
-          pezzi_per_cartone: r.prodotti?.pezzi_per_cartone || 1,
+          pezzi_per_cartone: Number(r.pezzi_per_cartone) || r.prodotti?.pezzi_per_cartone || 1,
           sc1: Number(r.sc1) || 0,
           sc2: Number(r.sc2) || 0,
           sc3: Number(r.sc3) || 0,

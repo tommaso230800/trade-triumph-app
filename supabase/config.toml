@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.maps-route]
 verify_jwt = false
+
+[functions.agency-auth]
+verify_jwt = false

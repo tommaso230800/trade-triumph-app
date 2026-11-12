@@ -17,6 +17,7 @@ import {
   Gauge,
   Activity,
   FileText,
+  PieChart,
   FolderOpen,
 } from "lucide-react";
 
@@ -49,10 +50,9 @@ const baseNavigation: NavItem[] = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
+  { name: "Statistiche prodotti", href: "/statistiche", icon: PieChart },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
-  { name: "Fiscalità e netto", href: "/fiscalita-netto", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
-  { name: "Locandine e proposte", href: "/proposte", icon: FileText },
   { name: "File e documenti", href: "/file-documenti", icon: FolderOpen },
   { name: "Riordino", href: "/riordino", icon: Repeat },
   { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge },

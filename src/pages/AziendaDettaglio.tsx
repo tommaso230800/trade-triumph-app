@@ -527,7 +527,6 @@ const AziendaDettaglio = () => {
 
         <OrderEmailSettings companyId={azienda.id} />
         <MandateAssignment companies={[{id:azienda.id,nome:azienda.nome}]} />
-        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={()=>navigate(`/proposte?azienda=${azienda.id}`)}>Locandine e proposte</Button></div>
         <AcceptedConditions companyId={azienda.id}/>
 
         {/* Products Section */}

@@ -1,4 +1,4 @@
-export const DEFAULT_ORDER_SUBJECT = 'Ordine {nome_cliente} – {data_del_giorno}';
+export const DEFAULT_ORDER_SUBJECT = 'Ordine – {nome_cliente} – {data_del_giorno}';
 export const DEFAULT_ORDER_BODY = '{saluto},\n\nin allegato ordine.\n\nAttendo conferma ordine.\n\n{chiusura}.\n\n{firma}';
 
 export function romeEmailContext(name: string, signature: string, now = new Date()) {

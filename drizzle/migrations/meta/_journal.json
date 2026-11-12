@@ -134,6 +134,34 @@
       "when": 1793795002165,
       "tag": "0018_onedrive_document_access_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794503134708,
+      "tag": "0019_agency_shared_workspace",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794503361710,
+      "tag": "0020_agency_shared_workspace_fixups",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794503678204,
+      "tag": "0021_product_sales_stats",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794503719403,
+      "tag": "0022_product_sales_stats_precision",
+      "breakpoints": true
     }
   ]
 }

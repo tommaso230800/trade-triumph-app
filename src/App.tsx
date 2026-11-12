@@ -26,7 +26,6 @@ const Ordini = lazy(() => import("./pages/Ordini"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const AnalyticsAzienda = lazy(() => import("./pages/AnalyticsAzienda"));
 const Provvigioni = lazy(() => import("./pages/Provvigioni"));
-const FiscalitaNetto = lazy(() => import("./pages/FiscalitaNetto"));
 const Canvass = lazy(() => import("./pages/Canvass"));
 const AssistenteAICommerciale = lazy(() => import("./pages/AssistenteAICommerciale"));
 const RiordinoForecast = lazy(() => import("./pages/RiordinoForecast"));
@@ -35,11 +34,12 @@ const Diagnostica = lazy(() => import("./pages/Diagnostica"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 const Problematiche = lazy(() => import("./pages/Problematiche"));
 const PannelloDati = lazy(() => import("./pages/PannelloDati"));
-const Proposte = lazy(() => import("./pages/Proposte"));
 const FileDocumenti = lazy(() => import("./pages/FileDocumenti"));
 const PreparaVisita = lazy(() => import("./pages/PreparaVisita"));
 const MappaClienti = lazy(() => import("./pages/MappaClienti"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const StatisticheProdotti = lazy(() => import("./pages/StatisticheProdotti"));
 
 const App = () => (
   <PersistQueryClientProvider
@@ -61,6 +61,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/aziende" element={<Aziende />} />
                 <Route path="/aziende/:id" element={<AziendaDettaglio />} />
                 <Route path="/clienti" element={<Clienti />} />
@@ -68,14 +69,17 @@ const App = () => (
                 <Route path="/clienti/consorzio/:slug" element={<ConsorzioDettaglio />} />
                 <Route path="/ordini" element={<Ordini />} />
                 <Route path="/pannello-dati" element={<PannelloDati />} />
-                <Route path="/proposte" element={<Proposte />} />
+                <Route path="/proposte" element={<Navigate to="/" replace />} />
                 <Route path="/file-documenti" element={<FileDocumenti />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/analytics/azienda/:id" element={<AnalyticsAzienda />} />
+                <Route path="/statistiche" element={<StatisticheProdotti />} />
                 {/* Vecchio percorso KPI: reindirizza ad Analytics */}
                 <Route path="/kpi" element={<Navigate to="/analytics" replace />} />
                 <Route path="/provvigioni" element={<Provvigioni />} />
-                <Route path="/fiscalita-netto" element={<FiscalitaNetto />} />
+                <Route path="/fiscalita-netto" element={<Navigate to="/provvigioni" replace />} />
+                <Route path="/fiscalita" element={<Navigate to="/provvigioni" replace />} />
+                <Route path="/netto" element={<Navigate to="/provvigioni" replace />} />
                 <Route path="/canvass" element={<Canvass />} />
                 <Route path="/ai-commerciale" element={<AssistenteAICommerciale />} />
                 <Route path="/riordino" element={<RiordinoForecast />} />

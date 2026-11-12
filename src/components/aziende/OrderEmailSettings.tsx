@@ -8,20 +8,18 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EMPTY_EMAIL_SETTINGS, saveCompanyEmailSettings, useCompanyEmailSettings, type CompanyEmailSettings } from '@/hooks/useOrderEmail';
-import { parseEmailAddresses } from '@/lib/orderEmailTemplates';
+import { CompanyEmailContacts } from '@/components/email/CompanyEmailContacts';
 
 export function OrderEmailSettings({ companyId }: { companyId: string }) {
   const query = useCompanyEmailSettings(companyId);
   const cache = useQueryClient();
   const [form, setForm] = useState<CompanyEmailSettings>(EMPTY_EMAIL_SETTINGS);
-  const [to, setTo] = useState('');
-  const [cc, setCc] = useState('');
   const [saving, setSaving] = useState(false);
-  useEffect(() => { if (query.data) { setForm(query.data); setTo(query.data.to_addresses.join(', ')); setCc(query.data.cc_addresses.join(', ')); } }, [query.data]);
+  useEffect(() => { if (query.data) setForm(query.data); }, [query.data]);
   const save = async () => {
     setSaving(true);
     try {
-      await saveCompanyEmailSettings(companyId, { ...form, to_addresses: parseEmailAddresses(to), cc_addresses: parseEmailAddresses(cc) });
+      await saveCompanyEmailSettings(companyId, form);
       await cache.invalidateQueries({ queryKey: ['company-order-email'] });
       toast.success('Impostazioni invio ordini salvate');
     } catch (error) { toast.error(error instanceof Error ? error.message : 'Salvataggio non riuscito'); }
@@ -29,10 +27,10 @@ export function OrderEmailSettings({ companyId }: { companyId: string }) {
   };
   return <section className="min-w-0 space-y-4 border-y border-border py-6">
     <h2 className="flex items-center gap-2 text-base font-semibold"><Mail className="h-5 w-5 text-primary" />Impostazioni invio ordini</h2>
+    <CompanyEmailContacts aziendaId={companyId} />
+    <p className="text-xs text-muted-foreground">Mittente unico degli ordini: agenziamazzigroup@gmail.com</p>
     {query.isLoading ? <Skeleton className="h-48 w-full" /> : query.isError ? <div className="space-y-2"><p className="text-sm text-destructive">Impostazioni non disponibili.</p><Button variant="outline" onClick={() => query.refetch()}>Riprova</Button></div> : <>
       <div className="grid min-w-0 gap-4 sm:grid-cols-2">
-        <div className="min-w-0 space-y-2"><Label htmlFor="company-order-to">A</Label><Textarea id="company-order-to" value={to} onChange={e => setTo(e.target.value)} placeholder="ordini@azienda.it, commerciale@azienda.it" className="min-h-20 rounded-lg border-border bg-muted/30 text-base sm:text-sm" /></div>
-        <div className="min-w-0 space-y-2"><Label htmlFor="company-order-cc">CC</Label><Textarea id="company-order-cc" value={cc} onChange={e => setCc(e.target.value)} placeholder="Indirizzi in copia" className="min-h-20 rounded-lg border-border bg-muted/30 text-base sm:text-sm" /></div>
         <div className="space-y-2"><Label htmlFor="company-sender">Nome mittente</Label><Input id="company-sender" value={form.sender_name} onChange={e => setForm({ ...form, sender_name: e.target.value })} className="h-11 rounded-lg border-border bg-muted/30 text-base sm:text-sm" /></div>
         <div className="space-y-2"><Label htmlFor="company-reply">Indirizzo di risposta</Label><Input id="company-reply" type="email" value={form.reply_to} onChange={e => setForm({ ...form, reply_to: e.target.value })} className="h-11 rounded-lg border-border bg-muted/30 text-base sm:text-sm" /></div>
       </div>
