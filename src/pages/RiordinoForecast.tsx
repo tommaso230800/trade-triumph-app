@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ReorderPairs } from "@/components/riordino/ReorderPairs";
+import { ReorderPairFocus } from "@/components/riordino/ReorderPairFocus";
 import { IntelligenceDashboard } from "@/components/riordino/IntelligenceDashboard";
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useReorderForecast, type EnrichedForecast } from "@/hooks/useReorderForecast";
@@ -134,6 +135,8 @@ export default function RiordinoForecast() {
             <p className="text-xs text-muted-foreground">Intelligence commerciale sulle abitudini di acquisto dei clienti, calcolata sugli ordini reali.</p>
           </header>
           {isError && <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive p-4 text-sm">Non riesco ad aggiornare Riordino. Controlla la connessione e riprova.<Button variant="outline" onClick={()=>refetch()}>Riprova</Button></div>}
+
+          <ReorderPairFocus/>
 
           <IntelligenceDashboard/>
 
