@@ -13,6 +13,7 @@ import {
   Search, RefreshCw, ShoppingCart, BarChart3, Clock, PauseCircle, SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useReorderTolerance } from "@/hooks/useReorderTolerance";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useReorderIntelligence, getTolleranza, setTolleranza, type EnrichedPair,
@@ -51,6 +52,8 @@ export function IntelligenceDashboard() {
   const [affidabilitaFilter, setAffidabilitaFilter] = useState("all");
   const [ordinamento, setOrdinamento] = useState<"ritardo" | "rallentamento" | "valore" | "priorita">("priorita");
   const [tolleranza, setTolleranzaState] = useState(getTolleranza());
+  const sharedTolerance = useReorderTolerance();
+  useEffect(() => { if (sharedTolerance.data) setTolleranzaState(sharedTolerance.data); }, [sharedTolerance.data]);
   const [dettaglio, setDettaglio] = useState<EnrichedPair | null>(null);
   const [ordinaPrefill, setOrdinaPrefill] = useState<OrdinePrefill | null>(null);
   const queryClient = useQueryClient();
