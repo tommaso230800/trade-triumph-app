@@ -26,17 +26,22 @@ export default function Auth() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
   const navigate = useNavigate();
+  // Only same-app relative paths are honoured, never external URLs.
+  const redirectTo = (() => {
+    const r = new URLSearchParams(window.location.search).get("redirect") || "/";
+    return r.startsWith("/") && !r.startsWith("//") && !r.startsWith("/auth") ? r : "/";
+  })();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) navigate("/");
+      if (session) navigate(redirectTo, { replace: true });
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/");
+      if (session) navigate(redirectTo, { replace: true });
       setChecking(false);
     });
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, redirectTo]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +56,7 @@ export default function Auth() {
       return;
     }
     toast.success("Bentornato!");
-    navigate("/");
+    navigate(redirectTo, { replace: true });
   };
 
   const handleReset = async (e: React.FormEvent) => {
