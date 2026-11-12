@@ -1,6 +1,7 @@
 // Web Push delivery queue shared by every notification producer.
 // Each device is sent independently: one unreachable device never blocks the others.
 import webpush from 'npm:web-push@3.6.7';
+import { classifyPushStatus, retryDelayMinutes } from './pushRules.ts';
 
 const MAX_ATTEMPTS = 5;
 const SEND_TIMEOUT_MS = 10_000;
@@ -15,18 +16,6 @@ function vapid() {
   const subject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:agenziamazzigroup@gmail.com';
   if (!publicKey || !privateKey) throw new Error('Chiavi notifiche push non configurate');
   return { publicKey, privateKey, subject };
-}
-
-export function retryDelayMinutes(attempts: number): number {
-  return Math.min(60, Math.max(1, attempts * attempts));
-}
-
-/** Classifies a push-service response: accepted, expired subscription, retryable or permanent failure. */
-export function classifyPushStatus(status: number): 'accettata' | 'scaduta' | 'riprova' | 'fallita' {
-  if (status >= 200 && status < 300) return 'accettata';
-  if (status === 404 || status === 410) return 'scaduta';
-  if (status === 429 || status >= 500) return 'riprova';
-  return 'fallita';
 }
 
 // deno-lint-ignore no-explicit-any
