@@ -28,7 +28,7 @@ export function OrdineDettaglioNotifica({ ordineId, onClose, onShowProforma, onE
       return { ordine: ordine.data, invii: invii.data ?? [] };
     },
   });
-  const o = q.data?.ordine as (Ordine & { clienti?: { nome: string } | null; aziende?: { nome: string } | null }) | null | undefined;
+  const o = q.data?.ordine as unknown as (Ordine & { clienti?: { nome: string } | null; aziende?: { nome: string } | null }) | null | undefined;
 
   return (
     <Dialog open={!!ordineId} onOpenChange={(v) => !v && onClose()}>

@@ -74,10 +74,12 @@ export async function getPushState(): Promise<{ state: PushState; endpoint: stri
   };
 }
 
-function base64UrlToBytes(value: string): Uint8Array {
+function base64UrlToBytes(value: string): ArrayBuffer {
   const pad = "=".repeat((4 - (value.length % 4)) % 4);
   const raw = atob((value + pad).replace(/-/g, "+").replace(/_/g, "/"));
-  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+  const out = new Uint8Array(new ArrayBuffer(raw.length));
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out.buffer;
 }
 
 export function deviceName(): string {
