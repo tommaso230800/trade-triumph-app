@@ -39,7 +39,7 @@ export function useStatsCoverage(range: DateRange | null, f: Pick<StatsFilters, 
         p_from: range!.from, p_to: range!.to, p_azienda_id: f.azienda_id ?? undefined, p_cliente_id: f.cliente_id ?? undefined,
       });
       if (error) throw error;
-      const r = (data ?? [])[0] ?? {};
+      const r: Record<string, unknown> = (data ?? [])[0] ?? {};
       return {
         ordini_inclusi: n(r.ordini_inclusi), valore_ordini: n(r.valore_ordini), ordini_con_righe: n(r.ordini_con_righe),
         valore_con_righe: n(r.valore_con_righe), ordini_senza_righe: n(r.ordini_senza_righe), valore_senza_righe: n(r.valore_senza_righe),
