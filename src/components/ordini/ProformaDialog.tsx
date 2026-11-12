@@ -171,7 +171,7 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
   // Calculate subtotals with cascading discounts - pieces auto-calculated from cartons
   const subtotale = data.righe.reduce((sum, riga) => {
     if (riga.is_omaggio) return sum;
-    const pezziTotali = riga.quantita_cartoni * riga.pezzi_per_cartone;
+    const pezziTotali = (Number(riga.quantita_pezzi) || 0) + riga.quantita_cartoni * riga.pezzi_per_cartone;
     const sc1 = riga.sc1 || 0;
     const sc2 = riga.sc2 || 0;
     const sc3 = riga.sc3 || 0;
@@ -270,7 +270,7 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
               </TableHeader>
               <TableBody>
                 {data.righe.map((riga, idx) => {
-                  const pezziTotali = riga.quantita_cartoni * riga.pezzi_per_cartone;
+                  const pezziTotali = (Number(riga.quantita_pezzi) || 0) + riga.quantita_cartoni * riga.pezzi_per_cartone;
                   const sc1 = riga.sc1 || 0;
                   const sc2 = riga.sc2 || 0;
                   const sc3 = riga.sc3 || 0;
