@@ -50,16 +50,31 @@ Deno.serve(async req => {
     if (orderError || !order) return json({ error: 'Ordine non trovato o non autorizzato.' }, 404);
     const version = await orderEmailVersion(order);
     const gatewayKey = Deno.env.get('LOVABLE_API_KEY');
-    const connectionKey = Deno.env.get('AGENCY_GOOGLE_MAIL_API_KEY') ?? Deno.env.get('GOOGLE_MAIL_API_KEY_1') ?? Deno.env.get('GOOGLE_MAIL_API_KEY');
-    if (!gatewayKey || !connectionKey) return json({ error: 'Collega Gmail per inviare gli ordini.' }, 503);
-    const headers = { Authorization: `Bearer ${gatewayKey}`, 'X-Connection-Api-Key': connectionKey, 'Content-Type': 'application/json' };
-    const profile = await fetch(`${GATEWAY_URL}/users/me/profile`, { headers });
-    if (!profile.ok) {
-      const details = await profile.text();
-      console.error(`Gmail profile [${profile.status}]: ${details}`);
-      return json({ error: 'Gmail non disponibile. Verifica il collegamento.', status: profile.status, details }, profile.status);
+    // Pick the linked Gmail connection that is actually the agency mailbox.
+    const candidates = ['AGENCY_GOOGLE_MAIL_API_KEY', 'GOOGLE_MAIL_API_KEY_1', 'GOOGLE_MAIL_API_KEY_2', 'GOOGLE_MAIL_API_KEY']
+      .map((name) => Deno.env.get(name)).filter((v, i, all): v is string => !!v && all.indexOf(v) === i);
+    if (!gatewayKey || candidates.length === 0) return json({ error: 'Collega Gmail per inviare gli ordini.' }, 503);
+    let headers: Record<string, string> | null = null;
+    let sender: { emailAddress?: string } = {};
+    let lastFailure: { status: number; details: string } | null = null;
+    for (const connectionKey of candidates) {
+      const candidateHeaders = { Authorization: `Bearer ${gatewayKey}`, 'X-Connection-Api-Key': connectionKey, 'Content-Type': 'application/json' };
+      const profile = await fetch(`${GATEWAY_URL}/users/me/profile`, { headers: candidateHeaders });
+      if (!profile.ok) {
+        lastFailure = { status: profile.status, details: await profile.text() };
+        console.error(`Gmail profile [${lastFailure.status}]: ${lastFailure.details}`);
+        continue;
+      }
+      const candidateSender = await profile.json();
+      if (!headers || String(candidateSender.emailAddress ?? '').toLowerCase() === AGENCY_SENDER) {
+        headers = candidateHeaders;
+        sender = candidateSender;
+      }
+      if (String(candidateSender.emailAddress ?? '').toLowerCase() === AGENCY_SENDER) break;
     }
-    const sender = await profile.json();
+    if (!headers) {
+      return json({ error: 'Gmail non disponibile. Verifica il collegamento.', status: lastFailure?.status, details: lastFailure?.details }, lastFailure?.status ?? 503);
+    }
     if (!sender.emailAddress) return json({ error: 'Mittente Gmail non disponibile.' }, 502);
     const senderAuthorised = String(sender.emailAddress).toLowerCase() === AGENCY_SENDER;
     if (input.action !== 'snapshot' && !senderAuthorised) {
