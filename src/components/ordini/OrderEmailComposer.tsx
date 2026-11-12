@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCompanyEmailSettings, useOrderEmailHistory, saveCompanyEmailSettings, EMPTY_EMAIL_SETTINGS } from '@/hooks/useOrderEmail';
 import { dynamicEmailTemplate, renderEmailTemplate, romeEmailContext, validEmailAddresses } from '@/lib/orderEmailTemplates';
-import { invokeOrderEmail } from '@/lib/orderEmailSnapshot';
+import { invokeOrderEmail, type OrderMailbox } from '@/lib/orderEmailSnapshot';
 import type { ProformaData } from './ProformaDialog';
 import { OrderPdfPreview } from './OrderPdfPreview';
 import { RecipientInput } from '@/components/email/RecipientInput';
@@ -19,7 +19,7 @@ import { useAziende } from '@/hooks/useAziende';
 import { useAgencyMembers, memberName } from '@/hooks/useAgency';
 import { defaultRecipients, normalizeEmail } from '@/lib/recipients';
 
-export type PreparedOrderEmail = { data: ProformaData; version: string; senderEmail: string; requiredSender: string; senderAuthorised: boolean; pdf: Blob; filename: string };
+export type PreparedOrderEmail = { data: ProformaData; version: string; senderEmail: string; requiredSender: string; senderAuthorised: boolean; mailboxes: OrderMailbox[]; pdf: Blob; filename: string };
 export function OrderEmailComposer({ prepared, onClose }: { prepared: PreparedOrderEmail; onClose: () => void }) {
   const settings = useCompanyEmailSettings(prepared.data.azienda_id ?? undefined);
   const history = useOrderEmailHistory(prepared.data.ordine_id);
@@ -37,6 +37,10 @@ export function OrderEmailComposer({ prepared, onClose }: { prepared: PreparedOr
   const [body, setBody] = useState('');
   const [senderName, setSenderName] = useState('');
   const [replyTo, setReplyTo] = useState('');
+  // Agency mailbox is the default; a personal one appears only for the profile allowed to use it.
+  const [mailboxKind, setMailboxKind] = useState<OrderMailbox['kind']>('agenzia');
+  const mailbox = prepared.mailboxes.find(m => m.kind === mailboxKind) ?? prepared.mailboxes[0];
+  const mailboxReady = !!mailbox?.available;
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -80,7 +84,7 @@ export function OrderEmailComposer({ prepared, onClose }: { prepared: PreparedOr
   };
   const send = async () => {
     if (lock.current || finished || uncertain) return;
-    if (!prepared.senderAuthorised) { setError(`Invio bloccato: gli ordini partono solo da ${prepared.requiredSender}.`); return; }
+    if (!mailboxReady) { setError(`La casella ${mailbox?.email ?? ''} non è collegata.`); return; }
     const recipients = to, copies = cc;
     if (!recipients.length || !validEmailAddresses([...recipients, ...copies, ...(replyTo ? [replyTo] : [])]) || !subject.trim() || !body.trim()) {
       setError('Inserisci almeno un destinatario valido, oggetto e testo.'); return;
@@ -96,7 +100,7 @@ export function OrderEmailComposer({ prepared, onClose }: { prepared: PreparedOr
       const bytes = new Uint8Array(await prepared.pdf.arrayBuffer());
       let binary = '';
       for (let i = 0; i < bytes.length; i += 8192) binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
-      const result = await invokeOrderEmail({ action: 'send', orderId: prepared.data.ordine_id, attemptId: attempt.current,
+      const result = await invokeOrderEmail({ action: 'send', mailbox: mailbox.kind, orderId: prepared.data.ordine_id, attemptId: attempt.current,
         version: prepared.version, to: recipients, cc: copies, subject: sentSubject, body, senderName, replyTo, filename: prepared.filename, pdf: btoa(binary) });
       if (result.send?.status === 'sent') { setFinished(true); toast.success('Ordine inviato via email'); }
       else if (result.send?.status === 'sending') { setUncertain(true); setError(result.error || result.send.error_message || 'Invio in corso. Attendi la conferma nello storico.'); }
@@ -130,11 +134,23 @@ export function OrderEmailComposer({ prepared, onClose }: { prepared: PreparedOr
         <DialogHeader className="shrink-0 border-b border-border p-4 sm:p-6"><DialogTitle>Invia ordine via email</DialogTitle><DialogDescription className="break-words">{prepared.data.cliente_nome} · {prepared.data.azienda_nome}</DialogDescription></DialogHeader>
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-6">
           {settings.isLoading || contacts.isLoading ? <Skeleton className="h-80 w-full" /> : settings.isError || contacts.isError ? <div className="space-y-2"><p className="text-sm text-destructive">Impostazioni email non disponibili.</p><Button variant="outline" onClick={() => { settings.refetch(); contacts.refetch(); }}>Riprova</Button></div> : <>
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/30 p-3">
-              <p className="min-w-0 break-all text-sm"><span className="text-muted-foreground">Da </span><span className="font-medium">{prepared.requiredSender}</span></p>
+            {prepared.mailboxes.length > 1 ? <fieldset className="space-y-2">
+              <div className="flex items-center justify-between gap-2"><legend className="text-sm font-medium">Invia da</legend><span className={`rounded-md px-2 py-0.5 text-xs font-medium ${finished ? 'bg-success/10 text-success' : busy || uncertain ? 'bg-warning/10 text-warning' : 'bg-muted text-muted-foreground'}`}>{statusLabel}</span></div>
+              <div role="radiogroup" aria-label="Casella mittente" className="grid gap-2 sm:grid-cols-2">
+                {prepared.mailboxes.map(m => {
+                  const active = m.kind === mailbox.kind;
+                  return <button key={m.kind} type="button" role="radio" aria-checked={active} disabled={disabled} onClick={() => { setMailboxKind(m.kind); setError(''); }}
+                    className={`min-h-11 min-w-0 rounded-lg border p-3 text-left transition-colors duration-150 disabled:opacity-60 ${active ? 'border-primary bg-primary/5' : 'border-border bg-muted/30'}`}>
+                    <span className="block text-sm font-medium">{m.kind === 'agenzia' ? 'Email agenzia' : 'Email personale'}</span>
+                    <span className="block break-all text-xs text-muted-foreground">{m.email}{!m.available && ' · non collegata'}</span>
+                  </button>;
+                })}
+              </div>
+            </fieldset> : <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/30 p-3">
+              <p className="min-w-0 break-all text-sm"><span className="text-muted-foreground">Da </span><span className="font-medium">{mailbox?.email ?? prepared.requiredSender}</span></p>
               <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${finished ? 'bg-success/10 text-success' : busy || uncertain ? 'bg-warning/10 text-warning' : 'bg-muted text-muted-foreground'}`}>{statusLabel}</span>
-            </div>
-            {!prepared.senderAuthorised && <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm"><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /><span>La casella collegata è <strong className="break-all">{prepared.senderEmail}</strong>. Gli ordini devono partire da <strong className="break-all">{prepared.requiredSender}</strong>: l’invio resta bloccato finché la casella dell’agenzia non viene collegata.</span></div>}
+            </div>}
+            {!mailboxReady && <div role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm"><ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" /><span>La casella <strong className="break-all">{mailbox?.email}</strong> non è collegata: l’invio da questa casella resta bloccato.</span></div>}
             <div className="grid gap-4">
               <RecipientInput label="A" value={to} other={cc} otherLabel="CC" onChange={setTo} contacts={contacts.data ?? []} aziendaId={aziendaId} aziendaNames={aziendaNames} disabled={disabled} onSaveToBook={email => setBookDraft({ email, nome: '' })} />
               <RecipientInput label="CC" value={cc} other={to} otherLabel="A" onChange={setCc} contacts={contacts.data ?? []} aziendaId={aziendaId} aziendaNames={aziendaNames} disabled={disabled} onSaveToBook={email => setBookDraft({ email, nome: '' })} />
@@ -153,7 +169,7 @@ export function OrderEmailComposer({ prepared, onClose }: { prepared: PreparedOr
         </div>
         <div className="flex shrink-0 gap-2 border-t border-border bg-background p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button variant="outline" className="min-h-11" onClick={onClose} disabled={busy}><X className="mr-2 h-4 w-4" />Chiudi</Button>
-          <Button className="min-h-11 flex-1 gap-2" disabled={disabled || settings.isLoading || settings.isError || !prepared.senderAuthorised} onClick={send}><Send className="h-4 w-4" />{busy ? 'Invio in corso…' : finished ? 'Inviata' : uncertain ? 'In corso di verifica' : error ? 'Riprova invio' : 'Invia email'}</Button>
+          <Button className="min-h-11 flex-1 gap-2" disabled={disabled || settings.isLoading || settings.isError || !mailboxReady} onClick={send}><Send className="h-4 w-4" />{busy ? 'Invio in corso…' : finished ? 'Inviata' : uncertain ? 'In corso di verifica' : error ? 'Riprova invio' : 'Invia email'}</Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -189,7 +205,7 @@ export function OrderEmailHistory({ orderId }: { orderId?: string }) {
     <h3 className="text-base font-semibold">Storico invii</h3>
     {history.isLoading ? <Skeleton className="h-20 w-full" /> : history.isError ? <div><p className="text-sm text-destructive">Storico non disponibile.</p><Button variant="outline" onClick={() => history.refetch()}>Riprova</Button></div> : !history.data?.length ? <p className="text-sm text-muted-foreground">Nessun invio per questo ordine.</p> : history.data.map(row => <details key={row.id} className="min-w-0 rounded-lg border border-border p-3">
       <summary className="flex min-h-11 cursor-pointer flex-wrap items-center justify-between gap-2 text-sm"><span className="tabular-nums">{new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'short', timeStyle: 'short' }).format(new Date(row.sent_at ?? row.created_at))}</span><span className={row.status === 'sent' ? 'text-success' : row.status === 'error' ? 'text-destructive' : 'text-warning'}>{row.status === 'sent' ? 'Inviato' : row.status === 'error' ? 'Errore' : 'In invio'}</span></summary>
-      <div className="space-y-2 break-words pt-2 text-sm">{memberName(members.data ?? [], (row as { sent_by?: string | null }).sent_by) && <p className="text-xs text-muted-foreground">Inviato da {memberName(members.data ?? [], (row as { sent_by?: string | null }).sent_by)}</p>}<p>A: {row.to_addresses.join(', ')}</p>{row.cc_addresses.length > 0 && <p>CC: {row.cc_addresses.join(', ')}</p>}<p className="font-semibold">{row.subject}</p><p className="whitespace-pre-wrap">{row.body}</p>{row.error_message && <p className="text-destructive">{row.error_message}</p>}<Button variant="outline" className="min-h-11 max-w-full gap-2 whitespace-normal text-left" disabled={opening === row.id} onClick={() => openPdf(row.id)}><FileText className="h-4 w-4 shrink-0" />{row.pdf_filename}</Button></div>
+      <div className="space-y-2 break-words pt-2 text-sm">{memberName(members.data ?? [], (row as { sent_by?: string | null }).sent_by) && <p className="text-xs text-muted-foreground">Inviato da {memberName(members.data ?? [], (row as { sent_by?: string | null }).sent_by)}</p>}{(row as { sender_email?: string | null }).sender_email && <p>Da: {(row as { sender_email?: string | null }).sender_email}</p>}<p>A: {row.to_addresses.join(', ')}</p>{row.cc_addresses.length > 0 && <p>CC: {row.cc_addresses.join(', ')}</p>}<p className="font-semibold">{row.subject}</p><p className="whitespace-pre-wrap">{row.body}</p>{row.error_message && <p className="text-destructive">{row.error_message}</p>}<Button variant="outline" className="min-h-11 max-w-full gap-2 whitespace-normal text-left" disabled={opening === row.id} onClick={() => openPdf(row.id)}><FileText className="h-4 w-4 shrink-0" />{row.pdf_filename}</Button></div>
     </details>)}
   </section>;
 }

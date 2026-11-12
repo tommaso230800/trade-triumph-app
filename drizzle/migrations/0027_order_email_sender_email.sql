@@ -1,0 +1,2 @@
+ALTER TABLE public.order_email_sends ADD COLUMN IF NOT EXISTS sender_email text;
+COMMENT ON COLUMN public.order_email_sends.sender_email IS 'Mailbox the order email was sent from (agency or the authorised personal mailbox).';

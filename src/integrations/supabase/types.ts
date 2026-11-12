@@ -3529,6 +3529,7 @@ export type Database = {
           pdf_path: string
           provider_message_id: string | null
           reply_to: string
+          sender_email: string | null
           sender_name: string
           sent_at: string | null
           sent_by: string | null
@@ -3549,6 +3550,7 @@ export type Database = {
           pdf_path: string
           provider_message_id?: string | null
           reply_to?: string
+          sender_email?: string | null
           sender_name?: string
           sent_at?: string | null
           sent_by?: string | null
@@ -3569,6 +3571,7 @@ export type Database = {
           pdf_path?: string
           provider_message_id?: string | null
           reply_to?: string
+          sender_email?: string | null
           sender_name?: string
           sent_at?: string | null
           sent_by?: string | null

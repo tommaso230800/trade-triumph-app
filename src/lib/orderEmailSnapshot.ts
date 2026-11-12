@@ -12,12 +12,15 @@ export async function invokeOrderEmail(body: unknown) {
   }
   return data;
 }
-export async function loadOrderEmailSnapshot(orderId: string): Promise<{ data: ProformaData; version: string; senderEmail: string; requiredSender: string; senderAuthorised: boolean }> {
+export type OrderMailbox = { kind: 'agenzia' | 'personale'; email: string; available: boolean };
+export async function loadOrderEmailSnapshot(orderId: string): Promise<{ data: ProformaData; version: string; senderEmail: string; requiredSender: string; senderAuthorised: boolean; mailboxes: OrderMailbox[] }> {
   const result = await invokeOrderEmail({ action: 'snapshot', orderId });
   const o = result.order;
   const c = o.clienti;
   const a = o.aziende;
-  return { version: result.version, senderEmail: result.senderEmail, requiredSender: result.requiredSender ?? result.senderEmail, senderAuthorised: result.senderAuthorised !== false, data: {
+  const mailboxes: OrderMailbox[] = Array.isArray(result.mailboxes) ? result.mailboxes
+    : [{ kind: 'agenzia', email: result.requiredSender ?? result.senderEmail, available: result.senderAuthorised !== false }];
+  return { mailboxes, version: result.version, senderEmail: result.senderEmail, requiredSender: result.requiredSender ?? result.senderEmail, senderAuthorised: result.senderAuthorised !== false, data: {
     ordine_id: o.id, azienda_id: o.azienda_id, codice: o.codice || `ORD-${o.id.slice(0, 8)}`, created_at: o.created_at, data_ordine: o.data_ordine,
     cliente_nome: c?.nome || 'N/D', cliente_indirizzo: c?.indirizzo, cliente_citta: c?.citta, cliente_cap: c?.cap, cliente_piva: c?.partita_iva,
     azienda_nome: a?.nome || 'N/D', azienda_indirizzo: a?.indirizzo, azienda_citta: a?.citta,
