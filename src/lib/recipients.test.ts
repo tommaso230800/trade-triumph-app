@@ -11,13 +11,14 @@ const contacts = [
 describe("suggerimenti destinatari", () => {
   it("propone già dalla prima lettera, prima i contatti dell'azienda dell'ordine", () => {
     const s = suggestRecipients(contacts, "l", "A", []);
-    expect(s.map((x) => x.id)).toEqual(["1", "3"]);
+    // Lorella (azienda, inizia per "l"), Angelo (azienda, contiene "l"), poi Laura (altra azienda)
+    expect(s.map((x) => x.id)).toEqual(["1", "2", "3"]);
   });
   it("cerca anche nell'indirizzo", () => {
     expect(suggestRecipients(contacts, "altra", "A", []).map((x) => x.id)).toEqual(["3"]);
   });
   it("esclude indirizzi già presenti in A o CC", () => {
-    expect(suggestRecipients(contacts, "l", "A", ["LORELLA.MAGGI@cantine.it"]).map((x) => x.id)).toEqual(["3"]);
+    expect(suggestRecipients(contacts, "l", "A", ["LORELLA.MAGGI@cantine.it"]).map((x) => x.id)).toEqual(["2", "3"]);
   });
   it("nessun suggerimento senza testo", () => expect(suggestRecipients(contacts, "", "A", [])).toEqual([]));
 });
