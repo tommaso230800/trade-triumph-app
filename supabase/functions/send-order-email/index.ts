@@ -4,6 +4,7 @@ import { z } from 'npm:zod@3';
 import { ORDER_EMAIL_SELECT, orderEmailVersion } from '../_shared/orderEmailSnapshot.ts';
 import { encodeUtf8Base64, foldBase64, decodePdfBase64 } from './encoding.ts';
 import { resolveDataOwner } from '../_shared/agency.ts';
+import { dispatchPending } from '../_shared/pushDispatch.ts';
 
 /** Every agency profile sends orders from this single authorised mailbox. */
 const AGENCY_SENDER = 'agenziamazzigroup@gmail.com';
@@ -133,6 +134,10 @@ Deno.serve(async req => {
       const sentAt = new Date().toISOString();
       const { error: saveError } = await admin.from('order_email_sends').update({ status: 'sent', sent_at: sentAt, provider_message_id: result.id }).eq('id', send.id);
       if (saveError) return json({ error: 'Email accettata da Gmail, ma storico non aggiornato. Non ripetere l’invio.', send: { ...send, status: 'sending', error_message: 'Accettata da Gmail; aggiornamento storico da verificare.' } }, 202);
+      // The database queues the "order sent" notification on this status change; deliver it without waiting.
+      const pushing = dispatchPending(admin, 50).catch((e) => console.error('push dispatch after send failed:', e));
+      // deno-lint-ignore no-explicit-any
+      (globalThis as any).EdgeRuntime?.waitUntil?.(pushing);
       return json({ send: { ...send, status: 'sent', sent_at: sentAt, provider_message_id: result.id } });
     } catch (error) {
       console.error('Gmail send outcome uncertain:', error);
