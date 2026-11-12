@@ -7,7 +7,7 @@ export const normalizeUsername = (value: string) => value.trim().toLowerCase();
 
 /** Internal sign-in identity for members without a personal email. Not a mailbox. */
 export const internalIdentity = (username: string) =>
-  `${normalizeUsername(username).replace(/[^a-z0-9._-]/g, '')}@utenti.agenziamazzi.app`;
+  `${normalizeUsername(username).replace(/[^a-z0-9._-]/g, '')}@utenti.agenziamazzi.invalid`;
 
 export const isEmailLike = (value: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value.trim());
 
