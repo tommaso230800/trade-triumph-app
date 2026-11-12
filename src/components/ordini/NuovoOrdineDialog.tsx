@@ -43,6 +43,11 @@ import {
   CalendarDays,
   Check,
   Search,
+  SlidersHorizontal,
+  CloudOff,
+  CloudUpload,
+  CloudCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -67,6 +72,9 @@ import { PromozioniAttiveAlert } from "./PromozioniAttiveAlert";
 import { ProductPicker } from "./ProductPicker";
 import { NuovoProdottoRapidoDialog } from "./NuovoProdottoRapidoDialog";
 import { formatCurrency, parseDecimalInput, TIPI_PAGAMENTO } from "./ordiniShared";
+import { orderTotals, rowProblems } from "@/lib/orderTotals";
+import { saveOrderDraft, deleteOrderDraft, invalidateOrderDrafts, type OrderDraftRow } from "@/hooks/useOrderDrafts";
+import { useQueryClient } from "@tanstack/react-query";
 
 type RigaOrdine = {
   prodotto_id: string;
@@ -98,7 +106,15 @@ const emptyFormData = () => ({
   sconto_merce: "0",
   tipo_pagamento: "Come precedente ordine",
   data_ordine: format(new Date(), "yyyy-MM-dd"),
+  condizioni_commerciali: "",
+  data_consegna_prevista: "",
+  destinazione_consegna: "",
+  note_consegna: "",
 });
+
+type FormState = ReturnType<typeof emptyFormData>;
+type DraftPayload = { v: 1; formData: FormState; righe: RigaOrdine[]; step: number; appliedPromos: string[] };
+type SaveState = "idle" | "saving" | "saved" | "error";
 
 /** Pre-riempimento per il flusso Riordino → Ordina: cliente, azienda e
  *  prodotti con quantità suggerita arrivano dalla pagina Riordino. */
@@ -113,10 +129,12 @@ interface NuovoOrdineDialogProps {
   onOpenChange: (open: boolean) => void;
   onOrderCreated: (data: ProformaData) => void;
   prefill?: OrdinePrefill | null;
+  /** Bozza da riprendere: ripristina dati, righe e sezione. */
+  draft?: OrderDraftRow | null;
 }
 
-export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill }: NuovoOrdineDialogProps) {
-  const [formData, setFormData] = useState(emptyFormData());
+export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill, draft }: NuovoOrdineDialogProps) {
+  const [formData, setFormData] = useState<FormState>(emptyFormData());
   const [righeOrdine, setRigheOrdine] = useState<RigaOrdine[]>([]);
   const [selectedProdotto, setSelectedProdotto] = useState("");
   const [appliedPromos, setAppliedPromos] = useState<string[]>([]);
@@ -127,6 +145,15 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
   const [pendingSubmit, setPendingSubmit] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [quickProductOpen, setQuickProductOpen] = useState(false);
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [exitConfirm, setExitConfirm] = useState(false);
+  const [removeIndex, setRemoveIndex] = useState<number | null>(null);
+  const [showProblems, setShowProblems] = useState(false);
+  const submitLock = useRef(false);
+  const dirtyRef = useRef(false);
+  const restoredRef = useRef<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: clienti } = useClienti();
   const { data: aziende } = useAziende();
@@ -162,12 +189,79 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
     setPendingSubmit(false);
     setPriceConfirmIndex(null);
     setCurrentStep(0);
+    setDraftId(null);
+    setSaveState("idle");
+    setShowProblems(false);
+    dirtyRef.current = false;
+    restoredRef.current = null;
   };
 
-  const handleOpenChange = (v: boolean) => {
-    onOpenChange(v);
-    if (!v) resetForm();
+  const hasContent = !!(formData.cliente_id || formData.azienda_id || righeOrdine.length || formData.note.trim());
+
+  const closeNow = () => {
+    onOpenChange(false);
+    resetForm();
   };
+
+  // Uscita protetta: con dati inseriti si chiede conferma (la bozza resta salvata).
+  const handleOpenChange = (v: boolean) => {
+    if (v) { onOpenChange(true); return; }
+    if (hasContent && dirtyRef.current) { setExitConfirm(true); return; }
+    closeNow();
+  };
+
+  // ── Bozze ────────────────────────────────────────────────────────
+  // Ripristino di una bozza esistente all'apertura.
+  useEffect(() => {
+    if (!open || !draft || restoredRef.current === draft.id) return;
+    const p = draft.payload as unknown as DraftPayload | null;
+    if (!p || p.v !== 1) return;
+    restoredRef.current = draft.id;
+    setDraftId(draft.id);
+    setFormData({ ...emptyFormData(), ...p.formData });
+    setRigheOrdine(p.righe ?? []);
+    setAppliedPromos(p.appliedPromos ?? []);
+    setCurrentStep(Math.min(3, Math.max(0, p.step ?? 1)));
+    setSaveState("saved");
+  }, [open, draft]);
+
+  // Salvataggio automatico (1,2 s dopo l'ultima modifica) in una tabella separata:
+  // le bozze non entrano mai in KPI, statistiche, riordino o provvigioni.
+  const saveSeq = useRef(0);
+  const draftIdRef = useRef<string | null>(null);
+  draftIdRef.current = draftId;
+  const persistDraft = async () => {
+    const seq = ++saveSeq.current;
+    setSaveState("saving");
+    try {
+      const payload: DraftPayload = { v: 1, formData, righe: righeOrdine, step: currentStep, appliedPromos };
+      const id = await saveOrderDraft({ id: draftIdRef.current, cliente_id: formData.cliente_id || null, azienda_id: formData.azienda_id || null, payload, righe_count: righeOrdine.length, totale: calcolaTotale() });
+      if (seq !== saveSeq.current) return;
+      draftIdRef.current = id;
+      setDraftId(id);
+      setSaveState("saved");
+      void invalidateOrderDrafts(queryClient);
+    } catch {
+      if (seq === saveSeq.current) setSaveState("error");
+    }
+  };
+  useEffect(() => {
+    if (!open) return;
+    if (!hasContent) return;
+    if (restoredRef.current && saveState === "saved" && !dirtyRef.current) return;
+    dirtyRef.current = true;
+    const t = setTimeout(() => { void persistDraft(); }, 1200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, formData, righeOrdine, currentStep, appliedPromos]);
+
+  // Avviso del browser se si chiude la scheda con salvataggio in corso o fallito.
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: BeforeUnloadEvent) => { if (saveState === "saving" || saveState === "error") { e.preventDefault(); e.returnValue = ""; } };
+    window.addEventListener("beforeunload", h);
+    return () => window.removeEventListener("beforeunload", h);
+  }, [open, saveState]);
 
   // ── Pre-riempimento Riordino → Ordina ──────────────────────────────
   // Fase 1: imposta cliente e azienda. Fase 2: quando lo storico prezzi del
@@ -393,6 +487,10 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
   };
 
   const addProdottoObjectToOrder = (prodotto: Prodotto) => {
+    if (righeOrdine.some((r) => r.prodotto_id === prodotto.id && !r.is_omaggio)) {
+      toast.warning(`"${prodotto.nome}" è già nell'ordine: modifica la quantità della riga esistente.`);
+      return;
+    }
     const newRiga = buildRiga(prodotto);
 
     const availablePromo = promozioniRilevanti.find((promo) =>
@@ -441,6 +539,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
 
   const removeRiga = (index: number) => {
     setRigheOrdine(righeOrdine.filter((_, i) => i !== index));
+    setRemoveIndex(null);
   };
 
   // Una riga è "prezzo modificato" quando il valore digitato differisce da
@@ -501,6 +600,10 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
   const addOmaggioFromRiga = (index: number) => {
     const src = righeOrdine[index];
     if (!src) return;
+    if (righeOrdine.some((r) => r.is_omaggio && r.prodotto_id === src.prodotto_id)) {
+      toast.warning(`C'è già una riga omaggio per "${src.prodotto_nome}": modifica quella.`);
+      return;
+    }
     const omaggioRiga: RigaOrdine = {
       ...src,
       quantita_pezzi: 0,
@@ -542,6 +645,10 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
 
   const calcolaProdottiTotali = () =>
     righeOrdine.reduce((sum, riga) => sum + riga.quantita_pezzi + riga.quantita_cartoni * riga.pezzi_per_cartone, 0);
+
+  const problemsOf = (r: RigaOrdine) =>
+    rowProblems({ ...r, prezzo: parseDecimalInput(r.prezzo_unitario), sc: [r.sc1, r.sc2, r.sc3].map(parseDecimalInput) });
+  const righeConProblemi = righeOrdine.map((r, i) => ({ i, p: problemsOf(r) })).filter((x) => x.p.length > 0);
 
   const handleRiassortimento = () => {
     if (!productHistory || productHistory.products.length === 0) {
@@ -601,6 +708,12 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
   // viene posta qui prima di salvare.
   const handleSubmit = async () => {
     if (righeOrdine.length === 0) return;
+    if (righeConProblemi.length > 0) {
+      setShowProblems(true);
+      setCurrentStep(1);
+      toast.error(`Correggi ${righeConProblemi.length} ${righeConProblemi.length === 1 ? "riga" : "righe"} prima di creare l'ordine.`);
+      return;
+    }
     const dirtyIndex = righeOrdine.findIndex((r) => isPrezzoDirty(r));
     if (dirtyIndex >= 0) {
       setPendingSubmit(true);
@@ -611,7 +724,9 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
   };
 
   const doSubmit = async (righe: RigaOrdine[]) => {
-    if (righe.length === 0) return;
+    if (righe.length === 0 || submitLock.current) return;
+    submitLock.current = true;
+    try {
 
     const totale = calcolaTotale();
     const prodottiCount = calcolaProdottiTotali();
@@ -628,6 +743,10 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
       sconto_merce: parseDecimalInput(formData.sconto_merce),
       tipo_pagamento: formData.tipo_pagamento,
       data_ordine: formData.data_ordine,
+      condizioni_commerciali: formData.condizioni_commerciali.trim() || null,
+      data_consegna_prevista: formData.data_consegna_prevista || null,
+      destinazione_consegna: formData.destinazione_consegna.trim() || null,
+      note_consegna: formData.note_consegna.trim() || null,
     });
 
     await createRigheBatch.mutateAsync(
@@ -636,6 +755,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
         prodotto_id: riga.prodotto_id,
         quantita_pezzi: riga.quantita_pezzi,
         quantita_cartoni: riga.quantita_cartoni,
+        // Confezione al momento della vendita: le modifiche future al catalogo non riscrivono lo storico.
+        pezzi_per_cartone: riga.pezzi_per_cartone > 0 ? riga.pezzi_per_cartone : null,
         prezzo_unitario: riga.is_omaggio ? 0 : parseDecimalInput(riga.prezzo_unitario),
         sc1: riga.is_omaggio ? 0 : parseDecimalInput(riga.sc1),
         sc2: riga.is_omaggio ? 0 : parseDecimalInput(riga.sc2),
@@ -673,6 +794,10 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
       sconto_merce: parseDecimalInput(formData.sconto_merce),
       totale,
       note: formData.note || undefined,
+      condizioni_commerciali: formData.condizioni_commerciali.trim() || null,
+      data_consegna_prevista: formData.data_consegna_prevista || null,
+      destinazione_consegna: formData.destinazione_consegna.trim() || null,
+      note_consegna: formData.note_consegna.trim() || null,
       righe: righe.map((riga) => {
         const promoForProduct = promozioniRilevanti.find((promo) =>
           promo.canvass_prodotti?.some((cp) => cp.prodotto_id === riga.prodotto_id)
@@ -698,7 +823,14 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill 
       promozioni_applicate: promozioniApplicate.length > 0 ? promozioniApplicate : undefined,
     });
 
-    handleOpenChange(false);
+    // L'ordine è salvato: la bozza non serve più.
+    saveSeq.current += 1;
+    const id = draftIdRef.current;
+    if (id) { try { await deleteOrderDraft(id); } catch { /* la bozza resta visibile e si può eliminare a mano */ } void invalidateOrderDrafts(queryClient); }
+    closeNow();
+    } finally {
+      submitLock.current = false;
+    }
   };
 
   const isSubmitting = createOrdine.isPending || createRigheBatch.isPending;
