@@ -2,6 +2,7 @@ import { reorderExclusion, REORDER_START_DATE } from "@/lib/reorderEligibility";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { saveReorderTolerance, useReorderTolerance } from "./useReorderTolerance";
 import {
   analyzePair,
   computePortfolioKPIs,
@@ -32,15 +33,19 @@ export function getTolleranza(): number {
 }
 
 export function setTolleranza(t: number) {
-  localStorage.setItem("riordino_tolleranza", String(Math.min(7, Math.max(5, Math.round(t)))));
+  const v = Math.min(7, Math.max(5, Math.round(t)));
+  localStorage.setItem("riordino_tolleranza", String(v));
+  // Shared with colleagues and the scheduled reorder alerts.
+  return saveReorderTolerance(v);
 }
 
 export function useReorderIntelligence() {
   const { user } = useAuth();
+  const shared = useReorderTolerance();
 
   return useQuery({
-    queryKey: ["reorder_intelligence_v1", user?.id, getTolleranza(), REORDER_START_DATE],
-    enabled: !!user,
+    queryKey: ["reorder_intelligence_v1", user?.id, shared.data ?? getTolleranza(), REORDER_START_DATE],
+    enabled: !!user && shared.isFetched,
     staleTime: 60_000,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,

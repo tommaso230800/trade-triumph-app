@@ -106,9 +106,15 @@ export function IntelligenceDashboard() {
 
   const cambiaTolleranza = (v: string) => {
     const t = Number(v);
-    setTolleranza(t);
     setTolleranzaState(t);
-    queryClient.invalidateQueries({ queryKey: ["reorder_intelligence_v1"] });
+    setTolleranza(t)
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["riordino_tolleranza"] });
+        queryClient.invalidateQueries({ queryKey: ["reorder_intelligence_v1"] });
+        queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
+        toast.success(`Tolleranza ${t} giorni salvata per tutta l’agenzia`);
+      })
+      .catch(() => toast.error("Tolleranza non salvata. Riprova."));
   };
 
   if (isError) {
