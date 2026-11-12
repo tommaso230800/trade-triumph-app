@@ -17,6 +17,7 @@ import {
   Gauge,
   Activity,
   FileText,
+  PieChart,
   FolderOpen,
 } from "lucide-react";
 
