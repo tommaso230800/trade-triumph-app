@@ -463,7 +463,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
 
 
           {/* Altri indicatori: confronti e sconti */}
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard
               icon={Euro}
               label="Utile lordo"
@@ -490,12 +490,6 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
               label="Sconto medio"
               value={`${(stats?.scontoCascataMedio || 0).toFixed(1)}%`}
               caption={`+ ${(stats?.scontoMedio || 0).toFixed(1)}% sconto globale`}
-              tone="warning"
-            />
-            <StatCard
-              icon={Euro}
-              label="Sconto merce / ordine"
-              value={formatCurrency(stats?.scontoMerceMedio || 0)}
               tone="warning"
             />
           </div>
