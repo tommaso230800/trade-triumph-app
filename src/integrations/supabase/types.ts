@@ -3628,6 +3628,51 @@ export type Database = {
           },
         ]
       }
+      ordini_bozze: {
+        Row: {
+          azienda_id: string | null
+          cliente_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          payload: Json
+          righe_count: number
+          totale: number
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+          version: number
+        }
+        Insert: {
+          azienda_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json
+          righe_count?: number
+          totale?: number
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+          version?: number
+        }
+        Update: {
+          azienda_id?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          payload?: Json
+          righe_count?: number
+          totale?: number
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       ordini_conferme: {
         Row: {
           created_at: string

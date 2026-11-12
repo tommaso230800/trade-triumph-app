@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Gift, Trash2, Boxes, Info } from "lucide-react";
+import { Gift, Trash2, Boxes, Info, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { formatCurrency } from "./ordiniShared";
 import type { LastOrderPriceInfo } from "@/lib/priceResolver";
@@ -10,6 +10,9 @@ import { parseLocalDate } from "@/lib/periodRange";
 
 interface OrdineRigaEditorProps {
   prodottoNome: string;
+  prodottoCodice?: string;
+  /** Problemi da correggere mostrati vicino ai campi (quantità, prezzo, confezione). */
+  problems?: string[];
   formato?: string | null;
   pezziPerCartone: number;
   strati?: number;
@@ -37,6 +40,8 @@ interface OrdineRigaEditorProps {
 
 export function OrdineRigaEditor({
   prodottoNome,
+  prodottoCodice,
+  problems = [],
   formato,
   pezziPerCartone,
   strati,
@@ -62,7 +67,12 @@ export function OrdineRigaEditor({
   onAddOmaggio,
 }: OrdineRigaEditorProps) {
   const numCls = "h-11 rounded-lg border-order-line bg-order-paper px-3 text-right text-base tabular-nums sm:text-sm";
-  const pezziTot = quantitaPezzi + quantitaCartoni * pezziPerCartone;
+  const confezioneMancante = !(pezziPerCartone > 0);
+  const pezziTot = quantitaCartoni > 0 && confezioneMancante ? null : quantitaPezzi + quantitaCartoni * (pezziPerCartone || 0);
+  const onlyDigits = (v: string) => Math.max(0, parseInt(v.replace(/\D/g, ""), 10) || 0);
+  const qtyProblem = problems.includes("Quantità mancante");
+  const priceProblem = problems.includes("Prezzo non valido");
+  const scProblem = problems.includes("Sconto tra 0 e 99,99%");
   return (
     <div className={`min-w-0 rounded-xl border p-4 shadow-sm ${isOmaggio ? "border-success/40 bg-success/5" : "border-order-line bg-order-surface"}`}>
       {/* Prodotto */}
@@ -77,7 +87,13 @@ export function OrdineRigaEditor({
             )}
           </div>
           <p className="mt-1 break-words text-xs text-order-muted">
-            {[formato, `${pezziPerCartone} pz/cartone`].filter(Boolean).join(" · ")}
+            {[prodottoCodice, formato].filter(Boolean).join(" · ")}
+            {(prodottoCodice || formato) && " · "}
+            {confezioneMancante ? (
+              <span className="inline-flex items-center gap-1 font-medium text-warning"><AlertTriangle className="h-3 w-3" /> Pezzi per cartone da completare</span>
+            ) : (
+              <span className="font-medium text-order-ink">{pezziPerCartone} pz/cartone</span>
+            )}
             {strati !== undefined && cartoniPerStrato !== undefined && strati * cartoniPerStrato > 1 && (
               <span className="inline-flex items-center gap-1"> · <Boxes className="h-3 w-3" /> {strati * cartoniPerStrato} cart/pallet</span>
             )}
@@ -100,18 +116,18 @@ export function OrdineRigaEditor({
       {/* Quantità e prezzo */}
       <div className="mt-4 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_1.3fr]">
         <div className="min-w-0 space-y-1">
-          <Label className="text-xs text-order-muted">Cartoni</Label>
-          <Input type="number" inputMode="numeric" min="0" className={numCls} value={quantitaCartoni} onFocus={(e) => e.target.select()}
-            onChange={(e) => onChangeQuantitaCartoni(parseInt(e.target.value) || 0)} />
+          <Label className="text-xs font-semibold text-order-ink">{isOmaggio ? "Cartoni omaggio" : "Cartoni"}</Label>
+          <Input type="text" inputMode="numeric" pattern="[0-9]*" aria-invalid={qtyProblem} className={`${numCls} ${qtyProblem ? "border-destructive" : ""}`} value={quantitaCartoni} onFocus={(e) => e.target.select()}
+            onChange={(e) => onChangeQuantitaCartoni(onlyDigits(e.target.value))} />
         </div>
         <div className="min-w-0 space-y-1">
-          <Label className="text-xs text-order-muted">Pezzi sfusi</Label>
-          <Input type="number" inputMode="numeric" min="0" className={numCls} value={quantitaPezzi} onFocus={(e) => e.target.select()}
-            onChange={(e) => onChangeQuantitaPezzi(parseInt(e.target.value) || 0)} />
+          <Label className="text-xs font-semibold text-order-ink">{isOmaggio ? "Pezzi sfusi omaggio" : "Pezzi sfusi"}</Label>
+          <Input type="text" inputMode="numeric" pattern="[0-9]*" aria-invalid={qtyProblem} className={`${numCls} ${qtyProblem ? "border-destructive" : ""}`} value={quantitaPezzi} onFocus={(e) => e.target.select()}
+            onChange={(e) => onChangeQuantitaPezzi(onlyDigits(e.target.value))} />
         </div>
         <div className="col-span-2 min-w-0 space-y-1 sm:col-span-1">
           <div className="flex min-w-0 items-center gap-1">
-            <Label className="text-xs text-order-muted">Prezzo € / pezzo</Label>
+            <Label className="text-xs font-semibold text-order-ink">Prezzo € / pezzo</Label>
             {!isOmaggio && prezzoSourceLabel && <span className="truncate text-[11px] text-order-muted">· {prezzoSourceLabel}</span>}
             {!isOmaggio && prezzoSourceInfo && (
               <Popover>
@@ -136,7 +152,7 @@ export function OrdineRigaEditor({
               </Popover>
             )}
           </div>
-          <Input type="text" inputMode="decimal" className={numCls} value={isOmaggio ? "0" : prezzoUnitario} disabled={isOmaggio}
+          <Input type="text" inputMode="decimal" aria-invalid={priceProblem} className={`${numCls} ${priceProblem ? "border-destructive" : ""}`} value={isOmaggio ? "0" : prezzoUnitario} disabled={isOmaggio}
             onChange={(e) => onChangePrezzo(e.target.value)} onBlur={onBlurPrezzo} placeholder="0,00" />
         </div>
       </div>
@@ -152,7 +168,7 @@ export function OrdineRigaEditor({
             ].map((x) => (
               <div key={x.l} className="relative min-w-0">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-order-muted">{x.l}</span>
-                <Input type="text" inputMode="decimal" aria-label={`Sconto ${x.l} %`} className={`${numCls} pl-8`} value={x.v} onFocus={(e) => e.target.select()}
+                <Input type="text" inputMode="decimal" aria-label={`Sconto ${x.l} %`} aria-invalid={scProblem} className={`${numCls} pl-8 ${scProblem ? "border-destructive" : ""}`} value={x.v} onFocus={(e) => e.target.select()}
                   onChange={(e) => x.f(e.target.value)} placeholder="0" />
               </div>
             ))}
@@ -160,8 +176,17 @@ export function OrdineRigaEditor({
         </div>
       )}
 
+      {problems.length > 0 && (
+        <ul className="mt-3 space-y-1" aria-live="polite">
+          {problems.map((p) => <li key={p} className="flex items-center gap-1.5 text-xs font-medium text-destructive"><AlertTriangle className="h-3 w-3 shrink-0" />{p}</li>)}
+        </ul>
+      )}
+
       <div className="mt-4 flex items-baseline justify-between gap-3 border-t border-order-line pt-3">
-        <span className="text-xs tabular-nums text-order-muted">{pezziTot} pezzi</span>
+        <span className="text-xs tabular-nums text-order-muted">
+          <span className="font-semibold uppercase tracking-wide">{isOmaggio ? "Pezzi omaggio" : "Pezzi complessivi"}</span>{" "}
+          <span className="text-sm font-bold text-order-ink">{pezziTot === null ? "N/D" : pezziTot.toLocaleString("it-IT")}</span>
+        </span>
         <p className="text-base font-semibold tabular-nums text-order-ink">
           {isOmaggio ? <span className="text-success">Omaggio · 0,00 €</span> : formatCurrency(subtotale)}
         </p>

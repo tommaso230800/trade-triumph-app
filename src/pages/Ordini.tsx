@@ -175,6 +175,10 @@ const Ordini = () => {
       sconto_merce: Number(ordine.sconto_merce) || 0,
       totale: Number(ordine.totale),
       note: ordine.note || undefined,
+      condizioni_commerciali: (ordine as { condizioni_commerciali?: string | null }).condizioni_commerciali ?? null,
+      data_consegna_prevista: (ordine as { data_consegna_prevista?: string | null }).data_consegna_prevista ?? null,
+      destinazione_consegna: (ordine as { destinazione_consegna?: string | null }).destinazione_consegna ?? null,
+      note_consegna: (ordine as { note_consegna?: string | null }).note_consegna ?? null,
       righe: (righeData || []).map((r: any) => {
         const brandName = brands?.find((b) => b.id === r.prodotti?.brand_id)?.name;
         return {
