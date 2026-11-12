@@ -29,6 +29,6 @@ export function computeOwnerAlerts(ownerId: string, orders: ReorderOrder[], toda
 export function reorderMessage(cliente: string, azienda: string, a: Pick<ReorderAlert, 'giorni_ritardo' | 'ultimo_ordine_data'>) {
   return {
     titolo: `Riordino in ritardo · ${cliente} · ${azienda}`,
-    testo: `${cliente} ha superato di ${a.giorni_ritardo} ${a.giorni_ritardo === 1 ? 'giorno' : 'giorni'} la data prevista per il riordino con ${azienda}. Ultimo ordine: ${itDate(a.ultimo_ordine_data)}.`,
+    testo: `${cliente} ha superato di ${a.giorni_ritardo} ${a.giorni_ritardo === 1 ? 'giorno' : 'giorni'} la data prevista per il riordino con ${azienda}${azienda.endsWith('.') ? '' : '.'} Ultimo ordine: ${itDate(a.ultimo_ordine_data)}.`,
   };
 }

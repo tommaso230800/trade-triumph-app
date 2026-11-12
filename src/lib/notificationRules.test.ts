@@ -35,6 +35,8 @@ describe("riordino in ritardo", () => {
     const m = reorderMessage("Ingrocarico", "Casoni", { giorni_ritardo: 12, ultimo_ordine_data: "2026-09-29" });
     expect(m.titolo).toBe("Riordino in ritardo · Ingrocarico · Casoni");
     expect(m.testo).toBe("Ingrocarico ha superato di 12 giorni la data prevista per il riordino con Casoni. Ultimo ordine: 29/09/2026.");
+    expect(reorderMessage("A", "BIBITE POLARA S.R.L.", { giorni_ritardo: 1, ultimo_ordine_data: "2026-07-31" }).testo)
+      .toBe("A ha superato di 1 giorno la data prevista per il riordino con BIBITE POLARA S.R.L. Ultimo ordine: 31/07/2026.");
   });
 });
 

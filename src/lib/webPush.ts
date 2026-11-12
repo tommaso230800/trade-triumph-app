@@ -112,8 +112,10 @@ export async function enablePushOnThisDevice(): Promise<PushState> {
   if (permission !== "granted") return "da_concedere";
   const reg = await navigator.serviceWorker.register(SW_URL, { scope: "/" });
   await navigator.serviceWorker.ready;
+  // Some browsers never answer when their push service is unavailable: fail clearly instead of hanging.
+  const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Il servizio notifiche del browser non risponde. Riprova più tardi.")), 20000));
   const sub = (await reg.pushManager.getSubscription()) ??
-    (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(VAPID_PUBLIC_KEY) }));
+    (await Promise.race([reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(VAPID_PUBLIC_KEY) }), timeout]));
   await saveSubscription(sub);
   return "attive";
 }
