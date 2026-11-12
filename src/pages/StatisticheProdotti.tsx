@@ -25,10 +25,8 @@ const MONTHS = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "L
 const eur = (v: number) => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(v);
 const num = (v: number) => new Intl.NumberFormat("it-IT", { maximumFractionDigits: 0 }).format(v);
 const fmtDate = (iso: string) => iso.split("-").reverse().join("/");
-const todayIso = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+// Oggi nel fuso dell'agenzia (Europe/Rome), indipendente dal fuso del dispositivo.
+const todayIso = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
 interface Filters {
   year: number; compareYear: number | "none"; mode: PeriodMode; month: number; from: string; to: string;
@@ -36,16 +34,18 @@ interface Filters {
 }
 
 const defaultFilters = (): Filters => {
-  const y = new Date().getFullYear();
-  return { year: y, compareYear: defaultCompareYear(y), mode: "ytd", month: new Date().getMonth() + 1, from: `${y}-01-01`, to: todayIso(), azienda: "", cliente: "", prodotto: "", includeUnsold: false, sort: "fatturato", dir: "desc" };
+  const [y, m] = todayIso().split("-").map(Number);
+  return { year: y, compareYear: defaultCompareYear(y), mode: "ytd", month: m, from: `${y}-01-01`, to: todayIso(), azienda: "", cliente: "", prodotto: "", includeUnsold: false, sort: "fatturato", dir: "desc" };
 };
 
 function loadFilters(): Filters {
   const base = defaultFilters();
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
-    // Year and comparison always restart from the current year, so a new year never shows stale defaults.
-    return saved ? { ...base, ...saved, year: base.year, compareYear: base.compareYear } : base;
+    // Filters persist; year and comparison restart only when the calendar year has changed since saving.
+    if (!saved) return base;
+    const sameYear = saved.savedYear === base.year;
+    return { ...base, ...saved, year: sameYear ? saved.year ?? base.year : base.year, compareYear: sameYear ? saved.compareYear ?? base.compareYear : base.compareYear };
   } catch {
     return base;
   }
@@ -68,7 +68,7 @@ export default function StatisticheProdotti() {
   const [search, setSearch] = useState("");
   const [visible, setVisible] = useState(PAGE);
   const set = (patch: Partial<Filters>) => { setF((prev) => ({ ...prev, ...patch })); setVisible(PAGE); };
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(f)); }, [f]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...f, savedYear: Number(todayIso().slice(0, 4)) })); }, [f]);
 
   const years = useOrderYears();
   const { data: aziende } = useAziende();
