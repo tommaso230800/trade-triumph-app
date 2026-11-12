@@ -25,7 +25,7 @@
 - Agency members share one data owner: rows are rewritten to the owner by trigger and read through member-to-member RLS, while the acting user is kept in created_by/updated_by/sent_by, so colleagues see the same archive without losing authorship.
 - Staff sign in by case-insensitive username through the agency-auth function mapped to internal auth identities, so no email is needed and lockout is enforced server-side.
 - Order drafts live in their own table and become orders only on explicit save, so they never enter KPI, statistics, reorder or commissions.
-- Order recipients come from the per-company address book and the single agency sender is enforced in the email function, so no client setting can send from another mailbox.
+- Order recipients come from the per-company address book; the email function resolves the sender mailbox by the linked Gmail address and a per-username allowlist (agency default), so no client setting can send from an unauthorised mailbox.
 - Order form and proforma share one cartons/pieces/gifts calculation and rows snapshot pieces-per-carton at sale, so later catalog edits cannot change past documents.
 - Product statistics are computed by database functions that allocate saved order totals over net non-gift rows, so product sums reconcile with order revenue and missing detail is reported separately.
 - Notifications are written once per event by database triggers/jobs into a per-user outbox, then fanned out to every enabled Web Push device by a scheduled dispatcher, so history, dedupe and retries never depend on the browser that triggered them.
