@@ -141,6 +141,13 @@
       "when": 1794503134708,
       "tag": "0019_agency_shared_workspace",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794503361710,
+      "tag": "0020_agency_shared_workspace_fixups",
+      "breakpoints": true
     }
   ]
 }
