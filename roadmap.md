@@ -1,13 +1,13 @@
 # Roadmap
 
 ## Centro notifiche e notifiche push (12 novembre)
-- [ ] Archivio notifiche per utente, letture sincronizzate, preferenze per categoria
-- [ ] Dispositivi: attivazione su tocco, stati, prova, invio a tutti i dispositivi abilitati
-- [ ] Nuovo ordine: avviso unico al salvataggio confermato, apertura dettaglio ordine
-- [ ] Ordine inviato: avviso solo dopo esito positivo Gmail, nessun duplicato
-- [ ] Riordino in ritardo: stesso calcolo della pagina Riordino, tolleranza condivisa, un avviso per ciclo, controllo programmato Europe/Rome
-- [ ] Campanella con non lette, voce menu, Diagnostica notifiche
-- [ ] Verifiche: importo, invio fallito, riordino, duplicati, accesso protetto; prove su dispositivi reali da fare con l’utente
+- [x] Archivio notifiche per utente, letture sincronizzate, preferenze per categoria
+- [x] Dispositivi: attivazione su tocco, stati, prova, invio a tutti i dispositivi abilitati (verificato con 3 dispositivi simulati: accettato, scaduto disattivato, non raggiungibile in riprova)
+- [x] Nuovo ordine: avviso unico al salvataggio confermato, apertura dettaglio ordine (prova annullata, nessun ordine rimasto)
+- [x] Ordine inviato: avviso solo dopo esito positivo Gmail, nessun duplicato, nessun avviso su invio fallito
+- [x] Riordino in ritardo: stesso calcolo della pagina Riordino, tolleranza condivisa, un avviso per ciclo, controllo orario programmato
+- [x] Campanella con non lette, voce menu, Diagnostica notifiche
+- [ ] Prova su iPhone/iPad/Mac reali: serve l’utente (app aggiunta alla schermata Home su iPhone, iOS 16.4+)
 
 ## Agenzia condivisa, accesso username, ordini ed email (12 novembre)
 - [ ] Backup: non creato in automatico; consigliata esportazione manuale prima di altre modifiche strutturali (serve azione del titolare)
