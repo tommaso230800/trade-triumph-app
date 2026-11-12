@@ -11,7 +11,7 @@ const pages = [
   ["Dashboard", "/"], ["Ordini", "/ordini"], ["Analytics", "/analytics"], ["Statistiche prodotti", "/statistiche"], ["Pannello dati", "/pannello-dati"],
   ["Provvigioni", "/provvigioni"], ["Clienti", "/clienti"], ["Aziende", "/aziende"], ["Canvass/PFA", "/canvass"],
   ["Riordino", "/riordino"], ["Intelligenza", "/intelligenza-commerciale"], ["Prepara Visita", "/prepara-visita"],
-  ["AI Commerciale", "/ai-commerciale"], ["Impostazioni", "/impostazioni"], ["Problematiche", "/impostazioni/problematiche"], ["Diagnostica", "/diagnostica"],
+  ["AI Commerciale", "/ai-commerciale"], ["Impostazioni", "/impostazioni"], ["Problematiche", "/impostazioni/problematiche"], ["Diagnostica", "/diagnostica"], ["Centro notifiche", "/notifiche"],
 ];
 export function InternalSearch() {
   const [open, setOpen] = useState(false);
