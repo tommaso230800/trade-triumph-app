@@ -72,6 +72,42 @@ export type Database = {
           },
         ]
       }
+      agency_members: {
+        Row: {
+          active: boolean
+          created_at: string
+          full_name: string
+          internal_identity: boolean
+          is_owner: boolean
+          updated_at: string
+          user_id: string
+          username: string
+          username_norm: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          full_name: string
+          internal_identity?: boolean
+          is_owner?: boolean
+          updated_at?: string
+          user_id: string
+          username: string
+          username_norm?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          full_name?: string
+          internal_identity?: boolean
+          is_owner?: boolean
+          updated_at?: string
+          user_id?: string
+          username?: string
+          username_norm?: string | null
+        }
+        Relationships: []
+      }
       ai_activity_log: {
         Row: {
           azioni_confermate: Json | null
@@ -391,6 +427,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "aziende_alias_azienda_id_fkey"
+            columns: ["azienda_id"]
+            isOneToOne: false
+            referencedRelation: "aziende"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aziende_email_contatti: {
+        Row: {
+          azienda_id: string
+          created_at: string
+          created_by: string | null
+          default_cc: boolean
+          default_to: boolean
+          email: string
+          id: string
+          nome: string
+          ruolo: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          azienda_id: string
+          created_at?: string
+          created_by?: string | null
+          default_cc?: boolean
+          default_to?: boolean
+          email: string
+          id?: string
+          nome: string
+          ruolo?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          azienda_id?: string
+          created_at?: string
+          created_by?: string | null
+          default_cc?: boolean
+          default_to?: boolean
+          email?: string
+          id?: string
+          nome?: string
+          ruolo?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aziende_email_contatti_azienda_id_fkey"
             columns: ["azienda_id"]
             isOneToOne: false
             referencedRelation: "aziende"
@@ -2752,6 +2838,30 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string | null
+          success: boolean
+          username_norm: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          success?: boolean
+          username_norm: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string | null
+          success?: boolean
+          username_norm?: string
+        }
+        Relationships: []
+      }
       movimenti_provvigione: {
         Row: {
           anno: number | null
@@ -3244,6 +3354,7 @@ export type Database = {
           reply_to: string
           sender_name: string
           sent_at: string | null
+          sent_by: string | null
           status: string
           subject: string
           to_addresses: string[]
@@ -3263,6 +3374,7 @@ export type Database = {
           reply_to?: string
           sender_name?: string
           sent_at?: string | null
+          sent_by?: string | null
           status?: string
           subject: string
           to_addresses: string[]
@@ -3282,6 +3394,7 @@ export type Database = {
           reply_to?: string
           sender_name?: string
           sent_at?: string | null
+          sent_by?: string | null
           status?: string
           subject?: string
           to_addresses?: string[]
@@ -3305,7 +3418,9 @@ export type Database = {
           cliente_id: string | null
           codice: string | null
           condizione_applicata_id: string | null
+          condizioni_commerciali: string | null
           created_at: string | null
+          created_by: string | null
           data_conferma: string | null
           data_consegna_effettiva: string | null
           data_consegna_prevista: string | null
@@ -3345,9 +3460,11 @@ export type Database = {
           totale: number | null
           trimestre_pagamento: number | null
           updated_at: string | null
+          updated_by: string | null
           user_id: string
           verificato_conferma: boolean
           verificato_conferma_at: string | null
+          version: number
         }
         Insert: {
           aliquota_prevista?: number | null
@@ -3356,7 +3473,9 @@ export type Database = {
           cliente_id?: string | null
           codice?: string | null
           condizione_applicata_id?: string | null
+          condizioni_commerciali?: string | null
           created_at?: string | null
+          created_by?: string | null
           data_conferma?: string | null
           data_consegna_effettiva?: string | null
           data_consegna_prevista?: string | null
@@ -3396,9 +3515,11 @@ export type Database = {
           totale?: number | null
           trimestre_pagamento?: number | null
           updated_at?: string | null
+          updated_by?: string | null
           user_id: string
           verificato_conferma?: boolean
           verificato_conferma_at?: string | null
+          version?: number
         }
         Update: {
           aliquota_prevista?: number | null
@@ -3407,7 +3528,9 @@ export type Database = {
           cliente_id?: string | null
           codice?: string | null
           condizione_applicata_id?: string | null
+          condizioni_commerciali?: string | null
           created_at?: string | null
+          created_by?: string | null
           data_conferma?: string | null
           data_consegna_effettiva?: string | null
           data_consegna_prevista?: string | null
@@ -3447,9 +3570,11 @@ export type Database = {
           totale?: number | null
           trimestre_pagamento?: number | null
           updated_at?: string | null
+          updated_by?: string | null
           user_id?: string
           verificato_conferma?: boolean
           verificato_conferma_at?: string | null
+          version?: number
         }
         Relationships: [
           {
@@ -3578,6 +3703,8 @@ export type Database = {
           id: string
           is_omaggio: boolean
           ordine_id: string
+          pezzi_per_cartone: number | null
+          pezzi_sfusi: number
           prezzo_unitario: number
           prodotto_id: string
           quantita_cartoni: number
@@ -3592,6 +3719,8 @@ export type Database = {
           id?: string
           is_omaggio?: boolean
           ordine_id: string
+          pezzi_per_cartone?: number | null
+          pezzi_sfusi?: number
           prezzo_unitario?: number
           prodotto_id: string
           quantita_cartoni?: number
@@ -3606,6 +3735,8 @@ export type Database = {
           id?: string
           is_omaggio?: boolean
           ordine_id?: string
+          pezzi_per_cartone?: number | null
+          pezzi_sfusi?: number
           prezzo_unitario?: number
           prodotto_id?: string
           quantita_cartoni?: number
@@ -5402,6 +5533,8 @@ export type Database = {
         }
         Returns: string
       }
+      agency_data_owner: { Args: { _uid: string }; Returns: string }
+      agency_owner_id: { Args: never; Returns: string }
       assign_fiscal_mandates: {
         Args: {
           p_agency_type?: string
@@ -5437,6 +5570,8 @@ export type Database = {
       }
       is_accepted_proposal_file: { Args: { p_path: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_agency_member: { Args: { _uid: string }; Returns: boolean }
+      is_agency_member_text: { Args: { _uid: string }; Returns: boolean }
       merge_prodotti: {
         Args: {
           p_duplicate_ids: string[]
