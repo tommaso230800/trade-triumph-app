@@ -3020,6 +3020,183 @@ export type Database = {
         }
         Relationships: []
       }
+      notifiche: {
+        Row: {
+          azienda_id: string | null
+          azienda_nome: string | null
+          categoria: string
+          cliente_id: string | null
+          cliente_nome: string | null
+          created_at: string
+          event_key: string
+          id: string
+          importo: number | null
+          link: string | null
+          metadata: Json
+          ordine_id: string | null
+          push_mode: string
+          read_at: string | null
+          recipient_id: string
+          testo: string
+          titolo: string
+        }
+        Insert: {
+          azienda_id?: string | null
+          azienda_nome?: string | null
+          categoria: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          created_at?: string
+          event_key: string
+          id?: string
+          importo?: number | null
+          link?: string | null
+          metadata?: Json
+          ordine_id?: string | null
+          push_mode?: string
+          read_at?: string | null
+          recipient_id: string
+          testo: string
+          titolo: string
+        }
+        Update: {
+          azienda_id?: string | null
+          azienda_nome?: string | null
+          categoria?: string
+          cliente_id?: string | null
+          cliente_nome?: string | null
+          created_at?: string
+          event_key?: string
+          id?: string
+          importo?: number | null
+          link?: string | null
+          metadata?: Json
+          ordine_id?: string | null
+          push_mode?: string
+          read_at?: string | null
+          recipient_id?: string
+          testo?: string
+          titolo?: string
+        }
+        Relationships: []
+      }
+      notifiche_consegne: {
+        Row: {
+          accepted_at: string | null
+          attempts: number
+          clicked_at: string | null
+          created_at: string
+          dispositivo_id: string
+          error: string | null
+          http_status: number | null
+          id: string
+          next_attempt_at: string
+          notifica_id: string
+          receipt_token: string
+          received_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          attempts?: number
+          clicked_at?: string | null
+          created_at?: string
+          dispositivo_id: string
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          next_attempt_at?: string
+          notifica_id: string
+          receipt_token?: string
+          received_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          attempts?: number
+          clicked_at?: string | null
+          created_at?: string
+          dispositivo_id?: string
+          error?: string | null
+          http_status?: number | null
+          id?: string
+          next_attempt_at?: string
+          notifica_id?: string
+          receipt_token?: string
+          received_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifiche_consegne_dispositivo_id_fkey"
+            columns: ["dispositivo_id"]
+            isOneToOne: false
+            referencedRelation: "push_dispositivi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifiche_consegne_notifica_id_fkey"
+            columns: ["notifica_id"]
+            isOneToOne: false
+            referencedRelation: "notifiche"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifiche_preferenze: {
+        Row: {
+          categoria: string
+          enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categoria: string
+          enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categoria?: string
+          enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifiche_sistema_log: {
+        Row: {
+          details: Json
+          error: string | null
+          finished_at: string | null
+          id: string
+          job: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          details?: Json
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          job: string
+          started_at?: string
+          status: string
+        }
+        Update: {
+          details?: Json
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          job?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       omaggi_erogati: {
         Row: {
           cliente_id: string
@@ -4554,6 +4731,69 @@ export type Database = {
           },
         ]
       }
+      push_dispositivi: {
+        Row: {
+          auth_key: string
+          created_at: string
+          disabled_reason: string | null
+          enabled: boolean
+          endpoint: string
+          failure_count: number
+          id: string
+          last_accepted_at: string | null
+          last_error: string | null
+          last_error_at: string | null
+          last_received_at: string | null
+          last_seen_at: string | null
+          nome: string | null
+          p256dh: string
+          piattaforma: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          disabled_reason?: string | null
+          enabled?: boolean
+          endpoint: string
+          failure_count?: number
+          id?: string
+          last_accepted_at?: string | null
+          last_error?: string | null
+          last_error_at?: string | null
+          last_received_at?: string | null
+          last_seen_at?: string | null
+          nome?: string | null
+          p256dh: string
+          piattaforma?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          disabled_reason?: string | null
+          enabled?: boolean
+          endpoint?: string
+          failure_count?: number
+          id?: string
+          last_accepted_at?: string | null
+          last_error?: string | null
+          last_error_at?: string | null
+          last_received_at?: string | null
+          last_seen_at?: string | null
+          nome?: string | null
+          p256dh?: string
+          piattaforma?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       reorder_tracking: {
         Row: {
           azienda_id: string
@@ -4871,6 +5111,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      riordino_impostazioni: {
+        Row: {
+          owner_id: string
+          tolleranza: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          owner_id: string
+          tolleranza?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          owner_id?: string
+          tolleranza?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       scadenziario_fatture: {
         Row: {
@@ -5602,10 +5863,55 @@ export type Database = {
         Returns: undefined
       }
       claim_onedrive_sync: { Args: { p_user_id: string }; Returns: boolean }
+      claim_push_consegne: {
+        Args: { p_limit?: number }
+        Returns: {
+          accepted_at: string | null
+          attempts: number
+          clicked_at: string | null
+          created_at: string
+          dispositivo_id: string
+          error: string | null
+          http_status: number | null
+          id: string
+          next_attempt_at: string
+          notifica_id: string
+          receipt_token: string
+          received_at: string | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "notifiche_consegne"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       correct_fiscal_attributions: {
         Args: { p_items: Json; p_mandate_id: string }
         Returns: number
       }
+      enqueue_notifica: {
+        Args: {
+          p_azienda_id: string
+          p_azienda_nome: string
+          p_categoria: string
+          p_cliente_id: string
+          p_cliente_nome: string
+          p_event_key: string
+          p_importo: number
+          p_link: string
+          p_metadata: Json
+          p_ordine_id: string
+          p_push_mode?: string
+          p_recipients: string[]
+          p_testo: string
+          p_titolo: string
+        }
+        Returns: number
+      }
+      format_euro_it: { Args: { p: number }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -5625,6 +5931,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      notifica_destinatari: { Args: { p_owner: string }; Returns: string[] }
+      notifiche_diagnostica: { Args: never; Returns: Json }
       order_years: {
         Args: never
         Returns: {
@@ -5632,6 +5940,10 @@ export type Database = {
           ordini: number
           ordini_con_righe: number
         }[]
+      }
+      ordine_notificabile: {
+        Args: { p_deleted_at: string; p_note: string; p_status: string }
+        Returns: boolean
       }
       product_sales_coverage: {
         Args: {
@@ -5677,6 +5989,17 @@ export type Database = {
         }[]
       }
       purge_cestino_expired: { Args: never; Returns: undefined }
+      register_push_device: {
+        Args: {
+          p_auth: string
+          p_endpoint: string
+          p_nome: string
+          p_p256dh: string
+          p_piattaforma: string
+          p_user_agent: string
+        }
+        Returns: string
+      }
       remove_commercial_proposal: { Args: { p_id: string }; Returns: undefined }
       save_commission_receipt: {
         Args: {
@@ -5687,6 +6010,10 @@ export type Database = {
           p_source_id: string
         }
         Returns: string
+      }
+      set_riordino_tolleranza: {
+        Args: { p_tolleranza: number }
+        Returns: number
       }
       trova_condizione_provvigione: {
         Args: {
