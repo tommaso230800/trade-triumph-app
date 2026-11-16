@@ -63,7 +63,14 @@ import {
   Merge,
   History,
   AlertTriangle,
+  MoreHorizontal,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAziende, useUpdateAzienda, Azienda } from "@/hooks/useAziende";
 import { useProdotti, useCreateProdotto, useDeleteProdotto, useUpdateProdotto, Prodotto } from "@/hooks/useProdotti";
 import { useBrands, useCreateBrand } from "@/hooks/useBrands";
@@ -595,7 +602,48 @@ const AziendaDettaglio = () => {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <ul className="md:hidden divide-y">
+              {prodotti.map((prodotto) => {
+                const brandName = brands?.find(b => b.id === prodotto.brand_id)?.name;
+                return (
+                  <li key={prodotto.id} className="flex items-center gap-3 py-2 pl-4 pr-1">
+                    {prodotto.immagine_url ? (
+                      <img src={prodotto.immagine_url} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 break-words text-sm font-medium">{prodotto.nome}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {[prodotto.codice, brandName, `${prodotto.pezzi_per_cartone} pz/cart`].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-sm font-semibold tabular-nums">{formatCurrency(prodotto.prezzo_listino)}</span>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label={`Azioni per ${prodotto.nome}`}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openProductDialog(prodotto)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Modifica
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteProduct(prodotto.id)}>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Elimina
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -629,10 +677,10 @@ const AziendaDettaglio = () => {
                       <TableCell className="font-medium">{prodotto.nome}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{brandName || "—"}</TableCell>
                       <TableCell className="text-right">{formatCurrency(prodotto.prezzo_listino)}</TableCell>
-                      <TableCell className="text-right">{prodotto.pezzi_per_cartone}</TableCell>
-                      <TableCell className="text-right">{prodotto.strati}</TableCell>
-                      <TableCell className="text-right">{prodotto.cartoni_per_strato}</TableCell>
-                      <TableCell className="text-right font-medium">{calcTotaleCartoni(prodotto.strati, prodotto.cartoni_per_strato)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{prodotto.pezzi_per_cartone}</TableCell>
+                      <TableCell className="text-right tabular-nums">{prodotto.strati}</TableCell>
+                      <TableCell className="text-right tabular-nums">{prodotto.cartoni_per_strato}</TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">{calcTotaleCartoni(prodotto.strati, prodotto.cartoni_per_strato)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1 justify-end">
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openProductDialog(prodotto)}>
@@ -648,6 +696,7 @@ const AziendaDettaglio = () => {
                 </TableBody>
               </Table>
             </div>
+            </>
           )}
         </div>
       </div>

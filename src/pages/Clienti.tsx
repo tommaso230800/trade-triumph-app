@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +35,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Mail, Phone, TrendingUp, MoreHorizontal, Loader2, Filter, Wand2, X, Eye, Pencil, Users } from "lucide-react";
+import { Plus, Search, Mail, Phone, MoreHorizontal, Loader2, Filter, Wand2, X, Eye, Pencil, Users, MessageCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { telHref, whatsappHref } from "@/lib/contactLinks";
 import { useClienti, useCreateCliente, useDeleteCliente, useUpdateCliente, Cliente } from "@/hooks/useClienti";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -113,9 +114,17 @@ const defaultFormData: FormData = {
   condizioni_attive: [],
 };
 
+const STATUS_FILTER_KEY = "clienti:statusFilter";
+
 const Clienti = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Cliente["status"] | "tutti">("tutti");
+  const [statusFilter, setStatusFilter] = useState<Cliente["status"] | "tutti">(() => {
+    const saved = typeof window !== "undefined" ? window.localStorage.getItem(STATUS_FILTER_KEY) : null;
+    return saved === "nuovo" || saved === "standard" || saved === "premium" ? saved : "tutti";
+  });
+  useEffect(() => {
+    window.localStorage.setItem(STATUS_FILTER_KEY, statusFilter);
+  }, [statusFilter]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);
@@ -135,7 +144,8 @@ const Clienti = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  const { data: clienti, isLoading } = useClienti(searchTerm, statusFilter);
+  const { data: clienti, isLoading, isError, refetch } = useClienti(searchTerm, statusFilter);
+  const filtersActive = searchTerm.trim() !== "" || statusFilter !== "tutti";
   const createCliente = useCreateCliente();
   const updateCliente = useUpdateCliente();
   const deleteCliente = useDeleteCliente();
@@ -558,82 +568,124 @@ const Clienti = () => {
           </Select>
         </div>
 
-        {/* Table */}
+        {/* Elenco */}
         {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center space-y-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-              <p className="text-sm text-muted-foreground">Caricamento clienti...</p>
-            </div>
+          <div className="rounded-xl border bg-card shadow-card divide-y" aria-busy="true" aria-label="Caricamento clienti">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-4">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-4 w-2/5" />
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="rounded-xl border bg-card p-6 text-center shadow-card space-y-3">
+            <p className="text-sm font-semibold">Non riesco a caricare i clienti</p>
+            <p className="text-sm text-muted-foreground">Controlla la connessione e riprova.</p>
+            <Button variant="outline" onClick={() => refetch()}>Riprova</Button>
           </div>
         ) : !clienti?.length ? (
-          <div className="text-center py-16 rounded-xl border-2 border-dashed bg-muted/30">
-            <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-            <p className="text-lg font-medium text-muted-foreground">Nessun cliente trovato</p>
-            <p className="text-sm text-muted-foreground/70 mb-4">Inizia aggiungendo il tuo primo cliente</p>
-            <Button onClick={() => setIsDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Aggiungi Cliente
-            </Button>
-          </div>
+          filtersActive ? (
+            <div className="rounded-xl border bg-card p-6 text-center shadow-card space-y-3">
+              <Search className="h-6 w-6 mx-auto text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Nessun cliente corrisponde alla ricerca</p>
+              <Button variant="outline" onClick={() => { setSearchTerm(""); setStatusFilter("tutti"); }}>
+                Azzera filtri
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-xl border bg-card p-6 text-center shadow-card space-y-3">
+              <Users className="h-6 w-6 mx-auto text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Nessun cliente ancora</p>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Aggiungi cliente
+              </Button>
+            </div>
+          )
         ) : (
-          <div className="rounded-xl bg-card shadow-card overflow-hidden animate-fade-in">
-            <div className="overflow-x-auto">
+          <>
+            {/* Mobile: card compatte, niente scorrimento orizzontale */}
+            <ul className="md:hidden rounded-xl border bg-card shadow-card divide-y">
+              {clienti.map((cliente) => {
+                const tel = telHref(cliente.telefono);
+                const wa = whatsappHref(cliente.telefono);
+                return (
+                  <li key={cliente.id} className="flex items-center gap-2 py-2 pl-4 pr-2">
+                    <Link to={`/clienti/${cliente.id}`} className="min-w-0 flex-1 py-1">
+                      <p className="line-clamp-2 break-words text-sm font-semibold text-card-foreground">{cliente.nome}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {[cliente.citta, cliente.consorzio].filter(Boolean).join(" · ") || cliente.azienda || "—"}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="text-sm font-semibold tabular-nums text-card-foreground">
+                          {formatCurrency(Number(cliente.fatturato))}
+                        </span>
+                        <Badge className={statusConfig[cliente.status].className}>
+                          {statusConfig[cliente.status].label}
+                        </Badge>
+                      </div>
+                    </Link>
+                    {tel && (
+                      <Button asChild variant="ghost" size="icon" aria-label={`Chiama ${cliente.nome}`}>
+                        <a href={tel}><Phone className="h-4 w-4" /></a>
+                      </Button>
+                    )}
+                    {wa && (
+                      <Button asChild variant="ghost" size="icon" aria-label={`WhatsApp a ${cliente.nome}`}>
+                        <a href={wa} target="_blank" rel="noopener noreferrer"><MessageCircle className="h-4 w-4" /></a>
+                      </Button>
+                    )}
+                    <ClienteActions cliente={cliente} onEdit={openEditDialog} onDelete={(id) => deleteCliente.mutate(id)} />
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Desktop: tabella */}
+            <div className="hidden md:block rounded-xl border bg-card shadow-card overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
                     <TableHead>Cliente</TableHead>
-                    <TableHead className="hidden md:table-cell">Contatti</TableHead>
+                    <TableHead>Contatti</TableHead>
                     <TableHead className="hidden lg:table-cell">Consorzio</TableHead>
-                    <TableHead>Fatturato</TableHead>
-                    <TableHead className="hidden sm:table-cell">Ordini</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="text-right">Fatturato</TableHead>
+                    <TableHead className="text-right">Ordini</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead className="w-12"><span className="sr-only">Azioni</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {clienti.map((cliente) => (
-                    <TableRow key={cliente.id} className="hover:bg-muted/30 transition-colors">
+                    <TableRow key={cliente.id}>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9 hidden sm:flex">
-                            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                              {cliente.nome
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .slice(0, 2)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="font-medium text-card-foreground truncate">{cliente.nome}</p>
-                            <p className="text-xs text-muted-foreground truncate">{cliente.azienda || "—"}</p>
-                            {cliente.citta && (
-                              <p className="text-xs text-muted-foreground truncate">{cliente.citta}</p>
-                            )}
-                          </div>
-                        </div>
+                        <Link to={`/clienti/${cliente.id}`} className="block min-w-0 hover:underline">
+                          <p className="truncate font-medium text-card-foreground">{cliente.nome}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {[cliente.azienda, cliente.citta].filter(Boolean).join(" · ") || "—"}
+                          </p>
+                        </Link>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <div className="space-y-1">
-                          {cliente.email && (
-                            <div className="flex items-center gap-2 text-xs">
-                              <Mail className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-muted-foreground truncate max-w-[150px]">{cliente.email}</span>
-                            </div>
-                          )}
-                          {cliente.pec && (
-                            <div className="flex items-center gap-2 text-xs">
-                              <Mail className="h-3 w-3 text-primary" />
-                              <span className="text-muted-foreground truncate max-w-[150px]">{cliente.pec}</span>
-                            </div>
-                          )}
+                      <TableCell>
+                        <div className="space-y-1 text-xs text-muted-foreground">
                           {cliente.telefono && (
-                            <div className="flex items-center gap-2 text-xs">
-                              <Phone className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-muted-foreground">{cliente.telefono}</span>
-                            </div>
+                            <a href={telHref(cliente.telefono) ?? undefined} className="flex items-center gap-2 hover:text-foreground">
+                              <Phone className="h-3 w-3" />
+                              <span>{cliente.telefono}</span>
+                            </a>
                           )}
+                          {cliente.email && (
+                            <a href={`mailto:${cliente.email}`} className="flex min-w-0 items-center gap-2 hover:text-foreground">
+                              <Mail className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{cliente.email}</span>
+                            </a>
+                          )}
+                          {!cliente.telefono && !cliente.email && <span>—</span>}
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
@@ -643,61 +695,73 @@ const Clienti = () => {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <span className="font-semibold text-card-foreground text-sm">
-                            {formatCurrency(Number(cliente.fatturato))}
-                          </span>
-                          {Number(cliente.fatturato) > 0 && (
-                            <TrendingUp className="h-3 w-3 text-success hidden sm:block" />
-                          )}
-                        </div>
+                      <TableCell className="text-right">
+                        <span className="text-sm font-semibold tabular-nums text-card-foreground">
+                          {formatCurrency(Number(cliente.fatturato))}
+                        </span>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <span className="font-medium text-card-foreground">{cliente.ordini_count}</span>
-                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{cliente.ordini_count}</TableCell>
                       <TableCell>
                         <Badge className={statusConfig[cliente.status].className}>
                           {statusConfig[cliente.status].label}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link to={`/clienti/${cliente.id}`} className="flex items-center gap-2">
-                                <Eye className="h-4 w-4" />
-                                Dettaglio
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEditDialog(cliente)}>
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Modifica
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => deleteCliente.mutate(cliente.id)}
-                            >
-                              Elimina
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <ClienteActions cliente={cliente} onEdit={openEditDialog} onDelete={(id) => deleteCliente.mutate(id)} />
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
-          </div>
+          </>
         )}
       </div>
     </MainLayout>
   );
 };
+
+function ClienteActions({
+  cliente,
+  onEdit,
+  onDelete,
+}: {
+  cliente: Cliente;
+  onEdit: (c: Cliente) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label={`Azioni per ${cliente.nome}`}>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link to={`/clienti/${cliente.id}`} className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            Dettaglio
+          </Link>
+        </DropdownMenuItem>
+        {cliente.email && (
+          <DropdownMenuItem asChild>
+            <a href={`mailto:${cliente.email}`} className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Email
+            </a>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem onClick={() => onEdit(cliente)}>
+          <Pencil className="h-4 w-4 mr-2" />
+          Modifica
+        </DropdownMenuItem>
+        <DropdownMenuItem className="text-destructive" onClick={() => onDelete(cliente.id)}>
+          Elimina
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export default Clienti;

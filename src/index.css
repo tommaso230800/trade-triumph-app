@@ -508,3 +508,11 @@
   .crm-page .crm-table-wrapper td p { white-space: normal; overflow-wrap: anywhere; }
   .crm-page .crm-table-wrapper td button { min-width: 44px; min-height: 44px; }
 }
+
+/* Nasconde il badge "Edit with Lovable" iniettato dall'hosting Lovable
+   sul sito pubblicato (non fa parte dell'app). */
+#lovable-badge,
+a[href*="lovable.dev"][style*="position: fixed"],
+a[href*="lovable.dev"][style*="position:fixed"] {
+  display: none !important;
+}
