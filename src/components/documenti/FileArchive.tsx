@@ -304,7 +304,7 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
           <h2 className="text-base font-semibold">Archivio documenti</h2>
           <p className="text-xs text-muted-foreground">{docs.length} documenti · {daVerificare.length} da verificare</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" disabled={analyzing} onClick={analyzeAll}>
             <RefreshCw className={`mr-2 h-4 w-4 ${analyzing ? 'animate-spin' : ''}`} />{analyzing ? 'Analisi…' : 'Analizza archivio'}
           </Button>

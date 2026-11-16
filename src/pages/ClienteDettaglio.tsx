@@ -1,4 +1,6 @@
 import { useParams, Link } from "react-router-dom";
+import { OrderCompactList } from "@/components/ordini/OrderCompactList";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DocumentiSection } from "@/components/documenti/DocumentiSection";
 import { FileArchive } from '@/components/documenti/FileArchive';
 import { AcceptedConditions } from '@/components/proposte/AcceptedConditions';
@@ -349,7 +351,7 @@ const ClienteDettaglio = () => {
           </div>
         )}
 
-        <div className="rounded-xl bg-card p-6 shadow-card">
+        <div className="rounded-xl bg-card p-4 sm:p-6 shadow-card">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <ShoppingCart className="h-5 w-5 text-primary" />
@@ -358,13 +360,23 @@ const ClienteDettaglio = () => {
           </div>
 
           {ordiniLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <div className="space-y-2" aria-busy="true" aria-label="Caricamento ordini">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
+              ))}
             </div>
           ) : !ordini?.length ? (
             <p className="text-center text-muted-foreground py-8">Nessun ordine per questo cliente</p>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <OrderCompactList
+              className="md:hidden"
+              orders={ordini}
+              statusConfig={statusConfig}
+              formatCurrency={formatCurrency}
+              dateField="created_at"
+            />
+            <div className="hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
@@ -372,8 +384,8 @@ const ClienteDettaglio = () => {
                     <TableHead>Data</TableHead>
                     <TableHead>Azienda</TableHead>
                     <TableHead>Prodotti</TableHead>
-                    <TableHead>Totale</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Totale</TableHead>
+                    <TableHead>Stato</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -403,7 +415,7 @@ const ClienteDettaglio = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="font-semibold">{formatCurrency(Number(ordine.totale))}</TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums">{formatCurrency(Number(ordine.totale))}</TableCell>
                       <TableCell>
                         <Badge className={statusConfig[ordine.status as keyof typeof statusConfig]?.className}>
                           {statusConfig[ordine.status as keyof typeof statusConfig]?.label || ordine.status}
@@ -414,6 +426,7 @@ const ClienteDettaglio = () => {
                 </TableBody>
               </Table>
             </div>
+            </>
           )}
         </div>
 
@@ -600,14 +613,21 @@ const ClienteDettaglio = () => {
                         {ordiniPromo.length > 0 ? (
                           <div>
                             <p className="text-xs text-muted-foreground mb-2">Ordini effettuati durante la promozione:</p>
-                            <div className="overflow-x-auto">
+                            <OrderCompactList
+                              className="md:hidden bg-card"
+                              orders={ordiniPromo}
+                              statusConfig={statusConfig}
+                              formatCurrency={formatCurrency}
+                              showAzienda={false}
+                            />
+                            <div className="hidden md:block">
                               <Table>
                                 <TableHeader>
                                   <TableRow className="bg-muted/50">
                                     <TableHead className="text-xs">Codice</TableHead>
                                     <TableHead className="text-xs">Data</TableHead>
                                     <TableHead className="text-xs">Prodotti</TableHead>
-                                    <TableHead className="text-xs">Totale</TableHead>
+                                    <TableHead className="text-xs text-right">Totale</TableHead>
                                     <TableHead className="text-xs">Status</TableHead>
                                   </TableRow>
                                 </TableHeader>
@@ -623,7 +643,7 @@ const ClienteDettaglio = () => {
                                       <TableCell className="text-xs">
                                         {ordine.ordini_righe?.length || 0} prodotti
                                       </TableCell>
-                                      <TableCell className="text-xs font-semibold">
+                                      <TableCell className="text-xs text-right font-semibold tabular-nums">
                                         {formatCurrency(Number(ordine.totale))}
                                       </TableCell>
                                       <TableCell>
