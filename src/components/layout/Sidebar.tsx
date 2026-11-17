@@ -49,7 +49,7 @@ type NavItem = {
 };
 
 const baseNavigation: NavItem[] = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Home", href: "/", icon: LayoutDashboard },
   { name: "Ordini", href: "/ordini", icon: ShoppingCart },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
   { name: "Statistiche prodotti", href: "/statistiche", icon: PieChart },

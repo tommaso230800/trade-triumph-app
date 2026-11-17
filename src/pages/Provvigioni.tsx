@@ -424,24 +424,10 @@ const Provvigioni = () => {
           </div>
         </section>
 
-        {/* KPI CARDS */}
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-          <KPICard icon={<Euro />} label="Provvigioni maturate" value={fmtEur(analytics.kpi.provvigioniMaturate)} />
-          <KPICard icon={<CheckCircle2 />} label="Liquidate" value={fmtEur(analytics.kpi.provvigioniLiquidate)} accent="success" />
-          <KPICard icon={<Clock />} label="Da incassare" value={fmtEur(analytics.kpi.provvigioniDaIncassare)} accent="warning" />
-          <KPICard icon={<TrendingUp />} label="Fatturato generato" value={fmtEur(analytics.kpi.fatturato)} />
-          <KPICard icon={<FileText />} label="Numero ordini" value={String(analytics.kpi.nOrdini)} />
-          <KPICard icon={<Receipt />} label="Ticket medio" value={fmtEur(analytics.kpi.ticketMedio)} />
-          <KPICard icon={<Percent />} label="% media provv." value={`${formatNumber(analytics.kpi.pctMediaProvv, 2)}%`} />
-          <GrowthCard label="Vs mese scorso" value={analytics.kpi.growthMoM} />
-          <GrowthCard label="Vs stesso mese A-1" value={analytics.kpi.growthYoY} />
-          <ObjectiveCard target={analytics.kpi.obiettivoMensile} current={analytics.kpi.provvMese} pct={analytics.kpi.completamentoObiettivo} />
-        </div>
-
         {/* MAIN TABS */}
         <Tabs defaultValue={params.get("voce")?"provvigioni":"overview"} className="space-y-5">
           <TabsList className="w-full flex-wrap h-auto justify-start gap-1 rounded-xl border border-scatto-line bg-scatto-surface p-1">
-            <TabsTrigger value="overview" className={provTabCls}><LineChartIcon className="h-4 w-4" />Overview</TabsTrigger>
+            <TabsTrigger value="overview" className={provTabCls}><LineChartIcon className="h-4 w-4" />Panoramica</TabsTrigger>
             <TabsTrigger value="provvigioni" className={provTabCls}><Euro className="h-4 w-4" />Provvigioni</TabsTrigger>
             <TabsTrigger value="aziende" className={provTabCls}><Building2 className="h-4 w-4" />Aziende</TabsTrigger>
             <TabsTrigger value="clienti" className={provTabCls}><Users className="h-4 w-4" />Clienti</TabsTrigger>
@@ -453,6 +439,19 @@ const Provvigioni = () => {
 
           {/* OVERVIEW */}
           <TabsContent value="overview" className="space-y-5">
+          {/* KPI CARDS */}
+          <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+            <KPICard icon={<Euro />} label="Provvigioni maturate" value={fmtEur(analytics.kpi.provvigioniMaturate)} />
+            <KPICard icon={<CheckCircle2 />} label="Liquidate" value={fmtEur(analytics.kpi.provvigioniLiquidate)} accent="success" />
+            <KPICard icon={<Clock />} label="Da incassare" value={fmtEur(analytics.kpi.provvigioniDaIncassare)} accent="warning" />
+            <KPICard icon={<TrendingUp />} label="Fatturato generato" value={fmtEur(analytics.kpi.fatturato)} />
+            <KPICard icon={<FileText />} label="Numero ordini" value={String(analytics.kpi.nOrdini)} />
+            <KPICard icon={<Receipt />} label="Ticket medio" value={fmtEur(analytics.kpi.ticketMedio)} />
+            <KPICard icon={<Percent />} label="% media provv." value={`${formatNumber(analytics.kpi.pctMediaProvv, 2)}%`} />
+            <GrowthCard label="Vs mese scorso" value={analytics.kpi.growthMoM} />
+            <GrowthCard label="Vs stesso mese A-1" value={analytics.kpi.growthYoY} />
+            <ObjectiveCard target={analytics.kpi.obiettivoMensile} current={analytics.kpi.provvMese} pct={analytics.kpi.completamentoObiettivo} />
+          </div>
             {aziendeDuplicate.length > 0 && (
               <div className="flex items-start gap-2.5 rounded-xl border border-scatto-danger/30 bg-scatto-danger/5 p-3.5 text-sm text-scatto-danger">
                 <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />

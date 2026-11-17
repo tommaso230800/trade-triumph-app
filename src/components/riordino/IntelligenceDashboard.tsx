@@ -214,7 +214,7 @@ export function IntelligenceDashboard() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder="Cerca cliente o azienda…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-4">
             <Select value={aziendaFilter} onValueChange={setAziendaFilter}>
               <SelectTrigger><SelectValue placeholder="Tutte le aziende" /></SelectTrigger>
               <SelectContent>

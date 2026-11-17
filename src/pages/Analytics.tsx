@@ -96,6 +96,8 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
   };
 
   const { data: stats, isLoading } = useAdvancedKPIStats(filters);
+  // Senza costi di acquisto (utile = fatturato) il margine non è calcolabile: N/D, non 100%.
+  const costiMancanti = !!stats && stats.fatturatoTotale > 0 && Math.abs((stats.utileLordo ?? 0) - stats.fatturatoTotale) < 0.005;
   const { data: yoy } = useKPIYoY(filters);
 
   const aziendeNames = useMemo(() => {
@@ -424,8 +426,8 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
               },
               {
                 label: "Margine",
-                value: `${(stats?.marginePercentuale || 0).toFixed(1)}%`,
-                caption: `utile lordo ${formatCurrency(stats?.utileLordo || 0)}`,
+                value: costiMancanti ? "N/D" : `${formatNumber(stats?.marginePercentuale || 0, 1)}%`,
+                caption: costiMancanti ? "costi di acquisto non inseriti" : `utile lordo ${formatCurrency(stats?.utileLordo || 0)}`,
                 icon: Percent,
               },
             ]}

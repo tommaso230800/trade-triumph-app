@@ -51,6 +51,8 @@ import { useState } from "react";
 import { formatEuro } from "@/lib/format";
 import { PageSkeleton, ListSkeleton } from "@/components/ui/page-skeleton";
 import { ClienteQuickActions } from "@/components/clienti/ClienteQuickActions";
+import { isCounted, orderDate } from "@/lib/metricsEngine";
+import { formatNumber } from "@/lib/format";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -125,8 +127,16 @@ const ClienteDettaglio = () => {
     );
   }
 
-  const fatturatoTotale = ordini?.reduce((sum, o) => sum + Number(o.totale), 0) || 0;
+  // Stesse regole del resto dell'app (metricsEngine): data d'ordine, esclusi annullati e stand-by.
+  const annoCorrente = new Date().getFullYear();
+  const ordiniValidi = (ordini ?? []).filter((o) => isCounted(o));
+  const ordiniAnno = ordiniValidi.filter((o) => (orderDate(o) ?? "").startsWith(String(annoCorrente)));
+  const fatturatoTotale = ordiniAnno.reduce((sum, o) => sum + Number(o.totale), 0);
   const ordiniCompletati = ordini?.filter((o) => o.status === "completato").length || 0;
+  const ordiniEsclusi = (ordini?.length ?? 0) - ordiniValidi.length;
+  const ultimoOrdine = ordiniValidi.map((o) => orderDate(o)).filter((d): d is string => !!d).sort().at(-1) ?? null;
+  // Il campo storico del cliente è il fatturato 2025: confronto solo quando l'anno precedente è il 2025.
+  const fatturatoAnnoPrec = annoCorrente - 1 === 2025 ? cliente.fatturato_2025 ?? null : null;
 
   return (
     <MainLayout>
@@ -254,55 +264,55 @@ const ClienteDettaglio = () => {
             </div>
           </div>
 
-          {/* Stats con confronto 2025 */}
-          <div className="rounded-xl bg-card p-6 shadow-card space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Euro className="h-5 w-5 text-primary" />
-              Statistiche & Confronto 2025
+          {/* Fatturato del cliente: anno in corso vs anno precedente */}
+          <div className="rounded-xl bg-card p-4 shadow-card space-y-4 sm:p-6">
+            <h3 className="text-base font-semibold flex items-center gap-2">
+              <Euro className="h-4 w-4 text-primary" />
+              Fatturato {annoCorrente}
             </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-2xl font-bold">{formatCurrency(fatturatoTotale)}</p>
-                <p className="text-xs text-muted-foreground">Fatturato 2026</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-warning">
-                  {cliente.fatturato_2025 ? formatCurrency(cliente.fatturato_2025) : "—"}
+            <div className="space-y-1">
+              <p className="text-3xl font-bold tracking-tight tabular-nums">{formatCurrency(fatturatoTotale)}</p>
+              {fatturatoAnnoPrec && fatturatoAnnoPrec > 0 ? (
+                <p className="text-sm text-muted-foreground tabular-nums">
+                  <span className={fatturatoTotale >= fatturatoAnnoPrec ? "font-medium text-success" : "font-medium text-destructive"}>
+                    {formatNumber((fatturatoTotale / fatturatoAnnoPrec) * 100, 1)}%
+                  </span>{" "}
+                  del {annoCorrente - 1} ({formatCurrency(fatturatoAnnoPrec)})
+                  {fatturatoTotale < fatturatoAnnoPrec && ` · mancano ${formatCurrency(fatturatoAnnoPrec - fatturatoTotale)}`}
                 </p>
-                <p className="text-xs text-muted-foreground">Fatturato 2025</p>
-              </div>
-              {cliente.fatturato_2025 && cliente.fatturato_2025 > 0 && (
-                <>
-                  <div className="col-span-2 border-t border-border pt-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Avanzamento vs 2025:</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary rounded-full transition-all"
-                            style={{ width: `${Math.min((fatturatoTotale / cliente.fatturato_2025) * 100, 100)}%` }}
-                          />
-                        </div>
-                        <span className={`text-sm font-semibold ${fatturatoTotale >= cliente.fatturato_2025 ? 'text-success' : 'text-muted-foreground'}`}>
-                          {((fatturatoTotale / cliente.fatturato_2025) * 100).toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Mancano {formatCurrency(Math.max(0, cliente.fatturato_2025 - fatturatoTotale))} per raggiungere il 2025
-                    </p>
-                  </div>
-                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Fatturato {annoCorrente - 1}: N/D</p>
               )}
+              {fatturatoAnnoPrec && fatturatoAnnoPrec > 0 && (
+                <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
+                  <div
+                    className={`h-full rounded-full ${fatturatoTotale >= fatturatoAnnoPrec ? "bg-success" : "bg-primary"}`}
+                    style={{ width: `${Math.min((fatturatoTotale / fatturatoAnnoPrec) * 100, 100)}%` }}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="grid grid-cols-3 gap-3 border-t pt-3">
               <div>
-                <p className="text-2xl font-bold">{ordini?.length || 0}</p>
-                <p className="text-xs text-muted-foreground">Ordini Totali</p>
+                <p className="text-xs text-muted-foreground">Ultimo ordine</p>
+                <p className="text-sm font-semibold tabular-nums">
+                  {ultimoOrdine ? format(new Date(ultimoOrdine.length === 10 ? `${ultimoOrdine}T12:00:00` : ultimoOrdine), "d MMM yyyy", { locale: it }) : "—"}
+                </p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-success">{ordiniCompletati}</p>
+                <p className="text-xs text-muted-foreground">Ordini {annoCorrente}</p>
+                <p className="text-sm font-semibold tabular-nums">{ordiniAnno.length}</p>
+              </div>
+              <div>
                 <p className="text-xs text-muted-foreground">Completati</p>
+                <p className="text-sm font-semibold tabular-nums">{ordiniCompletati}</p>
               </div>
             </div>
+            {ordiniEsclusi > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {ordiniEsclusi} {ordiniEsclusi === 1 ? "ordine annullato o in stand-by escluso" : "ordini annullati o in stand-by esclusi"} dal fatturato.
+              </p>
+            )}
           </div>
         </div>
 
@@ -632,7 +642,7 @@ const ClienteDettaglio = () => {
                                     <TableHead className="text-xs">Data</TableHead>
                                     <TableHead className="text-xs">Prodotti</TableHead>
                                     <TableHead className="text-xs text-right">Totale</TableHead>
-                                    <TableHead className="text-xs">Status</TableHead>
+                                    <TableHead className="text-xs">Stato</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>

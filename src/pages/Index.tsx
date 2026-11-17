@@ -230,7 +230,9 @@ const Index = () => {
   const ticketDelta = ticket !== null ? deltaPct(ticket, ticketPrev) : null;
   const cartoniTotali = stats?.cartoniTotali ?? 0;
   const pezziTotali = stats?.pezziTotali ?? 0;
-  const marginePct = stats?.marginePercentuale ?? null;
+  // Senza costi di acquisto (utile = fatturato) il margine non è calcolabile: N/D, non 100%.
+  const costiMancanti = !!stats && stats.fatturatoTotale > 0 && Math.abs((stats.utileLordo ?? 0) - stats.fatturatoTotale) < 0.005;
+  const marginePct = costiMancanti ? null : stats?.marginePercentuale ?? null;
 
   // Confronto sui soli mesi CHIUSI dell'anno (mai il mese in corso, che è
   // parziale): stessa fonte dati del grafico sotto (yoy.monthlyComparison),
@@ -498,6 +500,139 @@ const Index = () => {
           )}
 
 
+          {/* Azioni prima dei grafici: chi ricontattare e ultimi ordini */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
+            <DashCard
+              className="lg:col-span-2"
+              title="Da ricontattare"
+              icon={<AlertTriangle className="h-4 w-4" />}
+              action={
+                <Link to="/riordino" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
+                  Vedi tutti <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              }
+              bodyClassName="p-0 sm:p-0"
+            >
+              {isLoading ? (
+                <div className="space-y-2 p-4 sm:p-5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                  ))}
+                </div>
+              ) : reorderError ? (<div role="alert" className="p-4 text-sm">Riordini non disponibili. <Button variant="outline" onClick={()=>refreshReorders()}>Riprova</Button></div>) : daRicontattare.length === 0 ? (
+                <div className="py-10 text-center">
+                  <p className="text-sm font-semibold text-scatto-ink">Nessun cliente in ritardo</p>
+                  <p className="mt-1 text-xs text-scatto-muted">
+                    Tutti i clienti sono in linea col loro ritmo di riordino.
+                  </p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-scatto-line">
+                  {daRicontattare.map((c) => {
+                    const az = aziendaMap.get(c.azienda_id);
+                    const color = aziendaColorValue(c.azienda_id, aziendaColorMap);
+                    return (
+                      <li key={c.id}>
+                        <Link
+                          to={`/ordini?cliente=${c.cliente_id}&azienda=${c.azienda_id}&storico=1`}
+                          className="flex min-h-[64px] items-center gap-3 px-4 py-3 transition-colors hover:bg-scatto-ink/[0.02] sm:px-5"
+                        >
+                          <span
+                            className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold"
+                            style={{ backgroundColor: softBg(color), color }}
+                          >
+                            {az?.logo_url ? (
+                              <img src={az.logo_url} alt={az.nome} className="h-full w-full object-cover" />
+                            ) : (
+                              initials(c.cliente_nome)
+                            )}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-base font-bold tracking-tight text-scatto-ink">
+                              {c.cliente_nome}
+                            </p>
+                            <p className="truncate text-xs text-scatto-muted">
+                              {c.azienda_nome} · {c.ultimo_ordine_data.split("-").reverse().join("/")} · ultimo ordine:{" "}
+                              {c.giorniUltimoOrdine === null
+                                ? "N/D"
+                                : c.giorniUltimoOrdine === 0
+                                ? "oggi"
+                                : `${c.giorniUltimoOrdine} giorni fa`}
+                            </p>
+                          </div>
+                          <div className="flex-shrink-0 text-right">
+                            <p className="font-display text-sm font-bold tabular-nums text-scatto-ink">
+                              {formatCompact(c.ultimo_importo)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Importo ultimo ordine</p><p className="text-xs font-medium text-scatto-danger">
+                              +{c.ritardo} {c.ritardo === 1 ? "giorno" : "giorni"}
+                            </p>
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </DashCard>
+
+            <DashCard
+              title="Ultimi ordini"
+              icon={<Package className="h-4 w-4" />}
+              action={
+                <Link to="/ordini" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
+                  Tutti <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              }
+              bodyClassName="p-0 sm:p-0"
+            >
+              {isLoading ? (
+                <div className="space-y-2 p-4 sm:p-5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full rounded-xl" />
+                  ))}
+                </div>
+              ) : attivitaRecente.length === 0 ? (
+                <p className="py-8 text-center text-sm text-scatto-muted">Nessun ordine recente</p>
+              ) : (
+                <ul className="divide-y divide-scatto-line">
+                  {attivitaRecente.map((o) => {
+                    const color = aziendaColorValue(o.azienda_id, aziendaColorMap);
+                    const nomeCliente = o.clienti?.nome || "N/D";
+                    return (
+                      <li key={o.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOrderId(o.id)}
+                          className="flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-scatto-ink/[0.03] sm:px-5 touch-target"
+                        >
+                          <span
+                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold"
+                            style={{ backgroundColor: softBg(color), color }}
+                          >
+                            {o.aziende?.logo_url ? (
+                              <img src={o.aziende.logo_url} alt={o.aziende?.nome || ""} className="h-full w-full object-cover" />
+                            ) : (
+                              initials(nomeCliente)
+                            )}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-scatto-ink">{nomeCliente}</p>
+                            <p className="text-xs text-scatto-muted">{relativeTime(o.created_at)}</p>
+                          </div>
+                          <span className="flex-shrink-0 font-display text-sm font-bold tabular-nums text-scatto-ink">
+                            {o.totale ? formatCompact(Number(o.totale)) : "N/D"}
+                          </span>
+                          <ChevronRight className="h-4 w-4 flex-shrink-0 text-scatto-muted" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </DashCard>
+          </div>
+
           {/* 2 — KPI: fatturato protagonista + tessere di supporto */}
           {isLoading ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr,1fr]">
@@ -653,11 +788,11 @@ const Index = () => {
             >
               <div className="mb-4 flex items-center gap-3 text-xs text-scatto-muted">
                 <span className="flex items-center gap-1.5">
-                  <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-ink" />
+                  <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-accent" />
                   {yoy?.yearCurr ?? now.getFullYear()}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-danger" />
+                  <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-muted/60" />
                   {yoy?.yearPrev ?? now.getFullYear() - 1}
                 </span>
               </div>
@@ -735,138 +870,6 @@ const Index = () => {
             </DashCard>
           </div>
 
-          {/* 4 + 5 — DA RICONTATTARE (protagonista) + ULTIMI ORDINI */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
-            <DashCard
-              className="lg:col-span-2"
-              title="Da ricontattare"
-              icon={<AlertTriangle className="h-4 w-4" />}
-              action={
-                <Link to="/riordino" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
-                  Vedi tutti <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              }
-              bodyClassName="p-0 sm:p-0"
-            >
-              {isLoading ? (
-                <div className="space-y-2 p-4 sm:p-5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full rounded-xl" />
-                  ))}
-                </div>
-              ) : reorderError ? (<div role="alert" className="p-4 text-sm">Riordini non disponibili. <Button variant="outline" onClick={()=>refreshReorders()}>Riprova</Button></div>) : daRicontattare.length === 0 ? (
-                <div className="py-10 text-center">
-                  <p className="text-sm font-semibold text-scatto-ink">Nessun cliente in ritardo</p>
-                  <p className="mt-1 text-xs text-scatto-muted">
-                    Tutti i clienti sono in linea col loro ritmo di riordino.
-                  </p>
-                </div>
-              ) : (
-                <ul className="divide-y divide-scatto-line">
-                  {daRicontattare.map((c) => {
-                    const az = aziendaMap.get(c.azienda_id);
-                    const color = aziendaColorValue(c.azienda_id, aziendaColorMap);
-                    return (
-                      <li key={c.id}>
-                        <Link
-                          to={`/ordini?cliente=${c.cliente_id}&azienda=${c.azienda_id}&storico=1`}
-                          className="flex min-h-[64px] items-center gap-3 px-4 py-3 transition-colors hover:bg-scatto-ink/[0.02] sm:px-5"
-                        >
-                          <span
-                            className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold"
-                            style={{ backgroundColor: softBg(color), color }}
-                          >
-                            {az?.logo_url ? (
-                              <img src={az.logo_url} alt={az.nome} className="h-full w-full object-cover" />
-                            ) : (
-                              initials(c.cliente_nome)
-                            )}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-base font-bold tracking-tight text-scatto-ink">
-                              {c.cliente_nome}
-                            </p>
-                            <p className="truncate text-xs text-scatto-muted">
-                              {c.azienda_nome} · {c.ultimo_ordine_data.split("-").reverse().join("/")} · ultimo ordine:{" "}
-                              {c.giorniUltimoOrdine === null
-                                ? "N/D"
-                                : c.giorniUltimoOrdine === 0
-                                ? "oggi"
-                                : `${c.giorniUltimoOrdine} giorni fa`}
-                            </p>
-                          </div>
-                          <div className="flex-shrink-0 text-right">
-                            <p className="font-display text-sm font-bold tabular-nums text-scatto-ink">
-                              {formatCompact(c.ultimo_importo)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">Importo ultimo ordine</p><p className="text-xs font-medium text-scatto-danger">
-                              +{c.ritardo} {c.ritardo === 1 ? "giorno" : "giorni"}
-                            </p>
-                          </div>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </DashCard>
-
-            <DashCard
-              title="Ultimi ordini"
-              icon={<Package className="h-4 w-4" />}
-              action={
-                <Link to="/ordini" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
-                  Tutti <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              }
-              bodyClassName="p-0 sm:p-0"
-            >
-              {isLoading ? (
-                <div className="space-y-2 p-4 sm:p-5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full rounded-xl" />
-                  ))}
-                </div>
-              ) : attivitaRecente.length === 0 ? (
-                <p className="py-8 text-center text-sm text-scatto-muted">Nessun ordine recente</p>
-              ) : (
-                <ul className="divide-y divide-scatto-line">
-                  {attivitaRecente.map((o) => {
-                    const color = aziendaColorValue(o.azienda_id, aziendaColorMap);
-                    const nomeCliente = o.clienti?.nome || "N/D";
-                    return (
-                      <li key={o.id}>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedOrderId(o.id)}
-                          className="flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-scatto-ink/[0.03] sm:px-5 touch-target"
-                        >
-                          <span
-                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold"
-                            style={{ backgroundColor: softBg(color), color }}
-                          >
-                            {o.aziende?.logo_url ? (
-                              <img src={o.aziende.logo_url} alt={o.aziende?.nome || ""} className="h-full w-full object-cover" />
-                            ) : (
-                              initials(nomeCliente)
-                            )}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-scatto-ink">{nomeCliente}</p>
-                            <p className="text-xs text-scatto-muted">{relativeTime(o.created_at)}</p>
-                          </div>
-                          <span className="flex-shrink-0 font-display text-sm font-bold tabular-nums text-scatto-ink">
-                            {o.totale ? formatCompact(Number(o.totale)) : "N/D"}
-                          </span>
-                          <ChevronRight className="h-4 w-4 flex-shrink-0 text-scatto-muted" />
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </DashCard>
-          </div>
         </div>
       </div>
 

@@ -298,7 +298,7 @@ const Aziende = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Status</Label>
+                    <Label>Stato</Label>
                     <Select
                       value={formData.status}
                       onValueChange={(v) => setFormData({ ...formData, status: v as "attivo" | "in_pausa" })}
