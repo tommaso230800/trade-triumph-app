@@ -1,0 +1,2 @@
+alter table public.notifiche_preferenze drop constraint notifiche_preferenze_categoria_check;
+alter table public.notifiche_preferenze add constraint notifiche_preferenze_categoria_check check (categoria = any (array['nuovo_ordine','ordine_inviato','riordino','promemoria']));
