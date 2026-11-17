@@ -15,6 +15,7 @@ import { useOrderEmailHistory } from "@/hooks/useOrderEmail";
 import { loadOrderEmailSnapshot } from "@/lib/orderEmailSnapshot";
 import { toast } from "sonner";
 import { orderTotals } from "@/lib/orderTotals";
+import { formatEuro } from "@/lib/format";
 
 export type ProformaRigaOrdine = {
   prodotto_codice?: string;
@@ -73,7 +74,7 @@ type ProformaDialogProps = {
 };
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 export function ProformaDialog({ open, onOpenChange, data: originalData }: ProformaDialogProps) {
   const [freshData, setFreshData] = useState<ProformaData | null>(null);
@@ -209,69 +210,69 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
                 className="h-16 w-auto object-contain"
               />
               <div>
-                <h1 className="text-xl font-bold text-gray-900">MAZZI GROUP</h1>
-                <p className="text-sm text-gray-600">Agenzia di Rappresentanza</p>
+                <h1 className="text-xl font-bold text-foreground">MAZZI GROUP</h1>
+                <p className="text-sm text-muted-foreground">Agenzia di Rappresentanza</p>
               </div>
             </div>
             <div className="text-right">
-              <h2 className="text-lg font-semibold text-blue-600">PROFORMA</h2>
-              <p className="text-sm font-mono text-gray-700">{data.codice}</p>
-              <p className="text-sm text-gray-600">
+              <h2 className="text-lg font-semibold text-primary">PROFORMA</h2>
+              <p className="text-sm font-mono text-foreground">{data.codice}</p>
+              <p className="text-sm text-muted-foreground">
                 {format(dataOrdine, "dd MMMM yyyy", { locale: it })}
               </p>
             </div>
           </div>
 
-          <Separator className="bg-gray-200" />
+          <Separator className="bg-muted" />
 
           {/* Client and Company Info */}
           <div className="grid grid-cols-2 gap-8">
             <div className="space-y-2">
-              <h3 className="text-xs font-semibold uppercase text-gray-500">Cliente</h3>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="font-semibold text-gray-900">{data.cliente_nome}</p>
+              <h3 className="text-xs font-semibold uppercase text-muted-foreground">Cliente</h3>
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <p className="font-semibold text-foreground">{data.cliente_nome}</p>
                 {data.cliente_indirizzo && (
-                  <p className="text-sm text-gray-600">{data.cliente_indirizzo}</p>
+                  <p className="text-sm text-muted-foreground">{data.cliente_indirizzo}</p>
                 )}
                 {(data.cliente_cap || data.cliente_citta) && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     {data.cliente_cap} {data.cliente_citta}
                   </p>
                 )}
                 {data.cliente_piva && (
-                  <p className="text-sm text-gray-600">P.IVA: {data.cliente_piva}</p>
+                  <p className="text-sm text-muted-foreground">P.IVA: {data.cliente_piva}</p>
                 )}
               </div>
             </div>
             <div className="space-y-2">
-              <h3 className="text-xs font-semibold uppercase text-gray-500">Fornitore</h3>
-              <div className="bg-gray-50 p-3 rounded-lg">
-                <p className="font-semibold text-gray-900">{data.azienda_nome}</p>
+              <h3 className="text-xs font-semibold uppercase text-muted-foreground">Fornitore</h3>
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <p className="font-semibold text-foreground">{data.azienda_nome}</p>
                 {data.azienda_indirizzo && (
-                  <p className="text-sm text-gray-600">{data.azienda_indirizzo}</p>
+                  <p className="text-sm text-muted-foreground">{data.azienda_indirizzo}</p>
                 )}
                 {data.azienda_citta && (
-                  <p className="text-sm text-gray-600">{data.azienda_citta}</p>
+                  <p className="text-sm text-muted-foreground">{data.azienda_citta}</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Order Details Table */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden overflow-x-auto">
+          <div className="border border-border rounded-lg overflow-hidden overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead className="font-semibold text-gray-900 text-xs">C.P</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-xs">Prodotto</TableHead>
-                  <TableHead className="font-semibold text-gray-900 text-xs">Marchio</TableHead>
-                  <TableHead className="text-right font-semibold text-gray-900 text-xs">Prezzo</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.1</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.2</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Sc.3</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Cart.</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-900 text-xs">Tot. Pz</TableHead>
-                  <TableHead className="text-right font-semibold text-gray-900 text-xs">Subtot.</TableHead>
+                <TableRow className="bg-muted">
+                  <TableHead className="font-semibold text-foreground text-xs">C.P</TableHead>
+                  <TableHead className="font-semibold text-foreground text-xs">Prodotto</TableHead>
+                  <TableHead className="font-semibold text-foreground text-xs">Marchio</TableHead>
+                  <TableHead className="text-right font-semibold text-foreground text-xs">Prezzo</TableHead>
+                  <TableHead className="text-center font-semibold text-foreground text-xs">Sc.1</TableHead>
+                  <TableHead className="text-center font-semibold text-foreground text-xs">Sc.2</TableHead>
+                  <TableHead className="text-center font-semibold text-foreground text-xs">Sc.3</TableHead>
+                  <TableHead className="text-center font-semibold text-foreground text-xs">Cart.</TableHead>
+                  <TableHead className="text-center font-semibold text-foreground text-xs">Tot. Pz</TableHead>
+                  <TableHead className="text-right font-semibold text-foreground text-xs">Subtot.</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -286,48 +287,48 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
                   const prezzoNetto = prezzo2 * (1 - sc3 / 100);
                   const rigaSubtotale = riga.is_omaggio ? 0 : pezziTotali * prezzoNetto;
                   return (
-                    <TableRow key={idx} className={`border-b border-gray-100 ${riga.is_omaggio ? "bg-green-50" : ""}`}>
-                      <TableCell className="py-2 text-xs text-gray-600">
+                    <TableRow key={idx} className={`border-b border-border ${riga.is_omaggio ? "bg-success/10" : ""}`}>
+                      <TableCell className="py-2 text-xs text-muted-foreground">
                         {riga.prodotto_codice || "—"}
                       </TableCell>
                       <TableCell className="py-2">
-                        <p className="font-medium text-gray-900 text-sm">
+                        <p className="font-medium text-foreground text-sm">
                           {riga.prodotto_nome}
                           {riga.is_omaggio && (
-                            <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-green-100 text-green-700">
+                            <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-success/10 text-success">
                               <Gift className="h-3 w-3" /> Omaggio
                             </span>
                           )}
                         </p>
-                        <p className="text-xs text-gray-500">{riga.pezzi_per_cartone} pz/cart</p>
+                        <p className="text-xs text-muted-foreground">{riga.pezzi_per_cartone} pz/cart</p>
                         {riga.promo_applicata && (
-                          <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
+                          <p className="text-xs text-success font-medium mt-1 flex items-center gap-1">
                             <Gift className="h-3 w-3" />
                             {riga.promo_applicata}
                           </p>
                         )}
                       </TableCell>
-                      <TableCell className="py-2 text-xs text-gray-600">
+                      <TableCell className="py-2 text-xs text-muted-foreground">
                         {riga.prodotto_brand || "—"}
                       </TableCell>
                       <TableCell className="text-right py-2">
-                        <span className="text-gray-700 text-sm">
+                        <span className="text-foreground text-sm">
                           {riga.is_omaggio ? "—" : formatCurrency(riga.prezzo_unitario)}
                         </span>
                       </TableCell>
-                      <TableCell className="text-center text-gray-700 text-sm py-2">
+                      <TableCell className="text-center text-foreground text-sm py-2">
                         {riga.is_omaggio ? "—" : sc1 > 0 ? `${sc1}%` : "—"}
                       </TableCell>
-                      <TableCell className="text-center text-gray-700 text-sm py-2">
+                      <TableCell className="text-center text-foreground text-sm py-2">
                         {riga.is_omaggio ? "—" : sc2 > 0 ? `${sc2}%` : "—"}
                       </TableCell>
-                      <TableCell className="text-center text-gray-700 text-sm py-2">
+                      <TableCell className="text-center text-foreground text-sm py-2">
                         {riga.is_omaggio ? "—" : sc3 > 0 ? `${sc3}%` : "—"}
                       </TableCell>
-                      <TableCell className="text-center text-gray-700 text-sm py-2">{riga.quantita_cartoni}</TableCell>
-                      <TableCell className="text-center font-medium text-gray-900 text-sm py-2">{pezziTotali}</TableCell>
-                      <TableCell className="text-right font-semibold text-gray-900 text-sm py-2">
-                        {riga.is_omaggio ? <span className="text-green-700">Omaggio</span> : formatCurrency(rigaSubtotale)}
+                      <TableCell className="text-center text-foreground text-sm py-2">{riga.quantita_cartoni}</TableCell>
+                      <TableCell className="text-center font-medium text-foreground text-sm py-2">{pezziTotali}</TableCell>
+                      <TableCell className="text-right font-semibold text-foreground text-sm py-2">
+                        {riga.is_omaggio ? <span className="text-success">Omaggio</span> : formatCurrency(rigaSubtotale)}
                       </TableCell>
                     </TableRow>
                   );
@@ -338,66 +339,66 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
 
           {/* Cartoni e pezzi: stessi totali del modulo ordine */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-lg border border-gray-200 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Cartoni totali</p>
-              <p className="text-2xl font-bold tabular-nums text-gray-900">{qty.cartoni.toLocaleString("it-IT")}</p>
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Cartoni totali</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground">{qty.cartoni.toLocaleString("it-IT")}</p>
             </div>
-            <div className="rounded-lg border border-gray-200 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Pezzi totali</p>
-              <p className="text-2xl font-bold tabular-nums text-gray-900">{qty.pezzi.toLocaleString("it-IT")}{!qty.completo && " *"}</p>
-              {qty.pezziSfusi > 0 && <p className="text-xs text-gray-500">di cui {qty.pezziSfusi.toLocaleString("it-IT")} sfusi</p>}
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Pezzi totali</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground">{qty.pezzi.toLocaleString("it-IT")}{!qty.completo && " *"}</p>
+              {qty.pezziSfusi > 0 && <p className="text-xs text-muted-foreground">di cui {qty.pezziSfusi.toLocaleString("it-IT")} sfusi</p>}
             </div>
-            <div className="rounded-lg border border-gray-200 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-gray-600">Omaggi</p>
-              <p className="text-2xl font-bold tabular-nums text-gray-900">{qty.omaggioCartoni.toLocaleString("it-IT")} <span className="text-sm font-medium">ct</span></p>
-              <p className="text-xs text-gray-500">{qty.omaggioPezzi.toLocaleString("it-IT")} pz · da consegnare {qty.daConsegnarePezzi.toLocaleString("it-IT")} pz</p>
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Omaggi</p>
+              <p className="text-2xl font-bold tabular-nums text-foreground">{qty.omaggioCartoni.toLocaleString("it-IT")} <span className="text-sm font-medium">ct</span></p>
+              <p className="text-xs text-muted-foreground">{qty.omaggioPezzi.toLocaleString("it-IT")} pz · da consegnare {qty.daConsegnarePezzi.toLocaleString("it-IT")} pz</p>
             </div>
           </div>
-          {!qty.completo && <p className="text-xs text-gray-600">* Pezzi per cartone mancanti su {qty.righeSenzaConfezione} {qty.righeSenzaConfezione === 1 ? "riga" : "righe"}: il totale pezzi non è completo.</p>}
+          {!qty.completo && <p className="text-xs text-muted-foreground">* Pezzi per cartone mancanti su {qty.righeSenzaConfezione} {qty.righeSenzaConfezione === 1 ? "riga" : "righe"}: il totale pezzi non è completo.</p>}
 
           {/* Totals */}
           <div className="flex justify-end">
             <div className="w-80 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Subtotale Netto:</span>
-                <span className="font-medium text-gray-900">{formatCurrency(subtotale)}</span>
+                <span className="text-muted-foreground">Subtotale Netto:</span>
+                <span className="font-medium text-foreground">{formatCurrency(subtotale)}</span>
               </div>
               {data.sconto > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Sconto Documento ({data.sconto}%):</span>
-                  <span className="font-medium text-red-600">-{formatCurrency(scontoPercentuale)}</span>
+                  <span className="text-muted-foreground">Sconto Documento ({data.sconto}%):</span>
+                  <span className="font-medium text-destructive">-{formatCurrency(scontoPercentuale)}</span>
                 </div>
               )}
               {data.sconto_merce > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Sconto Merce:</span>
-                  <span className="font-medium text-red-600">-{formatCurrency(data.sconto_merce)}</span>
+                  <span className="text-muted-foreground">Sconto Merce:</span>
+                  <span className="font-medium text-destructive">-{formatCurrency(data.sconto_merce)}</span>
                 </div>
               )}
-              <Separator className="bg-gray-300" />
+              <Separator className="bg-muted-foreground" />
               <div className="flex justify-between text-lg">
-                <span className="font-semibold text-gray-900">Totale:</span>
-                <span className="font-bold text-blue-600">{formatCurrency(data.totale)}</span>
+                <span className="font-semibold text-foreground">Totale:</span>
+                <span className="font-bold text-primary">{formatCurrency(data.totale)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Pagamento:</span>
-                <span className="font-medium text-gray-900">{data.tipo_pagamento}</span>
+                <span className="text-muted-foreground">Pagamento:</span>
+                <span className="font-medium text-foreground">{data.tipo_pagamento}</span>
               </div>
             </div>
           </div>
 
           {/* Promozioni Applicate */}
           {data.promozioni_applicate && data.promozioni_applicate.length > 0 && (
-            <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+            <div className="bg-success/10 border border-success/30 p-4 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <Gift className="h-4 w-4 text-green-600" />
-                <h3 className="text-xs font-semibold uppercase text-green-700">Promozioni Applicate</h3>
+                <Gift className="h-4 w-4 text-success" />
+                <h3 className="text-xs font-semibold uppercase text-success">Promozioni Applicate</h3>
               </div>
               <div className="space-y-1">
                 {data.promozioni_applicate.map((promo, idx) => (
-                  <p key={idx} className="text-sm text-green-700">
+                  <p key={idx} className="text-sm text-success">
                     <span className="font-medium">{promo.nome}</span>
-                    <span className="text-green-600 ml-2">
+                    <span className="text-success ml-2">
                       ({promo.tipo === "sconto_percentuale" ? `${promo.valore}%` : `€${promo.valore}`} come da promo canvass)
                     </span>
                   </p>
@@ -407,21 +408,21 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
           )}
 
           {(data.condizioni_commerciali || data.data_consegna_prevista || data.destinazione_consegna || data.note_consegna) && (
-            <div className="grid gap-3 rounded-lg bg-gray-50 p-4 sm:grid-cols-2">
-              {data.condizioni_commerciali && <div><h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">Condizioni commerciali</h3><p className="whitespace-pre-wrap text-sm text-gray-700">{data.condizioni_commerciali}</p></div>}
-              {(data.data_consegna_prevista || data.destinazione_consegna || data.note_consegna) && <div><h3 className="mb-1 text-xs font-semibold uppercase text-gray-500">Consegna</h3>
-                {data.data_consegna_prevista && <p className="text-sm text-gray-700">Prevista il {format(parseLocalDate(data.data_consegna_prevista) ?? new Date(data.data_consegna_prevista), "dd/MM/yyyy")}</p>}
-                {data.destinazione_consegna && <p className="whitespace-pre-wrap text-sm text-gray-700">{data.destinazione_consegna}</p>}
-                {data.note_consegna && <p className="whitespace-pre-wrap text-sm text-gray-700">{data.note_consegna}</p>}
+            <div className="grid gap-3 rounded-lg bg-muted/50 p-4 sm:grid-cols-2">
+              {data.condizioni_commerciali && <div><h3 className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Condizioni commerciali</h3><p className="whitespace-pre-wrap text-sm text-foreground">{data.condizioni_commerciali}</p></div>}
+              {(data.data_consegna_prevista || data.destinazione_consegna || data.note_consegna) && <div><h3 className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Consegna</h3>
+                {data.data_consegna_prevista && <p className="text-sm text-foreground">Prevista il {format(parseLocalDate(data.data_consegna_prevista) ?? new Date(data.data_consegna_prevista), "dd/MM/yyyy")}</p>}
+                {data.destinazione_consegna && <p className="whitespace-pre-wrap text-sm text-foreground">{data.destinazione_consegna}</p>}
+                {data.note_consegna && <p className="whitespace-pre-wrap text-sm text-foreground">{data.note_consegna}</p>}
               </div>}
             </div>
           )}
 
           {/* Notes */}
           {data.note && (
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-xs font-semibold uppercase text-gray-500 mb-2">Note</h3>
-              <p className="text-sm text-gray-700">{data.note}</p>
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h3 className="text-xs font-semibold uppercase text-muted-foreground mb-2">Note</h3>
+              <p className="text-sm text-foreground">{data.note}</p>
             </div>
           )}
         </div>

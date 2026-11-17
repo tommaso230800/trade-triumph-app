@@ -41,6 +41,7 @@ import { telHref, whatsappHref } from "@/lib/contactLinks";
 import { useClienti, useCreateCliente, useDeleteCliente, useUpdateCliente, Cliente } from "@/hooks/useClienti";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { formatEuroInt } from "@/lib/format";
 
 const statusConfig = {
   premium: { label: "Premium", className: "bg-primary/10 text-primary hover:bg-primary/20" },
@@ -60,7 +61,7 @@ const CONSORZI = [
 ];
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+  formatEuroInt(value);
 
 type FormData = {
   nome: string;

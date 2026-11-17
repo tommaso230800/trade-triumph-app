@@ -4,6 +4,7 @@ import { Activity, PieChart as PieIcon } from "lucide-react";
 import { formatCompact, formatCurrency, mesiLabel } from "./kpiShared";
 import type { AziendaColorMap } from "@/lib/aziendaColor";
 import { aziendaColorValue } from "@/lib/aziendaColor";
+import { formatNumber } from "@/lib/format";
 
 type AziendaRow = {
   id: string;
@@ -211,7 +212,7 @@ export function SalesOverviewPanel({
                       {formatCurrency(a.fatturato_totale)}
                     </span>
                     <span className="w-12 text-right text-xs tabular-nums text-scatto-muted">
-                      {quota.toFixed(1)}%
+                      {formatNumber(quota, 1)}%
                     </span>
                   </div>
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-scatto-ink/[0.06]">

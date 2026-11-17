@@ -178,7 +178,7 @@ export function ContrattoFormDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-amber-500" />
+            <Trophy className="h-5 w-5 text-warning" />
             {editingContratto ? "Modifica Contratto Premio" : "Nuovo Contratto Premio"}
           </DialogTitle>
           <DialogDescription>
@@ -285,8 +285,8 @@ export function ContrattoFormDialog({
                       </SelectContent>
                     </Select>
                     {form.consorzio && clientiConsorzio.length > 0 && (
-                      <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200">
-                        <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-2">
+                      <div className="p-3 bg-primary/10  rounded-lg border border-primary/30">
+                        <p className="text-sm text-primary  font-medium mb-2">
                           {clientiConsorzio.length} clienti associati al consorzio
                         </p>
                         <div className="flex flex-wrap gap-1">
@@ -305,9 +305,9 @@ export function ContrattoFormDialog({
                     <Label className="text-base font-semibold">Seleziona Cliente *</Label>
                     
                     {selectedCliente && (
-                      <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 flex items-center justify-between">
+                      <div className="p-3 bg-success/10  rounded-lg border border-success/30 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Check className="h-4 w-4 text-green-600" />
+                          <Check className="h-4 w-4 text-success" />
                           <span className="font-medium">{selectedCliente.nome}</span>
                           {selectedCliente.azienda && (
                             <span className="text-sm text-muted-foreground">({selectedCliente.azienda})</span>
@@ -378,7 +378,7 @@ export function ContrattoFormDialog({
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Trophy className="h-5 w-5 text-amber-600" />
+                      <Trophy className="h-5 w-5 text-warning" />
                       <Label className="text-base font-semibold">Scaglioni Premio</Label>
                     </div>
                     <Button 
@@ -399,8 +399,8 @@ export function ContrattoFormDialog({
                         key={index} 
                         className={`p-4 rounded-xl border-2 space-y-3 ${
                           obj.tipo === "incondizionato" 
-                            ? "border-green-200 bg-green-50/50 dark:bg-green-900/10 dark:border-green-800" 
-                            : "border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-800"
+                            ? "border-success/30 bg-success/10  " 
+                            : "border-warning/30 bg-warning/10  "
                         }`}
                       >
                         <div className="flex items-center justify-between">

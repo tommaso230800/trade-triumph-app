@@ -18,38 +18,39 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { formatEuro, formatEuroInt, formatNumber, formatPercent } from "@/lib/format";
 
 const eur = (n: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n || 0);
+  formatEuroInt(n || 0);
 const eur2 = (n: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(n || 0);
-const pct = (n: number) => `${(n || 0).toFixed(1)}%`;
+  formatEuro(n || 0);
+const pct = (n: number) => formatPercent(n || 0);
 
 const SEG_COLORS: Record<string, string> = {
-  Campioni: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
-  Fedeli: "bg-blue-500/20 text-blue-300 border-blue-500/40",
-  Potenziali: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40",
-  Nuovi: "bg-violet-500/20 text-violet-300 border-violet-500/40",
-  "Da riattivare": "bg-amber-500/20 text-amber-300 border-amber-500/40",
-  "A rischio": "bg-orange-500/20 text-orange-300 border-orange-500/40",
-  Persi: "bg-red-500/20 text-red-300 border-red-500/40",
+  Campioni: "bg-success/10 text-success border-success/30",
+  Fedeli: "bg-success/10 text-success border-success/30",
+  Potenziali: "bg-info/10 text-info border-info/30",
+  Nuovi: "bg-info/10 text-info border-info/30",
+  "Da riattivare": "bg-warning/10 text-warning border-warning/30",
+  "A rischio": "bg-warning/10 text-warning border-warning/30",
+  Persi: "bg-destructive/10 text-destructive border-destructive/30",
   Occasionali: "bg-muted text-muted-foreground border-border",
 };
 
 const SEV_COLORS: Record<string, string> = {
-  critica: "bg-red-500/20 text-red-300 border-red-500/40",
-  alta: "bg-orange-500/20 text-orange-300 border-orange-500/40",
-  media: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+  critica: "bg-destructive/10 text-destructive border-destructive/30",
+  alta: "bg-warning/10 text-warning border-warning/30",
+  media: "bg-warning/10 text-warning border-warning/30",
   info: "bg-muted text-muted-foreground border-border",
 };
 
 const STATUS_COLORS: Record<string, string> = {
   bozza: "bg-muted text-muted-foreground",
-  da_confermare: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-  stand_by: "bg-orange-500/20 text-orange-300 border-orange-500/40",
-  confermato: "bg-blue-500/20 text-blue-300 border-blue-500/40",
-  evaso: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
-  annullato: "bg-red-500/20 text-red-300 border-red-500/40",
+  da_confermare: "bg-warning/10 text-warning border-warning/30",
+  stand_by: "bg-warning/10 text-warning border-warning/30",
+  confermato: "bg-success/10 text-success border-success/30",
+  evaso: "bg-success/10 text-success border-success/30",
+  annullato: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
 export default function IntelligenzaCommerciale() {
@@ -315,13 +316,13 @@ export default function IntelligenzaCommerciale() {
         {/* PANORAMICA */}
         <TabsContent value="panoramica" className="space-y-4 mt-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <KPI label="Fatturato totale" value={eur(totFatturato)} icon={TrendingUp} tone="primary" />
+            <KPI label="Fatturato totale" value={eur(totFatturato)} icon={TrendingUp} />
             <KPI label="Ordini" value={String(totOrdini)} icon={ShoppingCart} />
-            <KPI label="Provvigioni previste" value={eur(totProvvigione)} icon={Wallet} tone="emerald" />
+            <KPI label="Provvigioni previste" value={eur(totProvvigione)} icon={Wallet} />
             <KPI label="Clienti attivi" value={String(totClienti)} icon={Users} />
             <KPI label="Anomalie prezzo aperte" value={String(totAnomalie)} icon={AlertTriangle} tone={totAnomalie > 0 ? "red" : undefined} />
             <KPI label="MTD" value={eur(data?.monthSim.fatturato_mtd || 0)} icon={Calculator} />
-            <KPI label="Previsione fine mese" value={eur(data?.monthSim.fatturato_previsto || 0)} icon={Target} tone="primary" />
+            <KPI label="Previsione fine mese" value={eur(data?.monthSim.fatturato_previsto || 0)} icon={Target} />
             <KPI label="YoY mese" value={pct(data?.monthSim.delta_yoy_pct || 0)}
               icon={(data?.monthSim.delta_yoy_pct || 0) >= 0 ? TrendingUp : TrendingDown}
               tone={(data?.monthSim.delta_yoy_pct || 0) >= 0 ? "emerald" : "red"} />
@@ -344,8 +345,8 @@ export default function IntelligenzaCommerciale() {
               <CardContent className="space-y-2">
                 {Object.entries(ordersByStatus).sort((a, b) => b[1].totale - a[1].totale).map(([s, v]) => (
                   <div key={s} className="flex items-center justify-between text-sm">
-                    <Badge variant="outline" className={STATUS_COLORS[s]}>{s}</Badge>
-                    <span className="text-muted-foreground">{v.n} · <span className="font-medium text-foreground">{eur(v.totale)}</span></span>
+                    <Badge variant="outline" className={STATUS_COLORS[s]}>{(s.charAt(0).toUpperCase() + s.slice(1)).replace(/_/g, " ")}</Badge>
+                    <span className="text-muted-foreground tabular-nums">{v.n} · <span className="font-medium text-foreground">{eur(v.totale)}</span></span>
                   </div>
                 ))}
                 {Object.keys(ordersByStatus).length === 0 && <p className="text-xs text-muted-foreground">Nessun ordine.</p>}
@@ -386,7 +387,7 @@ export default function IntelligenzaCommerciale() {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground uppercase">Provvigioni previste</div>
-                    <div className="text-2xl font-bold text-emerald-400">{eur(data.monthSim.provvigioni_previste)}</div>
+                    <div className="text-2xl font-bold text-success">{eur(data.monthSim.provvigioni_previste)}</div>
                     <div className="text-xs text-muted-foreground">aliquota media {pct(data.monthSim.aliquota_media_prevista)}</div>
                     <div className="text-xs mt-2">MTD: {eur(data.monthSim.provvigioni_mtd)}</div>
                   </div>
@@ -461,7 +462,7 @@ export default function IntelligenzaCommerciale() {
                             <TableCell className="text-center font-mono">{r.r_score}</TableCell>
                             <TableCell className="text-center font-mono">{r.f_score}</TableCell>
                             <TableCell className="text-center font-mono">{r.m_score}</TableCell>
-                            <TableCell className="text-right"><span className={r.recency_giorni > 90 ? "text-orange-400" : ""}>{r.recency_giorni}g</span></TableCell>
+                            <TableCell className="text-right"><span className={r.recency_giorni > 90 ? "text-warning" : ""}>{r.recency_giorni}g</span></TableCell>
                             <TableCell className="text-right">{r.frequency}</TableCell>
                             <TableCell className="text-right font-medium">{eur(r.monetary)}</TableCell>
                             <TableCell className="text-right text-xs text-muted-foreground">{r.ultimo_ordine?.slice(0, 10)}</TableCell>
@@ -530,7 +531,7 @@ export default function IntelligenzaCommerciale() {
                       <div className="text-xs uppercase text-muted-foreground">{s}</div>
                       <div className="text-2xl font-bold">{sevCounts[s] || 0}</div>
                     </div>
-                    <AlertTriangle className={cn("w-6 h-6", s === "critica" ? "text-red-400" : s === "alta" ? "text-orange-400" : "text-amber-400")} />
+                    <AlertTriangle className={cn("w-6 h-6", s === "critica" ? "text-destructive" : s === "alta" ? "text-warning" : "text-warning")} />
                   </div>
                 </CardContent>
               </Card>
@@ -576,15 +577,15 @@ export default function IntelligenzaCommerciale() {
                             <TableCell>{a.data_ordine?.slice(0, 10)}</TableCell>
                             <TableCell className="text-right">€ {a.prezzo_netto.toFixed(3)}</TableCell>
                             <TableCell className="text-right text-muted-foreground">€ {a.media_netto_prodotto.toFixed(3)}</TableCell>
-                            <TableCell className={cn("text-right font-medium", a.scostamento_pct < 0 ? "text-red-400" : "text-emerald-400")}>
-                              {a.scostamento_pct > 0 ? "+" : ""}{a.scostamento_pct.toFixed(1)}%
+                            <TableCell className={cn("text-right font-medium", a.scostamento_pct < 0 ? "text-destructive" : "text-success")}>
+                              {a.scostamento_pct > 0 ? "+" : ""}{formatNumber(a.scostamento_pct, 1)}%
                             </TableCell>
-                            <TableCell className="text-right">{a.sconto_totale_pct.toFixed(1)}%</TableCell>
+                            <TableCell className="text-right">{formatNumber(a.sconto_totale_pct, 1)}%</TableCell>
                             <TableCell className="text-xs text-muted-foreground">{a.motivo}</TableCell>
                             <TableCell className="text-right">
                               <div className="flex gap-1 justify-end">
                                 <Button size="icon" variant="ghost" title="Verificato" onClick={() => resolveAnomaly(a, "verificato")}>
-                                  <Check className="w-4 h-4 text-emerald-400" />
+                                  <Check className="w-4 h-4 text-success" />
                                 </Button>
                                 <Button size="icon" variant="ghost" title="Escludi" onClick={() => resolveAnomaly(a, "escluso")}>
                                   <X className="w-4 h-4 text-muted-foreground" />
@@ -640,7 +641,7 @@ export default function IntelligenzaCommerciale() {
                           <TableCell className="font-medium">{c?.nome || "—"}</TableCell>
                           <TableCell><Badge variant="outline" className={STATUS_COLORS[o.status || "bozza"]}>{o.status}</Badge></TableCell>
                           <TableCell className="text-right">{eur(o.totale)}</TableCell>
-                          <TableCell className="text-right text-emerald-400">{eur2(o.provvigione_prevista || 0)}</TableCell>
+                          <TableCell className="text-right text-success">{eur2(o.provvigione_prevista || 0)}</TableCell>
                         </TableRow>
                       );
                     })}
@@ -660,7 +661,7 @@ export default function IntelligenzaCommerciale() {
                   <CardContent className="p-4">
                     <div className="text-xs uppercase text-muted-foreground">{st.replace("_", " ")}</div>
                     <div className="text-xl font-bold">{v.n}</div>
-                    <div className="text-xs text-emerald-400">{eur(v.provvigione)}</div>
+                    <div className="text-xs text-success">{eur(v.provvigione)}</div>
                   </CardContent>
                 </Card>
               );
@@ -700,7 +701,7 @@ export default function IntelligenzaCommerciale() {
                             {o.cliente?.citta && <div className="text-xs text-muted-foreground">{o.cliente.citta}</div>}
                           </TableCell>
                           <TableCell><Badge variant="outline" className={SEG_COLORS[o.segmento]}>{o.segmento}</Badge></TableCell>
-                          <TableCell className="text-right text-orange-400">{o.recency_giorni}g</TableCell>
+                          <TableCell className="text-right text-warning">{o.recency_giorni}g</TableCell>
                           <TableCell className="text-right">{o.frequency}</TableCell>
                           <TableCell className="text-right">{eur(o.monetary)}</TableCell>
                           <TableCell className="text-right font-semibold text-primary">{eur(o.potenziale)}</TableCell>
@@ -719,14 +720,14 @@ export default function IntelligenzaCommerciale() {
 
           <Card className="surface-glass">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-400" />Anomalie prezzo aperte</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-warning" />Anomalie prezzo aperte</CardTitle>
             </CardHeader>
             <CardContent>
               {filteredAnomalies.length === 0
                 ? <p className="text-sm text-muted-foreground">Nessuna anomalia aperta.</p>
                 : (
                   <div className="text-sm space-y-1">
-                    <p>Critiche: <b className="text-red-400">{sevCounts.critica || 0}</b> · Alta: <b className="text-orange-400">{sevCounts.alta || 0}</b> · Media: <b className="text-amber-400">{sevCounts.media || 0}</b></p>
+                    <p>Critiche: <b className="text-destructive">{sevCounts.critica || 0}</b> · Alta: <b className="text-warning">{sevCounts.alta || 0}</b> · Media: <b className="text-warning">{sevCounts.media || 0}</b></p>
                     <Button size="sm" variant="link" onClick={() => setTab("prezzi")}>Vedi controllo prezzi →</Button>
                   </div>
                 )}
@@ -739,16 +740,16 @@ export default function IntelligenzaCommerciale() {
 }
 
 function KPI({ label, value, icon: Icon, tone }: { label: string; value: string; icon: any; tone?: "primary" | "emerald" | "red" }) {
-  const toneClass = tone === "primary" ? "text-primary" : tone === "emerald" ? "text-emerald-400" : tone === "red" ? "text-red-400" : "text-foreground";
+  const toneClass = tone === "primary" ? "text-primary" : tone === "emerald" ? "text-success" : tone === "red" ? "text-destructive" : "text-foreground";
   return (
     <Card className="surface-noir">
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="min-w-0">
-            <div className="text-xs uppercase text-muted-foreground truncate">{label}</div>
-            <div className={cn("text-xl md:text-2xl font-bold truncate", toneClass)}>{value}</div>
+            <div className="text-xs text-muted-foreground line-clamp-2">{label}</div>
+            <div className={cn("text-xl md:text-2xl font-bold tabular-nums truncate", toneClass)}>{value}</div>
           </div>
-          <Icon className={cn("w-5 h-5 flex-shrink-0", toneClass)} />
+          <Icon className={cn("w-5 h-5 flex-shrink-0", tone ? toneClass : "text-muted-foreground")} />
         </div>
       </CardContent>
     </Card>
@@ -761,13 +762,13 @@ function DeltaCard({ label, delta, confront, confrontLabel }: { label: string; d
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
-          {positive ? <TrendingUp className="w-4 h-4 text-emerald-400" /> : <TrendingDown className="w-4 h-4 text-red-400" />}
+          {positive ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-destructive" />}
           {label}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-3xl font-bold">
-          <span className={positive ? "text-emerald-400" : "text-red-400"}>
+          <span className={positive ? "text-success" : "text-destructive"}>
             {positive ? "+" : ""}{pct(delta)}
           </span>
         </div>
@@ -797,7 +798,7 @@ function QuarterTable({ title, rows }: { title: string; rows: { q: string; n: nu
                     <TableCell className="font-mono">{r.q}</TableCell>
                     <TableCell className="text-right">{r.n}</TableCell>
                     <TableCell className="text-right">{eur(r.importo)}</TableCell>
-                    <TableCell className="text-right text-emerald-400 font-medium">{eur(r.provvigione)}</TableCell>
+                    <TableCell className="text-right text-success font-medium">{eur(r.provvigione)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

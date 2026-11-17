@@ -22,15 +22,16 @@ import { ContrattoFormDialog, ContrattoFormData } from "@/components/canvass/Con
 import { PromoDetailSheet } from "@/components/canvass/PromoDetailSheet";
 import { ActivePromosSection } from "@/components/canvass/ActivePromosSection";
 import { AIImportCanvassDialog } from "@/components/canvass/AIImportCanvassDialog";
+import { formatEuro } from "@/lib/format";
 
 const tipoConfig = {
-  sconto_percentuale: { label: "Sconto %", icon: Percent, color: "bg-blue-100 text-blue-800" },
-  prezzo_fisso: { label: "Prezzo Fisso", icon: Tag, color: "bg-green-100 text-green-800" },
-  premio_fine_anno: { label: "Premio Fine Anno", icon: Trophy, color: "bg-amber-100 text-amber-800" },
+  sconto_percentuale: { label: "Sconto %", icon: Percent, color: "bg-primary/10 text-primary" },
+  prezzo_fisso: { label: "Prezzo Fisso", icon: Tag, color: "bg-success/10 text-success" },
+  premio_fine_anno: { label: "Premio Fine Anno", icon: Trophy, color: "bg-warning/10 text-warning" },
 };
 
 const formatCurrency = (value: number) => 
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 export default function CanvassPage() {
   const { data: canvass = [], isLoading: loadingCanvass } = useCanvass();
@@ -163,19 +164,19 @@ export default function CanvassPage() {
 
   const getPromoStatus = (promo: Canvass) => {
     const todayStr = format(today, "yyyy-MM-dd");
-    if (!promo.attivo) return { label: "Disattivata", color: "bg-gray-100 text-gray-600", icon: AlertCircle };
+    if (!promo.attivo) return { label: "Disattivata", color: "bg-muted text-muted-foreground", icon: AlertCircle };
     const isInMainPeriod = promo.data_inizio <= todayStr && promo.data_fine >= todayStr;
     const isInAdditionalPeriod = promo.canvass_periodi?.some(p => p.data_inizio <= todayStr && p.data_fine >= todayStr);
     if (isInMainPeriod || isInAdditionalPeriod) {
       const allEndDates = [promo.data_fine, ...(promo.canvass_periodi?.map(p => p.data_fine) || [])];
       const nextEnd = allEndDates.filter(d => d >= todayStr).sort()[0];
-      if (nextEnd) { const daysLeft = differenceInDays(parseISO(nextEnd), today); if (daysLeft <= 7) return { label: `Scade tra ${daysLeft}g`, color: "bg-orange-100 text-orange-800", icon: AlertTriangle }; }
-      return { label: "Attiva", color: "bg-green-100 text-green-800", icon: CheckCircle2 };
+      if (nextEnd) { const daysLeft = differenceInDays(parseISO(nextEnd), today); if (daysLeft <= 7) return { label: `Scade tra ${daysLeft}g`, color: "bg-warning/10 text-warning", icon: AlertTriangle }; }
+      return { label: "Attiva", color: "bg-success/10 text-success", icon: CheckCircle2 };
     }
     const allEndDates = [promo.data_fine, ...(promo.canvass_periodi?.map(p => p.data_fine) || [])];
     const latestEnd = allEndDates.sort().pop() || promo.data_fine;
-    if (isBefore(parseISO(latestEnd), today)) return { label: "Scaduta", color: "bg-red-100 text-red-800", icon: AlertCircle };
-    return { label: "Futura", color: "bg-purple-100 text-purple-800", icon: Clock };
+    if (isBefore(parseISO(latestEnd), today)) return { label: "Scaduta", color: "bg-destructive/10 text-destructive", icon: AlertCircle };
+    return { label: "Futura", color: "bg-info/10 text-info", icon: Clock };
   };
 
   if (loadingCanvass || loadingContratti) {
@@ -192,8 +193,8 @@ export default function CanvassPage() {
             <p className="text-muted-foreground">Gestisci promozioni, sconti e premi fine anno</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => setIsAIImportOpen(true)} className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-200 hover:border-purple-300">
-              <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
+            <Button variant="outline" onClick={() => setIsAIImportOpen(true)}>
+              <Sparkles className="h-4 w-4 mr-2 text-muted-foreground" />
               Importa con AI
             </Button>
             <Button variant="outline" onClick={() => { setEditingContratto(null); setIsContrattoDialogOpen(true); }}>
@@ -207,7 +208,7 @@ export default function CanvassPage() {
 
         {/* Stats - Modern */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in stagger-1">
-          <div className="rounded-2xl bg-card border border-success/20 p-5 shadow-sm bg-gradient-to-br from-card to-success/5">
+          <div className="rounded-xl bg-card border p-4 sm:p-6 shadow-card">
             <div className="flex items-center gap-3">
               <div className="h-11 w-11 rounded-xl bg-success/10 flex items-center justify-center">
                 <CheckCircle2 className="h-5 w-5 text-success" />
@@ -218,7 +219,7 @@ export default function CanvassPage() {
               </div>
             </div>
           </div>
-          <div className="rounded-2xl bg-card border border-warning/20 p-5 shadow-sm bg-gradient-to-br from-card to-warning/5">
+          <div className="rounded-xl bg-card border p-4 sm:p-6 shadow-card">
             <div className="flex items-center gap-3">
               <div className="h-11 w-11 rounded-xl bg-warning/10 flex items-center justify-center">
                 <AlertTriangle className="h-5 w-5 text-warning" />
@@ -229,7 +230,7 @@ export default function CanvassPage() {
               </div>
             </div>
           </div>
-          <div className="rounded-2xl bg-card border border-info/20 p-5 shadow-sm bg-gradient-to-br from-card to-info/5">
+          <div className="rounded-xl bg-card border p-4 sm:p-6 shadow-card">
             <div className="flex items-center gap-3">
               <div className="h-11 w-11 rounded-xl bg-info/10 flex items-center justify-center">
                 <Clock className="h-5 w-5 text-info" />
@@ -240,7 +241,7 @@ export default function CanvassPage() {
               </div>
             </div>
           </div>
-          <div className="rounded-2xl bg-card border border-primary/20 p-5 shadow-sm bg-gradient-to-br from-card to-primary/5">
+          <div className="rounded-xl bg-card border p-4 sm:p-6 shadow-card">
             <div className="flex items-center gap-3">
               <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Trophy className="h-5 w-5 text-primary" />
@@ -266,7 +267,7 @@ export default function CanvassPage() {
                   <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Promozione</TableHead><TableHead>Azienda</TableHead><TableHead>Tipo</TableHead><TableHead>Valore</TableHead><TableHead>Periodo</TableHead><TableHead>Stato</TableHead><TableHead></TableHead></TableRow></TableHeader>
                     <TableBody>
                       {canvass.map((promo) => { const status = getPromoStatus(promo); const TipoIcon = tipoConfig[promo.tipo].icon; const StatusIcon = status.icon;
-                        return (<TableRow key={promo.id}><TableCell><div><p className="font-medium">{promo.nome}</p>{promo.cartoni_omaggio > 0 && <Badge variant="outline" className="mt-1"><Gift className="h-3 w-3 mr-1" />{promo.cartoni_acquisto}+{promo.cartoni_omaggio}</Badge>}</div></TableCell><TableCell><div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-muted-foreground" />{promo.azienda?.nome || "-"}</div></TableCell><TableCell><Badge className={tipoConfig[promo.tipo].color}><TipoIcon className="h-3 w-3 mr-1" />{tipoConfig[promo.tipo].label}</Badge></TableCell><TableCell className="font-medium">{promo.tipo === "prezzo_fisso" ? formatCurrency(promo.valore) : `${promo.valore}%`}</TableCell><TableCell><div className="text-sm"><p>{format(parseISO(promo.data_inizio), "dd MMM", { locale: it })} - {format(parseISO(promo.data_fine), "dd MMM", { locale: it })}</p>{promo.canvass_periodi && promo.canvass_periodi.length > 0 && <div className="flex flex-wrap gap-1 mt-1">{promo.canvass_periodi.map((p, idx) => <Badge key={idx} variant="outline" className="text-xs bg-purple-50">{format(parseISO(p.data_inizio), "dd/MM")} - {format(parseISO(p.data_fine), "dd/MM")}</Badge>)}</div>}</div></TableCell><TableCell><Badge className={status.color}><StatusIcon className="h-3 w-3 mr-1" />{status.label}</Badge></TableCell><TableCell><div className="flex gap-1"><Button variant="ghost" size="icon" onClick={() => setViewingPromo(promo)}><Eye className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => { setEditingPromo(promo); setIsPromoDialogOpen(true); }}><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => deleteCanvass.mutate(promo.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div></TableCell></TableRow>);
+                        return (<TableRow key={promo.id}><TableCell><div><p className="font-medium">{promo.nome}</p>{promo.cartoni_omaggio > 0 && <Badge variant="outline" className="mt-1"><Gift className="h-3 w-3 mr-1" />{promo.cartoni_acquisto}+{promo.cartoni_omaggio}</Badge>}</div></TableCell><TableCell><div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-muted-foreground" />{promo.azienda?.nome || "-"}</div></TableCell><TableCell><Badge className={tipoConfig[promo.tipo].color}><TipoIcon className="h-3 w-3 mr-1" />{tipoConfig[promo.tipo].label}</Badge></TableCell><TableCell className="font-medium">{promo.tipo === "prezzo_fisso" ? formatCurrency(promo.valore) : `${promo.valore}%`}</TableCell><TableCell><div className="text-sm"><p>{format(parseISO(promo.data_inizio), "dd MMM", { locale: it })} - {format(parseISO(promo.data_fine), "dd MMM", { locale: it })}</p>{promo.canvass_periodi && promo.canvass_periodi.length > 0 && <div className="flex flex-wrap gap-1 mt-1">{promo.canvass_periodi.map((p, idx) => <Badge key={idx} variant="outline" className="text-xs bg-muted/50">{format(parseISO(p.data_inizio), "dd/MM")} - {format(parseISO(p.data_fine), "dd/MM")}</Badge>)}</div>}</div></TableCell><TableCell><Badge className={status.color}><StatusIcon className="h-3 w-3 mr-1" />{status.label}</Badge></TableCell><TableCell><div className="flex gap-1"><Button variant="ghost" size="icon" onClick={() => setViewingPromo(promo)}><Eye className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => { setEditingPromo(promo); setIsPromoDialogOpen(true); }}><Pencil className="h-4 w-4" /></Button><Button variant="ghost" size="icon" onClick={() => deleteCanvass.mutate(promo.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></div></TableCell></TableRow>);
                       })}
                     </TableBody>
                   </Table></div>
@@ -321,7 +322,7 @@ export default function CanvassPage() {
                               </div>
                               <div className="text-right mr-2">
                                 <p className="text-xs text-muted-foreground">Premio Stimato</p>
-                                <p className="font-bold text-green-600">{formatCurrency(premioTotaleStimato)}</p>
+                                <p className="font-bold text-success">{formatCurrency(premioTotaleStimato)}</p>
                               </div>
                               <Button variant="ghost" size="icon" onClick={() => { setEditingContratto(contratto); setIsContrattoDialogOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                               <Button variant="ghost" size="icon" onClick={() => deleteContratto.mutate(contratto.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -338,8 +339,8 @@ export default function CanvassPage() {
                               return (
                                 <div key={obj.id} className={`p-3 rounded-xl border-2 ${
                                   raggiunto 
-                                    ? "border-green-200 bg-green-50/50 dark:bg-green-900/10 dark:border-green-800" 
-                                    : "border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-800"
+                                    ? "border-success/30 bg-success/10  " 
+                                    : "border-warning/30 bg-warning/10  "
                                 }`}>
                                   <div className="flex items-center justify-between mb-2">
                                     <Badge variant="outline" className="text-xs">
@@ -350,14 +351,14 @@ export default function CanvassPage() {
                                   {obj.descrizione && <p className="text-xs text-muted-foreground mb-2">{obj.descrizione}</p>}
                                   {!isIncondizionato && (
                                     <div className="space-y-1">
-                                      <Progress value={progress} className={`h-1.5 ${raggiunto ? '[&>div]:bg-green-500' : '[&>div]:bg-amber-500'}`} />
-                                      <p className={`text-xs ${raggiunto ? "text-green-600" : "text-amber-600"}`}>
+                                      <Progress value={progress} className={`h-1.5 ${raggiunto ? '[&>div]:bg-success' : '[&>div]:bg-warning'}`} />
+                                      <p className={`text-xs ${raggiunto ? "text-success" : "text-warning"}`}>
                                         {raggiunto ? "✓ Raggiunto" : `${Math.round(progress)}%`}
                                       </p>
                                     </div>
                                   )}
                                   {raggiunto && (
-                                    <p className="text-sm font-semibold text-green-600 mt-1">{formatCurrency(premio)}</p>
+                                    <p className="text-sm font-semibold text-success mt-1">{formatCurrency(premio)}</p>
                                   )}
                                 </div>
                               );

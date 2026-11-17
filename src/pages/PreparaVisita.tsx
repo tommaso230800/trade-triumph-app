@@ -58,8 +58,8 @@ const PreparaVisita = () => {
       <div className="space-y-6 max-w-5xl mx-auto animate-rise-in pb-24">
         {/* Header */}
         <div className="flex items-start gap-3 sm:gap-4">
-          <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-glow flex-shrink-0">
-            <Brain className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
+          <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+            <Brain className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
           <div className="min-w-0">
             <h1 className="text-heading-lg font-display font-bold leading-tight">
@@ -147,7 +147,7 @@ const PreparaVisita = () => {
               onClick={handleGenerate}
               disabled={!clienteId || prepareAI.isPending}
               size="lg"
-              className="w-full gap-2 h-12 bg-gradient-to-r from-primary to-accent text-primary-foreground shadow-glow"
+              className="w-full gap-2 h-12"
             >
               {prepareAI.isPending ? (
                 <>

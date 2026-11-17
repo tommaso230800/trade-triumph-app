@@ -15,20 +15,20 @@ interface ClientStatusBadgeProps {
 const semaforoConfig = {
   verde: {
     icon: TrendingUp,
-    color: "bg-green-500",
-    bgClass: "bg-green-500/10 text-green-600 border-green-500/30",
+    color: "bg-success",
+    bgClass: "bg-success/10 text-success border-success/30",
     emoji: "🟢",
   },
   giallo: {
     icon: Minus,
-    color: "bg-amber-500",
-    bgClass: "bg-amber-500/10 text-amber-600 border-amber-500/30",
+    color: "bg-warning",
+    bgClass: "bg-warning/10 text-warning border-warning/30",
     emoji: "🟡",
   },
   rosso: {
     icon: TrendingDown,
-    color: "bg-red-500",
-    bgClass: "bg-red-500/10 text-red-600 border-red-500/30",
+    color: "bg-destructive",
+    bgClass: "bg-destructive/10 text-destructive border-destructive/30",
     emoji: "🔴",
   },
 };
@@ -81,7 +81,7 @@ export function RiskAlert({ allarmeRischio, motiviRischio }: RiskAlertProps) {
   if (!allarmeRischio) return null;
 
   return (
-    <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-600">
+    <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive">
       <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
       <div>
         <p className="font-semibold text-sm">⚠️ Cliente a rischio perdita</p>

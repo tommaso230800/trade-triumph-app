@@ -9,7 +9,7 @@ export function ClientsNotVisitedWidget() {
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl bg-card border border-border/50 p-6 shadow-sm animate-pulse">
+      <div className="rounded-xl bg-card border p-4 sm:p-6 shadow-card animate-pulse">
         <div className="h-4 w-32 bg-muted rounded mb-4" />
         <div className="h-32 bg-muted rounded" />
       </div>
@@ -17,7 +17,7 @@ export function ClientsNotVisitedWidget() {
   }
 
   return (
-    <div className="rounded-2xl bg-card border border-border/50 p-6 shadow-sm">
+    <div className="rounded-xl bg-card border p-4 sm:p-6 shadow-card">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-warning/10 rounded-lg">

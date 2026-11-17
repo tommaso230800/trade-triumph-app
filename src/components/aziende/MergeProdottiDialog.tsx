@@ -15,9 +15,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Merge } from "lucide-react";
 import type { Prodotto } from "@/hooks/useProdotti";
 import { useMergeProdotti } from "@/hooks/useProdottiMerge";
+import { formatEuro } from "@/lib/format";
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 interface MergeProdottiDialogProps {
   open: boolean;

@@ -82,9 +82,10 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { findDuplicateGroups } from "@/lib/productDuplicates";
 import { useProdottiMergeLog } from "@/hooks/useProdottiMerge";
 import { format } from "date-fns";
+import { formatEuro } from "@/lib/format";
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 const parseDecimalInput = (value: string): number => {
   const normalized = value.replace(",", ".");

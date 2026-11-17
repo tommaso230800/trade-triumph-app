@@ -91,17 +91,17 @@ interface Props {
 }
 
 const STATO_LABEL: Record<MatchStato, { label: string; cls: string; icon: any }> = {
-  ok: { label: "OK", cls: "bg-green-600/20 text-green-500 border-green-600/40", icon: CheckCircle2 },
-  qta_diff: { label: "Quantità diversa", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: XCircle },
-  prezzo_diff: { label: "Prezzo diverso", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: XCircle },
-  sconto_diff: { label: "Sconto diverso", cls: "bg-yellow-600/20 text-yellow-500 border-yellow-600/40", icon: AlertCircle },
-  omaggio_diff: { label: "Omaggio diverso", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: XCircle },
-  imponibile_diff: { label: "Imponibile diverso", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: XCircle },
-  mancante_in_conferma: { label: "Mancante in conferma", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: MinusCircle },
-  extra_in_conferma: { label: "Extra in conferma", cls: "bg-orange-600/20 text-orange-500 border-orange-600/40", icon: PlusCircle },
-  match_incerto: { label: "Abbinamento incerto", cls: "bg-blue-600/20 text-blue-500 border-blue-600/40", icon: AlertCircle },
-  unita_incerta: { label: "Unità di misura incerta", cls: "bg-red-600/20 text-red-500 border-red-600/40", icon: AlertCircle },
-  alias_suggerito: { label: "Possibile alias", cls: "bg-blue-600/20 text-blue-500 border-blue-600/40", icon: AlertCircle },
+  ok: { label: "OK", cls: "bg-success/10 text-success border-success/30", icon: CheckCircle2 },
+  qta_diff: { label: "Quantità diversa", cls: "bg-destructive/10 text-destructive border-destructive/30", icon: XCircle },
+  prezzo_diff: { label: "Prezzo diverso", cls: "bg-destructive/10 text-destructive border-destructive/30", icon: XCircle },
+  sconto_diff: { label: "Sconto diverso", cls: "bg-warning/10 text-warning border-warning/30", icon: AlertCircle },
+  omaggio_diff: { label: "Omaggio diverso", cls: "bg-destructive/10 text-destructive border-destructive/30", icon: XCircle },
+  imponibile_diff: { label: "Imponibile diverso", cls: "bg-destructive/10 text-destructive border-destructive/30", icon: XCircle },
+  mancante_in_conferma: { label: "Mancante in conferma", cls: "bg-destructive/10 text-destructive border-destructive/30", icon: MinusCircle },
+  extra_in_conferma: { label: "Extra in conferma", cls: "bg-warning/10 text-warning border-warning/30", icon: PlusCircle },
+  match_incerto: { label: "Abbinamento incerto", cls: "bg-primary/10 text-primary border-primary/30", icon: AlertCircle },
+  unita_incerta: { label: "Unità di misura incerta", cls: "bg-destructive/10 text-destructive border-destructive/30", icon: AlertCircle },
+  alias_suggerito: { label: "Possibile alias", cls: "bg-primary/10 text-primary border-primary/30", icon: AlertCircle },
 };
 
 function fileToBase64(file: File): Promise<string> {
@@ -235,7 +235,7 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
 
   const scorePct = esito ? Math.round(esito.score * 100) : 0;
   const scoreColor =
-    scorePct >= 90 ? "text-green-500" : scorePct >= 60 ? "text-yellow-500" : "text-red-500";
+    scorePct >= 90 ? "text-success" : scorePct >= 60 ? "text-warning" : "text-destructive";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -312,7 +312,7 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
                         <Badge variant="outline">{Math.round(Number(p.score) * 100)}%</Badge>
                         <span>{p.nome_sorgente ?? "—"}</span>
                         {p.verificato_manualmente && (
-                          <Badge className="bg-green-600/20 text-green-500 border-green-600/40">
+                          <Badge className="bg-success/10 text-success border-success/30">
                             verificata
                           </Badge>
                         )}
@@ -331,18 +331,18 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
         {esito && (
           <div className="space-y-4">
             {esito.possibile_errore_matching && esito.avviso_matching && (
-              <div className="flex items-start gap-2 rounded-lg border border-amber-600/40 bg-amber-600/10 p-3 text-sm text-amber-600">
+              <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm text-warning">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                 <span>{esito.avviso_matching}</span>
               </div>
             )}
             <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
               <StatBox label="Score" value={`${scorePct}%`} className={scoreColor} />
-              <StatBox label="OK" value={String(esito.righe_ok)} className="text-green-500" />
-              <StatBox label="Differenze" value={String(esito.righe_diff)} className="text-yellow-500" />
-              <StatBox label="Mancanti" value={String(esito.righe_mancanti)} className="text-red-500" />
-              <StatBox label="Extra" value={String(esito.righe_extra)} className="text-orange-500" />
-              <StatBox label="Da confermare" value={String(esito.righe_alias_suggerito)} className="text-blue-500" />
+              <StatBox label="OK" value={String(esito.righe_ok)} className="text-success" />
+              <StatBox label="Differenze" value={String(esito.righe_diff)} className="text-warning" />
+              <StatBox label="Mancanti" value={String(esito.righe_mancanti)} className="text-destructive" />
+              <StatBox label="Extra" value={String(esito.righe_extra)} className="text-warning" />
+              <StatBox label="Da confermare" value={String(esito.righe_alias_suggerito)} className="text-primary" />
             </div>
             <Progress value={scorePct} />
 
@@ -357,7 +357,7 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
               </div>
               <div className="p-2 rounded border border-border">
                 <div className="text-muted-foreground text-xs">Δ conferma - CRM</div>
-                <div className={`font-semibold ${Math.abs(esito.delta_totale) < 0.01 ? "" : "text-red-500"}`}>
+                <div className={`font-semibold ${Math.abs(esito.delta_totale) < 0.01 ? "" : "text-destructive"}`}>
                   € {esito.delta_totale.toFixed(2)}
                 </div>
               </div>
@@ -385,7 +385,7 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
                       <TableRow
                         key={i}
                         className={
-                          r.gravita === "error" ? "bg-red-500/5" : r.gravita === "warning" ? "bg-yellow-500/5" : ""
+                          r.gravita === "error" ? "bg-destructive/10" : r.gravita === "warning" ? "bg-warning/10" : ""
                         }
                       >
                         <TableCell>

@@ -59,6 +59,7 @@ import {
   Percent,
 } from "lucide-react";
 import { exportKPIToPDF, exportKPIToCSV } from "@/lib/exportKPI";
+import { formatNumber } from "@/lib/format";
 
 interface AnalyticsProps {
   /** Se valorizzato, la pagina mostra SOLO i dati di questa azienda. */
@@ -179,7 +180,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
         emoji: "📈",
         bold: `${mesiLabel[recordIdx]} è il mese record`,
         text: `con ${formatCurrency(record.fatturato)}${
-          deltaVsPrev !== null ? ` (${deltaVsPrev >= 0 ? "+" : ""}${deltaVsPrev.toFixed(1)}% su ${mesiLabel[recordIdx - 1]})` : ""
+          deltaVsPrev !== null ? ` (${deltaVsPrev >= 0 ? "+" : ""}${formatNumber(deltaVsPrev, 1)}% su ${mesiLabel[recordIdx - 1]})` : ""
         }.`,
       });
     }
@@ -201,7 +202,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
       list.push({
         emoji: "🏆",
         bold: `${aziendaTop.nome} è il fornitore principale`,
-        text: `${formatCurrency(aziendaTop.fatturato_totale)}, il ${quota.toFixed(0)}% del totale.`,
+        text: `${formatCurrency(aziendaTop.fatturato_totale)}, il ${formatNumber(quota, 0)}% del totale.`,
       });
     }
 
@@ -474,14 +475,14 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
             <StatCard
               icon={RotateCcw}
               label="MoM"
-              value={`${momValue >= 0 ? "+" : ""}${momValue.toFixed(1)}%`}
+              value={`${momValue >= 0 ? "+" : ""}${formatNumber(momValue, 1)}%`}
               caption="rispetto al mese precedente"
               tone={momValue >= 0 ? "success" : "danger"}
             />
             <StatCard
               icon={CalendarIcon}
               label="YoY"
-              value={hasYoyData ? `${yoyValue >= 0 ? "+" : ""}${yoyValue.toFixed(1)}%` : "N/D"}
+              value={hasYoyData ? `${yoyValue >= 0 ? "+" : ""}${formatNumber(yoyValue, 1)}%` : "N/D"}
               caption={hasYoyData ? `vs ${formatCurrency(yoyPrevFatturato)}` : "Storico non disponibile per questa selezione"}
               tone={!hasYoyData ? "info" : yoyValue >= 0 ? "success" : "danger"}
             />
@@ -507,7 +508,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
                         yoy.deltaPct >= 0 ? "bg-scatto-success/10 text-scatto-success" : "bg-scatto-danger/10 text-scatto-danger"
                       }`}
                     >
-                      {yoy.deltaPct >= 0 ? "↑" : "↓"} {Math.abs(yoy.deltaPct).toFixed(1)}%
+                      {yoy.deltaPct >= 0 ? "↑" : "↓"} {formatNumber(Math.abs(yoy.deltaPct), 1)}%
                     </span>
                   )
                 }

@@ -1,5 +1,6 @@
 import { SectionCard } from "@/components/dashboard/SectionCard";
 import { formatCurrency } from "./kpiShared";
+import { formatNumber } from "@/lib/format";
 
 interface RipartizioniHighlightsProps {
   aziendaTop: { nome: string; fatturato_totale: number } | null;
@@ -20,7 +21,7 @@ export function RipartizioniHighlights({ aziendaTop, prodottoTop, fatturatoTotal
             <p className="mt-2 font-display text-2xl font-bold tabular-nums tracking-tight text-scatto-info">
               {formatCurrency(aziendaTop.fatturato_totale)}
             </p>
-            <p className="mt-1.5 text-[11px] text-scatto-muted">{quotaAzienda.toFixed(0)}% del fatturato totale</p>
+            <p className="mt-1.5 text-[11px] text-scatto-muted">{formatNumber(quotaAzienda, 0)}% del fatturato totale</p>
           </>
         ) : (
           <p className="mt-2 text-sm text-scatto-muted">Nessun dato disponibile</p>

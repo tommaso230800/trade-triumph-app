@@ -389,7 +389,7 @@ export const ImportExcelDialog = () => {
           {parsedData.length > 0 && (
             <>
               <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
-                <div className="flex items-center gap-2 text-green-600">
+                <div className="flex items-center gap-2 text-success">
                   <CheckCircle2 className="h-5 w-5" />
                   <span className="font-medium">{validCount} valide</span>
                 </div>
@@ -423,7 +423,7 @@ export const ImportExcelDialog = () => {
                         >
                           <td className="px-3 py-2">
                             {row.isValid ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              <CheckCircle2 className="h-4 w-4 text-success" />
                             ) : (
                               <AlertCircle className="h-4 w-4 text-destructive" />
                             )}

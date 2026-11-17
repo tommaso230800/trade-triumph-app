@@ -17,25 +17,26 @@ import {
   Clock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatEuroInt, formatNumber } from "@/lib/format";
 
 const prioritaConfig = {
   rischio: {
     icon: Flame,
     label: "A Rischio",
-    color: "text-red-500",
-    bgClass: "bg-red-500/10 border-red-500/30",
+    color: "text-destructive",
+    bgClass: "bg-destructive/10 border-destructive/30",
   },
   sotto_target: {
     icon: Target,
     label: "Sotto Target",
-    color: "text-amber-500",
-    bgClass: "bg-amber-500/10 border-amber-500/30",
+    color: "text-warning",
+    bgClass: "bg-warning/10 border-warning/30",
   },
   alto_potenziale: {
     icon: TrendingUp,
     label: "Alto Potenziale",
-    color: "text-green-500",
-    bgClass: "bg-green-500/10 border-green-500/30",
+    color: "text-success",
+    bgClass: "bg-success/10 border-success/30",
   },
   routine: {
     icon: Clock,
@@ -46,7 +47,7 @@ const prioritaConfig = {
 };
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+  formatEuroInt(value);
 
 export function PriorityClientsWidget() {
   const { data: clienti, isLoading, refetch } = useClientiCommercialiPrioritari();
@@ -102,17 +103,17 @@ export function PriorityClientsWidget() {
         {/* Summary badges */}
         <div className="flex flex-wrap gap-2 mt-2">
           {conti.rischio > 0 && (
-            <Badge className="bg-red-500/10 text-red-600 border-red-500/30 gap-1">
+            <Badge className="bg-destructive/10 text-destructive border-destructive/30 gap-1">
               <Flame className="h-3 w-3" /> {conti.rischio} a rischio
             </Badge>
           )}
           {conti.sotto_target > 0 && (
-            <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1">
+            <Badge className="bg-warning/10 text-warning border-warning/30 gap-1">
               <Target className="h-3 w-3" /> {conti.sotto_target} sotto target
             </Badge>
           )}
           {conti.alto_potenziale > 0 && (
-            <Badge className="bg-green-500/10 text-green-600 border-green-500/30 gap-1">
+            <Badge className="bg-success/10 text-success border-success/30 gap-1">
               <TrendingUp className="h-3 w-3" /> {conti.alto_potenziale} in crescita
             </Badge>
           )}
@@ -168,10 +169,10 @@ export function PriorityClientsWidget() {
                       {cliente.fatturato_2025 && cliente.fatturato_2025 > 0 && (
                         <p className={cn(
                           "text-xs",
-                          cliente.statoCliente.crescitaPercentuale >= 0 ? "text-green-600" : "text-red-600"
+                          cliente.statoCliente.crescitaPercentuale >= 0 ? "text-success" : "text-destructive"
                         )}>
                           {cliente.statoCliente.crescitaPercentuale >= 0 ? "+" : ""}
-                          {cliente.statoCliente.crescitaPercentuale.toFixed(0)}%
+                          {formatNumber(cliente.statoCliente.crescitaPercentuale, 0)}%
                         </p>
                       )}
                     </div>

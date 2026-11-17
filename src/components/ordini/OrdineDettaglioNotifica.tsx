@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Ordine } from "@/hooks/useOrdini";
+import { formatEuro } from "@/lib/format";
 
-const euro = (n: number | null | undefined) => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(Number(n ?? 0));
+const euro = (n: number | null | undefined) => formatEuro(Number(n ?? 0));
 const dt = (iso: string | null) => iso ? new Date(iso).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }) : "—";
 const d = (iso: string | null) => iso ? iso.slice(0, 10).split("-").reverse().join("/") : "—";
 const STATUS: Record<string, string> = { in_attesa: "In attesa", spedito: "Spedito", completato: "Confermato", annullato: "Annullato", stand_by: "Stand-by" };

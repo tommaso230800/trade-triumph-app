@@ -6,13 +6,14 @@ import {
   Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend,
 } from "recharts";
 import { TrendingUp, TrendingDown, Minus, Building2, Users, Trophy, AlertTriangle, Ban, CheckCircle2, Clock, Euro, Receipt, Percent, Calendar } from "lucide-react";
+import { formatEuro, formatEuroInt, formatNumber } from "@/lib/format";
 
 const MESI_LABEL = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
 const fmtEur = (v: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v || 0);
+  formatEuroInt(v || 0);
 const fmtEur2 = (v: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0);
+  formatEuro(v || 0);
 
 const STATO_COLORS: Record<string, string> = {
   pagata: "hsl(var(--success))",
@@ -47,7 +48,7 @@ function GrowthBadge({ value }: { value: number | null }) {
   return (
     <span className={`inline-flex items-center gap-1 text-sm font-semibold ${cls}`}>
       <Icon className="h-3.5 w-3.5" />
-      {positive && value !== 0 ? "+" : ""}{value.toFixed(1)}%
+      {positive && value !== 0 ? "+" : ""}{formatNumber(value, 1)}%
     </span>
   );
 }
@@ -76,7 +77,7 @@ export function MeseDetailSheet({ open, onOpenChange, detail }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-0">
-        <div className="p-6 border-b bg-gradient-to-br from-primary/10 to-card">
+        <div className="p-4 sm:p-6 border-b bg-card">
           <SheetHeader className="text-left space-y-2">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
@@ -111,7 +112,7 @@ export function MeseDetailSheet({ open, onOpenChange, detail }: Props) {
             <Stat label="N° ordini" value={String(detail.nOrdini)} icon={<Receipt className="h-3.5 w-3.5" />} />
             <Stat label="N° fatture" value={String(detail.fatture)} icon={<Receipt className="h-3.5 w-3.5" />} />
             <Stat label="Ticket medio" value={fmtEur(detail.ticketMedio)} icon={<Euro className="h-3.5 w-3.5" />} />
-            <Stat label="% media provv." value={`${detail.pctMediaProvv.toFixed(2)}%`} icon={<Percent className="h-3.5 w-3.5" />} />
+            <Stat label="% media provv." value={`${formatNumber(detail.pctMediaProvv, 2)}%`} icon={<Percent className="h-3.5 w-3.5" />} />
           </div>
 
           {/* Top azienda / cliente */}

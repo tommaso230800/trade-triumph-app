@@ -37,9 +37,10 @@ import {
   XCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatEuroInt, formatNumber } from "@/lib/format";
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(value);
+  formatEuroInt(value);
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -102,7 +103,7 @@ A. ANALISI CLIENTE CON QUESTA AZIENDA
 💰 FATTURATO:
 • Anno corrente: ${formatCurrency(a.fatturatoAnnoCorrente)}
 • Anno precedente: ${formatCurrency(a.fatturatoAnnoPrecedente)}
-• Variazione: ${a.variazionePercentuale >= 0 ? "+" : ""}${a.variazionePercentuale.toFixed(1)}%
+• Variazione: ${a.variazionePercentuale >= 0 ? "+" : ""}${formatNumber(a.variazionePercentuale, 1)}%
 
 📦 ORDINI:
 • Numero ordini anno corrente: ${a.numeroOrdiniAnnoCorrente}
@@ -116,7 +117,7 @@ B. ANALISI COMMERCIALE
 📄 CONTRATTO:
 • Ha contratto fine anno: ${a.haContratto ? "SÌ" : "NO"}
 ${a.haContratto ? `• Target fatturato: ${formatCurrency(a.targetFatturato)}
-• % Target raggiunto: ${a.percentualeTargetRaggiunto.toFixed(1)}%
+• % Target raggiunto: ${formatNumber(a.percentualeTargetRaggiunto, 1)}%
 • Premio contratto: ${a.premioContratto}%` : ""}
 
 🎁 PROMO:
@@ -364,10 +365,10 @@ REGOLE FONDAMENTALI:
   const getRiskBadge = () => {
     if (!analysisData) return null;
     const colors = {
-      low: "bg-green-100 text-green-800 border-green-300",
-      medium: "bg-yellow-100 text-yellow-800 border-yellow-300",
-      high: "bg-orange-100 text-orange-800 border-orange-300",
-      critical: "bg-red-100 text-red-800 border-red-300",
+      low: "bg-success/10 text-success border-success/30",
+      medium: "bg-warning/10 text-warning border-warning/30",
+      high: "bg-warning/10 text-warning border-warning/30",
+      critical: "bg-destructive/10 text-destructive border-destructive/30",
     };
     const labels = {
       low: "Basso",
@@ -465,9 +466,9 @@ REGOLE FONDAMENTALI:
                   {analysisData?.alertMessage && (
                     <div className={cn(
                       "mt-2 p-2 rounded-lg text-sm font-medium",
-                      analysisData.riskLevel === "critical" ? "bg-red-100 text-red-800" :
-                      analysisData.riskLevel === "high" ? "bg-orange-100 text-orange-800" :
-                      "bg-yellow-100 text-yellow-800"
+                      analysisData.riskLevel === "critical" ? "bg-destructive/10 text-destructive" :
+                      analysisData.riskLevel === "high" ? "bg-warning/10 text-warning" :
+                      "bg-warning/10 text-warning"
                     )}>
                       {analysisData.alertMessage}
                     </div>
@@ -486,16 +487,16 @@ REGOLE FONDAMENTALI:
                     <div className="p-3 rounded-lg bg-muted/50">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         {a.variazionePercentuale >= 0 ? 
-                          <TrendingUp className="h-3 w-3 text-green-600" /> : 
-                          <TrendingDown className="h-3 w-3 text-red-600" />
+                          <TrendingUp className="h-3 w-3 text-success" /> : 
+                          <TrendingDown className="h-3 w-3 text-destructive" />
                         }
                         vs Anno Prec.
                       </div>
                       <p className={cn(
                         "font-bold",
-                        a.variazionePercentuale >= 0 ? "text-green-600" : "text-red-600"
+                        a.variazionePercentuale >= 0 ? "text-success" : "text-destructive"
                       )}>
-                        {a.variazionePercentuale >= 0 ? "+" : ""}{a.variazionePercentuale.toFixed(1)}%
+                        {a.variazionePercentuale >= 0 ? "+" : ""}{formatNumber(a.variazionePercentuale, 1)}%
                       </p>
                     </div>
                   </div>
@@ -503,14 +504,14 @@ REGOLE FONDAMENTALI:
                   {/* Periodicità Ordini - FONDAMENTALE */}
                   <div className={cn(
                     "p-3 rounded-lg border-2",
-                    a.fuoriCicloRiordino ? "border-red-400 bg-red-50" : "border-green-400 bg-green-50"
+                    a.fuoriCicloRiordino ? "border-destructive/30 bg-destructive/10" : "border-success/30 bg-success/10"
                   )}>
                     <div className="flex items-center gap-2 mb-2">
                       <Clock className="h-4 w-4" />
                       <span className="font-semibold text-sm">Analisi Rotazione</span>
                       {a.fuoriCicloRiordino ? 
-                        <XCircle className="h-4 w-4 text-red-600 ml-auto" /> :
-                        <CheckCircle2 className="h-4 w-4 text-green-600 ml-auto" />
+                        <XCircle className="h-4 w-4 text-destructive ml-auto" /> :
+                        <CheckCircle2 className="h-4 w-4 text-success ml-auto" />
                       }
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -524,14 +525,14 @@ REGOLE FONDAMENTALI:
                         <p className="text-muted-foreground text-xs">Dall'ultimo ordine</p>
                         <p className={cn(
                           "font-bold",
-                          a.fuoriCicloRiordino ? "text-red-600" : "text-green-600"
+                          a.fuoriCicloRiordino ? "text-destructive" : "text-success"
                         )}>
                           {a.giorniDalUltimoOrdine < 999 ? `${a.giorniDalUltimoOrdine} giorni` : "Mai"}
                         </p>
                       </div>
                     </div>
                     {a.fuoriCicloRiordino && (
-                      <p className="mt-2 text-sm font-medium text-red-700">
+                      <p className="mt-2 text-sm font-medium text-destructive">
                         ⚠️ Fuori ciclo da {a.giorniFuoriCiclo} giorni!
                       </p>
                     )}
@@ -549,7 +550,7 @@ REGOLE FONDAMENTALI:
                         className="h-2 mb-1"
                       />
                       <div className="flex justify-between text-xs">
-                        <span className="font-medium">{a.percentualeTargetRaggiunto.toFixed(0)}%</span>
+                        <span className="font-medium">{formatNumber(a.percentualeTargetRaggiunto, 0)}%</span>
                         <span className="text-muted-foreground">
                           {formatCurrency(a.fatturatoAnnoCorrente)} / {formatCurrency(a.targetFatturato)}
                         </span>
@@ -573,7 +574,7 @@ REGOLE FONDAMENTALI:
                       <span>Usato: {formatCurrency(a.budgetPromoUsato)}</span>
                       <span className={cn(
                         "font-medium",
-                        a.budgetPromoUsato >= a.budgetPromoDisponibile ? "text-red-600" : "text-green-600"
+                        a.budgetPromoUsato >= a.budgetPromoDisponibile ? "text-destructive" : "text-success"
                       )}>
                         Residuo: {formatCurrency(Math.max(0, a.budgetPromoDisponibile - a.budgetPromoUsato))}
                       </span>

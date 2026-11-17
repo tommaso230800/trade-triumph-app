@@ -21,9 +21,10 @@ import { useProdotti, useCreateProdotto, useDeleteProdotto, useUpdateProdotto, P
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImportProductsPDFDialog } from "./ImportProductsPDFDialog";
+import { formatEuro } from "@/lib/format";
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 interface AziendaCardProps {
   azienda: Azienda;

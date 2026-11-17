@@ -1,5 +1,6 @@
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatEuro, formatNumber } from "@/lib/format";
 
 type ClientGrowthData = {
   id: string;
@@ -13,7 +14,7 @@ interface ClientGrowthWidgetProps {
 }
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 export function ClientGrowthWidget({ clienti }: ClientGrowthWidgetProps) {
   // Filter clients with 2025 data and calculate growth
@@ -71,7 +72,7 @@ export function ClientGrowthWidget({ clienti }: ClientGrowthWidgetProps) {
                     </p>
                   </div>
                   <span className="text-success font-semibold text-sm flex-shrink-0 ml-2">
-                    +{c.crescitaPercentuale.toFixed(0)}%
+                    +{formatNumber(c.crescitaPercentuale, 0)}%
                   </span>
                 </div>
               ))}
@@ -101,7 +102,7 @@ export function ClientGrowthWidget({ clienti }: ClientGrowthWidgetProps) {
                     </p>
                   </div>
                   <span className="text-destructive font-semibold text-sm flex-shrink-0 ml-2">
-                    {c.crescitaPercentuale.toFixed(0)}%
+                    {formatNumber(c.crescitaPercentuale, 0)}%
                   </span>
                 </div>
               ))}

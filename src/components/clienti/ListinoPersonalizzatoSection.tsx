@@ -44,9 +44,10 @@ import {
   type CustomerProductPrice,
 } from "@/hooks/useCustomerProductPrices";
 import { resolveProductPrice, PRICE_SOURCE_LABELS } from "@/lib/priceResolver";
+import { formatEuro } from "@/lib/format";
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 const parseDecimalInput = (value: string): number => {
   const normalized = value.replace(",", ".");

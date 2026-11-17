@@ -9,6 +9,7 @@ import {
   Percent, Tag, Trophy, Building2, Users, Gift, AlertTriangle, 
   ChevronRight, Zap
 } from "lucide-react";
+import { formatEuro } from "@/lib/format";
 
 interface ActivePromosSectionProps {
   promos: Canvass[];
@@ -22,7 +23,7 @@ const tipoConfig = {
 };
 
 const formatCurrency = (value: number) => 
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 export function ActivePromosSection({ promos, onViewDetail }: ActivePromosSectionProps) {
   const today = new Date();
@@ -113,7 +114,7 @@ export function ActivePromosSection({ promos, onViewDetail }: ActivePromosSectio
                           {promo.tipo === "prezzo_fisso" ? formatCurrency(promo.valore) : `${promo.valore}%`}
                         </p>
                         {promo.cartoni_omaggio > 0 && (
-                          <div className="flex items-center gap-1 text-xs text-green-600 mt-1">
+                          <div className="flex items-center gap-1 text-xs text-success mt-1">
                             <Gift className="h-3 w-3" />
                             {promo.cartoni_acquisto}+{promo.cartoni_omaggio} omaggio
                           </div>
@@ -135,12 +136,12 @@ export function ActivePromosSection({ promos, onViewDetail }: ActivePromosSectio
                     {/* Expiry Info */}
                     <div className={`flex items-center justify-between p-2 rounded-lg ${
                       isExpiring 
-                        ? "bg-orange-100 dark:bg-orange-900/30" 
+                        ? "bg-warning/10 " 
                         : "bg-muted/50"
                     }`}>
                       <div className="flex items-center gap-2">
-                        {isExpiring && <AlertTriangle className="h-4 w-4 text-orange-600" />}
-                        <span className={`text-xs font-medium ${isExpiring ? "text-orange-700 dark:text-orange-400" : ""}`}>
+                        {isExpiring && <AlertTriangle className="h-4 w-4 text-warning" />}
+                        <span className={`text-xs font-medium ${isExpiring ? "text-warning " : ""}`}>
                           {isExpiring 
                             ? `Scade tra ${daysLeft} giorni` 
                             : `Fino al ${format(parseISO(endDate), "dd MMM", { locale: it })}`

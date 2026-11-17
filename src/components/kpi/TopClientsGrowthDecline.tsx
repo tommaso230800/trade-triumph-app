@@ -1,5 +1,6 @@
 import { SectionCard } from "@/components/dashboard/SectionCard";
 import { formatCurrency } from "./kpiShared";
+import { formatNumber } from "@/lib/format";
 
 interface ClienteVariazione {
   id: string;
@@ -30,7 +31,7 @@ function ClientRow({ rank, c, positive }: { rank: number; c: ClienteVariazione; 
         }`}
       >
         {positive ? "+" : ""}
-        {c.variazionePct.toFixed(0)}%
+        {formatNumber(c.variazionePct, 0)}%
       </span>
     </div>
   );

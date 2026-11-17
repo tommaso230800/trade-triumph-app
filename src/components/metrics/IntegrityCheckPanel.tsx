@@ -9,6 +9,7 @@ import { integrityReport, orderDate, type OrdineLike } from "@/lib/metricsEngine
 import { AlertTriangle, CheckCircle2, Download, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { fetchDataPanelOrders } from "@/hooks/useDataPanelOrders";
+import { formatEuro } from "@/lib/format";
 
 type Row = ReturnType<typeof integrityReport>["rows"][number] & {
   codice?: string | null;
@@ -18,7 +19,7 @@ type Row = ReturnType<typeof integrityReport>["rows"][number] & {
 };
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
+  formatEuro(n);
 
 export function IntegrityCheckPanel() {
   const [loading, setLoading] = useState(false);

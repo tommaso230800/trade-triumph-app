@@ -31,8 +31,9 @@ import { CustomerCard } from "@/components/mappa/CustomerCard";
 import { STATO_COLORI, type MapStyleId } from "@/lib/googleMaps";
 import { useMappaClienti, distanzaKm, type ClienteMappa } from "@/hooks/useMappaClienti";
 import { useTheme } from "@/hooks/useTheme";
+import { formatEuroInt } from "@/lib/format";
 
-const euro = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const euro = { format: (n: number) => formatEuroInt(n) };
 
 type LayerId =
   | "clienti"

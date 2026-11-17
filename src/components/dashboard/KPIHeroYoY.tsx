@@ -1,9 +1,10 @@
 import { TrendingUp, TrendingDown, Euro, Package, Building2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DimensionYoY } from "@/hooks/useKPIYoY";
+import { formatEuroInt, formatNumber } from "@/lib/format";
 
 const fmt = (v: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
+  formatEuroInt(v);
 
 interface Props {
   fattCurr: number;
@@ -42,23 +43,23 @@ export function KPIHeroYoY({
   const trendC = delta >= 0 ? "text-success" : "text-destructive";
 
   return (
-    <div className="grid gap-4 grid-cols-2 lg:grid-cols-5 animate-fade-in">
+    <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
       {/* YoY totale */}
-      <div className="rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30 p-4 shadow-card">
+      <div className="rounded-xl border bg-card p-4 shadow-card">
         <div className="flex items-center gap-2">
           <TrendI className={cn("h-4 w-4", trendC)} />
           <p className="text-xs text-muted-foreground">YoY · {yearCurr} vs {yearPrev}</p>
         </div>
-        <p className={cn("text-2xl font-bold mt-1", trendC)}>
-          {delta >= 0 ? "+" : ""}{deltaPct.toFixed(1)}%
+        <p className={cn("text-2xl font-bold tabular-nums mt-1", trendC)}>
+          {delta >= 0 ? "+" : ""}{formatNumber(deltaPct, 1)}%
         </p>
-        <p className="text-[11px] text-muted-foreground mt-0.5">
+        <p className="text-xs text-muted-foreground mt-0.5">
           {fmt(fattCurr)} vs {fmt(fattPrev)}
         </p>
       </div>
 
       {/* Best azienda */}
-      <div className="rounded-xl bg-card p-4 shadow-card">
+      <div className="rounded-xl border bg-card p-4 shadow-card">
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-primary" />
           <p className="text-xs text-muted-foreground">Azienda top</p>
@@ -66,16 +67,16 @@ export function KPIHeroYoY({
         {bestAzienda ? (
           <>
             <p className="text-sm font-bold mt-1 truncate">{aziendeNames.get(bestAzienda.id) || "—"}</p>
-            <p className="text-base font-bold text-primary">{fmt(bestAzienda.curr)}</p>
-            <p className={cn("text-[11px]", bestAzienda.deltaPct >= 0 ? "text-success" : "text-destructive")}>
-              {bestAzienda.prev > 0 ? `${bestAzienda.deltaPct >= 0 ? "+" : ""}${bestAzienda.deltaPct.toFixed(1)}% YoY` : "nuova"}
+            <p className="text-base font-bold tabular-nums">{fmt(bestAzienda.curr)}</p>
+            <p className={cn("text-xs", bestAzienda.deltaPct >= 0 ? "text-success" : "text-destructive")}>
+              {bestAzienda.prev > 0 ? `${bestAzienda.deltaPct >= 0 ? "+" : ""}${formatNumber(bestAzienda.deltaPct, 1)}% YoY` : "nuova"}
             </p>
           </>
         ) : <p className="text-sm text-muted-foreground mt-2">—</p>}
       </div>
 
       {/* Best prodotto */}
-      <div className="rounded-xl bg-card p-4 shadow-card">
+      <div className="rounded-xl border bg-card p-4 shadow-card">
         <div className="flex items-center gap-2">
           <Package className="h-4 w-4 text-primary" />
           <p className="text-xs text-muted-foreground">Prodotto top</p>
@@ -83,16 +84,16 @@ export function KPIHeroYoY({
         {bestProdotto ? (
           <>
             <p className="text-sm font-bold mt-1 truncate">{prodottiNames.get(bestProdotto.id) || "—"}</p>
-            <p className="text-base font-bold text-primary">{fmt(bestProdotto.curr)}</p>
-            <p className={cn("text-[11px]", bestProdotto.deltaPct >= 0 ? "text-success" : "text-destructive")}>
-              {bestProdotto.prev > 0 ? `${bestProdotto.deltaPct >= 0 ? "+" : ""}${bestProdotto.deltaPct.toFixed(1)}% YoY` : "nuovo"}
+            <p className="text-base font-bold tabular-nums">{fmt(bestProdotto.curr)}</p>
+            <p className={cn("text-xs", bestProdotto.deltaPct >= 0 ? "text-success" : "text-destructive")}>
+              {bestProdotto.prev > 0 ? `${bestProdotto.deltaPct >= 0 ? "+" : ""}${formatNumber(bestProdotto.deltaPct, 1)}% YoY` : "nuovo"}
             </p>
           </>
         ) : <p className="text-sm text-muted-foreground mt-2">—</p>}
       </div>
 
       {/* Cliente in crescita */}
-      <div className="rounded-xl bg-gradient-to-br from-success/15 to-success/5 border border-success/30 p-4 shadow-card">
+      <div className="rounded-xl border bg-card p-4 shadow-card">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-4 w-4 text-success" />
           <p className="text-xs text-muted-foreground">Cliente in crescita</p>
@@ -100,14 +101,14 @@ export function KPIHeroYoY({
         {bestCliente ? (
           <>
             <p className="text-sm font-bold mt-1 truncate">{clientiNames.get(bestCliente.id) || "—"}</p>
-            <p className="text-base font-bold text-success">+{bestCliente.deltaPct.toFixed(1)}%</p>
-            <p className="text-[11px] text-muted-foreground">{fmt(bestCliente.curr)} vs {fmt(bestCliente.prev)}</p>
+            <p className="text-base font-bold tabular-nums text-success">+{formatNumber(bestCliente.deltaPct, 1)}%</p>
+            <p className="text-xs text-muted-foreground">{fmt(bestCliente.curr)} vs {fmt(bestCliente.prev)}</p>
           </>
         ) : <p className="text-sm text-muted-foreground mt-2">—</p>}
       </div>
 
       {/* Cliente in calo */}
-      <div className="rounded-xl bg-gradient-to-br from-destructive/15 to-destructive/5 border border-destructive/30 p-4 shadow-card">
+      <div className="rounded-xl border bg-card p-4 shadow-card">
         <div className="flex items-center gap-2">
           <TrendingDown className="h-4 w-4 text-destructive" />
           <p className="text-xs text-muted-foreground">Cliente in calo</p>
@@ -115,8 +116,8 @@ export function KPIHeroYoY({
         {worstCliente ? (
           <>
             <p className="text-sm font-bold mt-1 truncate">{clientiNames.get(worstCliente.id) || "—"}</p>
-            <p className="text-base font-bold text-destructive">{worstCliente.deltaPct.toFixed(1)}%</p>
-            <p className="text-[11px] text-muted-foreground">{fmt(worstCliente.curr)} vs {fmt(worstCliente.prev)}</p>
+            <p className="text-base font-bold tabular-nums text-destructive">{formatNumber(worstCliente.deltaPct, 1)}%</p>
+            <p className="text-xs text-muted-foreground">{fmt(worstCliente.curr)} vs {fmt(worstCliente.prev)}</p>
           </>
         ) : <p className="text-sm text-muted-foreground mt-2">—</p>}
       </div>

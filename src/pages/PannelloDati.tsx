@@ -11,8 +11,9 @@ import { usePeriodoFiltro, usePrimoAnnoOrdini } from "@/hooks/usePeriodoFiltro";
 import { useDataPanelOrders } from "@/hooks/useDataPanelOrders";
 import { dataPanelMetrics, inPeriodo, parseDocumentNumber } from "@/lib/dataPanelMetrics";
 import { periodoLabel } from "@/lib/periodFilter";
+import { formatEuro } from "@/lib/format";
 
-const eur = (n: number) => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
+const eur = (n: number) => formatEuro(n);
 export default function PannelloDati() {
   const { periodo, setPeriodo } = usePeriodoFiltro();
   const { data: firstYear } = usePrimoAnnoOrdini();

@@ -114,12 +114,12 @@ export const ScadenziarioTab = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500/10 rounded-lg">
-                <Banknote className="h-5 w-5 text-amber-500" />
+              <div className="p-2 bg-warning/10 rounded-lg">
+                <Banknote className="h-5 w-5 text-warning" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Provv. da Incassare</p>
-                <p className="text-2xl font-bold text-amber-600">€{totaleProvvigioniDaIncassare.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+                <p className="text-2xl font-bold text-warning">€{totaleProvvigioniDaIncassare.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
               </div>
             </div>
           </CardContent>
@@ -127,12 +127,12 @@ export const ScadenziarioTab = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500/10 rounded-lg">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <div className="p-2 bg-success/10 rounded-lg">
+                <CheckCircle2 className="h-5 w-5 text-success" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Provv. Incassate</p>
-                <p className="text-2xl font-bold text-green-600">€{totaleProvvigioniIncassate.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
+                <p className="text-2xl font-bold text-success">€{totaleProvvigioniIncassate.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
               </div>
             </div>
           </CardContent>
@@ -216,7 +216,7 @@ export const ScadenziarioTab = () => {
                             <TableCell className="text-right font-medium">
                               €{Number(fattura.importo).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                             </TableCell>
-                            <TableCell className="text-right text-green-600">
+                            <TableCell className="text-right text-success">
                               €{Number(fattura.provvigione_calcolata).toFixed(2)}
                             </TableCell>
                             <TableCell>
@@ -303,7 +303,7 @@ export const ScadenziarioTab = () => {
                           <TableCell className="text-right">
                             €{Number(fattura.importo).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                           </TableCell>
-                          <TableCell className="text-right font-medium text-amber-600">
+                          <TableCell className="text-right font-medium text-warning">
                             €{Number(fattura.provvigione_calcolata).toFixed(2)}
                           </TableCell>
                           <TableCell>
@@ -364,7 +364,7 @@ export const ScadenziarioTab = () => {
                               <Calendar className="h-5 w-5 text-muted-foreground" />
                               <CardTitle>{trimestre}</CardTitle>
                             </div>
-                            <Badge className="bg-green-500/10 text-green-600 text-lg px-4 py-1">
+                            <Badge className="bg-success/10 text-success text-lg px-4 py-1">
                               €{totTrimestre.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
                             </Badge>
                           </div>
@@ -395,7 +395,7 @@ export const ScadenziarioTab = () => {
                                   <TableCell className="text-right">
                                     {Number(fattura.percentuale_provvigione).toFixed(1)}%
                                   </TableCell>
-                                  <TableCell className="text-right font-medium text-green-600">
+                                  <TableCell className="text-right font-medium text-success">
                                     €{Number(fattura.provvigione_calcolata).toFixed(2)}
                                   </TableCell>
                                 </TableRow>

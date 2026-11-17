@@ -2,6 +2,7 @@ import { SectionCard } from "@/components/dashboard/SectionCard";
 import { aziendaColorValue, type AziendaColorMap } from "@/lib/aziendaColor";
 import { formatCurrency } from "./kpiShared";
 import type { ClienteKPI } from "@/hooks/useAdvancedKPIStats";
+import { formatNumber } from "@/lib/format";
 
 interface ClientRevenueCardsProps {
   clienti: ClienteKPI[];
@@ -41,7 +42,7 @@ export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap, prevByI
                   {" · "}
                   <span className={variazione >= 0 ? "font-semibold text-scatto-success" : "font-semibold text-scatto-danger"}>
                     {variazione >= 0 ? "+" : ""}
-                    {variazione.toFixed(0)}% vs {yearPrev ?? "anno prec."}
+                    {formatNumber(variazione, 0)}% vs {yearPrev ?? "anno prec."}
                   </span>
                 </>
               )}
