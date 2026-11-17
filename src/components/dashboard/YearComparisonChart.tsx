@@ -13,6 +13,7 @@ import {
   Area,
 } from "recharts";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { formatEuroInt, formatNumber } from "@/lib/format";
 
 // Dati storici 2025
 const fatturato2025 = {
@@ -37,12 +38,7 @@ interface YearComparisonChartProps {
 }
 
 export function YearComparisonChart({ data2026 }: YearComparisonChartProps) {
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("it-IT", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(value);
+  const formatCurrency = (value: number) => formatEuroInt(value);
 
   // Combina i dati 2025 e 2026
   const combinedData = mesiNomi.map((mese, index) => {
@@ -85,7 +81,7 @@ export function YearComparisonChart({ data2026 }: YearComparisonChartProps) {
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg bg-muted/50 p-4">
           <p className="text-xs text-muted-foreground">Totale 2025</p>
-          <p className="text-xl font-bold text-orange-600">{formatCurrency(totale2025)}</p>
+          <p className="text-xl font-bold text-warning">{formatCurrency(totale2025)}</p>
         </div>
         <div className="rounded-lg bg-muted/50 p-4">
           <p className="text-xs text-muted-foreground">Totale 2026 (ad oggi)</p>
@@ -102,7 +98,7 @@ export function YearComparisonChart({ data2026 }: YearComparisonChartProps) {
           <div className="flex items-center gap-2">
             <TrendIcon className={`h-5 w-5 ${trendColor}`} />
             <p className={`text-xl font-bold ${trendColor}`}>
-              {percentualeComparabile > 0 ? "+" : ""}{percentualeComparabile.toFixed(1)}%
+              {percentualeComparabile > 0 ? "+" : ""}{formatNumber(percentualeComparabile, 1)}%
             </p>
           </div>
         </div>
@@ -148,7 +144,7 @@ export function YearComparisonChart({ data2026 }: YearComparisonChartProps) {
           <thead className="bg-muted/50">
             <tr>
               <th className="text-left p-3 font-medium">Mese</th>
-              <th className="text-right p-3 font-medium text-orange-600">2025</th>
+              <th className="text-right p-3 font-medium text-warning">2025</th>
               <th className="text-right p-3 font-medium text-primary">2026</th>
               <th className="text-right p-3 font-medium">Diff.</th>
               <th className="text-right p-3 font-medium">%</th>
@@ -161,7 +157,7 @@ export function YearComparisonChart({ data2026 }: YearComparisonChartProps) {
               return (
                 <tr key={row.mese} className="border-t border-border hover:bg-muted/30">
                   <td className="p-3 font-medium">{row.mese}</td>
-                  <td className="text-right p-3 text-orange-600">{formatCurrency(row["2025"])}</td>
+                  <td className="text-right p-3 text-warning">{formatCurrency(row["2025"])}</td>
                   <td className="text-right p-3 text-primary">
                     {hasData2026 ? formatCurrency(row["2026"]) : "—"}
                   </td>
@@ -177,13 +173,13 @@ export function YearComparisonChart({ data2026 }: YearComparisonChartProps) {
             {/* Totale */}
             <tr className="border-t-2 border-border bg-muted/50 font-bold">
               <td className="p-3">TOTALE</td>
-              <td className="text-right p-3 text-orange-600">{formatCurrency(totale2025)}</td>
+              <td className="text-right p-3 text-warning">{formatCurrency(totale2025)}</td>
               <td className="text-right p-3 text-primary">{formatCurrency(totale2026)}</td>
               <td className={`text-right p-3 ${differenzaTotale >= 0 ? "text-success" : "text-destructive"}`}>
                 {differenzaTotale > 0 ? "+" : ""}{formatCurrency(differenzaTotale)}
               </td>
               <td className={`text-right p-3 ${percentualeTotale >= 0 ? "text-success" : "text-destructive"}`}>
-                {percentualeTotale > 0 ? "+" : ""}{percentualeTotale.toFixed(1)}%
+                {percentualeTotale > 0 ? "+" : ""}{formatNumber(percentualeTotale, 1)}%
               </td>
             </tr>
           </tbody>

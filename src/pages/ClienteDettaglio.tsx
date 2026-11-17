@@ -48,6 +48,7 @@ import {
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
+import { formatEuro } from "@/lib/format";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -57,7 +58,7 @@ const statusConfig = {
 };
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 const ClienteDettaglio = () => {
   const { id } = useParams<{ id: string }>();
@@ -262,7 +263,7 @@ const ClienteDettaglio = () => {
                 <p className="text-xs text-muted-foreground">Fatturato 2026</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-orange-500">
+                <p className="text-2xl font-bold text-warning">
                   {cliente.fatturato_2025 ? formatCurrency(cliente.fatturato_2025) : "—"}
                 </p>
                 <p className="text-xs text-muted-foreground">Fatturato 2025</p>

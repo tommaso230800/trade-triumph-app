@@ -3,6 +3,7 @@ import { Clock } from "lucide-react";
 import { formatCurrency } from "./kpiShared";
 import type { AziendaColorMap } from "@/lib/aziendaColor";
 import { aziendaColorValue } from "@/lib/aziendaColor";
+import { formatNumber } from "@/lib/format";
 
 type Slice = {
   id: string;
@@ -121,7 +122,7 @@ export function RevenueDistributionDial({
                 >
                   {hasDelta
                     ? `${positive ? "+" : "−"}${Math.abs(s.deltaPct as number).toFixed(1)}%`
-                    : `${quota.toFixed(1)}%`}
+                    : `${formatNumber(quota, 1)}%`}
                 </span>
               </div>
             );

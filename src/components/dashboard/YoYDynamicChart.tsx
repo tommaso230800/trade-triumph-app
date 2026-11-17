@@ -2,6 +2,7 @@ import {
   ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { formatEuroInt, formatNumber } from "@/lib/format";
 
 interface Props {
   data: { mese: string; curr: number; prev: number; delta: number; deltaPct: number }[];
@@ -10,7 +11,7 @@ interface Props {
 }
 
 const fmt = (v: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
+  formatEuroInt(v);
 
 export function YoYDynamicChart({ data, yearCurr, yearPrev }: Props) {
   const totCurr = data.reduce((s, d) => s + d.curr, 0);
@@ -32,7 +33,7 @@ export function YoYDynamicChart({ data, yearCurr, yearPrev }: Props) {
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg bg-muted/40 p-4">
           <p className="text-xs text-muted-foreground">Totale {yearPrev}</p>
-          <p className="text-xl font-bold text-orange-500">{fmt(totPrev)}</p>
+          <p className="text-xl font-bold text-warning">{fmt(totPrev)}</p>
         </div>
         <div className="rounded-lg bg-muted/40 p-4">
           <p className="text-xs text-muted-foreground">Totale {yearCurr}</p>
@@ -48,7 +49,7 @@ export function YoYDynamicChart({ data, yearCurr, yearPrev }: Props) {
           <div className="flex items-center gap-2">
             <Icon className={`h-5 w-5 ${trendColor}`} />
             <p className={`text-xl font-bold ${trendColor}`}>
-              {compPct > 0 ? "+" : ""}{compPct.toFixed(1)}%
+              {compPct > 0 ? "+" : ""}{formatNumber(compPct, 1)}%
             </p>
           </div>
         </div>
@@ -77,7 +78,7 @@ export function YoYDynamicChart({ data, yearCurr, yearPrev }: Props) {
           <thead className="bg-muted/40">
             <tr>
               <th className="text-left p-3 font-medium">Mese</th>
-              <th className="text-right p-3 font-medium text-orange-500">{yearPrev}</th>
+              <th className="text-right p-3 font-medium text-warning">{yearPrev}</th>
               <th className="text-right p-3 font-medium text-primary">{yearCurr}</th>
               <th className="text-right p-3 font-medium">Diff.</th>
               <th className="text-right p-3 font-medium">%</th>
@@ -90,7 +91,7 @@ export function YoYDynamicChart({ data, yearCurr, yearPrev }: Props) {
               return (
                 <tr key={r.mese} className="border-t border-border hover:bg-muted/30">
                   <td className="p-3 font-medium">{r.mese}</td>
-                  <td className="text-right p-3 text-orange-500">{fmt(r.prev)}</td>
+                  <td className="text-right p-3 text-warning">{fmt(r.prev)}</td>
                   <td className="text-right p-3 text-primary">{has ? fmt(r.curr) : "—"}</td>
                   <td className={`text-right p-3 ${c}`}>{has ? (r.delta > 0 ? "+" : "") + fmt(r.delta) : "—"}</td>
                   <td className={`text-right p-3 ${c}`}>{has && r.prev > 0 ? (r.deltaPct > 0 ? "+" : "") + r.deltaPct.toFixed(1) + "%" : "—"}</td>
@@ -99,13 +100,13 @@ export function YoYDynamicChart({ data, yearCurr, yearPrev }: Props) {
             })}
             <tr className="border-t-2 border-border bg-muted/40 font-bold">
               <td className="p-3">TOTALE</td>
-              <td className="text-right p-3 text-orange-500">{fmt(totPrev)}</td>
+              <td className="text-right p-3 text-warning">{fmt(totPrev)}</td>
               <td className="text-right p-3 text-primary">{fmt(totCurr)}</td>
               <td className={`text-right p-3 ${diff >= 0 ? "text-success" : "text-destructive"}`}>
                 {diff > 0 ? "+" : ""}{fmt(diff)}
               </td>
               <td className={`text-right p-3 ${pct >= 0 ? "text-success" : "text-destructive"}`}>
-                {pct > 0 ? "+" : ""}{pct.toFixed(1)}%
+                {pct > 0 ? "+" : ""}{formatNumber(pct, 1)}%
               </td>
             </tr>
           </tbody>

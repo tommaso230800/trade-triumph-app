@@ -351,7 +351,7 @@ export function ImportProductsPDFDialog({
               <Label>File PDF</Label>
               <Input type="file" accept=".pdf" onChange={handleFileChange} className="flex-1" />
               {resumable && (
-                <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 dark:bg-amber-950/30">
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 ">
                   <p className="text-sm">C'è un'importazione interrotta per questa azienda.</p>
                   <Button variant="outline" size="sm" onClick={resumeJob}>
                     <RotateCcw className="mr-2 h-4 w-4" />
@@ -391,7 +391,7 @@ export function ImportProductsPDFDialog({
                     {progress.failedPages > 0 ? ` · illeggibili ${progress.failedPages}` : ""} · prodotti rilevati {products.length} · già presenti in azienda {duplicates} · da verificare {toVerify}
                   </p>
                   {progress.unreadableRanges.length > 0 && (
-                    <div className="flex items-center justify-between gap-2 rounded-md border border-amber-300 bg-amber-50 p-2 dark:bg-amber-950/30">
+                    <div className="flex items-center justify-between gap-2 rounded-md border border-warning/30 bg-warning/10 p-2 ">
                       <p className="text-xs">
                         Pagine non lette: {progress.unreadableRanges.map((r) => `${r.from}–${r.to}`).join(", ")}. Il risultato è incompleto.
                       </p>
@@ -423,7 +423,7 @@ export function ImportProductsPDFDialog({
                         key={product.rowId}
                         className={`p-3 rounded-lg border ${
                           product.duplicate
-                            ? "border-amber-300 bg-amber-50/50 dark:bg-amber-950/20"
+                            ? "border-warning/30 bg-warning/10 "
                             : product.selected
                               ? "bg-accent/50 border-primary/30"
                               : "bg-muted/30"
@@ -449,7 +449,7 @@ export function ImportProductsPDFDialog({
                               </Button>
                             </div>
                             {(product.duplicate || warn) && (
-                              <p className="text-xs flex items-center gap-1 text-amber-700 dark:text-amber-400">
+                              <p className="text-xs flex items-center gap-1 text-warning ">
                                 <AlertTriangle className="h-3 w-3" />
                                 {product.duplicate ? "Possibile duplicato (già presente o ripetuto)" : ""}
                                 {product.ambigui.length > 0 ? ` Ambiguo: ${product.ambigui.join("; ")}` : ""}

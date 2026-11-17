@@ -1,5 +1,6 @@
 import { SectionCard } from "@/components/dashboard/SectionCard";
 import { formatCompact, formatCurrency } from "./kpiShared";
+import { formatNumber } from "@/lib/format";
 
 interface MonthlyGoalCardProps {
   meseLabel: string;
@@ -27,7 +28,7 @@ export function MonthlyGoalCard({ meseLabel, fatturatoMese, obiettivo }: Monthly
         <div className="h-full rounded-full bg-scatto-info transition-all" style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-2 text-xs text-scatto-muted">
-        {pct.toFixed(0)}% raggiunto
+        {formatNumber(pct, 0)}% raggiunto
         {mancano > 0 ? ` · mancano ${formatCurrency(mancano)} all'obiettivo` : " · obiettivo raggiunto"}
       </p>
       <p className="mt-1 text-[10.5px] text-scatto-muted/70">

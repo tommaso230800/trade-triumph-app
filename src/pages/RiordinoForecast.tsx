@@ -32,6 +32,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { NuovoOrdineDialog, type OrdinePrefill } from "@/components/ordini/NuovoOrdineDialog";
+import { formatEuroInt } from "@/lib/format";
 
 const urgenzaBadge: Record<EnrichedForecast["urgenza"], { label: string; className: string }> = {
   critica: { label: "In rottura", className: "bg-destructive/10 text-destructive border-destructive/30" },
@@ -41,7 +42,7 @@ const urgenzaBadge: Record<EnrichedForecast["urgenza"], { label: string; classNa
   futura: { label: "Futura", className: "bg-muted text-muted-foreground border-border" },
 };
 
-const fmtEur = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+const fmtEur = { format: (n: number) => formatEuroInt(n) };
 const fmtDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
 

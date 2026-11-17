@@ -8,8 +8,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDataPanelOrders } from "@/hooks/useDataPanelOrders";
 import { dataPanelMetrics, type DataPanelOrder } from "@/lib/dataPanelMetrics";
 import { runDataAudit, saveDataIssues } from "@/lib/dataAudit";
+import { formatEuro } from "@/lib/format";
 
-const eur = (n: number) => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
+const eur = (n: number) => formatEuro(n);
 export function OrderAudit({ ids }: { ids: string[] }) {
   const orders = useDataPanelOrders();
   const { user } = useAuth();

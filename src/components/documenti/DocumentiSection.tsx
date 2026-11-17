@@ -146,7 +146,7 @@ export function DocumentiSection({ entita, entita_id, title = "Documenti", compa
                   </button>
                   <Badge variant="outline" className="text-xs">{TIPO_LABEL[d.tipo]}</Badge>
                   {d.verificato && (
-                    <Badge className="text-xs bg-green-600/20 text-green-500 border-green-600/40">
+                    <Badge className="text-xs bg-success/10 text-success border-success/30">
                       <CheckCircle2 className="h-3 w-3 mr-1" />verificato
                     </Badge>
                   )}

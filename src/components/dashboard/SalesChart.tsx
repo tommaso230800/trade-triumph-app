@@ -9,6 +9,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { formatEuroInt } from "@/lib/format";
 
 interface SalesChartProps {
   data: { mese: string; ordini: number; fatturato: number }[];
@@ -16,12 +17,7 @@ interface SalesChartProps {
 }
 
 export function SalesChart({ data, type = "area" }: SalesChartProps) {
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("it-IT", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(value);
+  const formatCurrency = (value: number) => formatEuroInt(value);
 
   if (type === "bar") {
     return (

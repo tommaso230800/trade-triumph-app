@@ -38,6 +38,7 @@ import {
   Package,
 } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
+import { formatNumber } from "@/lib/format";
 
 // html2canvas + jsPDF pesano ~590kB: caricati solo al primo "Apri proforma",
 // non nel bundle iniziale della dashboard (pagina più visitata dell'app).
@@ -164,7 +165,7 @@ function DeltaBadge({ deltaPct, size = "sm" }: { deltaPct: number | null; size?:
           : "bg-scatto-danger/[0.14] text-scatto-danger"
       }`}
     >
-      {deltaPct === null ? "N/D" : `${positive ? "↑" : "↓"} ${Math.abs(deltaPct).toFixed(1)}%`}
+      {deltaPct === null ? "N/D" : `${positive ? "↑" : "↓"} ${formatNumber(Math.abs(deltaPct), 1)}%`}
     </span>
   );
 }
@@ -273,7 +274,7 @@ const Index = () => {
       return "Nessun confronto disponibile sui mesi chiusi di quest'anno.";
     }
     const p = chartClosedComparison.deltaPct;
-    return `Nei mesi chiusi (Gen–${chartClosedComparison.lastMonthLabel}) sei ${p >= 0 ? "+" : "−"}${Math.abs(p).toFixed(1)}% sul ${yearPrev}`;
+    return `Nei mesi chiusi (Gen–${chartClosedComparison.lastMonthLabel}) sei ${p >= 0 ? "+" : "−"}${formatNumber(Math.abs(p), 1)}% sul ${yearPrev}`;
   })();
 
   // Obiettivo mensile: media del fatturato negli ultimi 12 mesi (stessa logica
@@ -604,7 +605,7 @@ const Index = () => {
                   <div>
                     <p className="text-xs text-scatto-muted">Margine</p>
                     <p className="mt-1 font-display text-xl font-bold tabular-nums text-scatto-ink">
-                      {marginePct === null ? "N/D" : `${marginePct.toFixed(1)}%`}
+                      {marginePct === null ? "N/D" : `${formatNumber(marginePct, 1)}%`}
                     </p>
                   </div>
                   <div>
@@ -637,7 +638,7 @@ const Index = () => {
                   >
                     {chartClosedComparison?.deltaPct == null
                       ? "N/D"
-                      : `${chartClosedComparison.deltaPct >= 0 ? "+" : "−"}${Math.abs(chartClosedComparison.deltaPct).toFixed(1)}%`}
+                      : `${chartClosedComparison.deltaPct >= 0 ? "+" : "−"}${formatNumber(Math.abs(chartClosedComparison.deltaPct), 1)}%`}
                   </span>
                   <p className="mt-0.5 text-xs text-scatto-muted">
                     {chartClosedComparison

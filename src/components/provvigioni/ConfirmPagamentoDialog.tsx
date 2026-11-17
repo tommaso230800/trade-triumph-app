@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { EstrattoDoc, EstrattoRiga, useConfirmPagamento } from "@/hooks/useRiconciliazione";
+import { formatEuro as formatEuroShared } from "@/lib/format";
 
 const METODI = [
   { v: "bonifico", l: "Bonifico bancario" },
@@ -19,7 +20,7 @@ const METODI = [
 ];
 
 function formatEuro(n: number) {
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n || 0);
+  return formatEuroShared(n || 0);
 }
 
 export function ConfirmPagamentoDialog({
@@ -94,7 +95,7 @@ export function ConfirmPagamentoDialog({
               <div><div className="text-xs text-muted-foreground">Righe selezionate</div><div className="font-medium">{righe.length} · {formatEuro(totaleSelezionato)}</div></div>
               <div><div className="text-xs text-muted-foreground">Bonus/conguagli</div><div className="font-medium">{bonusSel}</div></div>
               <div><div className="text-xs text-muted-foreground">Righe escluse</div><div className="font-medium">{escluse}</div></div>
-              <div className="col-span-2"><div className="text-xs text-muted-foreground">Anomalie ancora aperte</div><div className={`font-medium ${anomalie > 0 ? "text-orange-600" : ""}`}>{anomalie > 0 ? <><AlertTriangle className="h-3 w-3 inline mr-1" />{anomalie}</> : "Nessuna"}</div></div>
+              <div className="col-span-2"><div className="text-xs text-muted-foreground">Anomalie ancora aperte</div><div className={`font-medium ${anomalie > 0 ? "text-warning" : ""}`}>{anomalie > 0 ? <><AlertTriangle className="h-3 w-3 inline mr-1" />{anomalie}</> : "Nessuna"}</div></div>
             </div>
 
             <div className="space-y-3">
@@ -164,7 +165,7 @@ export function ConfirmPagamentoDialog({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-emerald-600" />Pagamento registrato</DialogTitle>
+              <DialogTitle className="flex items-center gap-2"><CheckCircle2 className="h-5 w-5 text-success" />Pagamento registrato</DialogTitle>
               <DialogDescription>Il tabulato principale delle Provvigioni è stato aggiornato.</DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-2 text-sm">

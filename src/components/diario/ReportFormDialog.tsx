@@ -40,6 +40,7 @@ import {
   DailyReport,
 } from "@/hooks/useDailyReports";
 import { cn } from "@/lib/utils";
+import { formatEuro } from "@/lib/format";
 
 interface ReportFormDialogProps {
   open: boolean;
@@ -474,7 +475,7 @@ export function ReportFormDialog({
                         onCheckedChange={() => toggleOrderId(o.id)}
                       />
                       <Label htmlFor={`order-${o.id}`} className="text-sm font-normal cursor-pointer">
-                        {o.codice} - {o.totale?.toLocaleString("it-IT", { style: "currency", currency: "EUR" })}
+                        {o.codice} - {o.totale != null ? formatEuro(o.totale) : ""}
                       </Label>
                     </div>
                   ))}

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { formatEuro } from "@/lib/format";
 
 type Cliente = { id: string; nome: string; azienda?: string | null };
 type Azienda = { id: string; nome: string };
@@ -91,7 +92,7 @@ interface Props {
 }
 
 const fmtEur = (n: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n || 0);
+  formatEuro(n || 0);
 
 const normCode = (s?: string | null) =>
   (s || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^0+/, "");

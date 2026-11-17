@@ -44,9 +44,9 @@ export interface PromoFormData {
 }
 
 const tipoConfig = {
-  sconto_percentuale: { label: "Sconto %", icon: Percent, color: "border-blue-300 bg-blue-50 dark:bg-blue-900/20" },
-  prezzo_fisso: { label: "Prezzo Fisso", icon: Tag, color: "border-green-300 bg-green-50 dark:bg-green-900/20" },
-  premio_fine_anno: { label: "Premio Fine Anno", icon: Trophy, color: "border-amber-300 bg-amber-50 dark:bg-amber-900/20" },
+  sconto_percentuale: { label: "Sconto %", icon: Percent, color: "border-primary/30 bg-primary/10 " },
+  prezzo_fisso: { label: "Prezzo Fisso", icon: Tag, color: "border-success/30 bg-success/10 " },
+  premio_fine_anno: { label: "Premio Fine Anno", icon: Trophy, color: "border-warning/30 bg-warning/10 " },
 };
 
 export function PromoFormDialog({ 
@@ -213,14 +213,14 @@ export function PromoFormDialog({
                   step === s 
                     ? "bg-primary text-primary-foreground" 
                     : step > s 
-                      ? "bg-green-500 text-white" 
+                      ? "bg-success text-white" 
                       : "bg-muted text-muted-foreground"
                 } ${s > 1 && !isStep1Valid ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:opacity-80"}`}
               >
                 {step > s ? <Check className="h-4 w-4" /> : s}
               </button>
               {s < 3 && (
-                <div className={`flex-1 h-1 mx-2 rounded ${step > s ? "bg-green-500" : "bg-muted"}`} />
+                <div className={`flex-1 h-1 mx-2 rounded ${step > s ? "bg-success" : "bg-muted"}`} />
               )}
             </div>
           ))}
@@ -337,35 +337,35 @@ export function PromoFormDialog({
                   </div>
 
                   {/* Cartoni Omaggio - Collapsible */}
-                  <div className="rounded-xl border border-green-200 dark:border-green-800 overflow-hidden">
+                  <div className="rounded-xl border border-success/30  overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setShowCartoniOmaggio(!showCartoniOmaggio)}
-                      className="w-full p-4 bg-green-50 dark:bg-green-900/20 flex items-center justify-between hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                      className="w-full p-4 bg-success/10  flex items-center justify-between hover:bg-success/10  transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <Gift className="h-5 w-5 text-green-600" />
-                        <span className="font-semibold text-green-800 dark:text-green-300">Promozione Cartoni Omaggio</span>
+                        <Gift className="h-5 w-5 text-success" />
+                        <span className="font-semibold text-success ">Promozione Cartoni Omaggio</span>
                         {(form.cartoni_acquisto > 0 || form.cartoni_omaggio > 0) && (
-                          <Badge className="bg-green-600 text-white ml-2">
+                          <Badge className="bg-success text-white ml-2">
                             {form.cartoni_acquisto}+{form.cartoni_omaggio}
                           </Badge>
                         )}
                       </div>
                       <div className={`transform transition-transform ${showCartoniOmaggio ? "rotate-180" : ""}`}>
-                        <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
                     </button>
                     {showCartoniOmaggio && (
-                      <div className="p-4 bg-green-50/50 dark:bg-green-900/10 border-t border-green-200 dark:border-green-800">
-                        <p className="text-sm text-green-700 dark:text-green-400 mb-4">
+                      <div className="p-4 bg-success/10  border-t border-success/30 ">
+                        <p className="text-sm text-success  mb-4">
                           Es: Acquista 10 cartoni e ricevi 1 in omaggio (10+1)
                         </p>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-sm font-medium text-green-700 dark:text-green-400">
+                            <Label className="text-sm font-medium text-success ">
                               Acquista (cartoni)
                             </Label>
                             <Input 
@@ -378,7 +378,7 @@ export function PromoFormDialog({
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-sm font-medium text-green-700 dark:text-green-400">
+                            <Label className="text-sm font-medium text-success ">
                               Ricevi Omaggio (cartoni)
                             </Label>
                             <Input 
@@ -392,8 +392,8 @@ export function PromoFormDialog({
                           </div>
                         </div>
                         {form.cartoni_acquisto > 0 && form.cartoni_omaggio > 0 && (
-                          <div className="mt-4 p-3 bg-green-100 dark:bg-green-800/30 rounded-lg">
-                            <p className="text-sm font-medium text-green-800 dark:text-green-200 text-center">
+                          <div className="mt-4 p-3 bg-success/10  rounded-lg">
+                            <p className="text-sm font-medium text-success  text-center">
                               ✅ Promo: {form.cartoni_acquisto}+{form.cartoni_omaggio} (Acquista {form.cartoni_acquisto} cartoni, ricevi {form.cartoni_omaggio} gratis)
                             </p>
                           </div>
@@ -403,11 +403,11 @@ export function PromoFormDialog({
                   </div>
 
                   {/* Periodi Aggiuntivi */}
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                  <div className="p-4 bg-muted/50 rounded-xl border border-border">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-purple-600" />
-                        <Label className="font-semibold text-purple-800 dark:text-purple-300">Periodi Aggiuntivi</Label>
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                        <Label className="font-semibold text-foreground">Periodi Aggiuntivi</Label>
                       </div>
                       <Button 
                         type="button" 
@@ -423,7 +423,7 @@ export function PromoFormDialog({
                         Aggiungi
                       </Button>
                     </div>
-                    <p className="text-xs text-purple-600 dark:text-purple-400 mb-3">
+                    <p className="text-xs text-muted-foreground mb-3">
                       Aggiungi periodi separati durante l'anno (es. Marzo, Giugno, Ottobre)
                     </p>
                     {form.periodi_aggiuntivi.length === 0 && (
@@ -505,28 +505,28 @@ export function PromoFormDialog({
           {/* Step 2: Clienti */}
           {step === 2 && (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200">
+              <div className="flex items-center gap-3 p-4 bg-primary/10  rounded-xl border border-primary/30">
                 <Checkbox 
                   id="tutti_clienti" 
                   checked={form.tutti_clienti} 
                   onCheckedChange={(c) => setForm(f => ({ ...f, tutti_clienti: !!c, clienti_ids: [] }))} 
                 />
                 <div className="flex-1">
-                  <Label htmlFor="tutti_clienti" className="font-semibold text-blue-800 dark:text-blue-300 cursor-pointer">
+                  <Label htmlFor="tutti_clienti" className="font-semibold text-primary  cursor-pointer">
                     Applica a tutti i clienti
                   </Label>
-                  <p className="text-xs text-blue-600">Questa promozione sarà visibile per tutti</p>
+                  <p className="text-xs text-primary">Questa promozione sarà visibile per tutti</p>
                 </div>
-                <Users className="h-8 w-8 text-blue-500" />
+                <Users className="h-8 w-8 text-primary" />
               </div>
 
               {!form.tutti_clienti && (
                 <>
                   {/* Selected Clients Summary */}
                   {selectedClienti.length > 0 && (
-                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200">
+                    <div className="p-3 bg-success/10  rounded-lg border border-success/30">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-green-800 dark:text-green-300">
+                        <span className="text-sm font-medium text-success ">
                           {selectedClienti.length} clienti selezionati
                         </span>
                         <Button 
@@ -620,9 +620,9 @@ export function PromoFormDialog({
 
               {/* Selected Products Summary */}
               {selectedProdotti.length > 0 && (
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200">
+                <div className="p-3 bg-success/10  rounded-lg border border-success/30">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-green-800 dark:text-green-300">
+                    <span className="text-sm font-medium text-success ">
                       {selectedProdotti.length} prodotti selezionati
                     </span>
                     <Button 

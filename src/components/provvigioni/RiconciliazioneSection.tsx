@@ -36,6 +36,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Upload, FileText, Trash2, RefreshCw, MoreVertical, ExternalLink, Sparkles, AlertTriangle, ChevronDown, CheckCircle2, Link2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmPagamentoDialog } from "./ConfirmPagamentoDialog";
+import { formatEuro as formatEuroShared } from "@/lib/format";
 
 const TIPI_DOC = [
   { v: "principale", l: "Estratto principale" },
@@ -55,7 +56,7 @@ const TRIMESTRI = [
 
 function formatEuro(n?: number | null) {
   if (n == null) return "—";
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
+  return formatEuroShared(n);
 }
 function signedEuro(n?: number | null) {
   if (n == null) return "—";
@@ -64,17 +65,17 @@ function signedEuro(n?: number | null) {
 }
 
 const STATUS_CLS: Record<string, string> = {
-  esatta_confermata: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
-  esatta: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
-  probabile: "bg-yellow-500/15 text-yellow-600 border-yellow-500/30",
-  multipli: "bg-amber-500/15 text-amber-600 border-amber-500/30",
-  mancante_crm: "bg-orange-500/15 text-orange-600 border-orange-500/30",
-  mancante_pdf: "bg-red-500/15 text-red-600 border-red-500/30",
-  straordinaria: "bg-blue-500/15 text-blue-600 border-blue-500/30",
-  bonus: "bg-blue-500/15 text-blue-600 border-blue-500/30",
+  esatta_confermata: "bg-success/10 text-success border-success/30",
+  esatta: "bg-success/10 text-success border-success/30",
+  probabile: "bg-warning/10 text-warning border-warning/30",
+  multipli: "bg-warning/10 text-warning border-warning/30",
+  mancante_crm: "bg-warning/10 text-warning border-warning/30",
+  mancante_pdf: "bg-destructive/10 text-destructive border-destructive/30",
+  straordinaria: "bg-primary/10 text-primary border-primary/30",
+  bonus: "bg-primary/10 text-primary border-primary/30",
   ignorata: "bg-muted text-muted-foreground border-muted",
   da_verificare: "bg-muted text-muted-foreground border-muted",
-  verificata: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
+  verificata: "bg-success/10 text-success border-success/30",
 };
 
 function StatusBadge({ status, verified }: { status: string; verified?: boolean }) {
@@ -85,10 +86,10 @@ function StatusBadge({ status, verified }: { status: string; verified?: boolean 
 
 function EsitoBadge({ esito }: { esito: string | null }) {
   if (!esito) return null;
-  const cls = esito === "corretto" ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/30"
-    : esito === "extra" ? "bg-blue-500/15 text-blue-600 border-blue-500/30"
+  const cls = esito === "corretto" ? "bg-success/10 text-success border-success/30"
+    : esito === "extra" ? "bg-primary/10 text-primary border-primary/30"
     : esito === "dati_insufficienti" ? "bg-muted text-muted-foreground border-muted"
-    : "bg-red-500/15 text-red-600 border-red-500/30";
+    : "bg-destructive/10 text-destructive border-destructive/30";
   return <Badge variant="outline" className={cls}>{ESITO_LABEL[esito] ?? esito}</Badge>;
 }
 
@@ -340,11 +341,11 @@ function RowDetailPanel({ r }: { r: EstrattoRiga }) {
         <div className="text-xs font-semibold uppercase text-muted-foreground">Differenze</div>
         <div className="text-sm space-y-1">
           <div className="flex justify-between"><span>Imponibile</span><span>{r.imponibile != null && crmImp != null ? signedEuro(r.imponibile - crmImp) : "—"}</span></div>
-          <div className="flex justify-between"><span>Provvigione</span><span className={diffProv == null ? "" : Math.abs(diffProv) < 0.01 ? "text-emerald-600" : diffProv < 0 ? "text-red-600 font-medium" : "text-blue-600 font-medium"}>{diffProv != null ? signedEuro(diffProv) : "—"}</span></div>
+          <div className="flex justify-between"><span>Provvigione</span><span className={diffProv == null ? "" : Math.abs(diffProv) < 0.01 ? "text-success" : diffProv < 0 ? "text-destructive font-medium" : "text-primary font-medium"}>{diffProv != null ? signedEuro(diffProv) : "—"}</span></div>
           {daysDiff != null && <div className="flex justify-between"><span>Giorni fra date</span><span>{daysDiff}g</span></div>}
         </div>
         {diffProv != null && diffProv < -0.01 && (
-          <div className="text-xs mt-2 p-2 rounded bg-red-500/10 border border-red-500/30 text-red-700">
+          <div className="text-xs mt-2 p-2 rounded bg-destructive/10 border border-destructive/30 text-destructive">
             Possibile importo da recuperare: <b>{formatEuro(Math.abs(diffProv))}</b>
           </div>
         )}
@@ -353,7 +354,7 @@ function RowDetailPanel({ r }: { r: EstrattoRiga }) {
             <div className="text-xs font-semibold uppercase text-muted-foreground mb-1">Motivo del punteggio ({r.match_score}%)</div>
             <ul className="text-xs space-y-0.5">
               {r.score_breakdown.map((p: any, i: number) => (
-                <li key={i}>• {p.label} {p.pts > 0 ? <span className="text-emerald-600">+{p.pts}</span> : <span className="text-muted-foreground">0</span>}</li>
+                <li key={i}>• {p.label} {p.pts > 0 ? <span className="text-success">+{p.pts}</span> : <span className="text-muted-foreground">0</span>}</li>
               ))}
             </ul>
           </div>
@@ -565,10 +566,10 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
               const crmProv = crmImp != null && r.aliquota != null ? crmImp * (r.aliquota / 100) : null;
               const provAttesa = r.crm_only ? (Number(r.provvigione_attesa) || crmProv) : null;
               const diffProv = crmProv != null && r.provvigione != null ? r.provvigione - crmProv : null;
-              const diffCls = diffProv == null ? "" : Math.abs(diffProv) < 0.01 ? "text-emerald-600" : diffProv < 0 ? "text-red-600 font-medium" : "text-blue-600 font-medium";
+              const diffCls = diffProv == null ? "" : Math.abs(diffProv) < 0.01 ? "text-success" : diffProv < 0 ? "text-destructive font-medium" : "text-primary font-medium";
               const isOpen = expanded.has(r.id);
               const isCrmOnly = r.crm_only;
-              const rowCls = isCrmOnly ? "bg-red-500/5" : r.esito_economico && !["corretto", "dati_insufficienti"].includes(r.esito_economico) ? "bg-yellow-500/5" : "";
+              const rowCls = isCrmOnly ? "bg-destructive/10" : r.esito_economico && !["corretto", "dati_insufficienti"].includes(r.esito_economico) ? "bg-warning/10" : "";
               const crossCands: any[] = Array.isArray(r.cross_estratto_candidates) ? r.cross_estratto_candidates : [];
               return (
                 <Fragment key={r.id}>
@@ -577,7 +578,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                       {!r.crm_only && !r.pagata && (
                         <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleSel(r.id)} />
                       )}
-                      {r.pagata && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                      {r.pagata && <CheckCircle2 className="h-4 w-4 text-success" />}
                     </TableCell>
                     <TableCell className="p-1">
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => toggleExpand(r.id)}>
@@ -591,7 +592,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                     {!simpleView && <TableCell className="text-right">{r.aliquota != null ? `${r.aliquota}%` : "—"}</TableCell>}
                     <TableCell className="text-right font-medium">
                       {isCrmOnly && r.provvigione == null ? (
-                        <span className="text-red-600" title="Provvigione attesa (non riscontrata nel PDF)">
+                        <span className="text-destructive" title="Provvigione attesa (non riscontrata nel PDF)">
                           {provAttesa != null ? `att. ${formatEuro(provAttesa)}` : "—"}
                         </span>
                       ) : formatEuro(r.provvigione)}
@@ -627,7 +628,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                         }}>
                           {AZIONE_LABEL[r.azione_consigliata] ?? r.azione_consigliata}
                         </Button>
-                      ) : <span className="text-xs text-emerald-600 flex items-center gap-1"><CheckCircle2 className="h-3 w-3" />OK</span>}
+                      ) : <span className="text-xs text-success flex items-center gap-1"><CheckCircle2 className="h-3 w-3" />OK</span>}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -648,7 +649,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "contestazione_aperta", azione_consigliata: "contesta", motivo: `Contestazione da aprire con l'azienda: provvigione attesa ${provAttesa != null ? formatEuro(provAttesa) : "—"} non riconosciuta.` } })}><AlertTriangle className="h-4 w-4 mr-2" />Apri contestazione</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "contestato", motivo: "Contestazione inoltrata all'azienda mandante." } })}>Segna contestato</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "recuperato", esito_economico: "corretto", azione_consigliata: "nessuna", motivo: "Provvigione recuperata dopo contestazione." } })}><CheckCircle2 className="h-4 w-4 mr-2 text-emerald-600" />Segna recuperato</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "recuperato", esito_economico: "corretto", azione_consigliata: "nessuna", motivo: "Provvigione recuperata dopo contestazione." } })}><CheckCircle2 className="h-4 w-4 mr-2 text-success" />Segna recuperato</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "chiuso", azione_consigliata: "nessuna", esito_economico: "corretto", motivo: "Chiuso con motivazione dall'agente." } })}>Chiudi con motivazione</DropdownMenuItem>
                             </>
                           ) : (
@@ -673,8 +674,8 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                       <TableCell colSpan={simpleView ? 9 : 16} className="p-2">
                         <RowDetailPanel r={r} />
                         {isCrmOnly && crossCands.length > 0 && (
-                          <div className="mt-3 border rounded p-3 bg-amber-500/5">
-                            <div className="text-xs font-semibold uppercase text-amber-700 mb-2">Possibili riscontri in altri estratti</div>
+                          <div className="mt-3 border rounded p-3 bg-warning/10">
+                            <div className="text-xs font-semibold uppercase text-warning mb-2">Possibili riscontri in altri estratti</div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                               {crossCands.map((c: any, i: number) => (
                                 <div key={i} className="border rounded p-2 text-sm bg-background">
@@ -705,7 +706,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
       {/* Sticky action bar */}
       <div className="sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card/95 backdrop-blur p-3 shadow-sm">
         <div className="text-sm">
-          <b>{selected.size}</b> righe selezionate · <b>{new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(selectedTotal)}</b>
+          <b>{selected.size}</b> righe selezionate · <b>{formatEuro(selectedTotal)}</b>
           {selected.size === 0 && <span className="text-muted-foreground ml-2">Seleziona le provvigioni da segnare come pagate</span>}
         </div>
         <Button disabled={selected.size === 0} onClick={() => setConfirmOpen(true)}>
@@ -733,7 +734,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
 // ---------- KPI card ----------
 
 function KpiCard({ label, value, sub, tone, active, onClick }: { label: string; value: string; sub?: string; tone?: "green" | "orange" | "red" | "blue" | "yellow"; active?: boolean; onClick?: () => void }) {
-  const toneCls = tone === "green" ? "border-emerald-500/40" : tone === "orange" ? "border-orange-500/40" : tone === "red" ? "border-red-500/40" : tone === "blue" ? "border-blue-500/40" : tone === "yellow" ? "border-yellow-500/40" : "border-border";
+  const toneCls = tone === "green" ? "border-success/30" : tone === "orange" ? "border-warning/30" : tone === "red" ? "border-destructive/30" : tone === "blue" ? "border-primary/30" : tone === "yellow" ? "border-warning/30" : "border-border";
   const activeCls = active ? "ring-2 ring-primary" : "";
   return (
     <button type="button" onClick={onClick} disabled={!onClick} className={`text-left border rounded-lg p-3 bg-card transition hover:bg-muted/40 ${toneCls} ${activeCls}`}>

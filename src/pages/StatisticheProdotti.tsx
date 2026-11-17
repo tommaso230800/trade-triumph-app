@@ -18,11 +18,12 @@ import {
   comparisonRange, defaultCompareYear, matchesSearch, mergeStats, periodRange, sortRows, totals, variation,
   type MergedProductRow, type PeriodMode, type SortKey, type Variation,
 } from "@/lib/productStats";
+import { formatEuro } from "@/lib/format";
 
 const STORAGE_KEY = "statistiche-prodotti-filtri-v1";
 const PAGE = 50;
 const MONTHS = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
-const eur = (v: number) => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(v);
+const eur = (v: number) => formatEuro(v);
 const num = (v: number) => new Intl.NumberFormat("it-IT", { maximumFractionDigits: 0 }).format(v);
 const fmtDate = (iso: string) => iso.split("-").reverse().join("/");
 // Oggi nel fuso dell'agenzia (Europe/Rome), indipendente dal fuso del dispositivo.

@@ -32,7 +32,7 @@ export function WeeklyActivityWidget() {
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl bg-card border border-border/50 p-6 shadow-sm animate-pulse">
+      <div className="rounded-xl bg-card border p-4 sm:p-6 shadow-card animate-pulse">
         <div className="h-4 w-32 bg-muted rounded mb-4" />
         <div className="h-24 bg-muted rounded" />
       </div>
@@ -40,7 +40,7 @@ export function WeeklyActivityWidget() {
   }
 
   return (
-    <div className="rounded-2xl bg-card border border-border/50 p-6 shadow-sm">
+    <div className="rounded-xl bg-card border p-4 sm:p-6 shadow-card">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-lg">
@@ -58,15 +58,15 @@ export function WeeklyActivityWidget() {
 
       {/* Main stats - Modern Grid */}
       <div className="grid grid-cols-3 gap-4 mb-5">
-        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent">
+        <div className="text-center p-4 rounded-xl bg-muted/50">
           <p className="text-2xl font-bold text-primary">{stats?.totalReports || 0}</p>
           <p className="text-xs text-muted-foreground mt-1">Report</p>
         </div>
-        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-success/10 to-transparent">
+        <div className="text-center p-4 rounded-xl bg-muted/50">
           <p className="text-2xl font-bold text-success">{stats?.totalActivities || 0}</p>
           <p className="text-xs text-muted-foreground mt-1">Attività</p>
         </div>
-        <div className="text-center p-4 rounded-xl bg-gradient-to-br from-info/10 to-transparent">
+        <div className="text-center p-4 rounded-xl bg-muted/50">
           <p className="text-2xl font-bold text-info">{stats?.clientiContattati || 0}</p>
           <p className="text-xs text-muted-foreground mt-1">Clienti</p>
         </div>

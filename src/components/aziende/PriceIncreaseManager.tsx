@@ -322,9 +322,9 @@ export function PriceIncreaseManager() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {isFuture ? (
-                      <Badge className="bg-blue-100 text-blue-800">Futuro</Badge>
+                      <Badge className="bg-primary/10 text-primary">Futuro</Badge>
                     ) : (
-                      <Badge className="bg-green-100 text-green-800">Attivo</Badge>
+                      <Badge className="bg-success/10 text-success">Attivo</Badge>
                     )}
                     <Button
                       variant="ghost"

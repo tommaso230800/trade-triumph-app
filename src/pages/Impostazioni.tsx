@@ -203,7 +203,7 @@ const Impostazioni = () => {
           </CardHeader>
           <CardContent className="space-y-6 p-4 sm:p-6 pt-0 sm:pt-0">
             <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-muted/50">
-              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-xl sm:text-2xl font-bold text-primary-foreground flex-shrink-0">
+              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-primary flex items-center justify-center text-xl sm:text-2xl font-bold text-primary-foreground flex-shrink-0">
                 {user?.email?.charAt(0).toUpperCase() || "U"}
               </div>
               <div className="flex-1 min-w-0">

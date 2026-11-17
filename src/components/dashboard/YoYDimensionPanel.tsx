@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { SectionCard } from "@/components/dashboard/SectionCard";
 import { cn } from "@/lib/utils";
 import type { DimensionYoY } from "@/hooks/useKPIYoY";
+import { formatEuroInt, formatNumber } from "@/lib/format";
 
 const fmtEUR = (v: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
+  formatEuroInt(v);
 
 interface YoYDimensionPanelProps {
   title: string;
@@ -82,7 +83,7 @@ export function YoYDimensionPanel({ title, data, names, yearCurr, yearPrev, topN
                     )}
                   >
                     {it.delta >= 0 ? "+" : ""}
-                    {it.deltaPct.toFixed(0)}%
+                    {formatNumber(it.deltaPct, 0)}%
                   </Badge>
                 </div>
               )}

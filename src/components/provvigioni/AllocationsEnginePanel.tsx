@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { useReconciliationEngine } from "@/hooks/useReconciliationEngine";
 import { Loader2, Save, Trash2, Layers } from "lucide-react";
 import { useMemo } from "react";
+import { formatEuroInt } from "@/lib/format";
 
 const fmtEur = (n: number) =>
-  n.toLocaleString("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  formatEuroInt(n);
 
 type Props = {
   estrattoId?: string | null;
@@ -123,9 +124,9 @@ function Stat({
 }) {
   const cls =
     tone === "ok"
-      ? "text-emerald-500"
+      ? "text-success"
       : tone === "warn"
-      ? "text-amber-500"
+      ? "text-warning"
       : tone === "muted"
       ? "text-muted-foreground"
       : "text-foreground";

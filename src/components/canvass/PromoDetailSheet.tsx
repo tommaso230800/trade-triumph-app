@@ -10,6 +10,7 @@ import {
   Percent, Tag, Trophy, Building2, Users, Package, Calendar, 
   Gift, CheckCircle2, AlertTriangle, Clock, AlertCircle, Pencil, Trash2
 } from "lucide-react";
+import { formatEuro } from "@/lib/format";
 
 interface PromoDetailSheetProps {
   promo: Canvass | null;
@@ -20,13 +21,13 @@ interface PromoDetailSheetProps {
 }
 
 const tipoConfig = {
-  sconto_percentuale: { label: "Sconto %", icon: Percent, color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
-  prezzo_fisso: { label: "Prezzo Fisso", icon: Tag, color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300" },
-  premio_fine_anno: { label: "Premio Fine Anno", icon: Trophy, color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
+  sconto_percentuale: { label: "Sconto %", icon: Percent, color: "bg-primary/10 text-primary  " },
+  prezzo_fisso: { label: "Prezzo Fisso", icon: Tag, color: "bg-success/10 text-success  " },
+  premio_fine_anno: { label: "Premio Fine Anno", icon: Trophy, color: "bg-warning/10 text-warning  " },
 };
 
 const formatCurrency = (value: number) => 
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 export function PromoDetailSheet({ promo, open, onOpenChange, onEdit, onDelete }: PromoDetailSheetProps) {
   if (!promo) return null;
@@ -35,7 +36,7 @@ export function PromoDetailSheet({ promo, open, onOpenChange, onEdit, onDelete }
   const todayStr = format(today, "yyyy-MM-dd");
   
   const getPromoStatus = () => {
-    if (!promo.attivo) return { label: "Disattivata", color: "bg-gray-100 text-gray-600", icon: AlertCircle };
+    if (!promo.attivo) return { label: "Disattivata", color: "bg-muted text-muted-foreground", icon: AlertCircle };
     
     const isInMainPeriod = promo.data_inizio <= todayStr && promo.data_fine >= todayStr;
     const isInAdditionalPeriod = promo.canvass_periodi?.some(p => 
@@ -48,16 +49,16 @@ export function PromoDetailSheet({ promo, open, onOpenChange, onEdit, onDelete }
       
       if (nextEnd) {
         const daysLeft = differenceInDays(parseISO(nextEnd), today);
-        if (daysLeft <= 7) return { label: `Scade tra ${daysLeft}g`, color: "bg-orange-100 text-orange-800", icon: AlertTriangle };
+        if (daysLeft <= 7) return { label: `Scade tra ${daysLeft}g`, color: "bg-warning/10 text-warning", icon: AlertTriangle };
       }
-      return { label: "Attiva", color: "bg-green-100 text-green-800", icon: CheckCircle2 };
+      return { label: "Attiva", color: "bg-success/10 text-success", icon: CheckCircle2 };
     }
     
     const allEndDates = [promo.data_fine, ...(promo.canvass_periodi?.map(p => p.data_fine) || [])];
     const latestEnd = allEndDates.sort().pop() || promo.data_fine;
-    if (isBefore(parseISO(latestEnd), today)) return { label: "Scaduta", color: "bg-red-100 text-red-800", icon: AlertCircle };
+    if (isBefore(parseISO(latestEnd), today)) return { label: "Scaduta", color: "bg-destructive/10 text-destructive", icon: AlertCircle };
     
-    return { label: "Futura", color: "bg-purple-100 text-purple-800", icon: Clock };
+    return { label: "Futura", color: "bg-info/10 text-info", icon: Clock };
   };
 
   const status = getPromoStatus();
@@ -107,10 +108,10 @@ export function PromoDetailSheet({ promo, open, onOpenChange, onEdit, onDelete }
               </div>
               
               {promo.cartoni_omaggio > 0 && (
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="p-3 bg-success/10  rounded-lg border border-success/30 ">
                   <div className="flex items-center gap-2">
-                    <Gift className="h-4 w-4 text-green-600" />
-                    <span className="font-medium text-green-800 dark:text-green-300">
+                    <Gift className="h-4 w-4 text-success" />
+                    <span className="font-medium text-success ">
                       Prendi {promo.cartoni_acquisto}, ricevi {promo.cartoni_omaggio} omaggio
                     </span>
                   </div>
@@ -147,8 +148,8 @@ export function PromoDetailSheet({ promo, open, onOpenChange, onEdit, onDelete }
                   <Separator />
                   <p className="text-xs text-muted-foreground">Periodi Aggiuntivi</p>
                   {promo.canvass_periodi.map((periodo, idx) => (
-                    <div key={idx} className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg flex justify-between items-center border border-purple-200 dark:border-purple-800">
-                      <span className="text-sm text-purple-800 dark:text-purple-300">Periodo {idx + 2}</span>
+                    <div key={idx} className="p-3 bg-muted/50 rounded-lg flex justify-between items-center border border-border">
+                      <span className="text-sm text-foreground">Periodo {idx + 2}</span>
                       <span className="text-sm font-medium">
                         {format(parseISO(periodo.data_inizio), "dd MMM", { locale: it })} - {format(parseISO(periodo.data_fine), "dd MMM", { locale: it })}
                       </span>
@@ -169,10 +170,10 @@ export function PromoDetailSheet({ promo, open, onOpenChange, onEdit, onDelete }
             </CardHeader>
             <CardContent>
               {promo.tutti_clienti ? (
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-center">
-                  <Users className="h-6 w-6 mx-auto mb-2 text-blue-600" />
-                  <p className="font-medium text-blue-800 dark:text-blue-300">Tutti i Clienti</p>
-                  <p className="text-xs text-blue-600">Questa promozione si applica a tutti</p>
+                <div className="p-3 bg-primary/10  rounded-lg text-center">
+                  <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
+                  <p className="font-medium text-primary ">Tutti i Clienti</p>
+                  <p className="text-xs text-primary">Questa promozione si applica a tutti</p>
                 </div>
               ) : (
                 <div className="space-y-2">

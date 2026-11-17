@@ -97,9 +97,10 @@ import { useAziendaColorMap, aziendaColorValue } from "@/lib/aziendaColor";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { formatEuroInt, formatNumber } from "@/lib/format";
 
 const fmtEur = (v: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
+  formatEuroInt(v);
 
 const STATO_CONFIG: Record<StatoProvvigione, { label: string; color: string; rowBg?: string; icon: any; iconColor: string }> = {
   pagata: { label: "Pagata", color: "status-prov-paid", icon: CheckCircle2, iconColor: "text-scatto-success" },
@@ -431,7 +432,7 @@ const Provvigioni = () => {
           <KPICard icon={<TrendingUp />} label="Fatturato generato" value={fmtEur(analytics.kpi.fatturato)} />
           <KPICard icon={<FileText />} label="Numero ordini" value={String(analytics.kpi.nOrdini)} />
           <KPICard icon={<Receipt />} label="Ticket medio" value={fmtEur(analytics.kpi.ticketMedio)} />
-          <KPICard icon={<Percent />} label="% media provv." value={`${analytics.kpi.pctMediaProvv.toFixed(2)}%`} />
+          <KPICard icon={<Percent />} label="% media provv." value={`${formatNumber(analytics.kpi.pctMediaProvv, 2)}%`} />
           <GrowthCard label="Vs mese scorso" value={analytics.kpi.growthMoM} />
           <GrowthCard label="Vs stesso mese A-1" value={analytics.kpi.growthYoY} />
           <ObjectiveCard target={analytics.kpi.obiettivoMensile} current={analytics.kpi.provvMese} pct={analytics.kpi.completamentoObiettivo} />
@@ -530,10 +531,10 @@ const Provvigioni = () => {
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--scatto-line))" />
                           <XAxis dataKey="mese" stroke="hsl(var(--scatto-muted))" fontSize={11} />
                           <YAxis yAxisId="left" stroke="hsl(var(--scatto-muted))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
-                          <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--scatto-success))" fontSize={11} tickFormatter={(v) => `${v.toFixed(1)}%`} domain={["dataMin - 1", "dataMax + 1"]} />
+                          <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--scatto-success))" fontSize={11} tickFormatter={(v) => `${formatNumber(v, 1)}%`} domain={["dataMin - 1", "dataMax + 1"]} />
                           <Tooltip
                             contentStyle={{ background: "hsl(var(--scatto-surface))", border: "1px solid hsl(var(--scatto-line))", borderRadius: 8 }}
-                            formatter={(v: number, name: string) => (name === "fatturato" ? [fmtEur(v), "Fatturato"] : [`${v.toFixed(1)}%`, "Provvigione effettiva"])}
+                            formatter={(v: number, name: string) => (name === "fatturato" ? [fmtEur(v), "Fatturato"] : [`${formatNumber(v, 1)}%`, "Provvigione effettiva"])}
                           />
                           <Legend wrapperStyle={{ fontSize: 11 }} formatter={(value) => (value === "fatturato" ? "Fatturato" : "Provvigione effettiva %")} />
                           {mediaIncidenza > 0 && (
@@ -542,7 +543,7 @@ const Provvigioni = () => {
                               y={mediaIncidenza}
                               stroke="hsl(var(--scatto-success))"
                               strokeDasharray="5 4"
-                              label={{ value: `media ${mediaIncidenza.toFixed(1)}%`, position: "insideBottomRight", fill: "hsl(var(--scatto-success))", fontSize: 11 }}
+                              label={{ value: `media ${formatNumber(mediaIncidenza, 1)}%`, position: "insideBottomRight", fill: "hsl(var(--scatto-success))", fontSize: 11 }}
                             />
                           )}
                           <Bar yAxisId="left" dataKey="fatturato" fill="hsl(var(--scatto-info) / 0.22)" radius={[3, 3, 0, 0]} name="fatturato" />
@@ -993,7 +994,7 @@ const Provvigioni = () => {
                         <h3 className="truncate font-display text-base font-semibold tracking-tight text-scatto-ink">{a.nome}</h3>
                         <p className="text-xs text-scatto-muted">{a.ordini} ordini · {a.clienti} clienti</p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-scatto-accent/10 px-2.5 py-0.5 text-xs font-semibold text-scatto-accent">{a.incidenza.toFixed(0)}%</span>
+                      <span className="shrink-0 rounded-full bg-scatto-accent/10 px-2.5 py-0.5 text-xs font-semibold text-scatto-accent">{formatNumber(a.incidenza, 0)}%</span>
                     </header>
                     <div className="space-y-3 p-4">
                       <div className="grid grid-cols-2 gap-3 text-sm">
@@ -1238,7 +1239,7 @@ function GrowthCard({ label, value }: { label: string; value: number }) {
         <p className="text-xs text-scatto-muted mb-2">{label}</p>
         <div className={`flex items-center gap-1 ${color}`}>
           <Icon className="h-5 w-5" />
-          <p className="text-lg font-bold tabular-nums">{value > 0 ? "+" : ""}{value.toFixed(1)}%</p>
+          <p className="text-lg font-bold tabular-nums">{value > 0 ? "+" : ""}{formatNumber(value, 1)}%</p>
         </div>
       </div>
     </div>
@@ -1253,7 +1254,7 @@ function ObjectiveCard({ target, current, pct }: { target: number; current: numb
           <p className="text-xs text-scatto-muted">Obiettivo mensile</p>
           <Target className="h-4 w-4 text-scatto-accent" />
         </div>
-        <p className="text-lg font-bold tabular-nums text-scatto-ink">{pct.toFixed(0)}%</p>
+        <p className="text-lg font-bold tabular-nums text-scatto-ink">{formatNumber(pct, 0)}%</p>
         <Progress value={Math.min(100, pct)} className="h-1.5" />
         <p className="text-xs tabular-nums text-scatto-muted">{fmtEur(current)} / {fmtEur(target)}</p>
       </div>

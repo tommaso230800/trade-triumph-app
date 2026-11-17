@@ -399,7 +399,7 @@ export function AIImportCanvassDialog({ open, onOpenChange }: Props) {
                 </TableHeader>
                 <TableBody>
                   {righe.map((r, idx) => (
-                    <TableRow key={idx} className={r.warnings?.length ? "bg-amber-500/5" : ""}>
+                    <TableRow key={idx} className={r.warnings?.length ? "bg-warning/10" : ""}>
                       <TableCell className="space-y-1">
                         <div className="text-xs text-muted-foreground">{r.prodotto_testo}</div>
                         <Select
@@ -426,7 +426,7 @@ export function AIImportCanvassDialog({ open, onOpenChange }: Props) {
                           </SelectContent>
                         </Select>
                         {r.warnings?.map((w, wi) => (
-                          <div key={wi} className="text-xs text-amber-600 flex items-center gap-1">
+                          <div key={wi} className="text-xs text-warning flex items-center gap-1">
                             <AlertTriangle className="h-3 w-3" />
                             {w}
                           </div>

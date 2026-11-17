@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { formatEuro } from "@/lib/format";
 
 type ParsedRiga = {
   codice_prodotto: string | null;
@@ -102,7 +103,7 @@ interface ImportPDFDialogProps {
 }
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(value);
+  formatEuro(value);
 
 export function ImportPDFDialog({
   open,

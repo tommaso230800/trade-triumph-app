@@ -12,12 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { STATO_COLORI } from "@/lib/googleMaps";
 import type { ClienteMappa } from "@/hooks/useMappaClienti";
+import { formatEuroInt } from "@/lib/format";
 
-const euro = new Intl.NumberFormat("it-IT", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 0,
-});
+const euro = { format: (n: number) => formatEuroInt(n) };
 
 const dataIt = (v: string | null) =>
   v ? new Date(v).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" }) : "N/D";

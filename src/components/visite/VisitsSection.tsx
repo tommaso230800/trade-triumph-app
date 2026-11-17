@@ -63,7 +63,7 @@ export function VisitsSection({ clienteId }: Props) {
                 <div className="flex items-center justify-between">
                   <div className="font-medium text-sm">{new Date(r.data_visita).toLocaleDateString("it-IT")}{r.esito && ` · ${r.esito}`}</div>
                   <div className="flex gap-1">
-                    {r.ordine_preso && <Badge className="bg-emerald-500/15 text-emerald-600 border-emerald-500/30">Ordine €{Number(r.valore_ordine).toFixed(2)}</Badge>}
+                    {r.ordine_preso && <Badge className="bg-success/10 text-success border-success/30">Ordine €{Number(r.valore_ordine).toFixed(2)}</Badge>}
                     {r.interesse_cliente && <Badge variant="outline">{r.interesse_cliente}</Badge>}
                   </div>
                 </div>

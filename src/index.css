@@ -15,7 +15,7 @@
     --popover-foreground: 222 34% 14%;
 
     /* Blu elettrico primario */
-    --primary: 220 95% 62%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 220 100% 75%;
 
@@ -30,31 +30,31 @@
     --accent-foreground: 152 100% 10%;
 
     /* Rosso */
-    --destructive: 358 82% 60%;
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 22% 78%;
+    --border: 220 22% 86%;
     --input: 0 0% 100%;
-    --ring: 220 95% 62%;
+    --ring: 221 83% 53%;
 
     --radius: 1rem;
 
     /* Status */
-    --success: 152 75% 48%;
+    --success: 152 76% 30%;
     --success-foreground: 0 0% 100%;
-    --warning: 45 100% 56%;
+    --warning: 32 95% 40%;
     --warning-foreground: 30 80% 8%;
-    --danger: 358 82% 60%;
+    --danger: 0 72% 50%;
     --danger-foreground: 0 0% 100%;
-    --info: 220 95% 62%;
+    --info: 221 83% 53%;
     --info-foreground: 0 0% 100%;
     --commission-unpaid: 28 92% 48%;
     --commission-contested: 280 65% 52%;
 
     /* Brand multi accent */
-    --accent-blue: 220 95% 62%;
-    --accent-red: 358 82% 60%;
-    --accent-green: 150 75% 48%;
+    --accent-blue: 221 83% 53%;
+    --accent-red: 0 72% 50%;
+    --accent-green: 152 76% 30%;
     --accent-yellow: 46 100% 56%;
 
     /* Identità azienda: palette fissa di 12 tinte, assegnata per hash dell'id
@@ -107,17 +107,19 @@
        Ordini (pilota del redesign). Non tocca --background/--card ecc. usati
        dal resto dell'app: nessun'altra pagina la referenzia.
        Bianco pulito (#fbfbfc) al posto del precedente beige/crema. */
-    --scatto-bg: 220 20% 97%;
-    --scatto-surface: 0 0% 100%;
-    --scatto-ink: 225 18% 9%;
-    --scatto-muted: 219 9% 64%;
-    --scatto-line: 220 14% 91%;
-    --scatto-accent: 336 74% 56%;
-    --scatto-success: 161 94% 30%;
-    --scatto-warning: 38 92% 50%;
-    --scatto-danger: 0 84% 60%;
-    --scatto-info: 214 68% 54%;
-    --scatto-violet: 258 74% 58%;
+    /* Palette "scatto" allineata ai token ufficiali: un solo accento (primary),
+       stati con gli stessi colori del resto dell'app. */
+    --scatto-bg: var(--background);
+    --scatto-surface: var(--card);
+    --scatto-ink: var(--foreground);
+    --scatto-muted: var(--muted-foreground);
+    --scatto-line: var(--border);
+    --scatto-accent: var(--primary);
+    --scatto-success: var(--success);
+    --scatto-warning: var(--warning);
+    --scatto-danger: var(--destructive);
+    --scatto-info: var(--info);
+    --scatto-violet: var(--info);
 
     /* Modulo ordine — direzione "Carta tecnica". Ambito locale ai componenti
        di creazione ordine: carta calda, grafite e blu operativo. */
@@ -144,13 +146,15 @@
     --sidebar-item-icon: 217 16% 35%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(220 95% 62%) 0%, hsl(258 90% 66%) 100%);
-    --gradient-spectrum: linear-gradient(120deg, hsl(220 95% 62%) 0%, hsl(150 75% 48%) 35%, hsl(46 100% 56%) 70%, hsl(358 82% 60%) 100%);
-    --gradient-noir: linear-gradient(180deg, hsl(216 35% 98%) 0%, hsl(210 30% 94%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(214 28% 97%) 100%);
-    --gradient-glass: linear-gradient(135deg, hsla(0,0%,100%,0.98) 0%, hsla(214,28%,97%,0.96) 100%);
-    --gradient-text-primary: linear-gradient(135deg, hsl(220 82% 40%) 0%, hsl(258 72% 46%) 100%);
-    --gradient-text-spectrum: linear-gradient(120deg, hsl(220 82% 40%), hsl(152 72% 30%), hsl(44 96% 36%), hsl(358 72% 45%));
+    /* Gradients — neutralizzati: niente sfumature decorative (vedi CLAUDE.md).
+       I nomi restano per compatibilità con le classi esistenti. */
+    --gradient-primary: linear-gradient(hsl(var(--primary)), hsl(var(--primary)));
+    --gradient-spectrum: linear-gradient(hsl(var(--primary)), hsl(var(--primary)));
+    --gradient-noir: linear-gradient(hsl(var(--background)), hsl(var(--background)));
+    --gradient-card: linear-gradient(hsl(var(--card)), hsl(var(--card)));
+    --gradient-glass: linear-gradient(hsl(var(--card)), hsl(var(--card)));
+    --gradient-text-primary: linear-gradient(hsl(var(--foreground)), hsl(var(--foreground)));
+    --gradient-text-spectrum: linear-gradient(hsl(var(--foreground)), hsl(var(--foreground)));
 
     /* Shadows */
     --shadow-xs: 0 1px 2px 0 hsl(220 30% 20% / 0.08);
@@ -158,12 +162,13 @@
     --shadow-md: 0 10px 28px -10px hsl(220 24% 22% / 0.16);
     --shadow-lg: 0 18px 42px -14px hsl(220 22% 20% / 0.2);
     --shadow-xl: 0 28px 56px -18px hsl(220 22% 18% / 0.24);
-    --shadow-card: 0 10px 26px -14px hsl(220 28% 18% / 0.16), 0 1px 0 0 hsl(0 0% 100% / 0.9) inset;
-    --shadow-card-hover: 0 22px 48px -16px hsl(220 50% 34% / 0.24), 0 0 0 1px hsl(220 95% 62% / 0.2);
-    --shadow-glow: 0 0 28px hsl(220 95% 62% / 0.2);
-    --shadow-glow-green: 0 0 28px hsl(150 75% 48% / 0.18);
-    --shadow-glow-red: 0 0 28px hsl(358 82% 60% / 0.18);
-    --shadow-glow-yellow: 0 0 28px hsl(46 100% 56% / 0.16);
+    /* Un solo livello di ombra leggera; niente glow colorati. */
+    --shadow-card: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-card-hover: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-glow: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-glow-green: none;
+    --shadow-glow-red: none;
+    --shadow-glow-yellow: none;
   }
 
   .dark {
@@ -173,7 +178,7 @@
     --card-foreground: 222 34% 15%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 34% 14%;
-    --primary: 220 95% 62%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
     --secondary: 216 30% 92%;
     --secondary-foreground: 222 28% 18%;
@@ -181,11 +186,11 @@
     --muted-foreground: 222 16% 34%;
     --accent: 152 75% 50%;
     --accent-foreground: 152 100% 10%;
-    --destructive: 358 82% 60%;
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 22% 78%;
+    --border: 220 22% 86%;
     --input: 0 0% 100%;
-    --ring: 220 95% 62%;
+    --ring: 221 83% 53%;
     --commission-unpaid: 28 92% 48%;
     --commission-contested: 280 65% 52%;
   }
@@ -239,7 +244,7 @@
   }
   ::-webkit-scrollbar-thumb:hover { background: hsl(220 80% 50%); background-clip: padding-box; border: 2px solid transparent; }
 
-  ::selection { background: hsl(220 95% 62% / 0.4); color: hsl(210 30% 98%); }
+  ::selection { background: hsl(var(--primary) / 0.2); }
 }
 
 @layer utilities {
@@ -247,7 +252,7 @@
   .gradient-spectrum { background: var(--gradient-spectrum); }
   .gradient-noir { background: var(--gradient-noir); }
   .gradient-card-elevated { background: var(--gradient-card); }
-  .gradient-glass { background: var(--gradient-glass); backdrop-filter: blur(18px) saturate(150%); -webkit-backdrop-filter: blur(18px) saturate(150%); }
+  .gradient-glass { background: var(--gradient-glass); }
 
   /* Backwards compat utilities (old gold names map to new primary) */
   .gradient-gold { background: var(--gradient-primary); }
@@ -330,13 +335,13 @@
   .touch-target { min-height: 44px; min-width: 44px; }
 
   .hover-lift { @apply transition-all duration-300 ease-smooth; }
-  .hover-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+  .hover-lift:hover { box-shadow: var(--shadow-card-hover); }
 
   .hover-scale { @apply transition-transform duration-200 ease-smooth; }
-  .hover-scale:hover { transform: scale(1.015); }
+  .hover-scale:hover { transform: none; }
 
   .hover-glow { transition: box-shadow 0.4s ease, transform 0.4s ease, border-color 0.4s ease; }
-  .hover-glow:hover { box-shadow: var(--shadow-glow); transform: translateY(-2px); border-color: hsl(220 95% 62% / 0.5); }
+  .hover-glow:hover { border-color: hsl(var(--primary) / 0.4); }
 
   .shimmer {
     background: linear-gradient(110deg, hsl(var(--muted)) 25%, hsl(var(--secondary)) 50%, hsl(var(--muted)) 75%);
@@ -391,24 +396,10 @@
 
   .table-mobile-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
 
-  .noise-overlay::before {
-    content: '';
-    position: absolute; inset: 0;
-    pointer-events: none;
-    opacity: 0.05;
-    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  }
+  .noise-overlay::before { content: none; }
 
   /* Sfondo "aurora" — statico, molto tenue, non domina mai il contenuto */
-  .aurora-bg {
-    position: absolute; inset: 0; pointer-events: none;
-    background:
-      radial-gradient(40% 35% at 20% 20%, hsla(220,95%,62%,0.035), transparent 60%),
-      radial-gradient(35% 30% at 80% 25%, hsla(150,75%,48%,0.028), transparent 60%),
-      radial-gradient(30% 25% at 70% 90%, hsla(358,82%,60%,0.024), transparent 60%),
-      radial-gradient(25% 25% at 15% 90%, hsla(46,100%,56%,0.02), transparent 60%);
-    filter: blur(48px);
-  }
+  .aurora-bg { display: none; }
 }
 
 @layer components {
@@ -420,9 +411,7 @@
     color: hsl(var(--card-foreground));
   }
   .card-interactive:hover {
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-3px);
-    border-color: hsl(220 95% 62% / 0.55);
+    border-color: hsl(var(--primary) / 0.4);
   }
 
   .page-title {
@@ -438,10 +427,9 @@
   .btn-gold {
     background: var(--gradient-primary);
     color: hsl(0 0% 100%);
-    box-shadow: 0 8px 22px -8px hsl(220 95% 62% / 0.7);
-    transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+    transition: filter 0.2s ease;
   }
-  .btn-gold:hover { transform: translateY(-1px); filter: brightness(1.08); box-shadow: 0 14px 32px -8px hsl(220 95% 62% / 0.9); }
+  .btn-gold:hover { filter: brightness(1.05); }
 }
 
 @keyframes spectrum-shift {
@@ -515,4 +503,14 @@
 a[href*="lovable.dev"][style*="position: fixed"],
 a[href*="lovable.dev"][style*="position:fixed"] {
   display: none !important;
+}
+
+/* Movimento solo come feedback, e mai per chi chiede meno movimento. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

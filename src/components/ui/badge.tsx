@@ -9,19 +9,19 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-primary/25 bg-primary/12 text-[hsl(var(--primary))] hover:bg-primary/20 hover:shadow-glow",
+          "border-primary/25 bg-primary/12 text-[hsl(var(--primary))] hover:bg-primary/20",
         secondary:
           "border-border bg-secondary text-secondary-foreground hover:border-primary/40",
         destructive:
-          "border-destructive/35 bg-destructive/12 text-[hsl(var(--accent-red))] hover:bg-destructive/18 hover:shadow-glow-red",
+          "border-destructive/35 bg-destructive/12 text-[hsl(var(--accent-red))] hover:bg-destructive/18",
         success:
-          "border-success/35 bg-success/12 text-[hsl(var(--accent-green))] hover:bg-success/18 hover:shadow-glow-green",
+          "border-success/35 bg-success/12 text-[hsl(var(--accent-green))] hover:bg-success/18",
         warning:
-          "border-warning/35 bg-warning/14 text-[hsl(var(--warning-foreground))] hover:bg-warning/22 hover:shadow-glow-yellow",
+          "border-warning/35 bg-warning/14 text-[hsl(var(--warning-foreground))] hover:bg-warning/22",
         info:
-          "border-info/35 bg-info/12 text-[hsl(var(--primary))] hover:bg-info/18 hover:shadow-glow",
+          "border-info/35 bg-info/12 text-[hsl(var(--primary))] hover:bg-info/18",
         spectrum:
-          "border-transparent text-white [background:var(--gradient-spectrum)] hover:shadow-glow",
+          "border-primary/25 bg-primary/12 text-[hsl(var(--primary))]",
         outline:
           "border-border bg-card text-foreground hover:border-primary/50 hover:text-primary",
       },
