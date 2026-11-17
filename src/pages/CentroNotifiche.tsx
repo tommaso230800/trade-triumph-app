@@ -187,7 +187,7 @@ export default function CentroNotifiche() {
               <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed p-8 text-center">
                 <Inbox className="h-6 w-6 text-muted-foreground" />
                 <p className="text-sm font-medium">{filtro === "non_lette" ? "Nessuna notifica da leggere" : "Nessuna notifica"}</p>
-                <p className="text-xs text-muted-foreground">Qui trovi nuovi ordini, ordini inviati e riordini in ritardo appena succedono.</p>
+                <p className="text-xs text-muted-foreground">Qui trovi nuovi ordini, ordini inviati, riordini in ritardo e promemoria appena succedono.</p>
               </div>
             ) : (
               <div className="space-y-6">
