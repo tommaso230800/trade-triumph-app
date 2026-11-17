@@ -1,0 +1,2 @@
+alter table public.notifiche drop constraint notifiche_categoria_check;
+alter table public.notifiche add constraint notifiche_categoria_check check (categoria = any (array['nuovo_ordine','ordine_inviato','riordino','promemoria','test']));
