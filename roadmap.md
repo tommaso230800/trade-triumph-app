@@ -1,5 +1,12 @@
 # Roadmap
 
+## Promemoria con notifiche push (17 novembre)
+- [x] Pagina Promemoria su `ai_promemoria` (tabella esistente): scaduti/oggi/domani/prossimi/fatti, "fatto" o "ricordamelo di nuovo", archivio fatti finché non eliminati
+- [x] Funzione `promemoria-alerts`: promemoria da fare arrivati all'ora → notifica al solo proprietario, stesso canale e anti-duplicato degli avvisi riordino; rinvio = nuova notifica; arretrati oltre 2 ore solo nel Centro notifiche senza push; 4 test
+- [x] Categoria "Promemoria" nelle preferenze e nel Centro notifiche; avviso con attivazione a un tocco nella pagina se il telefono non riceve notifiche
+- [ ] In Lovable: pubblicare la funzione, verificare che la categoria `promemoria` sia ammessa da `enqueue_notifica`/`notifiche`, programmare `promemoria-alerts` ogni 5 minuti (serve l'utente)
+- [ ] Prova su iPhone reale: promemoria tra 5–10 minuti, notifica ricevuta e apertura su /promemoria
+
 ## Centro notifiche e notifiche push (12 novembre)
 - [x] Archivio notifiche per utente, letture sincronizzate, preferenze per categoria
 - [x] Dispositivi: attivazione su tocco, stati, prova, invio a tutti i dispositivi abilitati (verificato con 3 dispositivi simulati: accettato, scaduto disattivato, non raggiungibile in riprova)

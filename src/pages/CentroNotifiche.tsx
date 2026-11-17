@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, CheckCheck, PackagePlus, Send, Clock, FlaskConical, Inbox } from "lucide-react";
+import { Bell, BellRing, CheckCheck, PackagePlus, Send, Clock, FlaskConical, Inbox } from "lucide-react";
 import { toast } from "sonner";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -13,20 +13,22 @@ import {
 } from "@/hooks/useNotifiche";
 import { cn } from "@/lib/utils";
 
-type Filtro = "tutte" | "non_lette" | "nuovo_ordine" | "ordine_inviato" | "riordino";
+type Filtro = "tutte" | "non_lette" | "nuovo_ordine" | "ordine_inviato" | "riordino" | "promemoria";
 const FILTRI: Array<{ id: Filtro; label: string }> = [
   { id: "tutte", label: "Tutte" },
   { id: "non_lette", label: "Non lette" },
   { id: "nuovo_ordine", label: "Nuovi ordini" },
   { id: "ordine_inviato", label: "Ordini inviati" },
   { id: "riordino", label: "Riordini" },
+  { id: "promemoria", label: "Promemoria" },
 ];
 
-const ICONS = { nuovo_ordine: PackagePlus, ordine_inviato: Send, riordino: Clock, test: FlaskConical } as const;
+const ICONS = { nuovo_ordine: PackagePlus, ordine_inviato: Send, riordino: Clock, promemoria: BellRing, test: FlaskConical } as const;
 const TONE = {
   nuovo_ordine: "bg-success/10 text-success",
   ordine_inviato: "bg-info/10 text-info",
   riordino: "bg-warning/10 text-warning",
+  promemoria: "bg-info/10 text-info",
   test: "bg-muted text-muted-foreground",
 } as const;
 

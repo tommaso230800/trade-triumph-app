@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ListSkeleton } from "@/components/ui/page-skeleton";
+import { PushActivationHint } from "@/components/notifiche/PushActivationHint";
 import {
   Dialog,
   DialogContent,
@@ -245,6 +246,8 @@ export default function PromemoriaPage() {
             Nuovo promemoria
           </Button>
         </header>
+
+        <PushActivationHint motivo="Senza notifiche i promemoria si vedono solo aprendo l’app." />
 
         {isLoading ? (
           <ListSkeleton rows={5} />
