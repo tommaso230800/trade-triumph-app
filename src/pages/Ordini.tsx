@@ -60,7 +60,7 @@ import { DashCard } from "@/components/dashboard/modern/DashCard";
 import { OrdiniSelectionBar } from "@/components/ordini/OrdiniSelectionBar";
 import type { OrdiniTableRow } from "@/components/ordini/ordiniShared";
 import type { OrdineCardAction } from "@/components/ordini/OrdineCard";
-import { NuovoOrdineDialog } from "@/components/ordini/NuovoOrdineDialog";
+import { NuovoOrdineDialog, type OrdinePrefill } from "@/components/ordini/NuovoOrdineDialog";
 import { OrderDraftsPanel } from "@/components/ordini/OrderDraftsPanel";
 import type { OrderDraftRow } from "@/hooks/useOrderDrafts";
 import { ModificaOrdineDialog } from "@/components/ordini/ModificaOrdineDialog";
@@ -90,6 +90,8 @@ const Ordini = () => {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [resumeDraft, setResumeDraft] = useState<OrderDraftRow | null>(null);
+  // Ordine letto dall'AI da un documento: si apre nel modulo per la revisione.
+  const [importPrefill, setImportPrefill] = useState<OrdinePrefill | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingOrdine, setEditingOrdine] = useState<Ordine | null>(null);
   const [isProformaOpen, setIsProformaOpen] = useState(false);
@@ -584,8 +586,9 @@ const Ordini = () => {
 
         <NuovoOrdineDialog
           open={isDialogOpen}
-          onOpenChange={(v) => { setIsDialogOpen(v); if (!v) setResumeDraft(null); }}
+          onOpenChange={(v) => { setIsDialogOpen(v); if (!v) { setResumeDraft(null); setImportPrefill(null); } }}
           draft={resumeDraft}
+          prefill={importPrefill}
           onOrderCreated={(data) => {
             setProformaData(data);
             setIsProformaOpen(true);
@@ -617,6 +620,12 @@ const Ordini = () => {
           aziende={aziende || []}
           prodotti={allProdotti || []}
           onProductsCreated={() => refetchProdotti()}
+          onReview={(prefill) => {
+            setResumeDraft(null);
+            setImportPrefill(prefill);
+            setIsDialogOpen(true);
+            toast.message("Controlla i dati letti dal documento", { description: "Correggi quello che serve e salva l'ordine." });
+          }}
           onImportComplete={async (data) => {
             try {
               const ordine = await createOrdine.mutateAsync({

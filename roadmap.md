@@ -1,5 +1,12 @@
 # Roadmap
 
+## Revisione import ordini e accisa prodotti (17 novembre)
+- [x] Import singolo PDF/Excel: dopo l'analisi AI "Rivedi e modifica" apre il modulo ordine già compilato (data, cliente, azienda, pagamento, sconti, note, cartoni, prezzo a pezzo, sconti di riga, omaggi), con confronto col totale del documento; salvataggio con le stesse regole degli ordini manuali
+- [x] Accisa per prodotto (€ a bottiglia), attivata solo dall'agente: scheda prodotto, elenco prodotti, import listino (proposta letta dall'AI, "Applica a tutti", aggiornamento dei soli campi accisa sui prodotti già presenti)
+- [x] Ordine: accisa a parte (omaggi esclusi) e "Totale con accisa"; il totale ordine resta l'imponibile, fatturato e provvigioni invariati; accisa memorizzata sulle righe dei nuovi ordini, storico invariato; 3 test
+- [ ] In Lovable: applicare `supabase/migrations/20261117120000_accisa_prodotti.sql` (solo colonne nuove) e ripubblicare `parse-products-pdf` (serve l'utente)
+- [ ] Prova reale: un prodotto Casoni con accisa, un ordine importato da PDF Casoni rivisto e salvato
+
 ## Promemoria con notifiche push (17 novembre)
 - [x] Pagina Promemoria su `ai_promemoria` (tabella esistente): scaduti/oggi/domani/prossimi/fatti, "fatto" o "ricordamelo di nuovo", archivio fatti finché non eliminati
 - [x] Funzione `promemoria-alerts`: promemoria da fare arrivati all'ora → notifica al solo proprietario, stesso canale e anti-duplicato degli avvisi riordino; rinvio = nuova notifica; arretrati oltre 2 ore solo nel Centro notifiche senza push; 4 test

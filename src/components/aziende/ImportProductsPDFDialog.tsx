@@ -16,6 +16,8 @@ import { Progress } from "@/components/ui/progress";
 import { FileUp, Loader2, Package, AlertTriangle, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { accisaValida } from "@/lib/accisa";
+import { formatEuro } from "@/lib/format";
 
 type ParsedProduct = {
   rowId: string;
@@ -34,6 +36,10 @@ type ParsedProduct = {
   prezzo_vendita: number | null;
   prezzo_riferimento: string | null;
   iva: number | null;
+  /** Accisa € a bottiglia letta dal listino (proposta). */
+  accisa_pezzo: number | null;
+  /** Scelta dell'agente: il prodotto ha l'accisa (mai automatica). */
+  ha_accisa: boolean;
   sconti: string | null;
   pagina: number | null;
   campi_mancanti: string[];
@@ -169,6 +175,8 @@ export function ImportProductsPDFDialog({
         prezzo_vendita: num(d.prezzo_vendita),
         prezzo_riferimento: d.prezzo_riferimento ? String(d.prezzo_riferimento) : null,
         iva: num(d.iva),
+        accisa_pezzo: accisaValida(d.accisa_pezzo),
+        ha_accisa: false,
         sconti: d.sconti ? String(d.sconti) : null,
         pagina: typeof row.page === "number" ? row.page : null,
         campi_mancanti: Array.isArray(d.campi_mancanti) ? (d.campi_mancanti as string[]) : [],
@@ -246,7 +254,12 @@ export function ImportProductsPDFDialog({
     setProducts((prev) => prev.map((p) => ({ ...p, selected })));
   const toggleExpand = (index: number) =>
     setProducts((prev) => prev.map((p, i) => (i === index ? { ...p, expanded: !p.expanded } : p)));
-  const updateProduct = (index: number, field: keyof ParsedProduct, value: string | number | null) =>
+  const [aggiornaAccisaEsistenti, setAggiornaAccisaEsistenti] = useState(true);
+  const conAccisaNelListino = products.filter((p) => p.accisa_pezzo != null).length;
+  const applicaAccisaATutti = (v: boolean) =>
+    setProducts((prev) => prev.map((p) => (p.accisa_pezzo != null ? { ...p, ha_accisa: v } : p)));
+
+  const updateProduct = (index: number, field: keyof ParsedProduct, value: string | number | boolean | null) =>
     setProducts((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
 
   const handleImport = async () => {
@@ -301,6 +314,8 @@ export function ImportProductsPDFDialog({
           strati: p.strati ?? 1,
           cartoni_per_strato: p.cartoni_per_strato ?? 1,
           quantita_pezzi: 0,
+          // Campi accisa solo se scelti: senza accisa l'inserimento resta identico.
+          ...(p.ha_accisa && accisaValida(p.accisa_pezzo) ? { ha_accisa: true, accisa_pezzo: accisaValida(p.accisa_pezzo) } : {}),
         }));
         const { error } = await supabase.from("prodotti").insert(batch);
         if (error) throw error;
@@ -309,7 +324,26 @@ export function ImportProductsPDFDialog({
         await supabase.from("product_import_rows").update({ imported: true }).in("id", rowIds);
       }
 
+      // Prodotti già presenti: si aggiorna SOLO l'accisa, e solo se scelta dall'agente.
+      let accisaAggiornate = 0;
+      if (aggiornaAccisaEsistenti) {
+        const daAggiornare = selectedProducts.filter((p) => !fresh.includes(p) && p.ha_accisa && accisaValida(p.accisa_pezzo));
+        for (const p of daAggiornare) {
+          let q = supabase
+            .from("prodotti")
+            .update({ ha_accisa: true, accisa_pezzo: accisaValida(p.accisa_pezzo) } as never, { count: "exact" })
+            .eq("azienda_id", aziendaId)
+            .is("deleted_at", null);
+          q = p.codice ? q.eq("codice", p.codice) : q.eq("nome", p.nome);
+          if (!p.codice && p.formato) q = q.eq("formato", p.formato);
+          const { error, count } = await q;
+          if (error) throw error;
+          accisaAggiornate += count ?? 0;
+        }
+      }
+
       setImportStats({ imported, skipped });
+      if (accisaAggiornate > 0) toast.success(`Accisa aggiornata su ${accisaAggiornate} prodotti già presenti`);
       setPhase("done");
       localStorage.removeItem(resumeKey(aziendaId));
       toast.success(`${imported} prodotti importati${skipped ? `, ${skipped} già presenti` : ""}`);
@@ -414,6 +448,23 @@ export function ImportProductsPDFDialog({
                 </div>
               </div>
 
+              {conAccisaNelListino > 0 && (
+                <div className="space-y-2 rounded-lg border p-3 text-sm">
+                  <p className="font-medium">Accisa trovata nel listino su {conAccisaNelListino} prodotti</p>
+                  <p className="text-xs text-muted-foreground">
+                    Decidi tu quali prodotti hanno l'accisa: spunta "Accisa" sul singolo prodotto oppure applicala a tutti quelli che la riportano.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" onClick={() => applicaAccisaATutti(true)}>Applica a tutti ({conAccisaNelListino})</Button>
+                    <Button variant="outline" size="sm" onClick={() => applicaAccisaATutti(false)}>Togli a tutti</Button>
+                  </div>
+                  <label className="flex min-h-11 items-center gap-2 text-xs">
+                    <Checkbox checked={aggiornaAccisaEsistenti} onCheckedChange={(v) => setAggiornaAccisaEsistenti(v === true)} />
+                    Aggiorna l'accisa anche dei prodotti già presenti (solo l'accisa, nient'altro)
+                  </label>
+                </div>
+              )}
+
               <ScrollArea className="flex-1 min-h-0 border rounded-md">
                 <div className="p-3 space-y-2">
                   {products.map((product, index) => {
@@ -448,6 +499,12 @@ export function ImportProductsPDFDialog({
                                 {product.expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                               </Button>
                             </div>
+                            {(product.accisa_pezzo != null || product.ha_accisa) && (
+                              <label className="flex min-h-11 w-fit items-center gap-2 text-xs">
+                                <Checkbox checked={product.ha_accisa} onCheckedChange={(v) => updateProduct(index, "ha_accisa", v === true)} />
+                                Accisa {product.accisa_pezzo != null ? `${formatEuro(product.accisa_pezzo)}/bt` : "— inserisci il valore nei dettagli"}
+                              </label>
+                            )}
                             {(product.duplicate || warn) && (
                               <p className="text-xs flex items-center gap-1 text-warning ">
                                 <AlertTriangle className="h-3 w-3" />
@@ -498,6 +555,20 @@ export function ImportProductsPDFDialog({
                                   <Label className="text-xs text-muted-foreground">Strati</Label>
                                   <Input type="number" value={product.strati ?? ""} onChange={(e) => updateProduct(index, "strati", num(e.target.value))} className="h-9 text-sm" />
                                 </div>
+                                <div>
+                                  <Label className="text-xs text-muted-foreground">Accisa €/bottiglia</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.0001"
+                                    value={product.accisa_pezzo ?? ""}
+                                    onChange={(e) => updateProduct(index, "accisa_pezzo", accisaValida(e.target.value))}
+                                    className="h-9 text-sm"
+                                  />
+                                </div>
+                                <label className="flex min-h-11 items-end gap-2 pb-2 text-xs">
+                                  <Checkbox checked={product.ha_accisa} onCheckedChange={(v) => updateProduct(index, "ha_accisa", v === true)} />
+                                  Prodotto con accisa
+                                </label>
                                 <div className="col-span-2">
                                   <Label className="text-xs text-muted-foreground">Sconti / condizioni</Label>
                                   <Input value={product.sconti ?? ""} onChange={(e) => updateProduct(index, "sconti", e.target.value || null)} className="h-9 text-sm" />

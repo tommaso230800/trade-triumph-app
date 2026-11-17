@@ -3,12 +3,13 @@
 // prezzo di listino generale del prodotto. Logica pura, condivisa tra i
 // dialog ordine e il Listino personalizzato in scheda cliente.
 
-export type PriceSource = "custom" | "last_order" | "list";
+export type PriceSource = "custom" | "last_order" | "list" | "document";
 
 export const PRICE_SOURCE_LABELS: Record<PriceSource, string> = {
   custom: "Prezzo personalizzato",
   last_order: "Ultimo prezzo applicato",
   list: "Prezzo di listino",
+  document: "Prezzo dal documento importato",
 };
 
 export interface LastOrderPriceInfo {

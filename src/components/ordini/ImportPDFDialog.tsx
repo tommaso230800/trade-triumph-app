@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatEuro } from "@/lib/format";
+import type { OrdinePrefill } from "./NuovoOrdineDialog";
 
 type ParsedRiga = {
   codice_prodotto: string | null;
@@ -100,6 +101,11 @@ interface ImportPDFDialogProps {
     righe: { prodotto_id: string; quantita_pezzi: number; quantita_cartoni: number; prezzo_unitario: number }[];
   }) => void;
   onProductsCreated?: () => void;
+  /**
+   * Se presente, al posto del salvataggio diretto si apre il modulo ordine
+   * già compilato con i dati letti dall'AI, da rivedere e correggere.
+   */
+  onReview?: (prefill: OrdinePrefill) => void;
 }
 
 const formatCurrency = (value: number) =>
@@ -113,6 +119,7 @@ export function ImportPDFDialog({
   prodotti,
   onImportComplete,
   onProductsCreated,
+  onReview,
 }: ImportPDFDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingProducts, setIsCreatingProducts] = useState(false);
@@ -488,6 +495,43 @@ export function ImportPDFDialog({
       return;
     }
 
+    const scartate = mappedRighe.length - validRighe.length;
+    if (onReview) {
+      onReview({
+        origine: "import",
+        cliente_id: selectedCliente,
+        azienda_id: selectedAzienda,
+        data_ordine: dataOrdine,
+        sconto: (parsedData?.sconto_pagamento_percentuale ?? parsedData?.sconto_percentuale) || 0,
+        sconto_merce: parsedData?.sconto_merce || 0,
+        tipo_pagamento: parsedData?.tipo_pagamento || undefined,
+        note: parsedData?.note || "",
+        totale_documento: parsedData?.imponibile_totale || 0,
+        righe: validRighe.map((r) => {
+          const prod = allProdotti.find((p) => p.id === r.prodotto_id);
+          const ppc = (r.pezzi_per_cartone && r.pezzi_per_cartone > 0)
+            ? r.pezzi_per_cartone
+            : (prod?.pezzi_per_cartone && prod.pezzi_per_cartone > 0 ? prod.pezzi_per_cartone : 1);
+          // Nel modulo il prezzo è a PEZZO e lordo: gli sconti di riga restano separati.
+          return {
+            prodotto_id: r.prodotto_id!,
+            quantita_cartoni: r.quantita_cartoni,
+            prezzo_unitario: r.is_omaggio ? 0 : Number(((r.prezzo_unitario || 0) / ppc).toFixed(4)),
+            sc1: r.sc1 ?? 0,
+            sc2: r.sc2 ?? 0,
+            sc3: r.sc3 ?? 0,
+            is_omaggio: !!r.is_omaggio,
+          };
+        }),
+      });
+      if (scartate > 0) {
+        toast.warning(`${scartate} ${scartate === 1 ? "riga non associata" : "righe non associate"} a un prodotto: aggiungile nel modulo se servono.`);
+      }
+      resetState();
+      onOpenChange(false);
+      return;
+    }
+
     onImportComplete({
       cliente_id: selectedCliente,
       azienda_id: selectedAzienda,
@@ -739,7 +783,7 @@ export function ImportPDFDialog({
             disabled={!parsedData || !selectedCliente || !selectedAzienda || !dataOrdine || mappedRighe.filter(r => r.prodotto_id).length === 0}
           >
             <Upload className="h-4 w-4 mr-2" />
-            Importa Ordine
+            {onReview ? "Rivedi e modifica" : "Importa Ordine"}
           </Button>
         </DialogFooter>
       </DialogContent>

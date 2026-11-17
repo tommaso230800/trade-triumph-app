@@ -51,6 +51,7 @@ import {
 } from "@/lib/priceResolver";
 import { OrdineRigaEditor } from "./OrdineRigaEditor";
 import { formatCurrency, parseDecimalInput, TIPI_PAGAMENTO } from "./ordiniShared";
+import { accisaValida } from "@/lib/accisa";
 
 type EditRiga = {
   id: string;
@@ -73,6 +74,7 @@ type EditRiga = {
   prezzo_baseline: string;
   prezzo_dirty_prompted?: boolean;
   prezzo_source?: PriceSource;
+  accisa_pezzo?: number | null;
   prezzo_source_info?: LastOrderPriceInfo;
 };
 
@@ -229,6 +231,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
       prezzo_baseline: prezzoIniziale,
       prezzo_source: resolved.source,
       prezzo_source_info: resolved.lastOrderInfo,
+      accisa_pezzo: prodotto.ha_accisa ? accisaValida(prodotto.accisa_pezzo) : null,
     };
     setEditRighe([...editRighe, nuovaRiga]);
     setSelectedProdotto("");
@@ -335,6 +338,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
             sc2: parseDecimalInput(riga.sc2),
             sc3: parseDecimalInput(riga.sc3),
             is_omaggio: false,
+            ...(accisaValida(riga.accisa_pezzo) ? { accisa_pezzo: accisaValida(riga.accisa_pezzo) } : {}),
           });
         } else {
           await updateRigaMutation.mutateAsync({
