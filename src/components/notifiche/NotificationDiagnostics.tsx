@@ -21,12 +21,13 @@ export function NotificationDiagnostics() {
     queryKey: ["notifiche_diagnostica"],
     refetchInterval: 60_000,
     queryFn: async () => {
-      const [summary, runs] = await Promise.all([
+      const [summary, runs, pmRuns] = await Promise.all([
         supabase.rpc("notifiche_diagnostica"),
         supabase.from("notifiche_sistema_log").select("*").eq("job", "controllo_riordini").order("started_at", { ascending: false }).limit(1),
+        supabase.from("notifiche_sistema_log").select("*").eq("job", "controllo_promemoria").order("started_at", { ascending: false }).limit(1),
       ]);
       if (summary.error) throw summary.error;
-      return { summary: summary.data as unknown as Diag, lastRun: runs.data?.[0] ?? null };
+      return { summary: summary.data as unknown as Diag, lastRun: runs.data?.[0] ?? null, lastPmRun: pmRuns.data?.[0] ?? null };
     },
   });
   const runNow = async () => {
@@ -85,6 +86,8 @@ export function NotificationDiagnostics() {
             )}
           </section>
 
+          <PromemoriaJob run={diag.data!.lastPmRun} onDone={() => diag.refetch()} />
+
           <section className="space-y-2">
             <h3 className="text-sm font-semibold">Errori recenti</h3>
             {diag.data!.summary.errori_recenti.length === 0 ? <p className="text-sm text-muted-foreground">Nessun errore negli ultimi 7 giorni.</p> : (
@@ -96,5 +99,79 @@ export function NotificationDiagnostics() {
         </>
       )}
     </Card>
+  );
+}
+
+type JobRun = { status: string; started_at: string; error: string | null; details: unknown } | null;
+
+/** Errore leggibile da una chiamata a funzione edge (non pubblicata, rifiutata, fallita). */
+async function describeInvokeError(error: unknown): Promise<string> {
+  const e = error as { name?: string; message?: string; context?: Response };
+  if (e?.name === "FunctionsHttpError" && e.context) {
+    const status = e.context.status;
+    if (status === 404) return "Funzione promemoria-alerts non pubblicata: va pubblicata in Lovable.";
+    try {
+      const body = await e.context.json();
+      return `${body?.error ?? "Errore"}${body?.details ? ` — ${body.details}` : ""} (HTTP ${status})`;
+    } catch {
+      return `Errore HTTP ${status}`;
+    }
+  }
+  if (e?.name === "FunctionsFetchError" || e?.name === "FunctionsRelayError") {
+    return "Funzione promemoria-alerts non raggiungibile: probabilmente non è ancora pubblicata in Lovable.";
+  }
+  return e?.message ?? "Errore sconosciuto";
+}
+
+function PromemoriaJob({ run, onDone }: { run: JobRun; onDone: () => void }) {
+  const [running, setRunning] = useState(false);
+  const [esito, setEsito] = useState<string | null>(null);
+  const det = (run?.details ?? {}) as Record<string, unknown>;
+  const minutiFa = run ? Math.round((Date.now() - new Date(run.started_at).getTime()) / 60_000) : null;
+  const fermo = minutiFa != null && minutiFa > 15;
+
+  const runNow = async () => {
+    setRunning(true);
+    setEsito(null);
+    const { data, error } = await supabase.functions.invoke("promemoria-alerts", { body: { source: "diagnostica" } });
+    setRunning(false);
+    if (error) {
+      const msg = await describeInvokeError(error);
+      setEsito(msg);
+      toast.error("Controllo promemoria non riuscito", { description: msg });
+    } else {
+      const d = (data ?? {}) as Record<string, unknown>;
+      setEsito(`Completato: ${String(d.in_scadenza ?? 0)} promemoria arrivati all'ora, ${String(d.nuove_notifiche ?? 0)} nuove notifiche.`);
+      toast.success("Controllo promemoria completato");
+    }
+    onDone();
+  };
+
+  return (
+    <section className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">Ultimo controllo promemoria</h3>
+        <Button variant="outline" className="h-11" onClick={runNow} disabled={running}>
+          {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}Esegui ora
+        </Button>
+      </div>
+      {!run ? (
+        <p className="text-sm text-muted-foreground">
+          Mai eseguito: il controllo automatico ogni 5 minuti non è ancora programmato in Lovable.
+        </p>
+      ) : (
+        <div className="space-y-1 rounded-lg border p-3 text-sm">
+          <p className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className={run.status === "ok" ? "border-success/30 bg-success/10 text-success" : run.status === "errore" ? "border-destructive/30 bg-destructive/10 text-destructive" : ""}>{run.status === "ok" ? "Completato" : run.status === "errore" ? "Errore" : "In corso"}</Badge>
+            <span className="tabular-nums">{dt(run.started_at)}</span>
+            <span className="text-xs text-muted-foreground">{det.avvio === "manuale" ? "manuale" : "programmato, ogni 5 minuti"}</span>
+          </p>
+          {run.status === "ok" && <p className="text-xs text-muted-foreground tabular-nums">{String(det.in_scadenza ?? 0)} arrivati all'ora · {String(det.nuove_notifiche ?? 0)} nuove notifiche</p>}
+          {run.error && <p className="break-words text-xs text-destructive">{run.error}</p>}
+          {fermo && <p className="text-xs text-warning">Nessun controllo negli ultimi 15 minuti: la programmazione automatica sembra ferma o assente.</p>}
+        </div>
+      )}
+      {esito && <p className="break-words rounded-lg bg-muted p-3 text-xs">{esito}</p>}
+    </section>
   );
 }
