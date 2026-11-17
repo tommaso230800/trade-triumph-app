@@ -21,6 +21,7 @@ import {
   ChevronUp
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PageSkeleton, ListSkeleton } from "@/components/ui/page-skeleton";
 
 // Map URL slugs to consorzio names
 export const CONSORZI_MAP: Record<string, string> = {
@@ -238,11 +239,7 @@ const ConsorzioDettaglio = () => {
         </div>
 
         {isLoading ? (
-          <Card className="shadow-card">
-            <CardContent className="p-8 text-center text-muted-foreground">
-              Caricamento dati...
-            </CardContent>
-          </Card>
+          <ListSkeleton rows={4} />
         ) : (
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Fatturato per Azienda */}

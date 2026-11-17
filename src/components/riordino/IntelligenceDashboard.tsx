@@ -21,6 +21,7 @@ import {
 import { PortfolioChart } from "./PortfolioChart";
 import { PairDetailDialog } from "./PairDetailDialog";
 import { NuovoOrdineDialog, type OrdinePrefill } from "@/components/ordini/NuovoOrdineDialog";
+import { usePersistentState, oneOf } from "@/hooks/usePersistentState";
 
 const fmtD = (iso: string | null) =>
   iso ? new Date(`${iso}T00:00:00`).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
@@ -45,12 +46,12 @@ const RALLENTAMENTO_BADGE: Record<string, { label: string; className: string } |
 
 export function IntelligenceDashboard() {
   const { data, isLoading, isError, isFetching, refetch, dataUpdatedAt } = useReorderIntelligence();
-  const [filtro, setFiltro] = useState<FiltroKpi>("tutti");
+  const [filtro, setFiltro] = usePersistentState<FiltroKpi>("riordino:kpi", "tutti", oneOf("tutti", "previsti", "ritardo", "sospetti", "persistenti", "prodotti", "volumi", "inattivita"));
   const [search, setSearch] = useState("");
-  const [aziendaFilter, setAziendaFilter] = useState("all");
-  const [prioritaFilter, setPrioritaFilter] = useState("all");
-  const [affidabilitaFilter, setAffidabilitaFilter] = useState("all");
-  const [ordinamento, setOrdinamento] = useState<"ritardo" | "rallentamento" | "valore" | "priorita">("priorita");
+  const [aziendaFilter, setAziendaFilter] = usePersistentState("riordino:azienda", "all");
+  const [prioritaFilter, setPrioritaFilter] = usePersistentState<string>("riordino:priorita", "all", oneOf("all", "alta", "media", "bassa"));
+  const [affidabilitaFilter, setAffidabilitaFilter] = usePersistentState<string>("riordino:affidabilita", "all", oneOf("all", "alta", "media", "bassa", "insufficiente"));
+  const [ordinamento, setOrdinamento] = usePersistentState<"ritardo" | "rallentamento" | "valore" | "priorita">("riordino:ordinamento", "priorita", oneOf("ritardo", "rallentamento", "valore", "priorita"));
   const [tolleranza, setTolleranzaState] = useState(getTolleranza());
   const sharedTolerance = useReorderTolerance();
   useEffect(() => { if (sharedTolerance.data) setTolleranzaState(sharedTolerance.data); }, [sharedTolerance.data]);
@@ -66,6 +67,14 @@ export function IntelligenceDashboard() {
     pairs.forEach((p) => map.set(p.azienda_id, p.azienda_nome));
     return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
   }, [pairs]);
+
+  // Un'azienda memorizzata nel filtro che non compare più nei dati non deve
+  // nascondere tutta la lista: si torna a "Tutte le aziende".
+  useEffect(() => {
+    if (!isLoading && aziendaFilter !== "all" && !aziendeOpt.some(([id]) => id === aziendaFilter)) {
+      setAziendaFilter("all");
+    }
+  }, [isLoading, aziendaFilter, aziendeOpt, setAziendaFilter]);
 
   const filtrate = useMemo(() => {
     let list = pairs;

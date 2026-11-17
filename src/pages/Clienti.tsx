@@ -42,6 +42,7 @@ import { useClienti, useCreateCliente, useDeleteCliente, useUpdateCliente, Clien
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatEuroInt } from "@/lib/format";
+import { usePersistentState, oneOf } from "@/hooks/usePersistentState";
 
 const statusConfig = {
   premium: { label: "Premium", className: "bg-primary/10 text-primary hover:bg-primary/20" },
@@ -115,17 +116,13 @@ const defaultFormData: FormData = {
   condizioni_attive: [],
 };
 
-const STATUS_FILTER_KEY = "clienti:statusFilter";
-
 const Clienti = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Cliente["status"] | "tutti">(() => {
-    const saved = typeof window !== "undefined" ? window.localStorage.getItem(STATUS_FILTER_KEY) : null;
-    return saved === "nuovo" || saved === "standard" || saved === "premium" ? saved : "tutti";
-  });
-  useEffect(() => {
-    window.localStorage.setItem(STATUS_FILTER_KEY, statusFilter);
-  }, [statusFilter]);
+  const [statusFilter, setStatusFilter] = usePersistentState<Cliente["status"] | "tutti">(
+    "clienti:stato",
+    "tutti",
+    oneOf("tutti", "nuovo", "standard", "premium"),
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [isLookingUp, setIsLookingUp] = useState(false);

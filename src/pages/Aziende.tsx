@@ -30,6 +30,7 @@ import { MandateAssignment } from "@/components/fiscal/MandateAssignment";
 import { useFiscal } from "@/hooks/useFiscal";
 import { resolveMandate } from "@/lib/fiscal/engine";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type FormData = {
   nome: string;
@@ -395,11 +396,8 @@ const Aziende = () => {
 
             {/* Grid */}
             {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="text-center space-y-4">
-                  <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                  <p className="text-muted-foreground animate-pulse">Caricamento aziende...</p>
-                </div>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-busy="true" aria-label="Caricamento aziende">
+                {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl" />)}
               </div>
             ) : !aziende?.length ? (
               <div className="text-center py-16 space-y-4">

@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { exportKPIToPDF, exportKPIToCSV } from "@/lib/exportKPI";
 import { formatNumber } from "@/lib/format";
+import { PageSkeleton, ListSkeleton } from "@/components/ui/page-skeleton";
 
 interface AnalyticsProps {
   /** Se valorizzato, la pagina mostra SOLO i dati di questa azienda. */
@@ -266,9 +267,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="-m-4 -mt-6 flex min-h-[100dvh] items-center justify-center bg-scatto-bg p-4 pt-6 lg:-m-8 lg:p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-scatto-info" />
-        </div>
+        <PageSkeleton kpis={4} rows={6} />
       </MainLayout>
     );
   }

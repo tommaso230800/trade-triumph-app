@@ -74,10 +74,15 @@ import { exportOrdiniToCSV } from "@/lib/exportOrdiniCsv";
 import { usePeriodoFiltro, usePrimoAnnoOrdini } from "@/hooks/usePeriodoFiltro";
 import { isDefaultPeriodo, periodoLabel } from "@/lib/periodFilter";
 import { OrderAudit } from "@/components/metrics/OrderAudit";
+import { usePersistentState, oneOf } from "@/hooks/usePersistentState";
 
 const Ordini = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<Ordine["status"] | "tutti">("tutti");
+  const [statusFilter, setStatusFilter] = usePersistentState<Ordine["status"] | "tutti">(
+    "ordini:stato",
+    "tutti",
+    oneOf("tutti", "in_attesa", "spedito", "completato", "annullato", "stand_by"),
+  );
   const { periodo, setPeriodo, resetPeriodo } = usePeriodoFiltro();
   const { data: primoAnno } = usePrimoAnnoOrdini();
   const [clienteFilter, setClienteFilter] = useState("");
