@@ -83,6 +83,7 @@ import { findDuplicateGroups } from "@/lib/productDuplicates";
 import { useProdottiMergeLog } from "@/hooks/useProdottiMerge";
 import { format } from "date-fns";
 import { formatEuro } from "@/lib/format";
+import { PageSkeleton, ListSkeleton } from "@/components/ui/page-skeleton";
 
 const formatCurrency = (value: number) =>
   formatEuro(value);
@@ -417,9 +418,7 @@ const AziendaDettaglio = () => {
   if (isLoadingAzienda) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <PageSkeleton />
       </MainLayout>
     );
   }
@@ -591,9 +590,7 @@ const AziendaDettaglio = () => {
           )}
 
           {isLoadingProdotti ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
+            <ListSkeleton rows={4} className="rounded-none border-0" />
           ) : !prodotti?.length ? (
             <div className="text-center py-12">
               <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />

@@ -49,6 +49,7 @@ import { format } from "date-fns";
 import { it } from "date-fns/locale";
 import { useState } from "react";
 import { formatEuro } from "@/lib/format";
+import { PageSkeleton, ListSkeleton } from "@/components/ui/page-skeleton";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -105,9 +106,7 @@ const ClienteDettaglio = () => {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <PageSkeleton />
       </MainLayout>
     );
   }

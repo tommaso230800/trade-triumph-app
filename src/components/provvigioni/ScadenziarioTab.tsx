@@ -35,6 +35,9 @@ import { useScadenziario, ScadenziarioFattura } from "@/hooks/useScadenziario";
 import { ImportExcelDialog } from "@/components/scadenziario/ImportExcelDialog";
 import { SegnaIncassataDialog } from "@/components/scadenziario/SegnaIncassataDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { formatEuro, formatPercent } from "@/lib/format";
 
 export const ScadenziarioTab = () => {
   const {
@@ -58,6 +61,8 @@ export const ScadenziarioTab = () => {
     open: boolean;
     fattura: ScadenziarioFattura | null;
   }>({ open: false, fattura: null });
+
+  const [confirmProvvigione, setConfirmProvvigione] = useState<ScadenziarioFattura | null>(null);
 
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
@@ -83,264 +88,296 @@ export const ScadenziarioTab = () => {
   };
 
 
+  const scaduteCount = fattureScadute.filter((f) => calcGiorniRitardo(f.data_scadenza) > 0).length;
+
+  const RitardoBadge = ({ giorni }: { giorni: number }) =>
+    giorni > 0 ? (
+      <Badge variant="destructive" className="whitespace-nowrap tabular-nums">Scaduta da {giorni} gg</Badge>
+    ) : giorni === 0 ? (
+      <Badge variant="warning" className="whitespace-nowrap">Scade oggi</Badge>
+    ) : (
+      <Badge variant="outline" className="whitespace-nowrap tabular-nums">Tra {Math.abs(giorni)} gg</Badge>
+    );
+
+  const ListSkeleton = () => (
+    <div className="space-y-2" aria-busy="true" aria-label="Caricamento">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="h-16 w-full rounded-lg" />
+      ))}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Header con importazione */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Scadenziario Clienti</h3>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold">Scadenziario clienti</h3>
           <p className="text-sm text-muted-foreground">
-            Gestisci le fatture da incassare e le provvigioni maturate
+            Fatture da incassare e provvigioni maturate
           </p>
         </div>
         <ImportExcelDialog />
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-destructive/10 rounded-lg">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Da Incassare (Clienti)</p>
-                <p className="text-2xl font-bold">€{totaleScaduto.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-warning/10 rounded-lg">
-                <Banknote className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Provv. da Incassare</p>
-                <p className="text-2xl font-bold text-warning">€{totaleProvvigioniDaIncassare.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-success/10 rounded-lg">
-                <CheckCircle2 className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Provv. Incassate</p>
-                <p className="text-2xl font-bold text-success">€{totaleProvvigioniIncassate.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Provv. Totale Maturata</p>
-                <p className="text-2xl font-bold">€{provvigioneMaturata.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPI: il dato protagonista è quanto i clienti devono ancora pagare */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="col-span-2 rounded-xl border bg-card p-4 shadow-card md:col-span-1">
+          <p className="text-xs text-muted-foreground">Da incassare dai clienti</p>
+          <p className="text-3xl font-bold tracking-tight tabular-nums">{formatEuro(totaleScaduto)}</p>
+          {scaduteCount > 0 ? (
+            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-destructive">
+              <AlertTriangle className="h-3 w-3" />
+              {scaduteCount} {scaduteCount === 1 ? "fattura scaduta" : "fatture scadute"}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground">Nessuna fattura scaduta</p>
+          )}
+        </div>
+        <div className="rounded-xl border bg-card p-4 shadow-card">
+          <p className="text-xs text-muted-foreground">Provv. da ricevere</p>
+          <p className="whitespace-nowrap text-lg font-bold tabular-nums sm:text-xl text-warning">{formatEuro(totaleProvvigioniDaIncassare)}</p>
+        </div>
+        <div className="rounded-xl border bg-card p-4 shadow-card">
+          <p className="text-xs text-muted-foreground">Provv. incassate</p>
+          <p className="whitespace-nowrap text-lg font-bold tabular-nums sm:text-xl text-success">{formatEuro(totaleProvvigioniIncassate)}</p>
+        </div>
+        <div className="col-span-2 rounded-xl border bg-card p-4 shadow-card md:col-span-1">
+          <p className="text-xs text-muted-foreground">Provv. totale maturata</p>
+          <p className="whitespace-nowrap text-lg font-bold tabular-nums sm:text-xl">{formatEuro(provvigioneMaturata)}</p>
+        </div>
       </div>
 
-      {/* Sub-Tabs per Scadenziario/Incassate */}
+      {/* Sotto-schede */}
       <Tabs defaultValue="scadenziario" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="scadenziario" className="gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Da Incassare ({fattureScadute.length})
+        <TabsList className="grid h-auto w-full grid-cols-3">
+          <TabsTrigger value="scadenziario" className="min-h-11 whitespace-normal text-xs sm:text-sm">
+            Da incassare ({fattureScadute.length})
           </TabsTrigger>
-          <TabsTrigger value="provvigioni_da_incassare" className="gap-2">
-            <Banknote className="h-4 w-4" />
-            Provvigioni da Incassare ({provvigioniDaIncassare.length})
+          <TabsTrigger value="provvigioni_da_incassare" className="min-h-11 whitespace-normal text-xs sm:text-sm">
+            Provv. da ricevere ({provvigioniDaIncassare.length})
           </TabsTrigger>
-          <TabsTrigger value="incassate" className="gap-2">
-            <CheckCircle2 className="h-4 w-4" />
-            Provvigioni Incassate ({provvigioniIncassate.length})
+          <TabsTrigger value="incassate" className="min-h-11 whitespace-normal text-xs sm:text-sm">
+            Incassate ({provvigioniIncassate.length})
           </TabsTrigger>
         </TabsList>
 
-        {/* Tab Scadenziario */}
+        {/* Fatture da incassare */}
         <TabsContent value="scadenziario">
           <Card>
             <CardHeader>
-              <CardTitle>Fatture da Incassare</CardTitle>
-              <CardDescription>
-                Fatture scadute o in scadenza ancora da incassare
-              </CardDescription>
+              <CardTitle>Fatture da incassare</CardTitle>
+              <CardDescription>Fatture scadute o in scadenza ancora da incassare</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingScadute ? (
-                <p className="text-muted-foreground py-8 text-center">Caricamento...</p>
+                <ListSkeleton />
               ) : fattureScadute.length === 0 ? (
-                <div className="text-center py-12">
-                  <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Nessuna fattura da incassare</p>
-                  <p className="text-sm text-muted-foreground">
-                    Importa uno scadenziario Excel per iniziare
-                  </p>
+                <div className="py-8 text-center space-y-2">
+                  <Receipt className="mx-auto h-6 w-6 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Nessuna fattura da incassare</p>
+                  <p className="text-xs text-muted-foreground">Importa uno scadenziario Excel per iniziare</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Azienda</TableHead>
-                        <TableHead>N. Fattura</TableHead>
-                        <TableHead>Scadenza</TableHead>
-                        <TableHead className="text-right">Importo</TableHead>
-                        <TableHead className="text-right">Provvigione</TableHead>
-                        <TableHead>Ritardo</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {fattureScadute.map((fattura) => {
-                        const giorniRitardo = calcGiorniRitardo(fattura.data_scadenza);
-                        return (
-                          <TableRow key={fattura.id}>
-                            <TableCell className="font-medium">{fattura.cliente_nome}</TableCell>
-                            <TableCell>{fattura.azienda_nome}</TableCell>
-                            <TableCell>{fattura.numero_fattura}</TableCell>
-                            <TableCell>{formatDate(fattura.data_scadenza)}</TableCell>
-                            <TableCell className="text-right font-medium">
-                              €{Number(fattura.importo).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
-                            </TableCell>
-                            <TableCell className="text-right text-success">
-                              €{Number(fattura.provvigione_calcolata).toFixed(2)}
-                            </TableCell>
-                            <TableCell>
-                              {giorniRitardo > 0 ? (
-                                <Badge variant="destructive">
-                                  +{giorniRitardo}gg
-                                </Badge>
-                              ) : giorniRitardo === 0 ? (
-                                <Badge variant="secondary">Oggi</Badge>
-                              ) : (
-                                <Badge variant="outline">
-                                  {Math.abs(giorniRitardo)}gg
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={() => setIncassataDialog({ open: true, fattura })}
-                                >
-                                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                                  Incassa
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setDeleteDialog({ open: true, fattura })}
-                                >
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
+                <>
+                  {/* Mobile */}
+                  <ul className="md:hidden divide-y rounded-lg border">
+                    {fattureScadute.map((fattura) => {
+                      const giorni = calcGiorniRitardo(fattura.data_scadenza);
+                      return (
+                        <li
+                          key={fattura.id}
+                          className={cn("space-y-2 p-3", giorni > 0 && "border-l-4 border-l-destructive")}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="line-clamp-2 break-words text-sm font-semibold">{fattura.cliente_nome}</p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {[fattura.azienda_nome, fattura.numero_fattura && `Fatt. ${fattura.numero_fattura}`].filter(Boolean).join(" · ")}
+                              </p>
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <p className="text-sm font-semibold tabular-nums">{formatEuro(Number(fattura.importo))}</p>
+                              <p className="text-xs text-muted-foreground tabular-nums">
+                                provv. {formatEuro(Number(fattura.provvigione_calcolata))}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <RitardoBadge giorni={giorni} />
+                            <span className="text-xs text-muted-foreground tabular-nums">{formatDate(fattura.data_scadenza)}</span>
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="flex shrink-0 items-center">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Elimina fattura ${fattura.numero_fattura ?? ""}`}
+                                onClick={() => setDeleteDialog({ open: true, fattura })}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                              <Button size="sm" onClick={() => setIncassataDialog({ open: true, fattura })}>
+                                <CheckCircle2 className="h-4 w-4" />
+                                Incassa
+                              </Button>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  {/* Desktop */}
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Azienda</TableHead>
+                          <TableHead>N. fattura</TableHead>
+                          <TableHead>Scadenza</TableHead>
+                          <TableHead>Stato</TableHead>
+                          <TableHead className="text-right">Importo</TableHead>
+                          <TableHead className="text-right">Provvigione</TableHead>
+                          <TableHead className="text-right"><span className="sr-only">Azioni</span></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {fattureScadute.map((fattura) => {
+                          const giorni = calcGiorniRitardo(fattura.data_scadenza);
+                          return (
+                            <TableRow key={fattura.id}>
+                              <TableCell className="font-medium">{fattura.cliente_nome}</TableCell>
+                              <TableCell>{fattura.azienda_nome}</TableCell>
+                              <TableCell>{fattura.numero_fattura}</TableCell>
+                              <TableCell className="tabular-nums">{formatDate(fattura.data_scadenza)}</TableCell>
+                              <TableCell><RitardoBadge giorni={giorni} /></TableCell>
+                              <TableCell className="text-right font-medium tabular-nums">
+                                {formatEuro(Number(fattura.importo))}
+                              </TableCell>
+                              <TableCell className="text-right tabular-nums text-muted-foreground">
+                                {formatEuro(Number(fattura.provvigione_calcolata))}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button size="sm" onClick={() => setIncassataDialog({ open: true, fattura })}>
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Incassa
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    aria-label={`Elimina fattura ${fattura.numero_fattura ?? ""}`}
+                                    onClick={() => setDeleteDialog({ open: true, fattura })}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Tab Provvigioni da Incassare */}
+        {/* Provvigioni da ricevere */}
         <TabsContent value="provvigioni_da_incassare">
           <Card>
             <CardHeader>
-              <CardTitle>Provvigioni da Incassare</CardTitle>
+              <CardTitle>Provvigioni da ricevere</CardTitle>
               <CardDescription>
                 Fatture incassate dal cliente, provvigione ancora da riscuotere dall'azienda
               </CardDescription>
             </CardHeader>
             <CardContent>
               {loadingIncassate ? (
-                <p className="text-muted-foreground py-8 text-center">Caricamento...</p>
+                <ListSkeleton />
               ) : provvigioniDaIncassare.length === 0 ? (
-                <div className="text-center py-12">
-                  <Banknote className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Nessuna provvigione da incassare</p>
+                <div className="py-8 text-center space-y-2">
+                  <Banknote className="mx-auto h-6 w-6 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Nessuna provvigione da ricevere</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Azienda</TableHead>
-                        <TableHead>N. Fattura</TableHead>
-                        <TableHead>Data Incasso Cliente</TableHead>
-                        <TableHead className="text-right">Importo</TableHead>
-                        <TableHead className="text-right">Provvigione</TableHead>
-                        <TableHead>Trimestre</TableHead>
-                        <TableHead className="text-right">Azioni</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {provvigioniDaIncassare.map((fattura) => (
-                        <TableRow key={fattura.id}>
-                          <TableCell className="font-medium">{fattura.cliente_nome}</TableCell>
-                          <TableCell>{fattura.azienda_nome}</TableCell>
-                          <TableCell>{fattura.numero_fattura}</TableCell>
-                          <TableCell>{formatDate(fattura.data_incasso)}</TableCell>
-                          <TableCell className="text-right">
-                            €{Number(fattura.importo).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
-                          </TableCell>
-                          <TableCell className="text-right font-medium text-warning">
-                            €{Number(fattura.provvigione_calcolata).toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{fattura.trimestre_provvigione}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                const oggi = new Date().toISOString().split('T')[0];
-                                segnaProvvigioneIncassata.mutate({ id: fattura.id, data_incasso_provvigione: oggi });
-                              }}
-                            >
-                              <CheckCircle2 className="h-4 w-4 mr-1" />
-                              Incassata
-                            </Button>
-                          </TableCell>
+                <>
+                  <ul className="md:hidden divide-y rounded-lg border">
+                    {provvigioniDaIncassare.map((fattura) => (
+                      <li key={fattura.id} className="flex items-center gap-3 p-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="line-clamp-2 break-words text-sm font-semibold">{fattura.cliente_nome}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {[fattura.azienda_nome, fattura.trimestre_provvigione, `incassata ${formatDate(fattura.data_incasso)}`].filter(Boolean).join(" · ")}
+                          </p>
+                          <p className="text-sm font-semibold tabular-nums text-warning">
+                            {formatEuro(Number(fattura.provvigione_calcolata))}
+                          </p>
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => setConfirmProvvigione(fattura)}>
+                          <CheckCircle2 className="h-4 w-4" />
+                          Ricevuta
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Azienda</TableHead>
+                          <TableHead>N. fattura</TableHead>
+                          <TableHead>Incasso cliente</TableHead>
+                          <TableHead className="text-right">Importo</TableHead>
+                          <TableHead className="text-right">Provvigione</TableHead>
+                          <TableHead>Trimestre</TableHead>
+                          <TableHead className="text-right"><span className="sr-only">Azioni</span></TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {provvigioniDaIncassare.map((fattura) => (
+                          <TableRow key={fattura.id}>
+                            <TableCell className="font-medium">{fattura.cliente_nome}</TableCell>
+                            <TableCell>{fattura.azienda_nome}</TableCell>
+                            <TableCell>{fattura.numero_fattura}</TableCell>
+                            <TableCell className="tabular-nums">{formatDate(fattura.data_incasso)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatEuro(Number(fattura.importo))}</TableCell>
+                            <TableCell className="text-right font-medium tabular-nums text-warning">
+                              {formatEuro(Number(fattura.provvigione_calcolata))}
+                            </TableCell>
+                            <TableCell><Badge variant="outline">{fattura.trimestre_provvigione}</Badge></TableCell>
+                            <TableCell className="text-right">
+                              <Button size="sm" variant="outline" onClick={() => setConfirmProvvigione(fattura)}>
+                                <CheckCircle2 className="h-4 w-4" />
+                                Ricevuta
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Tab Provvigioni Incassate */}
+        {/* Provvigioni incassate */}
         <TabsContent value="incassate">
           <div className="space-y-6">
             {loadingIncassate ? (
-              <p className="text-muted-foreground py-8 text-center">Caricamento...</p>
+              <ListSkeleton />
             ) : provvigioniIncassate.length === 0 ? (
               <Card>
-                <CardContent className="py-12 text-center">
-                  <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Nessuna provvigione incassata</p>
+                <CardContent className="py-8 text-center space-y-2 sm:py-8">
+                  <TrendingUp className="mx-auto h-6 w-6 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Nessuna provvigione incassata</p>
                 </CardContent>
               </Card>
             ) : (
@@ -359,49 +396,62 @@ export const ScadenziarioTab = () => {
                     return (
                       <Card key={trimestre}>
                         <CardHeader>
-                          <div className="flex items-center justify-between">
+                          <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-2">
-                              <Calendar className="h-5 w-5 text-muted-foreground" />
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
                               <CardTitle>{trimestre}</CardTitle>
                             </div>
-                            <Badge className="bg-success/10 text-success text-lg px-4 py-1">
-                              €{totTrimestre.toLocaleString('it-IT', { minimumFractionDigits: 2 })}
-                            </Badge>
+                            <p className="text-base font-semibold tabular-nums text-success">{formatEuro(totTrimestre)}</p>
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Cliente</TableHead>
-                                <TableHead>Azienda</TableHead>
-                                <TableHead>N. Fattura</TableHead>
-                                <TableHead>Data Incasso Provv.</TableHead>
-                                <TableHead className="text-right">Importo</TableHead>
-                                <TableHead className="text-right">% Provv.</TableHead>
-                                <TableHead className="text-right">Provvigione</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {fatture.map((fattura) => (
-                                <TableRow key={fattura.id}>
-                                  <TableCell className="font-medium">{fattura.cliente_nome}</TableCell>
-                                  <TableCell>{fattura.azienda_nome}</TableCell>
-                                  <TableCell>{fattura.numero_fattura}</TableCell>
-                                  <TableCell>{formatDate(fattura.data_incasso_provvigione)}</TableCell>
-                                  <TableCell className="text-right">
-                                    €{Number(fattura.importo).toLocaleString('it-IT', { minimumFractionDigits: 2 })}
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    {Number(fattura.percentuale_provvigione).toFixed(1)}%
-                                  </TableCell>
-                                  <TableCell className="text-right font-medium text-success">
-                                    €{Number(fattura.provvigione_calcolata).toFixed(2)}
-                                  </TableCell>
+                          <ul className="md:hidden divide-y rounded-lg border">
+                            {fatture.map((fattura) => (
+                              <li key={fattura.id} className="flex items-center justify-between gap-3 p-3">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-medium">{fattura.cliente_nome}</p>
+                                  <p className="truncate text-xs text-muted-foreground">
+                                    {[fattura.azienda_nome, formatDate(fattura.data_incasso_provvigione)].filter(Boolean).join(" · ")}
+                                  </p>
+                                </div>
+                                <p className="shrink-0 text-sm font-semibold tabular-nums text-success">
+                                  {formatEuro(Number(fattura.provvigione_calcolata))}
+                                </p>
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="hidden md:block">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Cliente</TableHead>
+                                  <TableHead>Azienda</TableHead>
+                                  <TableHead>N. fattura</TableHead>
+                                  <TableHead>Incasso provv.</TableHead>
+                                  <TableHead className="text-right">Importo</TableHead>
+                                  <TableHead className="text-right">% provv.</TableHead>
+                                  <TableHead className="text-right">Provvigione</TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
+                              </TableHeader>
+                              <TableBody>
+                                {fatture.map((fattura) => (
+                                  <TableRow key={fattura.id}>
+                                    <TableCell className="font-medium">{fattura.cliente_nome}</TableCell>
+                                    <TableCell>{fattura.azienda_nome}</TableCell>
+                                    <TableCell>{fattura.numero_fattura}</TableCell>
+                                    <TableCell className="tabular-nums">{formatDate(fattura.data_incasso_provvigione)}</TableCell>
+                                    <TableCell className="text-right tabular-nums">{formatEuro(Number(fattura.importo))}</TableCell>
+                                    <TableCell className="text-right tabular-nums">
+                                      {formatPercent(Number(fattura.percentuale_provvigione))}
+                                    </TableCell>
+                                    <TableCell className="text-right font-medium tabular-nums text-success">
+                                      {formatEuro(Number(fattura.provvigione_calcolata))}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
                         </CardContent>
                       </Card>
                     );
@@ -419,6 +469,33 @@ export const ScadenziarioTab = () => {
         onOpenChange={(open) => setIncassataDialog({ open, fattura: open ? incassataDialog.fattura : null })}
       />
 
+      {/* Conferma provvigione ricevuta (prima era un tocco senza conferma) */}
+      <AlertDialog open={!!confirmProvvigione} onOpenChange={(open) => !open && setConfirmProvvigione(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Provvigione ricevuta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Segno come ricevuta oggi la provvigione di{" "}
+              {confirmProvvigione ? formatEuro(Number(confirmProvvigione.provvigione_calcolata)) : ""} per{" "}
+              {confirmProvvigione?.cliente_nome}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!confirmProvvigione) return;
+                const oggi = new Date().toISOString().split('T')[0];
+                segnaProvvigioneIncassata.mutate({ id: confirmProvvigione.id, data_incasso_provvigione: oggi });
+                setConfirmProvvigione(null);
+              }}
+            >
+              Conferma
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Dialog Conferma Eliminazione */}
       <AlertDialog 
         open={deleteDialog.open} 
@@ -426,7 +503,7 @@ export const ScadenziarioTab = () => {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Elimina Fattura</AlertDialogTitle>
+            <AlertDialogTitle>Elimina fattura</AlertDialogTitle>
             <AlertDialogDescription>
               Sei sicuro di voler eliminare la fattura {deleteDialog.fattura?.numero_fattura}? 
               Questa azione non può essere annullata.

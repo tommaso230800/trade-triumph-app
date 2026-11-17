@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { formatEuro, formatEuroInt, formatNumber, formatPercent } from "@/lib/format";
+import { ListSkeleton } from "@/components/ui/page-skeleton";
 
 const eur = (n: number) =>
   formatEuroInt(n || 0);
@@ -358,7 +359,7 @@ export default function IntelligenzaCommerciale() {
         {/* PREVISIONE FINE MESE */}
         <TabsContent value="previsione" className="space-y-4 mt-4">
           {isLoading || !data ? (
-            <Card><CardContent className="p-8 text-center text-muted-foreground">Caricamento…</CardContent></Card>
+            <ListSkeleton rows={4} />
           ) : (
             <>
               <Card className="surface-glass">
@@ -437,7 +438,7 @@ export default function IntelligenzaCommerciale() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Clienti — RFM</CardTitle></CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              {isLoading ? <div className="p-6 text-center text-muted-foreground">Caricamento…</div>
+              {isLoading ? <ListSkeleton rows={5} className="rounded-none border-0" />
                 : filteredRfm.length === 0 ? <div className="p-6 text-center text-muted-foreground">Nessun cliente.</div>
                 : (
                   <Table>
@@ -552,7 +553,7 @@ export default function IntelligenzaCommerciale() {
           <Card>
             <CardHeader><CardTitle className="text-lg">Anomalie di prezzo</CardTitle></CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-              {isLoading ? <div className="p-6 text-center text-muted-foreground">Caricamento…</div>
+              {isLoading ? <ListSkeleton rows={5} className="rounded-none border-0" />
                 : filteredAnomalies.length === 0 ? <div className="p-6 text-center text-muted-foreground">Nessuna anomalia aperta.</div>
                 : (
                   <Table>
