@@ -91,7 +91,7 @@ export function OrdiniTable({ rows, selectionMode, selectedIds, onToggleSelect }
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-scatto-line bg-scatto-bg text-[9px] font-bold text-scatto-ink">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-md border border-scatto-line bg-scatto-bg text-xs font-bold text-scatto-ink">
                       {ordine.aziende?.logo_url ? <img src={ordine.aziende.logo_url} alt="" className="h-full w-full object-cover" /> : getIniziali(ordine.aziende?.nome)}
                     </span>
                     <span className="truncate text-scatto-ink" title={ordine.aziende?.nome || ""}>{ordine.aziende?.nome || "—"}</span>

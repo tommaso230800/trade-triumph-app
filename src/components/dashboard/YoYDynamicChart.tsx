@@ -42,7 +42,7 @@ export function YoYDynamicChart({ data, yearCurr, yearPrev }: Props) {
         <div className="rounded-lg bg-muted/40 p-4">
           <p className="text-xs text-muted-foreground">Stesso periodo</p>
           <p className={`text-base font-bold ${trendColor}`}>{fmt(compCurr)}</p>
-          <p className="text-[11px] text-muted-foreground">vs {fmt(compPrev)}</p>
+          <p className="text-xs text-muted-foreground">vs {fmt(compPrev)}</p>
         </div>
         <div className="rounded-lg bg-muted/40 p-4">
           <p className="text-xs text-muted-foreground">Variazione</p>

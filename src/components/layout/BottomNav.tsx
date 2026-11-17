@@ -43,7 +43,7 @@ export function BottomNav({ onOpenMore, moreActive }: BottomNavProps) {
             key={item.name}
             to={item.href}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium touch-target",
+              "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium touch-target",
               isActive ? "text-primary" : "text-muted-foreground"
             )}
           >
@@ -56,7 +56,7 @@ export function BottomNav({ onOpenMore, moreActive }: BottomNavProps) {
       <Button variant="ghost"
         onClick={onOpenMore}
         className={cn(
-          "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium touch-target",
+          "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium touch-target",
           moreActive ? "text-primary" : "text-muted-foreground"
         )}
       >

@@ -23,7 +23,7 @@ export function QuickStatTiles({ stats }: { stats: QuickStat[] }) {
         return (
           <div
             key={s.label}
-            className="rounded-2xl border border-scatto-line bg-scatto-surface p-4 shadow-[0_6px_24px_-14px_hsl(225_18%_9%/0.16)]"
+            className="rounded-xl border border-scatto-line bg-scatto-surface p-4 shadow-card"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -34,7 +34,7 @@ export function QuickStatTiles({ stats }: { stats: QuickStat[] }) {
                   </span>
                   {hasDelta && (
                     <span
-                      className={`rounded-md px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${
+                      className={`rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ${
                         positive ? "bg-scatto-success/10 text-scatto-success" : "bg-scatto-danger/10 text-scatto-danger"
                       }`}
                     >

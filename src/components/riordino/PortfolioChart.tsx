@@ -61,7 +61,7 @@ export function PortfolioChart({ ordersByPair, aziendaFilter, tolleranza, mesi =
             content={({ active, payload, label }: any) => {
               if (!active || !payload?.length) return null;
               return (
-                <div className="rounded-lg border border-border bg-popover p-3 text-xs shadow-md">
+                <div className="rounded-lg border border-border bg-popover p-3 text-xs shadow-card">
                   <p className="font-semibold">{label}</p>
                   {payload.map((e: any) => (
                     <p key={e.dataKey} className="mt-0.5 flex items-center gap-1.5">

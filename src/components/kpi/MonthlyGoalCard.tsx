@@ -31,7 +31,7 @@ export function MonthlyGoalCard({ meseLabel, fatturatoMese, obiettivo }: Monthly
         {formatNumber(pct, 0)}% raggiunto
         {mancano > 0 ? ` · mancano ${formatCurrency(mancano)} all'obiettivo` : " · obiettivo raggiunto"}
       </p>
-      <p className="mt-1 text-[10.5px] text-scatto-muted/70">
+      <p className="mt-1 text-xs text-scatto-muted/70">
         Obiettivo stimato sulla media del fatturato degli ultimi 12 mesi.
       </p>
     </SectionCard>

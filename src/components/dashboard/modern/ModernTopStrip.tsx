@@ -48,7 +48,7 @@ type Cell = {
 
 export function ModernTopStrip({ cells }: { cells: Cell[] }) {
   return (
-    <div className="grid grid-cols-1 divide-y divide-scatto-line overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_hsl(225_18%_9%/0.05)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+    <div className="grid grid-cols-1 divide-y divide-scatto-line overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
       {cells.map((c) => {
         const hasDelta = c.deltaPct !== undefined && c.deltaPct !== null && Number.isFinite(c.deltaPct);
         const positive = hasDelta && (c.deltaPct as number) >= 0;

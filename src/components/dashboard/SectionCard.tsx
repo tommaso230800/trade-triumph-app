@@ -16,7 +16,7 @@ export function SectionCard({ title, action, className, children }: SectionCardP
   return (
     <div
       className={cn(
-        "rounded-2xl border border-scatto-line bg-scatto-surface p-4 shadow-[0_6px_24px_-14px_hsl(225_18%_9%/0.16)] lg:p-6",
+        "rounded-xl border border-scatto-line bg-scatto-surface p-4 shadow-card lg:p-6",
         className
       )}
     >

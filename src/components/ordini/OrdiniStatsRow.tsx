@@ -27,7 +27,7 @@ export function OrdiniStatsRow({ stats, mom, isLoading }: OrdiniStatsRowProps) {
   const inCrescita = hasDelta && (variazione as number) > 0;
 
   return (
-    <div className="grid grid-cols-1 divide-y divide-scatto-line overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_hsl(225_18%_9%/0.05)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+    <div className="grid grid-cols-1 divide-y divide-scatto-line overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
       <div className="flex items-start justify-between gap-3 p-4 sm:p-5">
         <div className="min-w-0">
           <p className="text-sm text-scatto-muted">Valore ordini attivi</p>

@@ -295,7 +295,7 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
                         <p className="font-medium text-foreground text-sm">
                           {riga.prodotto_nome}
                           {riga.is_omaggio && (
-                            <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded bg-success/10 text-success">
+                            <span className="ml-2 inline-flex items-center gap-1 text-xs font-semibold uppercase px-1.5 py-0.5 rounded bg-success/10 text-success">
                               <Gift className="h-3 w-3" /> Omaggio
                             </span>
                           )}
@@ -340,16 +340,16 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
           {/* Cartoni e pezzi: stessi totali del modulo ordine */}
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-lg border border-border p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Cartoni totali</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Cartoni totali</p>
               <p className="text-2xl font-bold tabular-nums text-foreground">{qty.cartoni.toLocaleString("it-IT")}</p>
             </div>
             <div className="rounded-lg border border-border p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Pezzi totali</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Pezzi totali</p>
               <p className="text-2xl font-bold tabular-nums text-foreground">{qty.pezzi.toLocaleString("it-IT")}{!qty.completo && " *"}</p>
               {qty.pezziSfusi > 0 && <p className="text-xs text-muted-foreground">di cui {qty.pezziSfusi.toLocaleString("it-IT")} sfusi</p>}
             </div>
             <div className="rounded-lg border border-border p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Omaggi</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Omaggi</p>
               <p className="text-2xl font-bold tabular-nums text-foreground">{qty.omaggioCartoni.toLocaleString("it-IT")} <span className="text-sm font-medium">ct</span></p>
               <p className="text-xs text-muted-foreground">{qty.omaggioPezzi.toLocaleString("it-IT")} pz · da consegnare {qty.daConsegnarePezzi.toLocaleString("it-IT")} pz</p>
             </div>

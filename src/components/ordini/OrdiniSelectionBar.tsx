@@ -38,7 +38,7 @@ export function OrdiniSelectionBar({
   pending,
 }: OrdiniSelectionBarProps) {
   return (
-    <div className="fixed inset-x-0 bottom-[76px] z-40 border-t border-scatto-line bg-scatto-surface/95 shadow-[0_-4px_20px_rgba(18,20,26,0.1)] backdrop-blur-md lg:bottom-0 lg:left-80">
+    <div className="fixed inset-x-0 bottom-[76px] z-40 border-t border-scatto-line bg-scatto-surface/95 shadow-card backdrop-blur-md lg:bottom-0 lg:left-80">
       <div className="mx-auto flex max-w-5xl flex-col gap-2.5 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-bold text-scatto-ink">

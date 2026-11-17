@@ -217,7 +217,7 @@ function LinkOrdineDialog({ riga, open, onOpenChange }: { riga: EstrattoRiga | n
                     <div className="font-medium">{c.codice} · {c.cliente || "—"}</div>
                     <div className="text-xs text-muted-foreground">{c.data || "—"} · {formatEuro(c.totale)} · Affidabilità {c.score}%</div>
                     {Array.isArray(c.parts) && (
-                      <ul className="text-[11px] text-muted-foreground mt-1 space-y-0.5">
+                      <ul className="text-xs text-muted-foreground mt-1 space-y-0.5">
                         {c.parts.slice(0, 5).map((p: any, i: number) => (
                           <li key={i}>• {p.label} {p.pts > 0 ? `(+${p.pts})` : ""}</li>
                         ))}
@@ -605,7 +605,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                       <div className="flex flex-col gap-1">
                         <StatusBadge status={r.match_status} verified={r.verificata} />
                         {isCrmOnly && r.stato_verifica && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded border border-border bg-muted text-muted-foreground w-fit">
+                          <span className="text-xs px-1.5 py-0.5 rounded border border-border bg-muted text-muted-foreground w-fit">
                             {STATO_VERIFICA_LABEL[r.stato_verifica] ?? r.stato_verifica}
                           </span>
                         )}
@@ -641,7 +641,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                               <DropdownMenuItem onClick={() => setLinkTarget(r)}><Link2 className="h-4 w-4 mr-2" />Cerca riscontro nel PDF</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => setVerifyTarget(r)}><CheckCircle2 className="h-4 w-4 mr-2" />Segna come verificata</DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <div className="px-2 py-1 text-[10px] uppercase text-muted-foreground">Stato verifica</div>
+                              <div className="px-2 py-1 text-xs uppercase text-muted-foreground">Stato verifica</div>
                               <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "non_fatturato", motivo: "Ordine non ancora fatturato: la provvigione arriverà nei prossimi estratti.", azione_consigliata: "nessuna" } })}>Non ancora fatturato</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "liquidato_altrove", motivo: "Provvigione già liquidata in un altro trimestre.", azione_consigliata: "nessuna", esito_economico: "corretto" } })}>Liquidato in altro trimestre</DropdownMenuItem>
                               <DropdownMenuItem onClick={() => update.mutate({ id: r.id, patch: { stato_verifica: "non_provvigionale", motivo: "Ordine non provvigionale (fuori mandato o escluso).", azione_consigliata: "nessuna", esito_economico: "corretto" } })}>Non provvigionale</DropdownMenuItem>
@@ -684,7 +684,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                                     <Badge variant="outline">{c.score}%</Badge>
                                   </div>
                                   <div className="text-xs text-muted-foreground">{c.data || "—"} · imp. {formatEuro(c.imponibile)} · prov. {formatEuro(c.provvigione)}</div>
-                                  {c.motivi?.length > 0 && <div className="text-[11px] text-muted-foreground mt-1">{c.motivi.join(" · ")}</div>}
+                                  {c.motivi?.length > 0 && <div className="text-xs text-muted-foreground mt-1">{c.motivi.join(" · ")}</div>}
                                 </div>
                               ))}
                             </div>
@@ -738,9 +738,9 @@ function KpiCard({ label, value, sub, tone, active, onClick }: { label: string; 
   const activeCls = active ? "ring-2 ring-primary" : "";
   return (
     <button type="button" onClick={onClick} disabled={!onClick} className={`text-left border rounded-lg p-3 bg-card transition hover:bg-muted/40 ${toneCls} ${activeCls}`}>
-      <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</div>
+      <div className="text-xs text-muted-foreground uppercase tracking-wide">{label}</div>
       <div className="text-base font-semibold mt-1">{value}</div>
-      {sub && <div className="text-[11px] text-muted-foreground mt-0.5">{sub}</div>}
+      {sub && <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>}
     </button>
   );
 }

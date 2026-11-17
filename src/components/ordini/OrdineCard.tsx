@@ -71,7 +71,7 @@ export function OrdineCard({
 
   return (
     <div
-      className={`overflow-hidden rounded-xl bg-scatto-surface shadow-[0_1px_2px_hsl(225_18%_9%/0.05)] ${
+      className={`overflow-hidden rounded-xl bg-scatto-surface shadow-card ${
         verificato ? "border border-scatto-success/50" : "border border-scatto-line"
       } ${muted ? "opacity-60" : ""} ${
         selected ? "ring-2 ring-scatto-accent ring-offset-2 ring-offset-scatto-bg" : ""
@@ -83,7 +83,7 @@ export function OrdineCard({
         style={{ backgroundColor: aziendaColor, color: fasciaTextColor }}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-white text-[8px] font-bold text-scatto-ink">
+          <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-white text-xs font-bold text-scatto-ink">
             {aziendaLogo ? (
               <img src={aziendaLogo} alt="" className="h-full w-full object-cover" />
             ) : (
@@ -94,17 +94,17 @@ export function OrdineCard({
         </div>
 
         {verificato ? (
-          <span className="flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-scatto-success px-2.5 py-0.5 text-[10px] font-bold text-white">
+          <span className="flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-scatto-success px-2.5 py-0.5 text-xs font-bold text-white">
             <CheckCircle2 className="h-3 w-3" />
             Verificato
           </span>
         ) : ordine.status === "in_attesa" || ordine.status === "stand_by" ? (
-          <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-scatto-warning px-2.5 py-0.5 text-[10px] font-bold text-scatto-ink">
+          <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-scatto-warning px-2.5 py-0.5 text-xs font-bold text-scatto-ink">
             {status.label}
           </span>
         ) : (
           <span
-            className="flex-shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+            className="flex-shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold"
             style={{ backgroundColor: fasciaIsDark ? "rgba(0,0,0,.12)" : "rgba(255,255,255,.22)" }}
           >
             {status.label}
@@ -125,7 +125,7 @@ export function OrdineCard({
             className="h-5 w-5 flex-shrink-0 border-scatto-line data-[state=checked]:border-scatto-accent data-[state=checked]:bg-scatto-accent"
           />
           <div className="min-w-0 flex-1">
-            <p className={`truncate text-[15px] font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
+            <p className={`truncate text-base font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
               {ordine.clienti?.nome || "—"}
             </p>
             <p className="mt-0.5 truncate text-xs">
@@ -142,7 +142,7 @@ export function OrdineCard({
           <CollapsibleTrigger asChild>
             <button type="button" className="group flex w-full items-center gap-3 p-3.5 text-left touch-target">
               <div className="min-w-0 flex-1">
-                <p className={`truncate text-[15px] font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
+                <p className={`truncate text-base font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
                   {ordine.clienti?.nome || "—"}
                 </p>
                 <p className="mt-0.5 truncate text-xs">

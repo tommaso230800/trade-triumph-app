@@ -32,7 +32,7 @@ export function OrdersMonthlyChart({ data }: OrdersMonthlyChartProps) {
           </Bar>
         </BarChart>
       </ResponsiveContainer>
-      <p className="mt-1 px-1 text-[11px] text-scatto-muted">
+      <p className="mt-1 px-1 text-xs text-scatto-muted">
         Stessi colori per mese del grafico sopra. Tocca una barra per mese e numero di ordini.
       </p>
     </div>

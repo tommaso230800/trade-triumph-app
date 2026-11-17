@@ -31,7 +31,7 @@ const deltaArrow: Record<"up" | "down" | "flat", string> = { up: "â†‘", down: "â
 // colore vive solo su icona e badge, come nelle reference.
 export function StatCard({ icon: Icon, label, value, delta, caption, tone = "info" }: StatCardProps) {
   return (
-    <div className="rounded-2xl border border-scatto-line bg-scatto-surface p-4 shadow-[0_6px_24px_-14px_hsl(225_18%_9%/0.16)]">
+    <div className="rounded-xl border border-scatto-line bg-scatto-surface p-4 shadow-card">
       <div className="flex items-center gap-2">
         <span className={cn("flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-scatto-ink/[0.05]", toneIconClass[tone])}>
           <Icon className="h-3.5 w-3.5" />
@@ -42,7 +42,7 @@ export function StatCard({ icon: Icon, label, value, delta, caption, tone = "inf
         {value}
       </p>
       {(delta || caption) && (
-        <p className="mt-1 flex items-center gap-1.5 text-[11px]">
+        <p className="mt-1 flex items-center gap-1.5 text-xs">
           {delta && (
             <span className={cn("inline-flex items-center gap-0.5 font-semibold", deltaClass[delta.direction])}>
               {deltaArrow[delta.direction]} {delta.label}

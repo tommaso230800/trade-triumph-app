@@ -71,7 +71,7 @@ export function SalesOverviewPanel({
   const totaleRipartizione = aziende.reduce((s, a) => s + a.fatturato_totale, 0);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-scatto-line bg-scatto-surface shadow-[0_6px_24px_-14px_hsl(225_18%_9%/0.16)]">
+    <div className="overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card">
       <div className="grid grid-cols-1 divide-y divide-scatto-line lg:grid-cols-[1.9fr,1fr] lg:divide-x lg:divide-y-0">
         {/* Colonna sinistra: andamento */}
         <div className="p-4 lg:p-6">
@@ -190,7 +190,7 @@ export function SalesOverviewPanel({
           </h2>
 
           <div className="rounded-xl border border-scatto-line bg-scatto-bg/60 p-4 text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scatto-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-scatto-muted">
               Fatturato totale
             </p>
             <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">

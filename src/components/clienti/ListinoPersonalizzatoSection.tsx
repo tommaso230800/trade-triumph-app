@@ -228,7 +228,7 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <p className="tabular-nums font-semibold">{formatCurrency(resolved.price)}</p>
-                    <p className="text-[10px] text-muted-foreground">{PRICE_SOURCE_LABELS[resolved.source]}</p>
+                    <p className="text-xs text-muted-foreground">{PRICE_SOURCE_LABELS[resolved.source]}</p>
                     {custom?.valid_from&&<p className="text-xs text-muted-foreground">Dal {custom.valid_from}</p>}
                     {custom?.proposal_id&&<span className="text-xs text-muted-foreground">Da proposta accettata</span>}
                   </div>
@@ -236,23 +236,23 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
 
                 <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground sm:grid-cols-4">
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wide">Listino</span>
+                    <span className="block text-xs uppercase tracking-wide">Listino</span>
                     <span className="tabular-nums text-foreground">{formatCurrency(prodotto.prezzo_listino)}</span>
                   </div>
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wide">Riservato</span>
+                    <span className="block text-xs uppercase tracking-wide">Riservato</span>
                     <span className="tabular-nums text-foreground">
                       {custom ? formatCurrency(custom.custom_price) : "—"}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wide">Ultimo applicato</span>
+                    <span className="block text-xs uppercase tracking-wide">Ultimo applicato</span>
                     <span className="tabular-nums text-foreground">
                       {last ? formatCurrency(last.last_prezzo_unitario) : "—"}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-[10px] uppercase tracking-wide">Ultimo acquisto</span>
+                    <span className="block text-xs uppercase tracking-wide">Ultimo acquisto</span>
                     <span className="text-foreground">
                       {last
                         ? `${format(new Date(last.last_order_date), "dd/MM/yyyy")} · ${

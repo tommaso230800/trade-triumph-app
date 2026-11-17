@@ -28,8 +28,8 @@ export function MonthlyComparisonCards({ data, yearCurr, yearPrev }: MonthlyComp
   const totDelta = totCurr - totPrev;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-scatto-line bg-scatto-surface shadow-[0_6px_24px_-14px_hsl(225_18%_9%/0.16)]">
-      <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1.2fr] gap-1 bg-scatto-ink/[0.03] px-3 py-2 text-[9.5px] font-semibold uppercase tracking-wide text-scatto-muted sm:gap-2 sm:px-4 sm:py-2.5 sm:text-[10.5px]">
+    <div className="overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card">
+      <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1.2fr] gap-1 bg-scatto-ink/[0.03] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-scatto-muted sm:gap-2 sm:px-4 sm:py-2.5 sm:text-xs">
         <span>Mese</span>
         <span className="text-right">{yearPrev}</span>
         <span className="text-right">{yearCurr}</span>
@@ -38,7 +38,7 @@ export function MonthlyComparisonCards({ data, yearCurr, yearPrev }: MonthlyComp
       {rows.map((r) => (
         <div
           key={r.mese}
-          className="grid grid-cols-[1fr_1.2fr_1.2fr_1.2fr] gap-1 border-t border-scatto-line px-3 py-2 text-[11px] sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
+          className="grid grid-cols-[1fr_1.2fr_1.2fr_1.2fr] gap-1 border-t border-scatto-line px-3 py-2 text-xs sm:gap-2 sm:px-4 sm:py-2.5 sm:text-sm"
         >
           <span className="min-w-0 truncate font-medium text-scatto-ink">{r.mese}</span>
           <span className="text-right tabular-nums text-scatto-muted">
@@ -54,7 +54,7 @@ export function MonthlyComparisonCards({ data, yearCurr, yearPrev }: MonthlyComp
           </span>
         </div>
       ))}
-      <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1.2fr] gap-1 border-t-2 border-scatto-line bg-scatto-ink/[0.03] px-3 py-2.5 text-[11px] font-bold sm:gap-2 sm:px-4 sm:py-3 sm:text-sm">
+      <div className="grid grid-cols-[1fr_1.2fr_1.2fr_1.2fr] gap-1 border-t-2 border-scatto-line bg-scatto-ink/[0.03] px-3 py-2.5 text-xs font-bold sm:gap-2 sm:px-4 sm:py-3 sm:text-sm">
         <span className="font-display text-scatto-ink">TOTALE</span>
         <span className="text-right tabular-nums text-scatto-muted">
           {totPrev > 0 ? formatCurrency(totPrev) : "N/D"}

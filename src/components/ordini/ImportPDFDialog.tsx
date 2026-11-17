@@ -675,7 +675,7 @@ export function ImportPDFDialog({
                             <span className="flex items-center gap-2">
                               {riga.nome_prodotto}
                               {riga.is_omaggio && (
-                                <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-success/20 text-success border border-success/40">Omaggio</span>
+                                <span className="text-xs uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-success/20 text-success border border-success/40">Omaggio</span>
                               )}
                             </span>
                           </TableCell>

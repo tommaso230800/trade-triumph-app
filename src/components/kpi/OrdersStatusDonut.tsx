@@ -31,7 +31,7 @@ export function OrdersStatusDonut({ verificati, inAttesa, altri }: OrdersStatusD
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
             <span className="font-display text-sm font-bold tabular-nums text-scatto-ink">{formatNumberIT(totale)}</span>
-            <span className="text-[9px] text-scatto-muted">ordini</span>
+            <span className="text-xs text-scatto-muted">ordini</span>
           </div>
         </div>
         <div className="flex-1 space-y-2 text-xs">

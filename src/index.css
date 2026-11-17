@@ -34,7 +34,7 @@
     --destructive-foreground: 0 0% 100%;
 
     --border: 220 22% 86%;
-    --input: 0 0% 100%;
+    --input: 220 22% 80%;
     --ring: 221 83% 53%;
 
     --radius: 1rem;
@@ -189,7 +189,7 @@
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
     --border: 220 22% 86%;
-    --input: 0 0% 100%;
+    --input: 220 22% 80%;
     --ring: 221 83% 53%;
     --commission-unpaid: 28 92% 48%;
     --commission-contested: 280 65% 52%;

@@ -671,21 +671,21 @@ export function MultiFileImportDialog({
                                     r.confidence === "low" && "bg-destructive/5",
                                   )}>
                                     <TableCell>
-                                      <Badge variant={r.confidence === "high" ? "default" : r.confidence === "medium" ? "secondary" : "destructive"} className="text-[10px]">
+                                      <Badge variant={r.confidence === "high" ? "default" : r.confidence === "medium" ? "secondary" : "destructive"} className="text-xs">
                                         {r.confidence || "med"}
                                       </Badge>
                                     </TableCell>
                                     <TableCell className="text-xs">
                                       <div className="font-medium">{r.nome_prodotto}</div>
-                                      {r.codice_prodotto && <div className="font-mono text-[10px] text-muted-foreground">{r.codice_prodotto}</div>}
+                                      {r.codice_prodotto && <div className="font-mono text-xs text-muted-foreground">{r.codice_prodotto}</div>}
                                       {(r.warning || r.listinoWarning) && (
-                                        <div className="text-[10px] text-warning flex items-start gap-1 mt-0.5">
+                                        <div className="text-xs text-warning flex items-start gap-1 mt-0.5">
                                           <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
                                           <span>{[r.warning, r.listinoWarning].filter(Boolean).join(" · ")}</span>
                                         </div>
                                       )}
                                       {r.unita_originale && r.unita_originale !== "cartoni" && (
-                                        <div className="text-[10px] text-muted-foreground">Originale: {r.unita_originale}</div>
+                                        <div className="text-xs text-muted-foreground">Originale: {r.unita_originale}</div>
                                       )}
                                     </TableCell>
                                     <TableCell>

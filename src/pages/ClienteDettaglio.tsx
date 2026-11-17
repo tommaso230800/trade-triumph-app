@@ -50,6 +50,7 @@ import { it } from "date-fns/locale";
 import { useState } from "react";
 import { formatEuro } from "@/lib/format";
 import { PageSkeleton, ListSkeleton } from "@/components/ui/page-skeleton";
+import { ClienteQuickActions } from "@/components/clienti/ClienteQuickActions";
 
 const statusConfig = {
   completato: { label: "Completato", className: "bg-success/10 text-success hover:bg-success/20" },
@@ -132,16 +133,16 @@ const ClienteDettaglio = () => {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Link to="/clienti">
-            <Button variant="ghost" size="icon">
+          <Button asChild variant="ghost" size="icon" aria-label="Torna ai clienti">
+            <Link to="/clienti">
               <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
+            </Link>
+          </Button>
+          <div className="min-w-0 flex-1">
+            <h1 className="break-words text-2xl font-bold tracking-tight text-foreground">
               {cliente.nome}
             </h1>
-            <p className="text-muted-foreground">{cliente.azienda || "—"}</p>
+            <p className="text-sm text-muted-foreground">{[cliente.azienda, cliente.citta].filter(Boolean).join(" · ") || "—"}</p>
           </div>
           <Badge
             className={
@@ -155,6 +156,9 @@ const ClienteDettaglio = () => {
             {cliente.status.charAt(0).toUpperCase() + cliente.status.slice(1)}
           </Badge>
         </div>
+
+        {/* Azioni a un tocco */}
+        <ClienteQuickActions cliente={cliente} />
 
         {/* Preparazione visite AI + Storico */}
         <VisitsSection clienteId={cliente.id} />

@@ -432,7 +432,7 @@ const Ordini = () => {
 
         {/* Direzione "Scatto": pannello con scope proprio (token --scatto-*,
             non tocca il tema globale dell'app). */}
-        <div className={`space-y-6 rounded-2xl bg-scatto-bg p-4 lg:p-6 ${selectionMode ? "pb-40 lg:pb-32" : ""}`}>
+        <div className={`space-y-6 rounded-xl bg-scatto-bg p-4 lg:p-6 ${selectionMode ? "pb-40 lg:pb-32" : ""}`}>
           {/* Intestazione */}
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0 space-y-1">

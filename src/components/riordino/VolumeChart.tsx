@@ -78,7 +78,7 @@ export function VolumeChart({ pair, height = 240 }: { pair: PairIntelligence; he
                 if (!active || !payload?.length) return null;
                 const p = payload[0].payload;
                 return (
-                  <div className="rounded-lg border border-border bg-popover p-3 text-xs shadow-md">
+                  <div className="rounded-lg border border-border bg-popover p-3 text-xs shadow-card">
                     <p className="font-semibold">{fmtD(p.data)}</p>
                     <p className="mt-1">
                       {UNITA_LABEL[unita]}: <span className="font-semibold tabular-nums">{p.valore.toLocaleString("it-IT")}</span>
