@@ -81,7 +81,7 @@ export function OrdineRigaEditor({
           <div className="flex flex-wrap items-center gap-2">
             <p className="min-w-0 break-words text-sm font-semibold leading-snug text-order-ink">{prodottoNome}</p>
             {isOmaggio && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-semibold text-success">
+              <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">
                 <Gift className="h-3 w-3" /> Omaggio
               </span>
             )}
@@ -128,7 +128,7 @@ export function OrdineRigaEditor({
         <div className="col-span-2 min-w-0 space-y-1 sm:col-span-1">
           <div className="flex min-w-0 items-center gap-1">
             <Label className="text-xs font-semibold text-order-ink">Prezzo € / pezzo</Label>
-            {!isOmaggio && prezzoSourceLabel && <span className="truncate text-[11px] text-order-muted">· {prezzoSourceLabel}</span>}
+            {!isOmaggio && prezzoSourceLabel && <span className="truncate text-xs text-order-muted">· {prezzoSourceLabel}</span>}
             {!isOmaggio && prezzoSourceInfo && (
               <Popover>
                 <PopoverTrigger asChild>

@@ -24,7 +24,7 @@ export function OfflineBanner() {
   if (online) return null;
 
   return (
-    <div className="fixed top-0 inset-x-0 z-[100] bg-warning/95 text-warning-foreground text-xs sm:text-sm py-1.5 px-3 text-center font-medium shadow-md backdrop-blur flex items-center justify-center gap-2">
+    <div className="fixed top-0 inset-x-0 z-[100] bg-warning/95 text-warning-foreground text-xs sm:text-sm py-1.5 px-3 text-center font-medium shadow-card backdrop-blur flex items-center justify-center gap-2">
       <WifiOff className="h-3.5 w-3.5" />
       Modalità offline — stai vedendo i dati salvati
     </div>

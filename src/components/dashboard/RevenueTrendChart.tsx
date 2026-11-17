@@ -35,7 +35,7 @@ export function RevenueTrendChart({ data, currentMonthIndex, yearCurr, yearPrev 
 
   return (
     <div>
-      <div className="mb-2 flex items-center gap-4 px-1 text-[11px] font-medium text-scatto-muted">
+      <div className="mb-2 flex items-center gap-4 px-1 text-xs font-medium text-scatto-muted">
         <span className="flex items-center gap-1.5">
           <i className="inline-block h-[3px] w-3 rounded-full bg-scatto-ink" />
           {yearCurr}

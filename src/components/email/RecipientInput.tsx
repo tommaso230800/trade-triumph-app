@@ -102,7 +102,7 @@ export function RecipientInput({ label, value, other, otherLabel, onChange, cont
         />
       </div>
       {focus && term.trim() && (suggestions.length > 0 || isValidEmail(term)) && (
-        <ul id={`${id}-list`} role="listbox" className="max-h-64 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-md">
+        <ul id={`${id}-list`} role="listbox" className="max-h-64 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-card">
           {suggestions.map((s, i) => (
             <li key={s.id} role="option" aria-selected={i === active}>
               <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => add(s.email)} className={`flex min-h-11 w-full flex-col items-start rounded-md px-3 py-2 text-left ${i === active ? "bg-muted" : "hover:bg-muted"}`}>

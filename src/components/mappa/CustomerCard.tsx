@@ -32,7 +32,7 @@ export function CustomerCard({ cliente, inGiro, onChiudi, onAggiungiGiro, onRegi
   const dest = `${cliente.lat},${cliente.lng}`;
 
   return (
-    <div className="rounded-2xl border border-border bg-card/95 shadow-lg backdrop-blur-md">
+    <div className="rounded-xl border border-border bg-card/95 shadow-lg backdrop-blur-md">
       <div className="flex items-start gap-3 p-4">
         <span
           className="mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full"
@@ -86,7 +86,7 @@ export function CustomerCard({ cliente, inGiro, onChiudi, onAggiungiGiro, onRegi
           <div className="mt-1 flex flex-wrap gap-1">
             {cliente.aziende.length ? (
               cliente.aziende.map((a) => (
-                <Badge key={a} variant="secondary" className="text-[11px]">
+                <Badge key={a} variant="secondary" className="text-xs">
                   {a}
                 </Badge>
               ))
@@ -99,12 +99,12 @@ export function CustomerCard({ cliente, inGiro, onChiudi, onAggiungiGiro, onRegi
           <Badge
             variant="outline"
             style={{ borderColor: colore.fill, color: colore.fill }}
-            className="text-[11px]"
+            className="text-xs"
           >
             {colore.label}
           </Badge>
           {cliente.insoluto > 0 && (
-            <Badge variant="destructive" className="text-[11px]">
+            <Badge variant="destructive" className="text-xs">
               Insoluto {euro.format(cliente.insoluto)}
             </Badge>
           )}

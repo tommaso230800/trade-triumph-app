@@ -41,7 +41,7 @@ export function PeriodRangeTabs({ value, onChange, className }: PeriodRangeTabsP
           aria-pressed={value === r}
           className={`min-h-[36px] rounded-lg px-3 text-xs font-semibold transition-colors ${
             value === r
-              ? "bg-scatto-surface text-scatto-ink shadow-[0_2px_6px_-3px_hsl(225_18%_9%/0.4)]"
+              ? "bg-scatto-surface text-scatto-ink shadow-card"
               : "text-scatto-muted hover:text-scatto-ink"
           }`}
         >

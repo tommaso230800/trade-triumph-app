@@ -266,7 +266,7 @@ export default function MappaClienti() {
 
   return (
     <MainLayout>
-      <div className="relative h-[calc(100dvh-9.5rem)] w-full overflow-hidden rounded-2xl border border-border bg-muted/30 lg:h-[calc(100dvh-5rem)]">
+      <div className="relative h-[calc(100dvh-9.5rem)] w-full overflow-hidden rounded-xl border border-border bg-muted/30 lg:h-[calc(100dvh-5rem)]">
         {isLoading ? (
           <Skeleton className="absolute inset-0" />
         ) : (
@@ -290,7 +290,7 @@ export default function MappaClienti() {
         {/* Ricerca */}
         <div className="pointer-events-none absolute inset-x-0 top-0 z-20 p-3">
           <div className="pointer-events-auto mx-auto max-w-xl">
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-card/95 px-3 shadow-md backdrop-blur-md">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-card/95 px-3 shadow-card backdrop-blur-md">
               <Search className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
               <Input
                 value={ricerca}
@@ -336,7 +336,7 @@ export default function MappaClienti() {
 
         {/* Controlli laterali */}
         <div className="absolute right-3 top-20 z-20 flex flex-col gap-2">
-          <div className="overflow-hidden rounded-xl border border-border bg-card/95 shadow-md backdrop-blur-md">
+          <div className="overflow-hidden rounded-xl border border-border bg-card/95 shadow-card backdrop-blur-md">
             {STILI.map((s) => (
               <button
                 key={s.id}
@@ -353,7 +353,7 @@ export default function MappaClienti() {
           <button
             onClick={() => setTridimensionale((v) => !v)}
             className={cn(
-              "touch-target rounded-xl border border-border bg-card/95 px-3 py-2 text-xs font-semibold shadow-md backdrop-blur-md",
+              "touch-target rounded-xl border border-border bg-card/95 px-3 py-2 text-xs font-semibold shadow-card backdrop-blur-md",
               tridimensionale && "bg-primary text-primary-foreground",
             )}
           >
@@ -362,7 +362,7 @@ export default function MappaClienti() {
           <button
             onClick={trovaPosizione}
             aria-label="Dove sono"
-            className="touch-target rounded-xl border border-border bg-card/95 p-2.5 shadow-md backdrop-blur-md"
+            className="touch-target rounded-xl border border-border bg-card/95 p-2.5 shadow-card backdrop-blur-md"
           >
             <Locate className={cn("h-4 w-4", posizione && "text-primary")} />
           </button>
@@ -370,15 +370,15 @@ export default function MappaClienti() {
 
         {/* Indicatori in alto a sinistra */}
         <div className="absolute left-3 top-20 z-20 hidden flex-col gap-2 sm:flex">
-          <div className="rounded-xl border border-border bg-card/95 px-3 py-2 shadow-md backdrop-blur-md">
-            <p className="text-[11px] text-muted-foreground">Clienti a mappa</p>
+          <div className="rounded-xl border border-border bg-card/95 px-3 py-2 shadow-card backdrop-blur-md">
+            <p className="text-xs text-muted-foreground">Clienti a mappa</p>
             <p className="text-lg font-bold tabular-nums leading-tight">{totaliVisibili.clienti}</p>
             <p className="text-xs tabular-nums text-muted-foreground">
               {euro.format(totaliVisibili.fatturato)}
             </p>
           </div>
           {geocodifica && (
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-card/95 px-3 py-2 text-xs shadow-md">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-card/95 px-3 py-2 text-xs shadow-card">
               <Loader2 className="h-3.5 w-3.5 animate-spin" /> Calcolo posizioni…
             </div>
           )}
@@ -405,7 +405,7 @@ export default function MappaClienti() {
             !pannelloAperto && "translate-y-[calc(100%-3.25rem)] sm:translate-y-0 sm:translate-x-[calc(100%+1rem)]",
           )}
         >
-          <div className="flex h-full max-h-[75dvh] flex-col overflow-hidden rounded-t-2xl border border-border bg-card/95 shadow-xl backdrop-blur-md sm:max-h-none sm:rounded-2xl">
+          <div className="flex h-full max-h-[75dvh] flex-col overflow-hidden rounded-t-2xl border border-border bg-card/95 shadow-xl backdrop-blur-md sm:max-h-none sm:rounded-xl">
             <button
               onClick={() => setPannelloAperto((v) => !v)}
               className="flex h-13 items-center justify-between px-4 py-3 text-sm font-semibold"
@@ -560,7 +560,7 @@ export default function MappaClienti() {
                           {t.nome}
                         </button>
                         {percorso?.tratte?.[i] && (
-                          <span className="text-[11px] tabular-nums text-muted-foreground">
+                          <span className="text-xs tabular-nums text-muted-foreground">
                             {(percorso.tratte[i].distanzaMetri / 1000).toFixed(1)} km ·{" "}
                             {Math.round(percorso.tratte[i].durataSecondi / 60)}′
                           </span>
@@ -606,7 +606,7 @@ export default function MappaClienti() {
                         <span className="text-muted-foreground tabular-nums">
                           {ore(percorso.durataSecondi)}
                         </span>
-                        <Badge variant="secondary" className="ml-auto text-[11px]">
+                        <Badge variant="secondary" className="ml-auto text-xs">
                           {percorso.tappe.length} tappe
                         </Badge>
                       </div>
@@ -651,7 +651,7 @@ export default function MappaClienti() {
         {!pannelloAperto && (
           <button
             onClick={() => setPannelloAperto(true)}
-            className="absolute bottom-3 right-3 z-20 hidden touch-target items-center gap-2 rounded-xl border border-border bg-card/95 px-3 py-2 text-sm font-medium shadow-md backdrop-blur-md sm:flex"
+            className="absolute bottom-3 right-3 z-20 hidden touch-target items-center gap-2 rounded-xl border border-border bg-card/95 px-3 py-2 text-sm font-medium shadow-card backdrop-blur-md sm:flex"
           >
             <Layers className="h-4 w-4" /> Livelli e filtri
           </button>

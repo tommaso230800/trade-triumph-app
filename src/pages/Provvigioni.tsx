@@ -116,7 +116,7 @@ const provInputCls =
 const provTabCls =
   "gap-2 rounded-lg text-scatto-muted hover:text-scatto-ink data-[state=active]:bg-scatto-accent data-[state=active]:text-white data-[state=active]:shadow-none";
 const provCardCls =
-  "rounded-xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_hsl(225_18%_9%/0.05)]";
+  "rounded-xl border border-scatto-line bg-scatto-surface shadow-card";
 
 type SortKey = keyof ProvvigioneRow;
 
@@ -347,7 +347,7 @@ const Provvigioni = () => {
       <CommissionDetail commission={fiscalDetail} onClose={()=>setFiscalDetail(null)}/>
       <div className="space-y-6 animate-rise-in pb-8">
         {/* Pannello con scope proprio (token --scatto-*), coerente con Ordini. */}
-        <div className="space-y-6 rounded-2xl bg-scatto-bg p-4 lg:p-6">
+        <div className="space-y-6 rounded-xl bg-scatto-bg p-4 lg:p-6">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
@@ -405,7 +405,7 @@ const Provvigioni = () => {
         </div>
 
         {/* CONTO ECONOMICO PERSONALE: striscia piatta, un dato protagonista */}
-        <section className="overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_hsl(225_18%_9%/0.05)]">
+        <section className="overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card">
           <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
             <Wallet className="h-4 w-4 text-scatto-muted" />
             <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">Il tuo Conto Economico</h2>
@@ -508,7 +508,7 @@ const Provvigioni = () => {
                           <Line type="monotone" dataKey="provvInCorso" stroke="hsl(var(--scatto-info) / 0.55)" strokeWidth={2.2} strokeDasharray="4 3" dot={{ r: 3 }} connectNulls activeDot={{ r: 4 }} legendType="none" />
                         </ComposedChart>
                       </ResponsiveContainer>
-                      <p className="mt-1 text-[11px] text-scatto-muted">
+                      <p className="mt-1 text-xs text-scatto-muted">
                         Il tratto tratteggiato è il mese in corso, ancora incompleto.
                       </p>
                     </>
@@ -550,7 +550,7 @@ const Provvigioni = () => {
                           <Line yAxisId="right" type="monotone" dataKey="incidenza" stroke="hsl(var(--scatto-success))" strokeWidth={2.2} dot={{ r: 2.5 }} connectNulls name="incidenza" />
                         </ComposedChart>
                       </ResponsiveContainer>
-                      <p className="mt-1 text-[11px] text-scatto-muted">
+                      <p className="mt-1 text-xs text-scatto-muted">
                         La linea è la provvigione realmente incassata sul fatturato: un mese sotto la media va controllato.
                       </p>
                     </>
@@ -625,7 +625,7 @@ const Provvigioni = () => {
                           <Line type="monotone" dataKey="cumulato" stroke="hsl(var(--scatto-info))" strokeWidth={2.4} dot={false} connectNulls name="cumulato" />
                         </ComposedChart>
                       </ResponsiveContainer>
-                      <p className="mt-1 text-[11px] text-scatto-muted">
+                      <p className="mt-1 text-xs text-scatto-muted">
                         Progressivo del mese: <b className="font-semibold text-scatto-ink">{fmtEur(cumFinale)}</b>
                         {obiettivo > 0 && <> · {Math.round((cumFinale / obiettivo) * 100)}% dell'obiettivo</>}
                       </p>
@@ -1328,7 +1328,7 @@ function Heatmap({
                 type="button"
                 onClick={() => onCellClick(row.anno, i)}
                 title={tooltip}
-                className={`aspect-square rounded transition-transform hover:scale-110 hover:ring-2 hover:ring-primary/50 focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-[9px] font-semibold ${textColor(v)}`}
+                className={`aspect-square rounded transition-transform hover:ring-2 hover:ring-primary/50 focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-center text-xs font-semibold ${textColor(v)}`}
                 style={{ background: bgFor(v, row.media) }}
               >
                 {v > 0 && v >= 1000 ? `${Math.round(v / 1000)}k` : ""}

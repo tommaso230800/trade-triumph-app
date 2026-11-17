@@ -154,7 +154,7 @@ const Impostazioni = () => {
                   className={cn(
                     "relative p-4 sm:p-5 rounded-xl border-2 transition-all duration-300 text-left group touch-target",
                     theme === key
-                      ? "border-primary bg-primary/5 shadow-md"
+                      ? "border-primary bg-primary/5 shadow-card"
                       : "border-border hover:border-primary/50 hover:bg-muted/30 active:scale-[0.98]"
                   )}
                 >

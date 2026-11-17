@@ -313,7 +313,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
                 </Button>
                 <Button
                   size="sm"
-                  className="gap-2 rounded-xl bg-scatto-ink text-white hover:bg-scatto-ink/90"
+                  className="gap-2"
                   disabled={!stats}
                   onClick={() => stats && exportKPIToPDF({ ...stats, yoy: yoyValue, yoyPrevFatturato, topGrowers: clientiClassificati.crescita.slice(0, 5), topDecliners: clientiClassificati.calo.slice(0, 5), periodoLabel: getPeriodoLabel() } as any)}
                 >
@@ -598,10 +598,10 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
           {/* Detailed Tabs */}
           <Tabs defaultValue="clienti" className="space-y-4">
             <TabsList className="grid h-auto w-full max-w-lg grid-cols-4 rounded-xl border border-scatto-line bg-scatto-surface p-1">
-              <TabsTrigger value="clienti" className="rounded-lg data-[state=active]:bg-scatto-ink data-[state=active]:text-white">Clienti</TabsTrigger>
-              <TabsTrigger value="aziende" className="rounded-lg data-[state=active]:bg-scatto-ink data-[state=active]:text-white">Aziende</TabsTrigger>
-              <TabsTrigger value="brands" className="rounded-lg data-[state=active]:bg-scatto-ink data-[state=active]:text-white">Marchi</TabsTrigger>
-              <TabsTrigger value="prodotti" className="rounded-lg data-[state=active]:bg-scatto-ink data-[state=active]:text-white">Prodotti</TabsTrigger>
+              <TabsTrigger value="clienti" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Clienti</TabsTrigger>
+              <TabsTrigger value="aziende" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Aziende</TabsTrigger>
+              <TabsTrigger value="brands" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Marchi</TabsTrigger>
+              <TabsTrigger value="prodotti" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Prodotti</TabsTrigger>
             </TabsList>
 
             {/* Clienti Tab */}

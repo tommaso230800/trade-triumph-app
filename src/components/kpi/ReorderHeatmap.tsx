@@ -24,13 +24,13 @@ export function ReorderHeatmap({ data }: ReorderHeatmapProps) {
       <div className="grid grid-cols-[minmax(58px,72px)_repeat(12,minmax(0,1fr))] items-center gap-1">
         <span />
         {mesiLettera.map((m, i) => (
-          <span key={i} className="text-center font-display text-[10px] text-scatto-muted">
+          <span key={i} className="text-center font-display text-xs text-scatto-muted">
             {m}
           </span>
         ))}
         {data.map((row) => (
           <Fragment key={row.clienteId}>
-            <span className="truncate pr-1 text-[11px] text-scatto-muted">{row.nome}</span>
+            <span className="truncate pr-1 text-xs text-scatto-muted">{row.nome}</span>
             {row.mesi.map((v, i) => (
               <span
                 key={i}
@@ -41,7 +41,7 @@ export function ReorderHeatmap({ data }: ReorderHeatmapProps) {
           </Fragment>
         ))}
       </div>
-      <div className="mt-3 flex flex-wrap gap-x-3.5 gap-y-1 text-[11px] text-scatto-muted">
+      <div className="mt-3 flex flex-wrap gap-x-3.5 gap-y-1 text-xs text-scatto-muted">
         <span className="inline-flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-sm bg-scatto-ink/[0.06]" />
           Nessun ordine

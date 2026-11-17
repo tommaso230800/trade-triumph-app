@@ -132,7 +132,7 @@ export function IntegrityCheckPanel() {
             <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
               <p className="text-xs text-muted-foreground">Δ globale</p>
               <p className="text-lg font-semibold">{fmt(summary.total_fatturato - summary.total_righe)}</p>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {fmt(summary.total_fatturato)} vs {fmt(summary.total_righe)}
               </p>
             </div>
@@ -203,7 +203,7 @@ export function IntegrityCheckPanel() {
                       <TableCell className="max-w-[220px] truncate">{r.cliente ?? "—"}</TableCell>
                       <TableCell className="text-xs">{r.data ?? "—"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-xs">
                           {r.status ?? "—"}
                         </Badge>
                       </TableCell>

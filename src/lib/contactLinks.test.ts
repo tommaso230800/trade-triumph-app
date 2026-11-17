@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizePhone, telHref, whatsappHref } from "./contactLinks";
+import { mapsHref, normalizePhone, telHref, whatsappHref } from "./contactLinks";
 
 describe("contactLinks", () => {
   it("normalizza cellulari e fissi italiani", () => {
@@ -21,5 +21,12 @@ describe("contactLinks", () => {
     expect(whatsappHref("055 123456")).toBeNull();
     expect(whatsappHref("+41 79 123 45 67")).toBe("https://wa.me/41791234567");
     expect(telHref("055 123456")).toBe("tel:+39055123456");
+  });
+
+  it("link al navigatore solo con un indirizzo", () => {
+    expect(mapsHref(["Via Roma 1", "50100", "Firenze"])).toBe(
+      "https://www.google.com/maps/dir/?api=1&destination=Via%20Roma%201%2C%2050100%2C%20Firenze",
+    );
+    expect(mapsHref([null, " ", undefined])).toBeNull();
   });
 });

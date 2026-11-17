@@ -10,7 +10,7 @@ interface RevenueMarginChartProps {
 export function RevenueMarginChart({ data }: RevenueMarginChartProps) {
   return (
     <div>
-      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] font-medium text-scatto-muted">
+      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs font-medium text-scatto-muted">
         <span>Ogni mese ha il suo colore, ripetuto identico nel grafico ordini</span>
         <span className="flex items-center gap-1.5">
           <i className="inline-block h-[3px] w-3 rounded-full bg-scatto-warning" />
@@ -54,7 +54,7 @@ export function RevenueMarginChart({ data }: RevenueMarginChartProps) {
           />
         </ComposedChart>
       </ResponsiveContainer>
-      <p className="mt-1 px-1 text-[11px] text-scatto-muted">
+      <p className="mt-1 px-1 text-xs text-scatto-muted">
         Barre = fatturato · linea ambra = margine %.
       </p>
     </div>

@@ -884,15 +884,15 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
   const TotalsStrip = ({ compact }: { compact?: boolean }) => (
     <div className={`grid grid-cols-3 gap-2 ${compact ? "" : "gap-3"}`} aria-live="polite">
       <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-order-ink">Cartoni totali</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-order-ink">Cartoni totali</p>
         <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight tracking-tight tabular-nums text-order-ink`}>{nf(qty.cartoni)}</p>
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-order-ink">Pezzi totali</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-order-ink">Pezzi totali</p>
         <p className={`${compact ? "text-xl" : "text-3xl"} font-bold leading-tight tracking-tight tabular-nums ${qty.completo ? "text-order-ink" : "text-warning"}`}>{nf(qty.pezzi)}{!qty.completo && "*"}</p>
       </div>
       <div className="min-w-0 text-right">
-        <p className="text-[11px] font-bold uppercase tracking-wide text-order-ink">Totale ordine</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-order-ink">Totale ordine</p>
         <p className={`${compact ? "text-xl" : "text-3xl"} truncate font-bold leading-tight tracking-tight tabular-nums text-order-blue`}>{formatCurrency(totale)}</p>
       </div>
     </div>
@@ -939,7 +939,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
               <DialogDescription className="mt-0.5 truncate text-xs text-order-muted sm:text-sm">
                 {selectedClienteName || "Nessun cliente"}{selectedAziendaName ? ` · ${selectedAziendaName}` : ""} · {format(new Date(`${formData.data_ordine}T12:00:00`), "dd/MM/yyyy")}
               </DialogDescription>
-              <p className="mt-0.5 text-[11px] text-order-muted">N. ordine assegnato al salvataggio</p>
+              <p className="mt-0.5 text-xs text-order-muted">N. ordine assegnato al salvataggio</p>
             </div>
             {saveBadge && (
               <span className={`flex shrink-0 items-center gap-1 text-xs font-medium ${saveBadge.cls}`} role="status">
@@ -1215,8 +1215,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                 <p className="mt-0.5 break-words text-xs text-order-muted">{selectedAziendaName || "Fornitore da scegliere"}</p>
               </div>
               <div className="space-y-4">
-                <div><p className="text-[11px] font-bold uppercase tracking-wide">Cartoni totali</p><p className="text-4xl font-bold tracking-tight tabular-nums">{nf(qty.cartoni)}</p></div>
-                <div><p className="text-[11px] font-bold uppercase tracking-wide">Pezzi totali</p><p className={`text-4xl font-bold tracking-tight tabular-nums ${qty.completo ? "" : "text-warning"}`}>{nf(qty.pezzi)}{!qty.completo && "*"}</p></div>
+                <div><p className="text-xs font-bold uppercase tracking-wide">Cartoni totali</p><p className="text-4xl font-bold tracking-tight tabular-nums">{nf(qty.cartoni)}</p></div>
+                <div><p className="text-xs font-bold uppercase tracking-wide">Pezzi totali</p><p className={`text-4xl font-bold tracking-tight tabular-nums ${qty.completo ? "" : "text-warning"}`}>{nf(qty.pezzi)}{!qty.completo && "*"}</p></div>
                 <QtyNotes />
                 <SummaryRow label="Pagamento" value={formData.tipo_pagamento} />
               </div>

@@ -80,7 +80,7 @@ export function AllocationsEnginePanel({ estrattoId, all, from, to, compact, tit
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>Salvate: <b className="text-foreground">{engine.saved.length}</b></span>
               {Object.entries(savedByType).map(([k, v]) => (
-                <Badge key={k} variant="secondary" className="text-[10px]">{k}: {v}</Badge>
+                <Badge key={k} variant="secondary" className="text-xs">{k}: {v}</Badge>
               ))}
             </div>
 
@@ -132,7 +132,7 @@ function Stat({
       : "text-foreground";
   return (
     <div className="rounded-lg border border-border/50 bg-background/30 p-3">
-      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
       <div className={`text-lg font-semibold ${cls}`}>{value}</div>
     </div>
   );

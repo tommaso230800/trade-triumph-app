@@ -30,3 +30,9 @@ export function whatsappHref(raw: string | null | undefined): string | null {
   if (n.startsWith("39") && !n.startsWith("393")) return null;
   return `https://wa.me/${n}`;
 }
+
+/** Navigatore: apre Google Maps (o Apple Maps su iPhone tramite il link universale). */
+export function mapsHref(parts: Array<string | null | undefined>): string | null {
+  const q = parts.map((p) => (p ?? "").trim()).filter(Boolean).join(", ");
+  return q ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}` : null;
+}

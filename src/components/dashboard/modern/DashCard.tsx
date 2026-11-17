@@ -24,7 +24,7 @@ export function DashCard({
   return (
     <section
       className={cn(
-        "flex h-full flex-col overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_hsl(225_18%_9%/0.05)]",
+        "flex h-full flex-col overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card",
         className
       )}
     >

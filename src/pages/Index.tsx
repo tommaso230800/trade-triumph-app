@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
 import { formatNumber } from "@/lib/format";
+import { PromemoriaWidget } from "@/components/dashboard/PromemoriaWidget";
 
 // html2canvas + jsPDF pesano ~590kB: caricati solo al primo "Apri proforma",
 // non nel bundle iniziale della dashboard (pagina più visitata dell'app).
@@ -142,7 +143,7 @@ function buildSparkPath(values: number[]): string {
 function FornitorePill({ curr, prev }: { curr: number; prev: number }) {
   if (prev <= 0) {
     return (
-      <span className="inline-flex items-center rounded-full bg-scatto-ink/5 px-2 py-0.5 text-[11px] font-semibold text-scatto-muted">
+      <span className="inline-flex items-center rounded-full bg-scatto-ink/5 px-2 py-0.5 text-xs font-semibold text-scatto-muted">
         nuovo
       </span>
     );
@@ -156,7 +157,7 @@ function DeltaBadge({ deltaPct, size = "sm" }: { deltaPct: number | null; size?:
   return (
     <span
       className={`inline-flex items-center rounded-full font-semibold tabular-nums ${
-        size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-[11px]"
+        size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-xs"
       } ${
         deltaPct === null
           ? "bg-scatto-ink/5 text-scatto-muted"
@@ -412,14 +413,14 @@ const Index = () => {
           {/* 1 — HEADER */}
           <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-scatto-surface p-1.5 shadow-[0_6px_20px_-12px_hsl(225_18%_9%/0.4)]">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-scatto-surface p-1.5 shadow-card">
                 <img src={agencyLogo} alt="Logo Mazzi Group" className="h-full w-full object-contain" />
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-scatto-muted">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-scatto-muted">
                   Mazzi Group
                 </p>
-                <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink lg:text-[32px]">
+                <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink lg:text-3xl">
                   {greeting}{firstName ? `, ${firstName}` : ""}.
                 </h1>
                 {isLoading ? (
@@ -438,7 +439,7 @@ const Index = () => {
                     onClick={() => setPeriod(p)}
                     className={`min-h-[36px] flex-1 rounded-lg px-3 text-xs font-semibold transition-colors sm:flex-initial ${
                       period === p
-                        ? "bg-scatto-ink text-white shadow-[0_2px_6px_-2px_hsl(225_18%_9%/0.4)]"
+                        ? "bg-card text-foreground shadow-card"
                         : "text-scatto-muted hover:text-scatto-ink"
                     }`}
                   >
@@ -448,13 +449,15 @@ const Index = () => {
               </div>
               <button
                 onClick={handleExport}
-                className="flex min-h-[44px] items-center gap-2 rounded-xl bg-scatto-surface px-4 text-xs font-semibold text-scatto-ink shadow-[0_6px_20px_-14px_hsl(225_18%_9%/0.6)]"
+                className="flex min-h-[44px] items-center gap-2 rounded-xl bg-scatto-surface px-4 text-xs font-semibold text-scatto-ink shadow-card"
               >
                 <Download className="h-4 w-4" />
                 Esporta
               </button>
             </div>
           </header>
+
+          <PromemoriaWidget />
 
           {/* Striscia sintesi (dati reali dell'agente: nessuna metrica e-commerce) */}
           {!isLoading && (
@@ -770,7 +773,7 @@ const Index = () => {
                           className="flex min-h-[64px] items-center gap-3 px-4 py-3 transition-colors hover:bg-scatto-ink/[0.02] sm:px-5"
                         >
                           <span
-                            className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-bold"
+                            className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold"
                             style={{ backgroundColor: softBg(color), color }}
                           >
                             {az?.logo_url ? (
@@ -780,7 +783,7 @@ const Index = () => {
                             )}
                           </span>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[15px] font-bold tracking-tight text-scatto-ink">
+                            <p className="truncate text-base font-bold tracking-tight text-scatto-ink">
                               {c.cliente_nome}
                             </p>
                             <p className="truncate text-xs text-scatto-muted">
@@ -796,7 +799,7 @@ const Index = () => {
                             <p className="font-display text-sm font-bold tabular-nums text-scatto-ink">
                               {formatCompact(c.ultimo_importo)}
                             </p>
-                            <p className="text-xs text-muted-foreground">Importo ultimo ordine</p><p className="text-[11px] font-medium text-scatto-danger">
+                            <p className="text-xs text-muted-foreground">Importo ultimo ordine</p><p className="text-xs font-medium text-scatto-danger">
                               +{c.ritardo} {c.ritardo === 1 ? "giorno" : "giorni"}
                             </p>
                           </div>
@@ -839,7 +842,7 @@ const Index = () => {
                           className="flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-scatto-ink/[0.03] sm:px-5 touch-target"
                         >
                           <span
-                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-bold"
+                            className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold"
                             style={{ backgroundColor: softBg(color), color }}
                           >
                             {o.aziende?.logo_url ? (
@@ -850,7 +853,7 @@ const Index = () => {
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-semibold text-scatto-ink">{nomeCliente}</p>
-                            <p className="text-[11px] text-scatto-muted">{relativeTime(o.created_at)}</p>
+                            <p className="text-xs text-scatto-muted">{relativeTime(o.created_at)}</p>
                           </div>
                           <span className="flex-shrink-0 font-display text-sm font-bold tabular-nums text-scatto-ink">
                             {o.totale ? formatCompact(Number(o.totale)) : "N/D"}
@@ -877,14 +880,14 @@ const Index = () => {
                 style={{ backgroundColor: aziendaColorValue(selectedOrder.azienda_id, aziendaColorMap) }}
               >
                 <span className="truncate">{selectedOrder.aziende?.nome || "N/D"}</span>
-                <span className="ml-auto flex-shrink-0 rounded-full bg-white/[0.24] px-2.5 py-0.5 text-[11px] font-bold">
+                <span className="ml-auto flex-shrink-0 rounded-full bg-white/[0.24] px-2.5 py-0.5 text-xs font-bold">
                   {statusLabels[selectedOrder.status]}
                 </span>
               </div>
               <div className="flex-1 overflow-y-auto px-4 pt-4">
                 <div className="mb-3.5 flex items-center gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-[17px] font-bold tracking-tight text-scatto-ink">
+                    <p className="truncate text-base font-bold tracking-tight text-scatto-ink">
                       {selectedOrder.clienti?.nome || "N/D"}
                     </p>
                     <p className="text-xs text-scatto-muted">
@@ -901,7 +904,7 @@ const Index = () => {
                   </div>
                 </div>
 
-                <p className="mb-0.5 mt-4 text-[10.5px] font-bold uppercase tracking-[0.11em] text-scatto-muted">
+                <p className="mb-0.5 mt-4 text-xs font-bold uppercase tracking-[0.11em] text-scatto-muted">
                   Righe
                 </p>
                 {!selectedOrderRighe ? (
@@ -942,7 +945,7 @@ const Index = () => {
                 <DrawerClose asChild>
                   <button
                     type="button"
-                    className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-scatto-muted shadow-[inset_0_0_0_1px_hsl(var(--scatto-line))] touch-target"
+                    className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-scatto-muted shadow-card touch-target"
                   >
                     Chiudi
                   </button>
@@ -950,7 +953,7 @@ const Index = () => {
                 <button
                   type="button"
                   onClick={() => selectedOrder && handleApriProforma(selectedOrder)}
-                  className="flex-1 rounded-xl bg-scatto-ink px-4 py-3 text-sm font-semibold text-white touch-target"
+                  className="flex-1 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground touch-target"
                 >
                   Apri proforma
                 </button>

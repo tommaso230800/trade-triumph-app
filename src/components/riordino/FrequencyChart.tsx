@@ -171,7 +171,7 @@ function FrequencyTooltip({ active, payload, pair }: any) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="max-w-64 rounded-lg border border-border bg-popover p-3 text-xs shadow-md">
+    <div className="max-w-64 rounded-lg border border-border bg-popover p-3 text-xs shadow-card">
       <p className="font-semibold">{STATO_LABEL[p.stato as StatoIntervallo]}</p>
       <p className="mt-1 text-muted-foreground">
         {fmtD(p.from_data)} → {fmtD(p.to_data)}

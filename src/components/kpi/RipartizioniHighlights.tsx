@@ -14,14 +14,14 @@ export function RipartizioniHighlights({ aziendaTop, prodottoTop, fatturatoTotal
   return (
     <div className="grid gap-3 lg:grid-cols-2">
       <SectionCard>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-scatto-muted">Azienda top</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-scatto-muted">Azienda top</p>
         {aziendaTop ? (
           <>
             <p className="mt-1.5 break-words font-display text-base font-bold text-scatto-ink">{aziendaTop.nome}</p>
             <p className="mt-2 font-display text-2xl font-bold tabular-nums tracking-tight text-scatto-info">
               {formatCurrency(aziendaTop.fatturato_totale)}
             </p>
-            <p className="mt-1.5 text-[11px] text-scatto-muted">{formatNumber(quotaAzienda, 0)}% del fatturato totale</p>
+            <p className="mt-1.5 text-xs text-scatto-muted">{formatNumber(quotaAzienda, 0)}% del fatturato totale</p>
           </>
         ) : (
           <p className="mt-2 text-sm text-scatto-muted">Nessun dato disponibile</p>
@@ -29,14 +29,14 @@ export function RipartizioniHighlights({ aziendaTop, prodottoTop, fatturatoTotal
       </SectionCard>
 
       <SectionCard>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-scatto-muted">Prodotto top</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-scatto-muted">Prodotto top</p>
         {prodottoTop ? (
           <>
             <p className="mt-1.5 break-words font-display text-base font-bold text-scatto-ink">{prodottoTop.nome}</p>
             <p className="mt-2 font-display text-2xl font-bold tabular-nums tracking-tight text-scatto-violet">
               {formatCurrency(prodottoTop.fatturato_totale)}
             </p>
-            <p className="mt-1.5 text-[11px] text-scatto-muted">il prodotto più venduto</p>
+            <p className="mt-1.5 text-xs text-scatto-muted">il prodotto più venduto</p>
           </>
         ) : (
           <p className="mt-2 text-sm text-scatto-muted">Nessun dato disponibile</p>

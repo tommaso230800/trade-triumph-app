@@ -19,7 +19,7 @@ export function ClientMovementBadges({ crescita, stabili, calo }: ClientMovement
         {items.map((it) => (
           <div key={it.label} className={`flex-1 rounded-xl py-3 text-center ${it.className}`}>
             <p className="font-display text-2xl font-bold tabular-nums">{it.n}</p>
-            <p className="mt-0.5 text-[10.5px] font-medium">{it.label}</p>
+            <p className="mt-0.5 text-xs font-medium">{it.label}</p>
           </div>
         ))}
       </div>

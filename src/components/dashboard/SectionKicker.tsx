@@ -19,7 +19,7 @@ const toneClass: Record<NonNullable<SectionKickerProps["tone"]>, { text: string;
 export function SectionKicker({ tone = "info", children }: SectionKickerProps) {
   const c = toneClass[tone];
   return (
-    <h2 className={cn("flex items-center gap-2 px-1 pt-4 text-[11px] font-bold uppercase tracking-widest", c.text)}>
+    <h2 className={cn("flex items-center gap-2 px-1 pt-4 text-xs font-bold uppercase tracking-widest", c.text)}>
       <span className={cn("inline-block h-3.5 w-1 rounded-sm", c.bar)} />
       {children}
     </h2>

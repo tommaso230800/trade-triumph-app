@@ -61,7 +61,7 @@ export function RevenueDistributionDial({
   }, [ordinate, somma, colorMap]);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-scatto-line bg-scatto-surface shadow-[0_1px_2px_hsl(225_18%_9%/0.05)]">
+    <div className="overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card">
       <div className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 lg:px-6">
         <Clock className="h-4 w-4 text-scatto-muted" />
         <h2 className="font-display text-sm font-semibold tracking-tight text-scatto-ink">{titolo}</h2>
@@ -88,7 +88,7 @@ export function RevenueDistributionDial({
             })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-scatto-muted">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-scatto-muted">
               {totaleLabel}
             </p>
             <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, ShoppingCart, UserPlus, X } from "lucide-react";
+import { BellPlus, Plus, ShoppingCart, UserPlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -15,6 +15,7 @@ type Action = {
 const actions: Action[] = [
   { label: "Nuovo Ordine", icon: ShoppingCart, href: "/ordini?nuovo=1" },
   { label: "Nuovo Cliente", icon: UserPlus, href: "/clienti?nuovo=1" },
+  { label: "Nuovo Promemoria", icon: BellPlus, href: "/promemoria?nuovo=1" },
 ];
 
 export function QuickActions({ compact = false }: { compact?: boolean }) {
@@ -36,7 +37,7 @@ export function QuickActions({ compact = false }: { compact?: boolean }) {
               <Button variant="outline"
                 key={a.label}
                 onClick={() => go(a.href)}
-                className="flex items-center gap-3 rounded-full pl-4 pr-2 py-2 bg-card border border-border shadow-md hover:border-primary/50 transition-colors"
+                className="flex items-center gap-3 rounded-full pl-4 pr-2 py-2 bg-card border border-border shadow-card hover:border-primary/50 transition-colors"
               >
                 <span className="text-sm font-medium text-foreground whitespace-nowrap">
                   {a.label}
