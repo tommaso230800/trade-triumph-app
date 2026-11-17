@@ -552,7 +552,7 @@ const AziendaDettaglio = () => {
                 <p className="font-medium">{azienda.provvigione_percentuale || 0}%</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Status</p>
+                <p className="text-xs text-muted-foreground">Stato</p>
                 <Badge className={azienda.status === "attivo" ? "bg-success/10 text-success" : "bg-warning/10 text-warning"}>
                   {azienda.status === "attivo" ? "Attivo" : "In Pausa"}
                 </Badge>
@@ -826,7 +826,7 @@ const AziendaDettaglio = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Status</Label>
+                  <Label>Stato</Label>
                   <Select
                     value={aziendaForm.status}
                     onValueChange={(v) => setAziendaForm({ ...aziendaForm, status: v as "attivo" | "in_pausa" })}

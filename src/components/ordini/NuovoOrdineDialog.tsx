@@ -1146,7 +1146,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                   <ShoppingBag className="mb-3 h-6 w-6 text-order-muted" />
                   <p className="text-sm font-semibold">L’ordine è ancora vuoto</p>
                   <p className="mt-1 text-xs text-order-muted">Aggiungi i prodotti con la ricerca qui sopra.</p>
-                  <Button type="button" className="mt-4 h-11 gap-2 rounded-lg bg-order-ink text-primary-foreground hover:bg-order-ink/90" onClick={() => setPickerOpen(true)}>
+                  <Button type="button" className="mt-4 h-11 gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setPickerOpen(true)}>
                     <Plus className="h-4 w-4" /> Aggiungi prodotto
                   </Button>
                 </div>
@@ -1332,7 +1332,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
             )}
             <div className="hidden min-w-0 flex-1 sm:block" />
             {currentStep < LAST_STEP ? (
-              <Button className="h-11 flex-1 rounded-lg bg-order-ink text-primary-foreground hover:bg-order-ink/90 sm:flex-none sm:px-6" onClick={() => setCurrentStep((step) => Math.min(LAST_STEP, step + 1))} disabled={currentStep === 0 ? !formData.azienda_id : righeOrdine.length === 0}>
+              <Button className="h-11 flex-1 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 sm:flex-none sm:px-6" onClick={() => setCurrentStep((step) => Math.min(LAST_STEP, step + 1))} disabled={currentStep === 0 ? !formData.azienda_id : righeOrdine.length === 0}>
                 {currentStep === 0 ? "Prodotti" : currentStep === 1 ? "Condizioni" : "Riepilogo"}<ChevronRight className="h-4 w-4" />
               </Button>
             ) : (

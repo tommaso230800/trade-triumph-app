@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { formatEuro, formatEuroInt, formatNumber, formatPercent } from "@/lib/format";
 import { ListSkeleton } from "@/components/ui/page-skeleton";
+import { MainLayout } from "@/components/layout/MainLayout";
 
 const eur = (n: number) =>
   formatEuroInt(n || 0);
@@ -274,7 +275,8 @@ export default function IntelligenzaCommerciale() {
   const totAnomalie = filteredAnomalies.length;
 
   return (
-    <div className="p-4 md:p-6 space-y-6 animate-rise-in pb-24">
+    <MainLayout>
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-heading font-bold flex items-center gap-2">
@@ -737,6 +739,7 @@ export default function IntelligenzaCommerciale() {
         </TabsContent>
       </Tabs>
     </div>
+    </MainLayout>
   );
 }
 

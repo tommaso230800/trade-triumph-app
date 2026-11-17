@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { queryClient, persister } from "@/lib/queryClient";
@@ -14,6 +14,7 @@ import { PageLoader } from "@/components/PageLoader";
 // (evita uno "sfarfallio" di loader all'avvio dell'app).
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Tutte le altre pagine sono caricate on-demand (code splitting per rotta):
 // riduce il bundle iniziale, soprattutto rilevante per l'avvio dell'app mobile.
@@ -28,6 +29,11 @@ const AnalyticsAzienda = lazy(() => import("./pages/AnalyticsAzienda"));
 const Provvigioni = lazy(() => import("./pages/Provvigioni"));
 const Canvass = lazy(() => import("./pages/Canvass"));
 const AssistenteAICommerciale = lazy(() => import("./pages/AssistenteAICommerciale"));
+function RouteErrorBoundary({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return <ErrorBoundary resetKey={location.pathname}>{children}</ErrorBoundary>;
+}
+
 const RiordinoForecast = lazy(() => import("./pages/RiordinoForecast"));
 const Promemoria = lazy(() => import("./pages/Promemoria"));
 const IntelligenzaCommerciale = lazy(() => import("./pages/IntelligenzaCommerciale"));
@@ -59,6 +65,7 @@ const App = () => (
           <Sonner />
           <OfflineBanner />
           <BrowserRouter>
+            <RouteErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -96,6 +103,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
+            </RouteErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>

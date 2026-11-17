@@ -492,7 +492,7 @@ const Clienti = () => {
 
                 {/* Status */}
                 <div className="space-y-2">
-                  <Label>Status</Label>
+                  <Label>Stato</Label>
                   <Select
                     value={formData.status}
                     onValueChange={(v) => setFormData({ ...formData, status: v as Cliente["status"] })}
@@ -558,7 +558,7 @@ const Clienti = () => {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="tutti">Tutti gli status</SelectItem>
+              <SelectItem value="tutti">Tutti gli stati</SelectItem>
               <SelectItem value="nuovo">Nuovo</SelectItem>
               <SelectItem value="standard">Standard</SelectItem>
               <SelectItem value="premium">Premium</SelectItem>

@@ -1,5 +1,7 @@
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { Compass } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const NotFound = () => {
   const location = useLocation();
@@ -9,13 +11,16 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <a href="/" className="text-primary underline hover:text-primary/90">
-          Return to Home
-        </a>
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background p-6">
+      <div className="max-w-sm space-y-3 text-center">
+        <Compass className="mx-auto h-6 w-6 text-muted-foreground" />
+        <h1 className="text-2xl font-bold">Pagina non trovata</h1>
+        <p className="text-sm text-muted-foreground">
+          Il collegamento potrebbe essere vecchio o la pagina è stata spostata.
+        </p>
+        <Button asChild>
+          <Link to="/">Torna alla Home</Link>
+        </Button>
       </div>
     </div>
   );
