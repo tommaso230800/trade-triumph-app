@@ -268,7 +268,8 @@ export default function IntelligenzaCommerciale() {
   };
 
   // Panoramica totals
-  const totFatturato = data?.ordiniIC.reduce((s, o) => s + (o.totale || 0), 0) || 0;
+  // Stessa regola del resto dell'app: annullati e stand-by fuori dal fatturato.
+  const totFatturato = data?.ordiniIC.filter((o) => !["annullato", "stand_by"].includes(o.status)).reduce((s, o) => s + (o.totale || 0), 0) || 0;
   const totOrdini = data?.ordiniIC.length || 0;
   const totProvvigione = data?.ordiniIC.reduce((s, o) => s + (o.provvigione_prevista || 0), 0) || 0;
   const totClienti = data?.rfm.length || 0;
