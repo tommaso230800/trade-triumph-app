@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.reorder-alerts]
 verify_jwt = false
+
+[functions.promemoria-alerts]
+verify_jwt = false

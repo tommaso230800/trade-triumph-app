@@ -4,11 +4,12 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
-export type CategoriaNotifica = "nuovo_ordine" | "ordine_inviato" | "riordino" | "test";
+export type CategoriaNotifica = "nuovo_ordine" | "ordine_inviato" | "riordino" | "promemoria" | "test";
 export const CATEGORIE_PREFERENZE: Array<{ id: Exclude<CategoriaNotifica, "test">; label: string; help: string }> = [
   { id: "nuovo_ordine", label: "Nuovi ordini", help: "Quando un ordine viene salvato e confermato" },
   { id: "ordine_inviato", label: "Ordini inviati", help: "Quando l’invio all’azienda è accettato dal servizio email" },
   { id: "riordino", label: "Riordini in ritardo", help: "Una volta per ciclo cliente–azienda, al superamento della scadenza" },
+  { id: "promemoria", label: "Promemoria", help: "All’ora che hai scelto, e di nuovo se lo rinvii" },
 ];
 
 export interface Notifica {
@@ -97,7 +98,7 @@ export function usePreferenze() {
     queryFn: async () => {
       const { data, error } = await supabase.from("notifiche_preferenze").select("categoria,enabled").eq("user_id", user!.id);
       if (error) throw error;
-      const map: Record<string, boolean> = { nuovo_ordine: true, ordine_inviato: true, riordino: true };
+      const map: Record<string, boolean> = { nuovo_ordine: true, ordine_inviato: true, riordino: true, promemoria: true };
       for (const r of data ?? []) map[r.categoria] = r.enabled;
       return map;
     },
