@@ -16,6 +16,8 @@ export type OrdineRiga = {
   is_omaggio?: boolean;
   /** Confezione registrata al momento della vendita. */
   pezzi_per_cartone?: number | null;
+  /** Accisa € a pezzo al momento della vendita (solo prodotti con accisa). */
+  accisa_pezzo?: number | null;
   created_at: string;
   prodotti?: { nome: string; pezzi_per_cartone: number; prezzo_listino: number } | null;
 };

@@ -84,6 +84,8 @@ import { useProdottiMergeLog } from "@/hooks/useProdottiMerge";
 import { format } from "date-fns";
 import { formatEuro } from "@/lib/format";
 import { PageSkeleton, ListSkeleton } from "@/components/ui/page-skeleton";
+import { Switch } from "@/components/ui/switch";
+import { accisaValida } from "@/lib/accisa";
 
 const formatCurrency = (value: number) =>
   formatEuro(value);
@@ -109,9 +111,13 @@ type ProductForm = {
   sc2_default: string;
   sc3_default: string;
   brand_id: string | null;
+  ha_accisa: boolean;
+  accisa_pezzo: string;
 };
 
 const defaultProductForm: ProductForm = {
+  ha_accisa: false,
+  accisa_pezzo: "",
   nome: "",
   codice: "",
   prezzo_listino: "0",
@@ -357,6 +363,8 @@ const AziendaDettaglio = () => {
         sc2_default: String(prodotto.sc2_default || 0).replace(".", ","),
         sc3_default: String(prodotto.sc3_default || 0).replace(".", ","),
         brand_id: prodotto.brand_id,
+        ha_accisa: !!prodotto.ha_accisa,
+        accisa_pezzo: prodotto.accisa_pezzo != null ? String(prodotto.accisa_pezzo).replace(".", ",") : "",
       });
     } else {
       setEditingProduct(null);
@@ -367,6 +375,18 @@ const AziendaDettaglio = () => {
 
   const handleSaveProduct = async () => {
     if (!productForm.nome || !id) return;
+    const accisaPezzo = accisaValida(productForm.accisa_pezzo);
+    if (productForm.ha_accisa && !accisaPezzo) {
+      toast.error("Inserisci l'accisa a bottiglia (es. 1,25) oppure togli la spunta \"Prodotto con accisa\".");
+      return;
+    }
+    // I campi accisa si inviano solo quando servono: così, se il database non è
+    // ancora aggiornato, il salvataggio dei prodotti senza accisa resta invariato.
+    const accisaPatch =
+      productForm.ha_accisa || editingProduct?.ha_accisa
+        ? { ha_accisa: productForm.ha_accisa, accisa_pezzo: productForm.ha_accisa ? accisaPezzo : null }
+        : {};
+    try {
     
     if (editingProduct) {
       await updateProdotto.mutateAsync({
@@ -385,6 +405,7 @@ const AziendaDettaglio = () => {
         sc2_default: parseDecimalInput(productForm.sc2_default),
         sc3_default: parseDecimalInput(productForm.sc3_default),
         brand_id: productForm.brand_id,
+        ...accisaPatch,
       });
     } else {
       await createProdotto.mutateAsync({
@@ -402,7 +423,15 @@ const AziendaDettaglio = () => {
         sc2_default: parseDecimalInput(productForm.sc2_default),
         sc3_default: parseDecimalInput(productForm.sc3_default),
         brand_id: productForm.brand_id,
+        ...accisaPatch,
       });
+    }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/accisa/i.test(msg)) {
+        toast.error("Accisa non salvata: il database non è ancora aggiornato per l'accisa. Vedi istruzioni nel roadmap.");
+      }
+      return;
     }
     setIsProductDialogOpen(false);
     setEditingProduct(null);
@@ -616,7 +645,7 @@ const AziendaDettaglio = () => {
                     <div className="min-w-0 flex-1">
                       <p className="line-clamp-2 break-words text-sm font-medium">{prodotto.nome}</p>
                       <p className="truncate text-xs text-muted-foreground">
-                        {[prodotto.codice, brandName, `${prodotto.pezzi_per_cartone} pz/cart`].filter(Boolean).join(" · ")}
+                        {[prodotto.codice, brandName, `${prodotto.pezzi_per_cartone} pz/cart`, prodotto.ha_accisa && prodotto.accisa_pezzo ? `accisa ${formatCurrency(prodotto.accisa_pezzo)}/bt` : null].filter(Boolean).join(" · ")}
                       </p>
                     </div>
                     <span className="shrink-0 text-sm font-semibold tabular-nums">{formatCurrency(prodotto.prezzo_listino)}</span>
@@ -650,6 +679,7 @@ const AziendaDettaglio = () => {
                     <TableHead>Nome</TableHead>
                     <TableHead>Marchio</TableHead>
                     <TableHead className="text-right">Prezzo</TableHead>
+                    <TableHead className="text-right">Accisa/bt</TableHead>
                     <TableHead className="text-right">Pz/Cart</TableHead>
                     <TableHead className="text-right">Strati</TableHead>
                     <TableHead className="text-right">Cart/Strato</TableHead>
@@ -674,7 +704,8 @@ const AziendaDettaglio = () => {
                       <TableCell className="font-mono text-xs">{prodotto.codice || "—"}</TableCell>
                       <TableCell className="font-medium">{prodotto.nome}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{brandName || "—"}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(prodotto.prezzo_listino)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCurrency(prodotto.prezzo_listino)}</TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">{prodotto.ha_accisa && prodotto.accisa_pezzo ? formatCurrency(prodotto.accisa_pezzo) : "—"}</TableCell>
                       <TableCell className="text-right tabular-nums">{prodotto.pezzi_per_cartone}</TableCell>
                       <TableCell className="text-right tabular-nums">{prodotto.strati}</TableCell>
                       <TableCell className="text-right tabular-nums">{prodotto.cartoni_per_strato}</TableCell>
@@ -933,6 +964,31 @@ const AziendaDettaglio = () => {
                   placeholder="es. 1L, 700ml, 500ml"
                 />
               </div>
+            </div>
+            <div className="space-y-3 rounded-lg border p-3">
+              <label className="flex min-h-11 items-center justify-between gap-3 text-sm font-medium">
+                Prodotto con accisa
+                <Switch
+                  checked={productForm.ha_accisa}
+                  onCheckedChange={(v) => setProductForm({ ...productForm, ha_accisa: v })}
+                />
+              </label>
+              {productForm.ha_accisa && (
+                <div className="space-y-2">
+                  <Label htmlFor="accisa-pezzo">Accisa € a bottiglia</Label>
+                  <Input
+                    id="accisa-pezzo"
+                    type="text"
+                    inputMode="decimal"
+                    value={productForm.accisa_pezzo}
+                    onChange={(e) => setProductForm({ ...productForm, accisa_pezzo: e.target.value })}
+                    placeholder="es. 1,25"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Il prezzo di listino resta l'imponibile: l'accisa si somma a parte negli ordini e non cambia fatturato né provvigioni.
+                  </p>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">

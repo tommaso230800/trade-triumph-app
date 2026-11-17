@@ -73,6 +73,7 @@ import { ProductPicker } from "./ProductPicker";
 import { NuovoProdottoRapidoDialog } from "./NuovoProdottoRapidoDialog";
 import { formatCurrency, parseDecimalInput, TIPI_PAGAMENTO } from "./ordiniShared";
 import { orderTotals, rowProblems } from "@/lib/orderTotals";
+import { accisaTotale, accisaValida } from "@/lib/accisa";
 import { saveOrderDraft, deleteOrderDraft, invalidateOrderDrafts, type OrderDraftRow } from "@/hooks/useOrderDrafts";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -96,6 +97,8 @@ type RigaOrdine = {
   prezzo_source_info?: LastOrderPriceInfo;
   prezzo_baseline: string;
   prezzo_dirty_prompted?: boolean;
+  /** Accisa € a pezzo del prodotto (null se il prodotto non ha accisa). */
+  accisa_pezzo?: number | null;
 };
 
 const emptyFormData = () => ({
@@ -121,8 +124,29 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 export interface OrdinePrefill {
   cliente_id: string;
   azienda_id: string;
-  righe: Array<{ prodotto_id: string; quantita_cartoni: number }>;
+  righe: Array<{
+    prodotto_id: string;
+    quantita_cartoni: number;
+    /** Solo da import documento: prezzo a PEZZO (lordo), sconti di riga, sfusi, omaggio. */
+    quantita_pezzi?: number;
+    prezzo_unitario?: number;
+    sc1?: number;
+    sc2?: number;
+    sc3?: number;
+    is_omaggio?: boolean;
+  }>;
+  /** Campi testata dall'import documento (assenti nel flusso Riordino → Ordina). */
+  data_ordine?: string;
+  note?: string;
+  sconto?: number;
+  sconto_merce?: number;
+  tipo_pagamento?: string;
+  /** Imponibile dichiarato nel documento: solo riferimento per la revisione. */
+  totale_documento?: number;
+  origine?: "riordino" | "import";
 }
+
+const decimalIt = (n: number) => String(Number(n.toFixed(4))).replace(".", ",");
 
 interface NuovoOrdineDialogProps {
   open: boolean;
@@ -283,6 +307,11 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
         ...prev,
         cliente_id: prefill.cliente_id,
         azienda_id: prefill.azienda_id,
+        ...(prefill.data_ordine ? { data_ordine: prefill.data_ordine } : {}),
+        ...(prefill.note != null ? { note: prefill.note } : {}),
+        ...(prefill.sconto != null ? { sconto: decimalIt(prefill.sconto) } : {}),
+        ...(prefill.sconto_merce != null ? { sconto_merce: decimalIt(prefill.sconto_merce) } : {}),
+        ...(prefill.tipo_pagamento ? { tipo_pagamento: prefill.tipo_pagamento } : {}),
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -303,8 +332,27 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
         mancanti.push(altrove ? `${altrove.nome} (non più dell'azienda selezionata)` : "un prodotto non più disponibile");
         continue;
       }
-      if (righe.some((x) => x.prodotto_id === prodotto.id)) continue;
-      righe.push(buildRiga(prodotto, Math.max(0, Math.round(r.quantita_cartoni))));
+      if (righe.some((x) => x.prodotto_id === prodotto.id && !!x.is_omaggio === !!r.is_omaggio)) continue;
+      const base = buildRiga(prodotto, Math.max(0, Math.round(r.quantita_cartoni)));
+      if (prefill.origine !== "import") {
+        righe.push(base);
+        continue;
+      }
+      // Import documento: si tengono i valori letti dal file, tutti modificabili nel modulo.
+      const prezzo = r.is_omaggio ? "0" : r.prezzo_unitario != null ? decimalIt(r.prezzo_unitario) : base.prezzo_unitario;
+      righe.push({
+        ...base,
+        quantita_pezzi: Math.max(0, Math.round(r.quantita_pezzi ?? 0)),
+        prezzo_unitario: prezzo,
+        prezzo_baseline: prezzo,
+        prezzo_source: r.is_omaggio || r.prezzo_unitario == null ? base.prezzo_source : "document",
+        prezzo_source_info: r.prezzo_unitario == null ? base.prezzo_source_info : undefined,
+        prezzo_dirty_prompted: r.is_omaggio ? true : base.prezzo_dirty_prompted,
+        sc1: r.sc1 != null ? decimalIt(r.sc1) : base.sc1,
+        sc2: r.sc2 != null ? decimalIt(r.sc2) : base.sc2,
+        sc3: r.sc3 != null ? decimalIt(r.sc3) : base.sc3,
+        is_omaggio: !!r.is_omaggio,
+      });
     }
     setRigheOrdine(righe);
     if (righe.length > 0) setCurrentStep(1);
@@ -486,6 +534,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
       prezzo_source: resolved.source,
       prezzo_source_info: resolved.lastOrderInfo,
       prezzo_baseline: prezzoIniziale,
+      accisa_pezzo: prodotto.ha_accisa ? accisaValida(prodotto.accisa_pezzo) : null,
     };
   };
 
@@ -765,6 +814,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
         sc2: riga.is_omaggio ? 0 : parseDecimalInput(riga.sc2),
         sc3: riga.is_omaggio ? 0 : parseDecimalInput(riga.sc3),
         is_omaggio: !!riga.is_omaggio,
+        // Inviata solo se presente: senza prodotti con accisa il salvataggio resta identico.
+        ...(accisaValida(riga.accisa_pezzo) ? { accisa_pezzo: accisaValida(riga.accisa_pezzo) } : {}),
       }))
     );
 
@@ -907,6 +958,22 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
       {!qty.completo && <p className="text-warning">* Pezzi per cartone mancanti su {qty.righeSenzaConfezione} {qty.righeSenzaConfezione === 1 ? "riga" : "righe"}: totale pezzi incompleto.</p>}
     </div>
   );
+
+  const accisaOrdine = accisaTotale(righeOrdine);
+  const AccisaNote = () =>
+    accisaOrdine > 0 ? (
+      <div className="mt-3 space-y-1 border-t border-order-line pt-3 text-sm">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-order-muted">Accisa (a parte, omaggi esclusi)</span>
+          <span className="tabular-nums text-order-ink">{formatCurrency(accisaOrdine)}</span>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-order-muted">Totale con accisa</span>
+          <span className="font-semibold tabular-nums text-order-ink">{formatCurrency(totale + accisaOrdine)}</span>
+        </div>
+        <p className="text-xs text-order-muted">Il totale ordine resta l'imponibile: fatturato e provvigioni non includono l'accisa.</p>
+      </div>
+    ) : null;
 
   const SummaryRow = ({ label, value, strong }: { label: string; value: string; strong?: boolean }) => (
     <div className="flex items-baseline justify-between gap-3 text-sm">
@@ -1145,7 +1212,22 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
               <div className="rounded-xl border border-order-blue/30 bg-order-surface p-4 shadow-sm sm:p-5">
                 <TotalsStrip />
                 <div className="mt-3"><QtyNotes /></div>
+                <AccisaNote />
               </div>
+              {prefill?.origine === "import" && prefill.totale_documento != null && prefill.totale_documento > 0 && (() => {
+                const diff = calcolaTotale() - prefill.totale_documento;
+                const ok = Math.abs(diff) < 0.05;
+                return (
+                  <div className={`rounded-xl border p-4 text-sm ${ok ? "border-success/30 bg-success/10" : "border-warning/30 bg-warning/10"}`}>
+                    <p className="font-semibold">{ok ? "Totale uguale al documento importato" : "Il totale è diverso dal documento importato"}</p>
+                    <p className="mt-1 text-xs tabular-nums text-order-muted">
+                      Documento: {formatCurrency(prefill.totale_documento)} · Ordine: {formatCurrency(calcolaTotale())}
+                      {!ok && ` · Differenza: ${diff > 0 ? "+" : ""}${formatCurrency(diff)}`}
+                    </p>
+                    {!ok && <p className="mt-1 text-xs text-order-muted">Controlla cartoni, prezzi, sconti e omaggi prima di salvare.</p>}
+                  </div>
+                );
+              })()}
               <div className="grid min-w-0 gap-4 sm:grid-cols-2">
                 <ReviewBlock title="Cliente" step={0}>
                   <p className="break-words text-sm font-semibold leading-snug">{selectedClienteName || "Nessun cliente"}</p>
@@ -1218,6 +1300,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                 <div><p className="text-xs font-bold uppercase tracking-wide">Cartoni totali</p><p className="text-4xl font-bold tracking-tight tabular-nums">{nf(qty.cartoni)}</p></div>
                 <div><p className="text-xs font-bold uppercase tracking-wide">Pezzi totali</p><p className={`text-4xl font-bold tracking-tight tabular-nums ${qty.completo ? "" : "text-warning"}`}>{nf(qty.pezzi)}{!qty.completo && "*"}</p></div>
                 <QtyNotes />
+                <AccisaNote />
                 <SummaryRow label="Pagamento" value={formData.tipo_pagamento} />
               </div>
               <div className="space-y-2 border-t border-order-line pt-4">
