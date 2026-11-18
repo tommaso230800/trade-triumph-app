@@ -86,6 +86,28 @@ Deno.serve(async req => {
     const { data: existing } = await admin.from('order_email_sends').select('*').eq('id', input.attemptId).eq('user_id', ownerId).maybeSingle();
     if (existing) return json({ send: existing, duplicate: true });
     if (version !== input.version) return json({ error: 'L’ordine è stato modificato. Chiudi e riapri la composizione per aggiornare il PDF.' }, 409);
+    // Recipients must be known business contacts: the agency address book, the
+    // company's saved order recipients, or the customer/company emails on record.
+    const allowed = new Set<string>();
+    const addAllowed = (value: unknown) => {
+      if (typeof value === 'string' && value.trim()) allowed.add(value.trim().toLowerCase());
+    };
+    const { data: bookRows } = await admin.from('aziende_email_contatti').select('email').eq('user_id', ownerId);
+    for (const row of bookRows ?? []) addAllowed(row.email);
+    // deno-lint-ignore no-explicit-any
+    const orderRow = order as any;
+    if (orderRow.azienda_id) {
+      const { data: settingsRow } = await admin.from('azienda_order_email_settings').select('to_addresses, cc_addresses')
+        .eq('user_id', ownerId).eq('azienda_id', orderRow.azienda_id).maybeSingle();
+      for (const v of [...(settingsRow?.to_addresses ?? []), ...(settingsRow?.cc_addresses ?? [])]) addAllowed(v);
+    }
+    addAllowed(orderRow.clienti?.email);
+    for (const v of orderRow.clienti?.email_aggiuntive ?? []) addAllowed(v);
+    addAllowed(orderRow.aziende?.email);
+    const unknownRecipients = [...input.to, ...input.cc].filter(v => !allowed.has(v.trim().toLowerCase()));
+    if (unknownRecipients.length) {
+      return json({ error: `Salva prima in rubrica questi indirizzi: ${unknownRecipients.join(', ')}. Nessuna email inviata.` }, 422);
+    }
     const bytes = decodePdfBase64(input.pdf);
     if (new TextDecoder().decode(bytes.subarray(0, 5)) !== '%PDF-' || bytes.length > 12000000) return json({ error: 'Il PDF non è valido o supera 12 MB.' }, 400);
     const path = `${ownerId}/order-email/${input.attemptId}/${input.filename}`;

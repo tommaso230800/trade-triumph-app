@@ -1,3 +1,6 @@
+import { requireUser } from "../_shared/requireUser.ts";
+import { authenticateCronRequest } from "../_shared/cron-auth.ts";
+import { resolveDataOwner } from "../_shared/agency.ts";
 // Agente email ordini — ingestione IMAP delle 2 caselle Gmail.
 //
 // ATTENZIONE: questa funzione usa 2 librerie npm nuove (imapflow, mailparser)
@@ -309,15 +312,29 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const dryRun = body?.dry_run === true;
-
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const userId = Deno.env.get("AGENTE_EMAIL_USER_ID");
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+
+    // Only the scheduler (cron secret) or a signed-in user working on the
+    // configured agent's data may trigger the mailbox synchronisation.
+    if (authenticateCronRequest(req) !== null) {
+      const auth = await requireUser(req, corsHeaders);
+      if (auth instanceof Response) return auth;
+      const owner = auth.userId ? await resolveDataOwner(admin, auth.userId) : null;
+      if (!userId || owner !== userId) {
+        return new Response(JSON.stringify({ error: "Operazione non consentita" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     if (!userId) throw new Error("Secret AGENTE_EMAIL_USER_ID non configurato");
 
-    const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+    const body = await req.json().catch(() => ({}));
+    const dryRun = body?.dry_run === true;
 
     const { data: config } = await admin
       .from("email_agente_config")

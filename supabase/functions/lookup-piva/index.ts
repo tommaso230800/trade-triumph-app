@@ -1,3 +1,4 @@
+import { requireUser } from "../_shared/requireUser.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -12,6 +13,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const auth = await requireUser(req, corsHeaders);
+  if (auth instanceof Response) return auth;
+
   try {
     const { partita_iva } = await req.json();
     
@@ -23,7 +27,7 @@ serve(async (req) => {
     }
 
     const piva = partita_iva.replace(/\s/g, '').replace(/^IT/i, '');
-    console.log(`Looking up P.IVA: ${piva}`);
+    console.log('Looking up P.IVA');
 
     // Try multiple APIs for P.IVA lookup
     let companyData = null;
@@ -44,7 +48,7 @@ serve(async (req) => {
             cap: data.data.cap,
             provincia: data.data.provincia,
           };
-          console.log('Found via openapi.it:', companyData);
+          console.log('Found via openapi.it');
         }
       }
     } catch (e: unknown) {
@@ -75,7 +79,7 @@ serve(async (req) => {
               citta: addressParts[1]?.replace(/^\d{5}\s*/, '') || '',
               cap: addressParts[1]?.match(/^\d{5}/)?.[0] || '',
             };
-            console.log('Found via VIES:', companyData);
+            console.log('Found via VIES');
           }
         }
       } catch (e: unknown) {

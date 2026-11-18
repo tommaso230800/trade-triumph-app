@@ -160,69 +160,8 @@ ${analysisData.alertMessage ? `⚠️ ALERT: ${analysisData.alertMessage}` : ""}
 `;
   };
 
-  // System prompt dettagliato
-  const buildSystemPrompt = () => {
-    const context = buildAIContext();
-    
-    return `Sei un MOTORE DECISIONALE COMMERCIALE per un agente di commercio nel settore HO.RE.CA.
-
-NON sei un chatbot generico. Sei un sistema di supporto alle decisioni basato su DATI REALI.
-
-${context}
-
-═══════════════════════════════════════════════════════════════
-ISTRUZIONI RISPOSTA - SEGUI ESATTAMENTE QUESTA STRUTTURA:
-═══════════════════════════════════════════════════════════════
-
-La tua risposta DEVE essere divisa in ESATTAMENTE queste sezioni:
-
-🧠 **LETTURA DELLA SITUAZIONE**
-Analizza in 2-3 frasi lo stato del cliente: è in crescita, calo, stabile? Sta ordinando regolarmente o è fuori ciclo? Ha già ricevuto supporto?
-
-🔄 **ANALISI ROTAZIONE**
-FRASE OBBLIGATORIA: "Il cliente ordina mediamente ogni X giorni. Sono passati Y giorni dall'ultimo ordine → [cliente nel ciclo / cliente fuori ciclo di Z giorni]."
-Se fuori ciclo, spiega l'urgenza di agire.
-
-🎯 **OBIETTIVO CONSIGLIATO ORA**
-Cosa deve ottenere l'agente con questo cliente ADESSO:
-- Riattivare riordino (se fuori ciclo)
-- Spingere volume per target (se sotto obiettivo contratto)
-- Difendere margine (se già supportato con promo)
-- Lavorare su esposizione (se già a buon livello)
-- Consolidare rapporto (se cliente stabile)
-
-🛠 **COME DEVI PARLARGLI**
-3-4 frasi pratiche da usare nella trattativa, tipo:
-- "Siamo oltre il tuo ritmo normale di riordino"
-- "Se manteniamo la rotazione solita, non rischi rotture di stock"
-- "Ti aiuto a vendere di più, non a spendere meno"
-- "Con il target che hai, manca poco al premio"
-
-💰 **LIVELLO CONCESSIONE CONSIGLIATO**
-Indica UNO di questi:
-🟢 PUOI CONCEDERE - Budget disponibile, cliente strategico, obiettivo volume
-🟡 CONCESSIONI MINIME - Budget limitato o già supportato
-🔴 EVITA SCONTI - Budget esaurito, cliente già molto supportato, lavorare su valore
-
-Spiega brevemente perché (es: "Budget promo residuo €X, già fatte Y promo").
-
-⚠️ **RISCHIO COMMERCIALE**
-Identifica IL rischio principale:
-- Cliente a rischio perdita (fuori ciclo da troppo)
-- Cliente fuori ciclo di riordino
-- Cliente già molto supportato (troppe promo)
-- Cliente sotto potenziale (fatturato basso vs storico)
-- Cliente in calo progressivo
-
-═══════════════════════════════════════════════════════════════
-REGOLE FONDAMENTALI:
-1. Rispondi SEMPRE in italiano
-2. Basa TUTTO sui dati reali forniti, non inventare
-3. Sii DIRETTO e PRATICO, l'agente deve usare subito i consigli
-4. Se il cliente è fuori ciclo, questo è IL problema principale
-5. Considera sempre budget promo residuo prima di consigliare sconti
-═══════════════════════════════════════════════════════════════`;
-  };
+  // Le istruzioni dell'assistente sono fisse sul server; qui si inviano solo i dati di contesto.
+  const buildSystemPrompt = () => buildAIContext();
 
   const handleSend = async () => {
     if (!selectedClienteId) {
@@ -244,7 +183,7 @@ REGOLE FONDAMENTALI:
     setIsLoading(true);
 
     try {
-      let systemPrompt = buildSystemPrompt();
+      let context = buildSystemPrompt();
 
       // Memoria documentale: cerca nei documenti archiviati termini del messaggio
       // e allega estratti con fonte. Se non c'è nulla, l'assistente deve dichiararlo.
@@ -259,24 +198,28 @@ REGOLE FONDAMENTALI:
             .or(orFilter)
             .limit(5);
           if (docMatches?.length) {
-            systemPrompt += `\n\nDOCUMENTI ARCHIVIATI RILEVANTI (cita sempre il documento di origine e la sua data; se due documenti riportano condizioni diverse, mostra la differenza con le rispettive date; se l'informazione manca, dichiaralo):\n` +
+            context += `\n\nDOCUMENTI ARCHIVIATI RILEVANTI (cita sempre il documento di origine e la sua data; se due documenti riportano condizioni diverse, mostra la differenza con le rispettive date; se l'informazione manca, dichiaralo):\n` +
               docMatches.map(d => `- "${d.titolo || d.nome_file}" (${d.category || "documento"}, doc. ${d.data_documento || "data N/D"}${d.valid_from || d.valid_until ? `, validità ${d.valid_from || "…"}→${d.valid_until || "…"}` : ""}): ${d.riepilogo || "riepilogo non disponibile"}`).join("\n");
           }
         }
       } catch { /* contesto documentale best-effort */ }
 
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error("Sessione scaduta: accedi di nuovo");
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-commercial-assistant`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           messages: [
             ...messages.map(m => ({ role: m.role, content: m.content })),
             { role: "user", content: userMessage }
           ],
-          systemPrompt,
+          context,
         }),
       });
 

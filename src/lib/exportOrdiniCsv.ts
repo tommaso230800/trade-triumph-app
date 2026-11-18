@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import type { Ordine } from "@/hooks/useOrdini";
+import { csvCell } from "@/lib/csvSafe";
 
 export const ORDINI_EXPORT_STATUS_LABEL: Record<Ordine["status"], string> = {
   in_attesa: "In attesa",
@@ -9,10 +10,7 @@ export const ORDINI_EXPORT_STATUS_LABEL: Record<Ordine["status"], string> = {
   stand_by: "Stand-by",
 };
 
-const csvEscape = (v: unknown) => {
-  const s = String(v ?? "");
-  return s.includes(";") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
-};
+const csvEscape = (v: unknown) => csvCell(v, ";");
 
 export function exportOrdiniToCSV(ordini: Ordine[]) {
   const header = ["Codice", "Data", "Cliente", "Azienda", "Totale", "Stato", "Verificato"];

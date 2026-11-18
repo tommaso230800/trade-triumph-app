@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
 import { formatNumber } from "@/lib/format";
+import { csvCell } from "@/lib/csvSafe";
 import { PromemoriaWidget } from "@/components/dashboard/PromemoriaWidget";
 
 // html2canvas + jsPDF pesano ~590kB: caricati solo al primo "Apri proforma",
@@ -399,7 +400,7 @@ const Index = () => {
         String(Math.round(c.fatturatoCliente)),
       ]),
     ];
-    const csv = rows.map((r) => r.map((c) => `"${(c ?? "").replace(/"/g, '""')}"`).join(";")).join("\n");
+    const csv = rows.map((r) => r.map((c) => csvCell(c ?? "", ";", true)).join(";")).join("\n");
     const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;

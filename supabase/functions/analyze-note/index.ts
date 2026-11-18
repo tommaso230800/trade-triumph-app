@@ -1,3 +1,4 @@
+import { requireUser } from "../_shared/requireUser.ts";
 // Assistente AI - analyze a free-form note and propose structured actions.
 // NO database writes: the client applies actions only after user confirmation.
 
@@ -73,6 +74,9 @@ const TOOL = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const auth = await requireUser(req, corsHeaders);
+  if (auth instanceof Response) return auth;
 
   try {
     const key = Deno.env.get("LOVABLE_API_KEY");

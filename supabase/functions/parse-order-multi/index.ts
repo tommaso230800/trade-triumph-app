@@ -1,3 +1,4 @@
+import { requireUser } from "../_shared/requireUser.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import type {
   ParseOrderMultiParsed,
@@ -156,6 +157,9 @@ async function callAI(parts: any[], apiKey: string, model = "google/gemini-2.5-p
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const auth = await requireUser(req, corsHeaders, { allowServiceRole: true });
+  if (auth instanceof Response) return auth;
 
   try {
     const body = await req.json();

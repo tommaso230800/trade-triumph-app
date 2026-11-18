@@ -189,6 +189,18 @@ serve(async (req) => {
     if (action === "start") {
       const { pdfBase64, aziendaId, fileName } = body;
       if (!pdfBase64 || !aziendaId) return jsonResponse({ error: "pdfBase64 e aziendaId obbligatori" }, 400);
+      if (typeof aziendaId !== "string" || !/^[0-9a-f-]{36}$/i.test(aziendaId)) {
+        return jsonResponse({ error: "Azienda non valida" }, 400);
+      }
+      // The company must belong to the caller's data owner (agency archive).
+      const { data: azienda } = await admin
+        .from("aziende")
+        .select("id")
+        .eq("id", aziendaId)
+        .eq("user_id", ownerId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (!azienda) return jsonResponse({ error: "Azienda non accessibile" }, 403);
       const bytes = base64ToBytes(String(pdfBase64));
       if (bytes.length > MAX_PDF_BYTES) return jsonResponse({ error: "Il PDF supera il limite di 50 MB" }, 400);
 

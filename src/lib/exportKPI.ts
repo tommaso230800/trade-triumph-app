@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import { csvCell } from "@/lib/csvSafe";
 
 const fmtEUR = (n: number) =>
   new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n || 0);
@@ -43,13 +44,7 @@ export type KPIExportData = {
   }>;
 };
 
-const csvEscape = (v: unknown) => {
-  const s = String(v ?? "");
-  if (s.includes(";") || s.includes('"') || s.includes("\n")) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-};
+const csvEscape = (v: unknown) => csvCell(v, ";");
 
 export function exportKPIToCSV(d: KPIExportData) {
   const rows: string[] = [];

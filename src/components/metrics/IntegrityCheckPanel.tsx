@@ -10,6 +10,7 @@ import { AlertTriangle, CheckCircle2, Download, Loader2, RefreshCw, ShieldCheck 
 import { toast } from "sonner";
 import { fetchDataPanelOrders } from "@/hooks/useDataPanelOrders";
 import { formatEuro } from "@/lib/format";
+import { csvCell } from "@/lib/csvSafe";
 
 type Row = ReturnType<typeof integrityReport>["rows"][number] & {
   codice?: string | null;
@@ -72,10 +73,10 @@ export function IntegrityCheckPanel() {
     for (const r of filtered) {
       lines.push(
         [
-          r.codice ?? "",
-          `"${(r.cliente ?? "").replace(/"/g, '""')}"`,
-          r.data ?? "",
-          r.status ?? "",
+          csvCell(r.codice ?? "", ","),
+          csvCell(r.cliente ?? "", ",", true),
+          csvCell(r.data ?? "", ","),
+          csvCell(r.status ?? "", ","),
           r.totale.toFixed(2),
           r.somma_righe.toFixed(2),
           r.delta.toFixed(2),

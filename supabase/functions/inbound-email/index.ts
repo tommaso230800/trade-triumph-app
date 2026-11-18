@@ -58,6 +58,18 @@ async function ownerUserId(admin: SupabaseClient): Promise<string | null> {
 
 type Allegato = { Name?: string; ContentType?: string; Content?: string; ContentLength?: number };
 
+// Bounds on inbound attachments: larger files are skipped (and recorded),
+// never decoded or uploaded to storage.
+const MAX_ATTACHMENT_BYTES = 15 * 1024 * 1024;
+const MAX_ATTACHMENTS = 10;
+
+function attachmentSize(a: Allegato): number {
+  const b64 = (a.Content || "").replace(/\s/g, "");
+  const padding = b64.endsWith("==") ? 2 : b64.endsWith("=") ? 1 : 0;
+  const decoded = Math.max(0, Math.floor((b64.length * 3) / 4) - padding);
+  return Math.max(decoded, Number(a.ContentLength) || 0);
+}
+
 async function processaAllegato(
   admin: SupabaseClient,
   ctx: { url: string; key: string; userId: string; emailId: string; dataRicezione: string },
@@ -65,7 +77,13 @@ async function processaAllegato(
 ) {
   const nomeFile = allegato.Name || "allegato";
   const contentType = allegato.ContentType || "application/octet-stream";
+  if (attachmentSize(allegato) > MAX_ATTACHMENT_BYTES) {
+    return { allegatoId: null as string | null, ordineId: null as string | null, score: 0, motivo: "allegato oltre 15 MB, non importato" };
+  }
   const bytes = base64ToBytes(allegato.Content || "");
+  if (bytes.byteLength > MAX_ATTACHMENT_BYTES) {
+    return { allegatoId: null as string | null, ordineId: null as string | null, score: 0, motivo: "allegato oltre 15 MB, non importato" };
+  }
 
   const safe = nomeFile.replace(/[^a-zA-Z0-9._-]/g, "_");
   const path = `${ctx.userId}/email/${crypto.randomUUID()}-${safe}`;
@@ -211,18 +229,34 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const allegati: Allegato[] = (payload?.Attachments || []).filter(
+    const validi: Allegato[] = (payload?.Attachments || []).filter(
       (a: Allegato) => ESTENSIONI_VALIDE.test(a.Name || "") || MIME_VALIDI.has(a.ContentType || ""),
     );
+    const scartati: string[] = [];
+    const allegati: Allegato[] = [];
+    for (const a of validi) {
+      if (allegati.length >= MAX_ATTACHMENTS) {
+        scartati.push(`${a.Name}: oltre il numero massimo di ${MAX_ATTACHMENTS} allegati`);
+      } else if (attachmentSize(a) > MAX_ATTACHMENT_BYTES) {
+        scartati.push(`${a.Name}: allegato oltre 15 MB, non importato`);
+      } else {
+        allegati.push(a);
+      }
+    }
 
     if (allegati.length === 0) {
-      await admin.from("email_ingest").update({ stato: "senza_allegati" }).eq("id", emailId);
+      await admin
+        .from("email_ingest")
+        .update(scartati.length
+          ? { stato: "da_rivedere", match_motivo: scartati.join(" | ") }
+          : { stato: "senza_allegati" })
+        .eq("id", emailId);
       return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     let ordineId: string | null = null;
     let score = 0;
-    const motivi: string[] = [];
+    const motivi: string[] = [...scartati];
     for (const allegato of allegati) {
       const esito = await processaAllegato(
         admin,
