@@ -65,6 +65,7 @@ REGOLE IMPORTANTI:
 - prezzo_riferimento indica a cosa si riferisce il prezzo: pezzo, bottiglia, cartone, chilogrammo o altra unità.
 - ACCISA (alcolici: colonne "Accisa", "Acc.", "Imposta di fabbricazione", "I.F."): riporta in "accisa_pezzo" l'accisa in euro PER BOTTIGLIA/PEZZO. Se il listino la indica per cartone, dividi per pezzi_per_cartone (solo se noto con certezza). Se è indicata solo al litro o in altro modo non convertibile con certezza, usa null e spiegalo in "ambigui". Se il prodotto non ha accisa, usa null.
 - prezzo_listino è l'IMPONIBILE SENZA accisa: se il listino mostra sia il prezzo con accisa sia l'accisa separata, riporta il prezzo senza accisa. Se c'è un solo prezzo e non è chiaro se includa l'accisa, riportalo com'è e segnalalo in "ambigui".
+- NON estrarre come prodotti le righe di riepilogo o contabili (es. "Imponibile IVA", "Imponibile Premi", "Imponibile Provvigioni", "Totale", "Subtotale", "IVA", "Spese trasporto", "Arrotondamento"): solo articoli del listino.
 - Restituisci SOLO il JSON, senza spiegazioni.`;
 
 function jsonResponse(body: unknown, status = 200): Response {

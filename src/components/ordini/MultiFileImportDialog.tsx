@@ -26,6 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { formatEuro } from "@/lib/format";
+import { isRigaRiepilogo } from "@/lib/importGuards";
 
 type Cliente = { id: string; nome: string; azienda?: string | null };
 type Azienda = { id: string; nome: string };
@@ -183,7 +184,7 @@ export function MultiFileImportDialog({
           }
         }
       }
-      return { ...r, prodotto_id: m?.id || "", createNew: !m, listinoWarning };
+      return { ...r, prodotto_id: m?.id || "", createNew: !m && !isRigaRiepilogo(r.nome_prodotto, r.codice_prodotto), listinoWarning };
     });
     const status: ParsedOrder["status"] =
       cliente_id && azienda_id && righe.some(r => r.prodotto_id || r.createNew)
@@ -402,7 +403,7 @@ export function MultiFileImportDialog({
             righe: o.righe.map(r => {
               if (r.prodotto_id) return r;
               const m = matchProdotto(r, pool, [...allProdotti, ...created]);
-              return { ...r, prodotto_id: m?.id || "", createNew: !m };
+              return { ...r, prodotto_id: m?.id || "", createNew: !m && !isRigaRiepilogo(r.nome_prodotto, r.codice_prodotto) };
             }),
           };
         }),
@@ -691,6 +692,8 @@ export function MultiFileImportDialog({
                                     <TableCell>
                                       {r.createNew && !r.prodotto_id ? (
                                         <span className="text-xs italic text-muted-foreground">Verrà creato</span>
+                                      ) : !r.prodotto_id && isRigaRiepilogo(r.nome_prodotto, r.codice_prodotto) ? (
+                                        <span className="text-xs text-warning">Riepilogo contabile: ignorato</span>
                                       ) : (
                                         <Select value={r.prodotto_id || ""} onValueChange={v => updateRiga(o.id, idx, { prodotto_id: v, createNew: false })} disabled={!o.azienda_id}>
                                           <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Seleziona..." /></SelectTrigger>

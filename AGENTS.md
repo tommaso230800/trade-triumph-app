@@ -32,3 +32,6 @@
 - Reorder alerts run the same shared reorder engine and the owner-level tolerance setting as the Riordino page, so alerts and the page always agree.
 - Edge functions that spend AI credits, call third-party services or send email authenticate the caller with `_shared/requireUser.ts` (service key only for internal server calls), so anonymous visitors cannot trigger them.
 - CSV exports pass every cell through `src/lib/csvSafe.ts`, so user-entered names cannot run as spreadsheet formulas.
+- Product deletion is an idempotent soft delete (`update deleted_at where deleted_at is null` by id), never a DELETE from the client: a repeated DELETE on a soft-deleted row became a physical delete that cascaded into historical order rows. `ordini_righe.prodotto_id` is ON DELETE RESTRICT and trash purge/permanent delete skip products or companies still used in orders.
+- Order and listino imports never propose accounting summary lines ("Imponibile IVA", "Totale", …) as new products (`src/lib/importGuards.ts` + AI prompt rule); the user can still override.
+- Never render an empty screen: page errors are caught by error boundaries (route and app level) that log to `error_log`, and MainLayout shows a sign-in prompt instead of `null` when the session is missing.

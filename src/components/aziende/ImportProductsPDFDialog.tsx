@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { accisaValida } from "@/lib/accisa";
 import { formatEuro } from "@/lib/format";
+import { isRigaRiepilogo } from "@/lib/importGuards";
 
 type ParsedProduct = {
   rowId: string;
@@ -157,6 +158,7 @@ export function ImportProductsPDFDialog({
       const formato = d.formato ? String(d.formato) : null;
       const key = codice ? `c:${codice.toLowerCase()}` : `n:${nome.toLowerCase()}|${(formato ?? "").toLowerCase()}`;
       const duplicate = existingKeys.has(key) || seen.has(key);
+      const riepilogo = isRigaRiepilogo(nome, codice);
       seen.add(key);
       return {
         rowId: row.id as string,
@@ -180,8 +182,12 @@ export function ImportProductsPDFDialog({
         sconti: d.sconti ? String(d.sconti) : null,
         pagina: typeof row.page === "number" ? row.page : null,
         campi_mancanti: Array.isArray(d.campi_mancanti) ? (d.campi_mancanti as string[]) : [],
-        ambigui: Array.isArray(d.ambigui) ? (d.ambigui as string[]) : [],
-        selected: !duplicate,
+        ambigui: [
+          ...(Array.isArray(d.ambigui) ? (d.ambigui as string[]) : []),
+          ...(riepilogo ? ["sembra un riepilogo contabile, non un prodotto"] : []),
+        ],
+        // Righe di riepilogo (Imponibile IVA, Totale, …) non selezionate: l'utente può comunque sceglierle.
+        selected: !duplicate && !riepilogo,
         duplicate,
         expanded: false,
       } satisfies ParsedProduct;

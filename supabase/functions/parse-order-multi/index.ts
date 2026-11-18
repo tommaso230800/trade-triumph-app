@@ -67,6 +67,7 @@ RESTITUISCI SOLO QUESTO JSON, niente testo prima/dopo, niente markdown:
 }
 
 REGOLE CRITICHE GENERALI:
+- RIGHE DI RIEPILOGO: NON inserire tra le righe prodotto le voci di riepilogo o contabili del documento (es. "Imponibile IVA", "Imponibile Premi", "Imponibile Provvigioni", "Totale", "Subtotale", "IVA", "Spese trasporto", "Arrotondamento", "Netto a pagare", "Scadenze"). Le righe sono SOLO articoli venduti o in omaggio.
 - Quantita SEMPRE in CARTONI. Prezzi SEMPRE per CARTONE.
 - Riconosci omaggi: GF, G.F., OMAGGIO/GRATIS/FREE/CAMPIONE, oppure prezzo 0 con qta>0 -> is_omaggio=true, prezzo_per_cartone=0.
 - Confidence per riga: "high"=tutto chiaro; "medium"=qualche ambiguita; "low"=incerto.
