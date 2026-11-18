@@ -32,6 +32,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatEuro } from "@/lib/format";
 import type { OrdinePrefill } from "./NuovoOrdineDialog";
+import { isRigaRiepilogo } from "@/lib/importGuards";
 
 type ParsedRiga = {
   codice_prodotto: string | null;
@@ -396,7 +397,8 @@ export function ImportPDFDialog({
       return {
         ...riga,
         prodotto_id: matched?.id || "",
-        createNew: !matched,
+        // Le righe di riepilogo (Imponibile IVA, Totale, …) non vengono proposte come nuovi prodotti.
+        createNew: !matched && !isRigaRiepilogo(riga.nome_prodotto, riga.codice_prodotto),
       };
     });
 
@@ -703,7 +705,7 @@ export function ImportPDFDialog({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(mappedRighe.length > 0 ? mappedRighe : parsedData.righe.map(r => ({ ...r, prodotto_id: "", createNew: true }))).map((riga: any, index: number) => (
+                      {(mappedRighe.length > 0 ? mappedRighe : parsedData.righe.map(r => ({ ...r, prodotto_id: "", createNew: !isRigaRiepilogo(r.nome_prodotto, r.codice_prodotto) }))).map((riga: any, index: number) => (
                         <TableRow key={index} className={riga.is_omaggio ? "bg-success/10" : ""}>
                           <TableCell>
                             <Checkbox
@@ -727,6 +729,10 @@ export function ImportPDFDialog({
                             {riga.createNew && !riga.prodotto_id ? (
                               <span className="text-xs text-muted-foreground italic">
                                 Verrà creato automaticamente
+                              </span>
+                            ) : !riga.prodotto_id && isRigaRiepilogo(riga.nome_prodotto, riga.codice_prodotto) ? (
+                              <span className="text-xs text-warning">
+                                Riepilogo contabile, non è un prodotto: ignorato
                               </span>
                             ) : (
                               <Select

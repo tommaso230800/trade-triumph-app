@@ -204,6 +204,27 @@
       "when": 1795043725003,
       "tag": "0028_harden_definer_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1795043785003,
+      "tag": "0029_accisa_prodotti",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1795043845003,
+      "tag": "0030_notifiche_categoria_promemoria",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795043905003,
+      "tag": "0031_preserva_storico_prodotti",
+      "breakpoints": true
     }
   ]
 }

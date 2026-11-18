@@ -72,7 +72,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAziende, useUpdateAzienda, Azienda } from "@/hooks/useAziende";
-import { useProdotti, useCreateProdotto, useDeleteProdotto, useUpdateProdotto, Prodotto } from "@/hooks/useProdotti";
+import { useProdotti, useCreateProdotto, useUpdateProdotto, Prodotto } from "@/hooks/useProdotti";
+import { useEliminaProdotto } from "@/components/aziende/useEliminaProdotto";
 import { useBrands, useCreateBrand } from "@/hooks/useBrands";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -203,7 +204,7 @@ const AziendaDettaglio = () => {
   };
   const createProdotto = useCreateProdotto();
   const updateProdotto = useUpdateProdotto();
-  const deleteProdotto = useDeleteProdotto();
+  const eliminaProdotto = useEliminaProdotto();
   const updateAzienda = useUpdateAzienda();
   const { data: brands } = useBrands(id);
   const createBrand = useCreateBrand();
@@ -471,8 +472,9 @@ const AziendaDettaglio = () => {
     setProductForm(defaultProductForm);
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    await deleteProdotto.mutateAsync(productId);
+  const handleDeleteProduct = (productId: string) => {
+    const p = prodotti?.find((x) => x.id === productId);
+    if (p) eliminaProdotto.richiedi({ id: p.id, nome: p.nome });
   };
 
   const calcTotaleCartoni = (strati: number, cartoniPerStrato: number) => strati * cartoniPerStrato;
@@ -693,7 +695,7 @@ const AziendaDettaglio = () => {
                           <Pencil className="mr-2 h-4 w-4" />
                           Modifica
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteProduct(prodotto.id)}>
+                        <DropdownMenuItem className="text-destructive" disabled={eliminaProdotto.inCorso.has(prodotto.id)} onClick={() => handleDeleteProduct(prodotto.id)}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           Elimina
                         </DropdownMenuItem>
@@ -745,10 +747,10 @@ const AziendaDettaglio = () => {
                       <TableCell className="text-right font-medium tabular-nums">{calcTotaleCartoni(prodotto.strati, prodotto.cartoni_per_strato)}</TableCell>
                       <TableCell>
                         <div className="flex gap-1 justify-end">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openProductDialog(prodotto)}>
+                          <Button variant="ghost" size="icon" aria-label={`Modifica ${prodotto.nome}`} onClick={() => openProductDialog(prodotto)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDeleteProduct(prodotto.id)}>
+                          <Button variant="ghost" size="icon" className="text-destructive" aria-label={`Elimina ${prodotto.nome}`} disabled={eliminaProdotto.inCorso.has(prodotto.id)} onClick={() => handleDeleteProduct(prodotto.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
@@ -1220,6 +1222,7 @@ const AziendaDettaglio = () => {
       <div className="px-4 pb-6 lg:px-0">
         <section className="space-y-4"><h2 className="text-base font-semibold">File e documenti azienda</h2><FileArchive companyId={id}/></section>
       </div>
+      {eliminaProdotto.dialog}
     </MainLayout>
 
   );

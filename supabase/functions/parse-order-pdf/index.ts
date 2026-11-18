@@ -46,6 +46,7 @@ REGOLE:
 - Numeri numerici (12.50 non "12,50€"). Date YYYY-MM-DD.
 - NON restituire campi quantita_pezzi: usa SOLO quantita_cartoni.
 - Salta righe con quantita_cartoni = 0 a meno che non siano omaggio.
+- RIGHE DI RIEPILOGO: NON inserire tra le righe prodotto le voci di riepilogo o contabili del documento (es. "Imponibile IVA", "Imponibile Premi", "Imponibile Provvigioni", "Totale", "Subtotale", "IVA", "Spese trasporto", "Arrotondamento", "Netto a pagare", "Scadenze"). Le righe sono SOLO articoli venduti o in omaggio.
 - Restituisci SOLO il JSON, senza spiegazioni.`;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {

@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { logClientError } from "@/hooks/useDiagnostica";
 
 /**
  * Rete di sicurezza: se una pagina va in errore, al posto dello schermo bianco
@@ -15,6 +16,11 @@ export class ErrorBoundary extends Component<{ children: ReactNode; resetKey?: s
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("[ErrorBoundary]", error, info.componentStack);
+    // Registrato in Diagnostica › errori, per capire la causa senza riprodurla.
+    void logClientError("schermata", error.message, {
+      stack: error.stack?.slice(0, 2000),
+      componentStack: info.componentStack?.slice(0, 2000),
+    });
   }
 
   componentDidUpdate(prev: { resetKey?: string }) {

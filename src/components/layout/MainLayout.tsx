@@ -38,6 +38,9 @@ export function MainLayout({ children }: MainLayoutProps) {
       if (!session) {
         setIsAuthenticated(false);
         navigate(authRedirect());
+      } else {
+        // Sessione ripristinata (es. rinnovo dopo una rete instabile): si torna alla pagina.
+        setIsAuthenticated(true);
       }
     });
 
@@ -58,7 +61,21 @@ export function MainLayout({ children }: MainLayoutProps) {
   }
 
   if (!isAuthenticated) {
-    return null;
+    // Mai uno schermo vuoto: se la sessione non c'è (scaduta o persa per un
+    // attimo) si spiega cosa succede e si offre l'accesso.
+    return (
+      <div role="alert" className="flex min-h-[100dvh] flex-col items-center justify-center gap-3 bg-background p-6 text-center">
+        <p className="text-base font-semibold">Sessione da rinnovare</p>
+        <p className="max-w-sm text-sm text-muted-foreground">Per sicurezza serve accedere di nuovo. I tuoi dati sono salvati.</p>
+        <button
+          type="button"
+          onClick={() => navigate(authRedirect())}
+          className="min-h-11 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground"
+        >
+          Accedi
+        </button>
+      </div>
+    );
   }
 
   return (

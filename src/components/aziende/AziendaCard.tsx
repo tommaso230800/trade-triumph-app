@@ -17,11 +17,12 @@ import {
 } from "@/components/ui/collapsible";
 import { MapPin, Phone, Mail, MoreHorizontal, Loader2, Package, Trash2, Check, X, Plus, ChevronDown, ChevronUp, Upload, ImageIcon, Pencil, FileUp } from "lucide-react";
 import { Azienda, useUpdateAzienda } from "@/hooks/useAziende";
-import { useProdotti, useCreateProdotto, useDeleteProdotto, useUpdateProdotto, Prodotto } from "@/hooks/useProdotti";
+import { useProdotti, useCreateProdotto, useUpdateProdotto, Prodotto } from "@/hooks/useProdotti";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImportProductsPDFDialog } from "./ImportProductsPDFDialog";
 import { formatEuro } from "@/lib/format";
+import { useEliminaProdotto } from "@/components/aziende/useEliminaProdotto";
 
 const formatCurrency = (value: number) =>
   formatEuro(value);
@@ -99,7 +100,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
   const { data: prodotti, isLoading, refetch: refetchProdotti } = useProdotti(isExpanded ? azienda.id : undefined);
   const createProdotto = useCreateProdotto();
   const updateProdotto = useUpdateProdotto();
-  const deleteProdotto = useDeleteProdotto();
+  const eliminaProdotto = useEliminaProdotto();
   const updateAzienda = useUpdateAzienda();
 
   const startEdit = (prodotto: Prodotto) => {
@@ -549,7 +550,9 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => deleteProdotto.mutate(prodotto.id)}
+                          disabled={eliminaProdotto.inCorso.has(prodotto.id)}
+                          aria-label={`Elimina ${prodotto.nome}`}
+                          onClick={() => eliminaProdotto.richiedi({ id: prodotto.id, nome: prodotto.nome })}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -759,6 +762,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
         aziendaNome={azienda.nome}
         onImportComplete={() => refetchProdotti()}
       />
+      {eliminaProdotto.dialog}
     </Collapsible>
   );
 }
