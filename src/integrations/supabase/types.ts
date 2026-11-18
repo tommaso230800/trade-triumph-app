@@ -3924,7 +3924,6 @@ export type Database = {
       }
       ordini_righe: {
         Row: {
-          accisa_pezzo: number | null
           created_at: string
           id: string
           is_omaggio: boolean
@@ -3941,7 +3940,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          accisa_pezzo?: number | null
           created_at?: string
           id?: string
           is_omaggio?: boolean
@@ -3958,7 +3956,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          accisa_pezzo?: number | null
           created_at?: string
           id?: string
           is_omaggio?: boolean
@@ -4153,8 +4150,6 @@ export type Database = {
           id: string
           immagine_url: string | null
           iva: number | null
-          ha_accisa: boolean
-          accisa_pezzo: number | null
           nome: string
           pezzi_per_cartone: number
           prezzo_listino: number
@@ -4180,8 +4175,6 @@ export type Database = {
           id?: string
           immagine_url?: string | null
           iva?: number | null
-          ha_accisa?: boolean
-          accisa_pezzo?: number | null
           nome: string
           pezzi_per_cartone?: number
           prezzo_listino?: number
@@ -4207,8 +4200,6 @@ export type Database = {
           id?: string
           immagine_url?: string | null
           iva?: number | null
-          ha_accisa?: boolean
-          accisa_pezzo?: number | null
           nome?: string
           pezzi_per_cartone?: number
           prezzo_listino?: number
