@@ -2,7 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { authenticateCronRequest } from '../_shared/cron-auth.ts';
 import { todayRome } from '../_shared/reorder/rome.ts';
-import { computeOwnerAlerts, reorderMessage, type OwnerOrder } from '../_shared/reorderAlerts.ts';
+import { computeOwnerAlerts, reorderMessage, reorderDigestKey, reorderDigestMessage, romeHour, DIGEST_DALLE_ORE, type OwnerOrder } from '../_shared/reorderAlerts.ts';
 import { dispatchPending } from '../_shared/pushDispatch.ts';
 
 const JOB = 'controllo_riordini';
@@ -53,7 +53,8 @@ Deno.serve(async (req) => {
     const cName = new Map<string, string>((clienti ?? []).map((c: { id: string; nome: string }) => [c.id, c.nome]));
     const aName = new Map<string, string>((aziende ?? []).map((a: { id: string; nome: string }) => [a.id, a.nome]));
 
-    let coppie = 0, insufficienti = 0, inRitardo = 0, nuove = 0;
+    let coppie = 0, insufficienti = 0, inRitardo = 0, nuove = 0, riepiloghi = 0;
+    const oraRoma = romeHour();
     for (const [owner, list] of byOwner) {
       const tol = tolByOwner.get(owner) ?? 6;
       const res = computeOwnerAlerts(owner, list, today, tol);
@@ -76,9 +77,28 @@ Deno.serve(async (req) => {
         if (error) throw new Error(`Avviso ${cliente}/${azienda}: ${error.message}`);
         nuove += Number(created ?? 0);
       }
+      // Riepilogo giornaliero (dalle 8, una volta al giorno): finché un cliente
+      // resta in ritardo, ogni mattina arriva una notifica che lo ricorda.
+      if (!baseline && oraRoma >= DIGEST_DALLE_ORE) {
+        const digest = reorderDigestMessage(res.alerts.map((a) => ({
+          cliente: cName.get(a.cliente_id) ?? 'Cliente N/D',
+          azienda: aName.get(a.azienda_id) ?? 'Azienda N/D',
+          giorni_ritardo: a.giorni_ritardo,
+        })));
+        const { data: createdDigest, error: dErr } = await admin.rpc('enqueue_notifica', {
+          p_event_key: reorderDigestKey(owner, today), p_categoria: 'riordino', p_recipients: recipients,
+          p_titolo: digest.titolo, p_testo: digest.testo, p_link: '/riordino',
+          p_ordine_id: null, p_cliente_id: null, p_azienda_id: null,
+          p_cliente_nome: null, p_azienda_nome: null, p_importo: null,
+          p_metadata: { tipo: 'riepilogo_giornaliero', clienti_in_ritardo: res.alerts.length, controllo: today },
+          p_push_mode: 'push',
+        });
+        if (dErr) throw new Error(`Riepilogo riordini: ${dErr.message}`);
+        riepiloghi += Number(createdDigest ?? 0);
+      }
     }
     const dispatch = await dispatchPending(admin, 300);
-    const details = { oggi: today, avvio: trigger, coppie, in_ritardo: inRitardo, dati_insufficienti: insufficienti, nuove_notifiche: nuove, iniziale_senza_push: baseline, invio: dispatch };
+    const details = { oggi: today, avvio: trigger, coppie, in_ritardo: inRitardo, dati_insufficienti: insufficienti, nuove_notifiche: nuove, riepiloghi_giornalieri: riepiloghi, iniziale_senza_push: baseline, invio: dispatch };
     await admin.from('notifiche_sistema_log').update({ status: 'ok', finished_at: new Date().toISOString(), details }).eq('id', run?.id);
     return json(details);
   } catch (e) {

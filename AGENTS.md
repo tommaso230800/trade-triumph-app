@@ -35,3 +35,5 @@
 - Product deletion is an idempotent soft delete (`update deleted_at where deleted_at is null` by id), never a DELETE from the client: a repeated DELETE on a soft-deleted row became a physical delete that cascaded into historical order rows. `ordini_righe.prodotto_id` is ON DELETE RESTRICT and trash purge/permanent delete skip products or companies still used in orders.
 - Order and listino imports never propose accounting summary lines ("Imponibile IVA", "Totale", …) as new products (`src/lib/importGuards.ts` + AI prompt rule); the user can still override.
 - Never render an empty screen: page errors are caught by error boundaries (route and app level) that log to `error_log`, and MainLayout shows a sign-in prompt instead of `null` when the session is missing.
+- Deleted (soft-deleted) products stay readable in orders (rows, names, amounts) but are never offered for new orders: pickers, imports and "Riassortimento" use only active catalog products.
+- Reorder alerts: one push per client–company cycle plus one daily digest per owner from 08:00 Europe/Rome (`riordino_riepilogo:<owner>:<date>`) while pairs stay late.

@@ -8,7 +8,7 @@ export type CategoriaNotifica = "nuovo_ordine" | "ordine_inviato" | "riordino" |
 export const CATEGORIE_PREFERENZE: Array<{ id: Exclude<CategoriaNotifica, "test">; label: string; help: string }> = [
   { id: "nuovo_ordine", label: "Nuovi ordini", help: "Quando un ordine viene salvato e confermato" },
   { id: "ordine_inviato", label: "Ordini inviati", help: "Quando l’invio all’azienda è accettato dal servizio email" },
-  { id: "riordino", label: "Riordini in ritardo", help: "Una volta per ciclo cliente–azienda, al superamento della scadenza" },
+  { id: "riordino", label: "Riordini in ritardo", help: "Al superamento della scadenza e un riepilogo ogni mattina dalle 8 finché il cliente non riordina" },
   { id: "promemoria", label: "Promemoria", help: "All’ora che hai scelto, e di nuovo se lo rinvii" },
 ];
 
