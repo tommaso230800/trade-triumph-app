@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { OrderEmailSettings } from "@/components/aziende/OrderEmailSettings";
 import { MandateAssignment } from "@/components/fiscal/MandateAssignment";
@@ -168,6 +168,39 @@ const AziendaDettaglio = () => {
   const azienda = aziende?.find((a) => a.id === id);
   
   const { data: prodotti, isLoading: isLoadingProdotti, refetch: refetchProdotti } = useProdotti(id);
+
+  // ── Bozza della modifica prodotto ──────────────────────────────────
+  // Se la pagina si ricarica mentre la scheda prodotto è aperta (es. iPhone
+  // dopo la scelta di una foto, rinnovo dell'accesso), si riapre com'era.
+  const bozzaKey = `bozza-prodotto:${id}`;
+  const bozzaRipresa = useRef(false);
+  useEffect(() => {
+    if (!isProductDialogOpen) return;
+    try {
+      sessionStorage.setItem(bozzaKey, JSON.stringify({ editingId: editingProduct?.id ?? null, form: productForm }));
+    } catch { /* storage non disponibile: nessuna bozza */ }
+  }, [isProductDialogOpen, editingProduct, productForm, bozzaKey]);
+  useEffect(() => {
+    if (bozzaRipresa.current || isProductDialogOpen || !prodotti) return;
+    bozzaRipresa.current = true;
+    try {
+      const raw = sessionStorage.getItem(bozzaKey);
+      if (!raw) return;
+      const bozza = JSON.parse(raw) as { editingId: string | null; form: ProductForm };
+      const prodotto = bozza.editingId ? prodotti.find((p) => p.id === bozza.editingId) ?? null : null;
+      if (bozza.editingId && !prodotto) { sessionStorage.removeItem(bozzaKey); return; }
+      setEditingProduct(prodotto);
+      setProductForm({ ...defaultProductForm, ...bozza.form });
+      setIsProductDialogOpen(true);
+      toast.message("Ho riaperto la modifica che avevi in corso", { description: "Controlla i dati e salva." });
+    } catch {
+      sessionStorage.removeItem(bozzaKey);
+    }
+  }, [prodotti, isProductDialogOpen, bozzaKey]);
+  const chiudiSchedaProdotto = () => {
+    try { sessionStorage.removeItem(bozzaKey); } catch { /* niente */ }
+    setIsProductDialogOpen(false);
+  };
   const createProdotto = useCreateProdotto();
   const updateProdotto = useUpdateProdotto();
   const deleteProdotto = useDeleteProdotto();
@@ -433,7 +466,7 @@ const AziendaDettaglio = () => {
       }
       return;
     }
-    setIsProductDialogOpen(false);
+    chiudiSchedaProdotto();
     setEditingProduct(null);
     setProductForm(defaultProductForm);
   };
@@ -899,7 +932,7 @@ const AziendaDettaglio = () => {
       </Dialog>
 
       {/* Product Dialog */}
-      <Dialog open={isProductDialogOpen} onOpenChange={setIsProductDialogOpen}>
+      <Dialog open={isProductDialogOpen} onOpenChange={(o) => (o ? setIsProductDialogOpen(true) : chiudiSchedaProdotto())}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingProduct ? "Modifica Prodotto" : "Nuovo Prodotto"}</DialogTitle>
@@ -1097,7 +1130,7 @@ const AziendaDettaglio = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsProductDialogOpen(false)}>Annulla</Button>
+            <Button variant="outline" onClick={chiudiSchedaProdotto}>Annulla</Button>
             <Button onClick={handleSaveProduct} disabled={(createProdotto.isPending || updateProdotto.isPending) || !productForm.nome}>
               {(createProdotto.isPending || updateProdotto.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editingProduct ? "Salva" : "Crea"}
