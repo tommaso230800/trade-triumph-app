@@ -708,7 +708,16 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
       return;
     }
 
-    const { products, defaults } = productHistory;
+    // Solo prodotti ancora a catalogo: quelli eliminati restano negli ordini
+    // passati ma non si possono più scegliere per i nuovi.
+    const attivi = new Set((allProdotti ?? []).map((p) => p.id));
+    const products = productHistory.products.filter((p) => attivi.has(p.prodotto_id));
+    const esclusi = productHistory.products.length - products.length;
+    const { defaults } = productHistory;
+    if (products.length === 0) {
+      toast.error("I prodotti degli ordini precedenti non sono più a catalogo");
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -752,7 +761,9 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
     });
 
     setRigheOrdine(newRighe);
-    toast.success(`${products.length} prodotti caricati da ${productHistory.totalOrders} ordini precedenti!`);
+    toast.success(`${products.length} prodotti caricati da ${productHistory.totalOrders} ordini precedenti`, {
+      description: esclusi > 0 ? `${esclusi} ${esclusi === 1 ? "prodotto eliminato dal catalogo è stato escluso" : "prodotti eliminati dal catalogo sono stati esclusi"}.` : undefined,
+    });
   };
 
   // Se l'utente ha modificato un prezzo e ha toccato direttamente "Crea Ordine"

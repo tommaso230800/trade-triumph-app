@@ -80,7 +80,7 @@ export function NotificationDiagnostics() {
                   <span className="tabular-nums">{dt(run.started_at)}</span>
                   <span className="text-xs text-muted-foreground">{det.avvio === "manuale" ? "manuale" : "programmato, ogni ora"}</span>
                 </p>
-                {run.status === "ok" && <p className="text-xs text-muted-foreground tabular-nums">{String(det.coppie ?? 0)} coppie · {String(det.in_ritardo ?? 0)} in ritardo · {String(det.dati_insufficienti ?? 0)} con dati insufficienti · {String(det.nuove_notifiche ?? 0)} nuovi avvisi</p>}
+                {run.status === "ok" && <p className="text-xs text-muted-foreground tabular-nums">{String(det.coppie ?? 0)} coppie · {String(det.in_ritardo ?? 0)} in ritardo · {String(det.dati_insufficienti ?? 0)} con dati insufficienti · {String(det.nuove_notifiche ?? 0)} nuovi avvisi{det.riepiloghi_giornalieri ? ` · ${String(det.riepiloghi_giornalieri)} riepilogo del mattino` : ""}</p>}
                 {run.error && <p className="break-words text-xs text-destructive">{run.error}</p>}
               </div>
             )}
