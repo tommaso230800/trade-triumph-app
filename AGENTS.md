@@ -20,6 +20,7 @@
 - Match document identities from content against accessible records; manual association status is authoritative and must survive reanalysis.
 - Document archive is an active memory: virtual per-company folders (never physical paths), `documenti_aziende` links for multi-company visibility, verified aliases in `aziende_alias` learned from manual corrections, and `stato_elaborazione` as the single processing state.
 - Generate dedicated poster exports from saved proposal content, awaiting real image decoding and preserving aspect ratio.
+- Document thumbnails load only when visible, at most two at a time, and are cached by storage path; archive rows are rendered as plain functions, so page updates never re-download PDFs (iPhone memory and request queue).
 - Mirror OneDrive physical hierarchy by stable drive/item IDs in a server-managed index; keep CRM classification virtual, persist every delta checkpoint, and gate shared-connector access through an explicit allowlist.
 - All reorder consumers use the same eligibility and chronological cadence replay; exclude explicitly reconstructed revenue allocations from chronology only, preserve historical baseline, adapt operational cadence after repeated shifts, and expose original IDs and exclusions without modifying commercial records.
 - Agency members share one data owner: rows are rewritten to the owner by trigger and read through member-to-member RLS, while the acting user is kept in created_by/updated_by/sent_by, so colleagues see the same archive without losing authorship.

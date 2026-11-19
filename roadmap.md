@@ -175,3 +175,9 @@
 - [ ] Esportazione grafico in immagine/PDF: non implementata
 - [ ] Zoom temporale dei grafici: disponibile selezione ultimi 5/10/20/tutto, zoom a trascinamento non implementato
 - [ ] Storico persistente delle segnalazioni: gli stati passati sono ricalcolati on-demand, non archiviati in tabella
+
+## Schermo bianco su iPhone in scheda azienda (prodotti)
+- [x] Causa: l'archivio documenti in fondo alla scheda azienda riscaricava e ridisegnava tutte le anteprime PDF a ogni aggiornamento (eliminazione, modifica, duplicati) → memoria esaurita su iPhone e salvataggi bloccati in coda
+- [x] Anteprime solo quando visibili, max 2 alla volta, memorizzate; righe archivio non ricreate a ogni aggiornamento
+- [x] Applicate le modifiche database in sospeso: accisa prodotti, categoria promemoria, prodotti usati negli ordini non cancellabili definitivamente
+- [x] Verificato con Safari iPhone simulato: modifica, eliminazione e unificazione prodotti di prova senza schermo bianco (prodotti di prova rimossi)

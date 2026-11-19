@@ -225,6 +225,13 @@
       "when": 1795043905003,
       "tag": "0031_preserva_storico_prodotti",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795075113245,
+      "tag": "0032_migration",
+      "breakpoints": true
     }
   ]
 }

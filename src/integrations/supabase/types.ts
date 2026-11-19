@@ -3924,6 +3924,7 @@ export type Database = {
       }
       ordini_righe: {
         Row: {
+          accisa_pezzo: number | null
           created_at: string
           id: string
           is_omaggio: boolean
@@ -3940,6 +3941,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accisa_pezzo?: number | null
           created_at?: string
           id?: string
           is_omaggio?: boolean
@@ -3956,6 +3958,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accisa_pezzo?: number | null
           created_at?: string
           id?: string
           is_omaggio?: boolean
@@ -4139,6 +4142,7 @@ export type Database = {
       }
       prodotti: {
         Row: {
+          accisa_pezzo: number | null
           azienda_id: string
           brand_id: string | null
           cartoni_per_strato: number
@@ -4147,6 +4151,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           formato: string | null
+          ha_accisa: boolean
           id: string
           immagine_url: string | null
           iva: number | null
@@ -4164,6 +4169,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accisa_pezzo?: number | null
           azienda_id: string
           brand_id?: string | null
           cartoni_per_strato?: number
@@ -4172,6 +4178,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           formato?: string | null
+          ha_accisa?: boolean
           id?: string
           immagine_url?: string | null
           iva?: number | null
@@ -4189,6 +4196,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accisa_pezzo?: number | null
           azienda_id?: string
           brand_id?: string | null
           cartoni_per_strato?: number
@@ -4197,6 +4205,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           formato?: string | null
+          ha_accisa?: boolean
           id?: string
           immagine_url?: string | null
           iva?: number | null

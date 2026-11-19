@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAziende } from '@/hooks/useAziende';
 import { useClienti } from '@/hooks/useClienti';
@@ -248,7 +248,9 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
     );
   }
 
-  function DocRow({ d }: { d: Documento }) {
+  // Funzione di disegno (non componente): così le righe e le loro anteprime non vengono
+  // ricreate da zero a ogni aggiornamento della pagina.
+  function docRow(d: Documento) {
     return (
       <article className="flex min-w-0 items-start gap-3 rounded-lg border p-4" key={d.id}>
         <button className="w-16 shrink-0 sm:w-20" onClick={() => setDetail(d)} aria-label={`Apri scheda ${d.nome_file}`}>
@@ -399,7 +401,7 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
                 return (
                   <section key={cat} className="space-y-2">
                     <h4 className="text-sm font-semibold text-muted-foreground">{cat} ({catDocs.length})</h4>
-                    <div className="grid gap-3">{catDocs.map(d => <DocRow key={d.id} d={d} />)}</div>
+                    <div className="grid gap-3">{catDocs.map(d => <Fragment key={d.id}>{docRow(d)}</Fragment>)}</div>
                   </section>
                 );
               })}
@@ -455,7 +457,7 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
           </div>
         ) : (
           !filtered.length ? <p className="py-8 text-center text-sm text-muted-foreground">Nessun file trovato</p>
-            : <div className="grid gap-3">{filtered.map(d => <DocRow key={d.id} d={d} />)}</div>
+            : <div className="grid gap-3">{filtered.map(d => <Fragment key={d.id}>{docRow(d)}</Fragment>)}</div>
         )}
 
       {/* Scheda documento */}

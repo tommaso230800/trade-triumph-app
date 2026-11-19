@@ -1,0 +1,1 @@
+COMMENT ON CONSTRAINT ordini_righe_prodotto_id_fkey ON public.ordini_righe IS 'ON DELETE RESTRICT: a product used in saved orders can only be soft-deleted, so historical order rows are never removed.';
