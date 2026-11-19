@@ -232,6 +232,13 @@
       "when": 1795075113245,
       "tag": "0032_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1795084761108,
+      "tag": "0033_promemoria_personali",
+      "breakpoints": true
     }
   ]
 }

@@ -6061,6 +6061,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      unregister_push_device: {
+        Args: { p_endpoint: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role:
