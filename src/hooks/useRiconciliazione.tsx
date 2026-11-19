@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getDataOwnerId } from "@/lib/dataOwner";
 
 export type EstrattoDoc = {
   id: string;
@@ -194,7 +195,7 @@ export function useUploadEstratto() {
         const { data: existing } = await supabase
           .from("estratti_provvigioni")
           .select("id, file_name")
-          .eq("user_id", user.id)
+          .eq("user_id", await getDataOwnerId(user.id))
           .eq("file_hash", hash)
           .limit(1);
         if (existing && existing.length > 0) {

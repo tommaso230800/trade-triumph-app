@@ -3,6 +3,7 @@
 // suggerire l'ordine, il cliente e l'azienda più probabili nel CRM.
 
 import { supabase } from "@/integrations/supabase/client";
+import { getDataOwnerId } from "@/lib/dataOwner";
 
 export type MatchCandidato = {
   ordine_id?: string | null;
@@ -83,7 +84,7 @@ export async function trovaCandidatiSegnalazione(input: MatchInput, limit = 6): 
     const { data } = await supabase
       .from("ordini")
       .select("id, codice, cliente_id, azienda_id, data_ordine, totale, clienti(nome), aziende(nome)")
-      .eq("user_id", user.id)
+      .eq("user_id", await getDataOwnerId(user.id))
       .eq("codice", codiceOrdine)
       .maybeSingle();
     if (data) {
@@ -110,7 +111,7 @@ export async function trovaCandidatiSegnalazione(input: MatchInput, limit = 6): 
   let q = supabase
     .from("ordini")
     .select("id, codice, cliente_id, azienda_id, data_ordine, totale, clienti(nome), aziende(nome)")
-    .eq("user_id", user.id)
+    .eq("user_id", await getDataOwnerId(user.id))
     .order("data_ordine", { ascending: false })
     .limit(120);
   if (daISO) q = q.gte("data_ordine", daISO);

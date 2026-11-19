@@ -43,7 +43,6 @@ const CentroNotifiche = lazy(() => import("./pages/CentroNotifiche"));
 const Impostazioni = lazy(() => import("./pages/Impostazioni"));
 const Problematiche = lazy(() => import("./pages/Problematiche"));
 const PannelloDati = lazy(() => import("./pages/PannelloDati"));
-const FileDocumenti = lazy(() => import("./pages/FileDocumenti"));
 const PreparaVisita = lazy(() => import("./pages/PreparaVisita"));
 const MappaClienti = lazy(() => import("./pages/MappaClienti"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -86,7 +85,8 @@ const App = () => (
                 <Route path="/ordini" element={<Ordini />} />
                 <Route path="/pannello-dati" element={<PannelloDati />} />
                 <Route path="/proposte" element={<Navigate to="/" replace />} />
-                <Route path="/file-documenti" element={<FileDocumenti />} />
+                {/* Pagina "File e documenti" rimossa: i documenti restano nelle schede cliente/azienda. */}
+                <Route path="/file-documenti" element={<Navigate to="/aziende" replace />} />
                 <Route path="/analytics" element={<Analytics />} />
                 <Route path="/analytics/azienda/:id" element={<AnalyticsAzienda />} />
                 <Route path="/statistiche" element={<StatisticheProdotti />} />

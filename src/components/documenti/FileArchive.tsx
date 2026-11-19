@@ -80,7 +80,7 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
   const fileInput = useRef<HTMLInputElement>(null);
   const [searchParams] = useSearchParams();
 
-  // Deep link: /file-documenti?doc=<id> apre direttamente la scheda.
+  // Deep link: /clienti/<id>?doc=<id> o /aziende/<id>?doc=<id> apre direttamente la scheda.
   useEffect(() => {
     const docId = searchParams.get('doc');
     if (docId && docs.length) {

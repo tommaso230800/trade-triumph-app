@@ -19,7 +19,6 @@ import {
   Activity,
   FileText,
   PieChart,
-  FolderOpen,
   Bell,
 } from "lucide-react";
 
@@ -56,7 +55,6 @@ const baseNavigation: NavItem[] = [
   { name: "Statistiche prodotti", href: "/statistiche", icon: PieChart },
   { name: "Provvigioni", href: "/provvigioni", icon: Wallet },
   { name: "Canvass/PFA", href: "/canvass", icon: Tag },
-  { name: "File e documenti", href: "/file-documenti", icon: FolderOpen },
   { name: "Promemoria", href: "/promemoria", icon: BellRing },
   { name: "Riordino", href: "/riordino", icon: Repeat },
   { name: "Intelligenza", href: "/intelligenza-commerciale", icon: Gauge },
