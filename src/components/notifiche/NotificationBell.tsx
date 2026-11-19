@@ -4,16 +4,26 @@ import { Bell } from "lucide-react";
 import { useNotificheRealtime, useUnreadCount } from "@/hooks/useNotifiche";
 import { refreshDeviceRegistration } from "@/lib/webPush";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
-let deviceRefreshed = false;
+// Ultimo account per cui questo dispositivo è stato collegato alle notifiche.
+let deviceLinkedTo: string | null = null;
 
 export function NotificationBell({ className }: { className?: string }) {
   const { data: unread = 0 } = useUnreadCount();
   const navigate = useNavigate();
+  const { user } = useAuth();
   useNotificheRealtime();
 
+  // A ogni cambio di account il dispositivo viene ricollegato a chi è entrato,
+  // così le notifiche personali (promemoria) arrivano solo al proprietario.
   useEffect(() => {
-    if (!deviceRefreshed) { deviceRefreshed = true; refreshDeviceRegistration(); }
+    if (!user?.id || deviceLinkedTo === user.id) return;
+    deviceLinkedTo = user.id;
+    void refreshDeviceRegistration();
+  }, [user?.id]);
+
+  useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     // Fallback when the system cannot navigate the open app window directly.
     const onMessage = (e: MessageEvent) => {

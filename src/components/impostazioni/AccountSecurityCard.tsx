@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrentMember, type AgencyMember } from "@/hooks/useAgency";
 import { changeOwnPassword, passwordProblem, resetMemberPassword } from "@/lib/agencyAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { esciDallAccount } from "@/lib/esci";
 
 /** Account, password change, logout and (for the owner) colleague passwords. */
 export function AccountSecurityCard() {
@@ -58,7 +59,7 @@ export function AccountSecurityCard() {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    await esciDallAccount();
     navigate("/auth");
   };
 

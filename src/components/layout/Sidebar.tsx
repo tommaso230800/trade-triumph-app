@@ -35,6 +35,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { esciDallAccount } from "@/lib/esci";
 
 type NavChild = {
   name: string;
@@ -107,7 +108,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
   const closeMobile = () => onMobileOpenChange(false);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await esciDallAccount();
     navigate("/auth");
   };
 

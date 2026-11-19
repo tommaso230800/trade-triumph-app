@@ -15,6 +15,7 @@ import { PageLoader } from "@/components/PageLoader";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { defaultShouldDehydrateQuery } from "@tanstack/react-query";
 
 // Tutte le altre pagine sono caricate on-demand (code splitting per rotta):
 // riduce il bundle iniziale, soprattutto rilevante per l'avvio dell'app mobile.
@@ -56,6 +57,12 @@ const App = () => (
       persister: persister!,
       maxAge: 1000 * 60 * 60 * 24,
       buster: "v3",
+      // Dati personali (promemoria, notifiche) mai salvati sul dispositivo:
+      // con un altro account sullo stesso telefono non devono essere leggibili.
+      dehydrateOptions: {
+        shouldDehydrateQuery: (q) =>
+          defaultShouldDehydrateQuery(q) && !["promemoria", "notifiche"].includes(String(q.queryKey[0])),
+      },
     }}
   >
     <AuthProvider>

@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin } from "./useUserRole";
+import { useCanOperate } from "./useUserRole";
 
 export function useErrorLog() {
-  const isAdmin = useIsAdmin();
+  const { allowed } = useCanOperate();
   return useQuery({
     queryKey: ["error-log"],
-    enabled: isAdmin,
+    enabled: allowed,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("error_log")
