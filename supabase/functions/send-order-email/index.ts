@@ -58,16 +58,26 @@ Deno.serve(async req => {
     const options = allowedMailboxes(member?.username);
     const linked = new Map<string, Record<string, string>>();
     let lastFailure: { status: number; details: string } | null = null;
-    for (const connectionKey of keys) {
+    // Controlli delle caselle in parallelo (prima erano in fila); i risultati si
+    // leggono nello stesso ordine delle chiavi, quindi la priorità non cambia.
+    type ProfileCheck = { candidateHeaders: Record<string, string>; address?: string; failure?: { status: number; details: string } };
+    const profiles: ProfileCheck[] = await Promise.all(keys.map(async (connectionKey): Promise<ProfileCheck> => {
       const candidateHeaders = { Authorization: `Bearer ${gatewayKey}`, 'X-Connection-Api-Key': connectionKey, 'Content-Type': 'application/json' };
-      const profile = await fetch(`${GATEWAY_URL}/users/me/profile`, { headers: candidateHeaders });
-      if (!profile.ok) {
-        lastFailure = { status: profile.status, details: await profile.text() };
-        console.error(`Gmail profile [${lastFailure.status}]: ${lastFailure.details}`);
+      try {
+        const profile = await fetch(`${GATEWAY_URL}/users/me/profile`, { headers: candidateHeaders });
+        if (!profile.ok) return { candidateHeaders, failure: { status: profile.status, details: await profile.text() } };
+        return { candidateHeaders, address: String((await profile.json()).emailAddress ?? '').toLowerCase() };
+      } catch (e) {
+        return { candidateHeaders, failure: { status: 503, details: e instanceof Error ? e.message : String(e) } };
+      }
+    }));
+    for (const p of profiles) {
+      if (p.failure) {
+        lastFailure = p.failure;
+        console.error(`Gmail profile [${p.failure.status}]: ${p.failure.details}`);
         continue;
       }
-      const address = String((await profile.json()).emailAddress ?? '').toLowerCase();
-      if (address && !linked.has(address)) linked.set(address, candidateHeaders);
+      if (p.address && !linked.has(p.address)) linked.set(p.address, p.candidateHeaders);
     }
     if (linked.size === 0) {
       return json({ error: 'Gmail non disponibile. Verifica il collegamento.', status: lastFailure?.status, details: lastFailure?.details }, lastFailure?.status ?? 503);
@@ -83,7 +93,16 @@ Deno.serve(async req => {
     if (!headers) return json({ error: `La casella ${required} non è collegata. Nessuna email inviata.`, requiredSender: required }, 412);
     const sender = { emailAddress: required };
     // A stable attempt ID is claimed before any call that can send mail.
-    const { data: existing } = await admin.from('order_email_sends').select('*').eq('id', input.attemptId).eq('user_id', ownerId).maybeSingle();
+    // deno-lint-ignore no-explicit-any
+    const orderRow = order as any;
+    // Letture indipendenti in parallelo (prima in fila); i controlli che seguono sono invariati.
+    const [{ data: existing }, { data: bookRows }, { data: settingsRow }] = await Promise.all([
+      admin.from('order_email_sends').select('*').eq('id', input.attemptId).eq('user_id', ownerId).maybeSingle(),
+      admin.from('aziende_email_contatti').select('email').eq('user_id', ownerId),
+      orderRow.azienda_id
+        ? admin.from('azienda_order_email_settings').select('to_addresses, cc_addresses').eq('user_id', ownerId).eq('azienda_id', orderRow.azienda_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
     if (existing) return json({ send: existing, duplicate: true });
     if (version !== input.version) return json({ error: 'L’ordine è stato modificato. Chiudi e riapri la composizione per aggiornare il PDF.' }, 409);
     // Recipients must be known business contacts: the agency address book, the
@@ -92,15 +111,8 @@ Deno.serve(async req => {
     const addAllowed = (value: unknown) => {
       if (typeof value === 'string' && value.trim()) allowed.add(value.trim().toLowerCase());
     };
-    const { data: bookRows } = await admin.from('aziende_email_contatti').select('email').eq('user_id', ownerId);
     for (const row of bookRows ?? []) addAllowed(row.email);
-    // deno-lint-ignore no-explicit-any
-    const orderRow = order as any;
-    if (orderRow.azienda_id) {
-      const { data: settingsRow } = await admin.from('azienda_order_email_settings').select('to_addresses, cc_addresses')
-        .eq('user_id', ownerId).eq('azienda_id', orderRow.azienda_id).maybeSingle();
-      for (const v of [...(settingsRow?.to_addresses ?? []), ...(settingsRow?.cc_addresses ?? [])]) addAllowed(v);
-    }
+    for (const v of [...(settingsRow?.to_addresses ?? []), ...(settingsRow?.cc_addresses ?? [])]) addAllowed(v);
     addAllowed(orderRow.clienti?.email);
     for (const v of orderRow.clienti?.email_aggiuntive ?? []) addAllowed(v);
     addAllowed(orderRow.aziende?.email);

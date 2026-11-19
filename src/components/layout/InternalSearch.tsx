@@ -13,6 +13,16 @@ const pages = [
   ["Promemoria", "/promemoria"], ["Riordino", "/riordino"], ["Intelligenza", "/intelligenza-commerciale"], ["Prepara Visita", "/prepara-visita"],
   ["AI Commerciale", "/ai-commerciale"], ["Impostazioni", "/impostazioni"], ["Problematiche", "/impostazioni/problematiche"], ["Diagnostica", "/diagnostica"], ["Centro notifiche", "/notifiche"],
 ];
+// Pagina "File e documenti" rimossa: un documento si apre nella scheda del
+// cliente o dell'azienda a cui appartiene (l'archivio lì legge ?doc=).
+type DocLinkable = { id: string; customer_id?: string | null; company_id?: string | null; documenti_aziende?: Array<{ azienda_id: string }> | null };
+function docLink(d: DocLinkable): string {
+  if (d.customer_id) return `/clienti/${d.customer_id}?doc=${d.id}`;
+  const azienda = d.company_id ?? d.documenti_aziende?.[0]?.azienda_id;
+  if (azienda) return `/aziende/${azienda}?doc=${d.id}`;
+  return "/aziende";
+}
+
 export function InternalSearch() {
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
@@ -32,7 +42,7 @@ export function InternalSearch() {
         supabase.from("aziende").select("id,nome").ilike("nome", like).limit(15),
         supabase.from("ordini").select("id,codice,data_ordine,clienti(nome)").ilike("codice", like).limit(15),
         supabase.from("prodotti").select("id,nome,azienda_id").ilike("nome", like).limit(15),
-        supabase.from("documenti").select("id,titolo,nome_file,category").is("deleted_at", null)
+        supabase.from("documenti").select("id,titolo,nome_file,category,customer_id,company_id,documenti_aziende(azienda_id)").is("deleted_at", null)
           .or(`titolo.ilike.${like},nome_file.ilike.${like},riepilogo.ilike.${like}`).limit(10),
       ]);
       for (const r of responses) if (r.error) throw r.error;
@@ -60,7 +70,7 @@ export function InternalSearch() {
             {results.data?.aziende.length ? <CommandGroup heading="Aziende">{results.data.aziende.map(c => <CommandItem key={c.id} onSelect={() => go(`/aziende/${c.id}`)} className="min-h-11 gap-2"><Building2 className="h-4 w-4 shrink-0" /><span className="break-words">{c.nome}</span></CommandItem>)}</CommandGroup> : null}
             {results.data?.ordini.length ? <CommandGroup heading="Ordini">{results.data.ordini.map(c => <CommandItem key={c.id} onSelect={() => go(`/ordini?ricerca=${encodeURIComponent(c.codice ?? "")}&anno=${c.data_ordine?.slice(0,4) ?? ""}`)} className="min-h-11 gap-2"><ShoppingCart className="h-4 w-4 shrink-0" /><span className="break-words">{c.codice} · {c.clienti?.nome ?? "N/D"}</span></CommandItem>)}</CommandGroup> : null}
             {results.data?.prodotti.length ? <CommandGroup heading="Prodotti">{results.data.prodotti.map(c => <CommandItem key={c.id} onSelect={() => go(c.azienda_id ? `/aziende/${c.azienda_id}?prodotto=${c.id}` : "/aziende")} className="min-h-11 gap-2"><Package className="h-4 w-4 shrink-0" /><span className="break-words">{c.nome}</span></CommandItem>)}</CommandGroup> : null}
-            {results.data?.documenti.length ? <CommandGroup heading="Documenti">{results.data.documenti.map(d => <CommandItem key={d.id} onSelect={() => go(`/file-documenti?doc=${d.id}`)} className="min-h-11 gap-2"><FileText className="h-4 w-4 shrink-0" /><span className="break-words">{d.titolo || d.nome_file}{d.category ? ` · ${d.category}` : ""}</span></CommandItem>)}</CommandGroup> : null}
+            {results.data?.documenti.length ? <CommandGroup heading="Documenti">{results.data.documenti.map(d => <CommandItem key={d.id} onSelect={() => go(docLink(d))} className="min-h-11 gap-2"><FileText className="h-4 w-4 shrink-0" /><span className="break-words">{d.titolo || d.nome_file}{d.category ? ` · ${d.category}` : ""}</span></CommandItem>)}</CommandGroup> : null}
           </CommandList>
         </Command>
       </DialogContent>

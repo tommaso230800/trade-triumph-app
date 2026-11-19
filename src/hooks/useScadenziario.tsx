@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { getDataOwnerId } from "@/lib/dataOwner";
 
 export type StatoProvvigione = 'da_pagare' | 'pagata' | 'parziale' | 'contestazione' | 'scaduta';
 
@@ -61,7 +62,7 @@ export const useScadenziario = () => {
       const { data, error } = await supabase
         .from('scadenziario_fatture')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', await getDataOwnerId(user.id))
         .eq('stato', 'scaduta')
         .order('data_scadenza', { ascending: true });
       
@@ -79,7 +80,7 @@ export const useScadenziario = () => {
       const { data, error } = await supabase
         .from('scadenziario_fatture')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', await getDataOwnerId(user.id))
         .eq('stato', 'incassata')
         .order('data_incasso', { ascending: false });
       

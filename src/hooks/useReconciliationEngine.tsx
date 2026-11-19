@@ -23,6 +23,7 @@ import {
   type OrdineForRec,
   type ReconciliationResult,
 } from "@/lib/reconciliationEngine";
+import { getDataOwnerId } from "@/lib/dataOwner";
 
 export type PersistedAllocazione = Allocazione & {
   id: string;
@@ -56,7 +57,7 @@ export function useReconciliationEngine(opts: Options = {}) {
       let q = supabase
         .from("estratti_provvigioni")
         .select("id, azienda_id, anno, trimestre, data_documento")
-        .eq("user_id", userId!);
+        .eq("user_id", await getDataOwnerId(userId!));
       if (estrattoId && !all) q = q.eq("id", estrattoId);
       const { data, error } = await q;
       if (error) throw error;
@@ -81,7 +82,7 @@ export function useReconciliationEngine(opts: Options = {}) {
         .select(
           "id, estratto_id, cliente_id, numero_ordine, data_riga, imponibile, provvigione, aliquota, tipo_movimento, descrizione"
         )
-        .eq("user_id", userId!)
+        .eq("user_id", await getDataOwnerId(userId!))
         .in("estratto_id", estrattoIds);
       if (error) throw error;
       return data ?? [];
@@ -98,7 +99,7 @@ export function useReconciliationEngine(opts: Options = {}) {
         .select(
           "id, codice, cliente_id, azienda_id, data_ordine, data_conferma, created_at, status, totale, provvigione_prevista"
         )
-        .eq("user_id", userId!);
+        .eq("user_id", await getDataOwnerId(userId!));
       if (from) q = q.gte("data_ordine", from);
       if (to) q = q.lte("data_ordine", to);
       const { data, error } = await q.limit(5000);
@@ -143,7 +144,7 @@ export function useReconciliationEngine(opts: Options = {}) {
       const { data, error } = await supabase
         .from("riconciliazioni_allocazioni")
         .select("*")
-        .eq("user_id", userId!)
+        .eq("user_id", await getDataOwnerId(userId!))
         .in("estratto_riga_id", rigaIds);
       if (error) throw error;
       return (data ?? []) as unknown as PersistedAllocazione[];
@@ -163,7 +164,7 @@ export function useReconciliationEngine(opts: Options = {}) {
       const { error: delErr } = await supabase
         .from("riconciliazioni_allocazioni")
         .delete()
-        .eq("user_id", userId)
+        .eq("user_id", await getDataOwnerId(userId))
         .in("estratto_riga_id", rigaIds)
         .eq("manuale", false);
       if (delErr) throw delErr;
@@ -211,7 +212,7 @@ export function useReconciliationEngine(opts: Options = {}) {
       let q = supabase
         .from("riconciliazioni_allocazioni")
         .delete()
-        .eq("user_id", userId)
+        .eq("user_id", await getDataOwnerId(userId))
         .in("estratto_riga_id", rigaIds);
       if (!opts?.includeManual) q = q.eq("manuale", false);
       const { error } = await q;
@@ -267,7 +268,7 @@ export function useReconciliationEngine(opts: Options = {}) {
         .from("riconciliazioni_allocazioni")
         .delete()
         .eq("id", id)
-        .eq("user_id", userId);
+        .eq("user_id", await getDataOwnerId(userId));
       if (error) throw error;
     },
     onSuccess: () => {

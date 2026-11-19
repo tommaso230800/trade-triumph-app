@@ -2,10 +2,12 @@ import {useQuery} from '@tanstack/react-query';
 import {supabase} from '@/integrations/supabase/client';
 import {useAuth} from '@/hooks/useAuth';
 import {Commission,FiscalData,Receipt} from '@/lib/fiscal/engine';
+import { getDataOwnerId } from "@/lib/dataOwner";
 export function useFiscalCommissions(){const {user}=useAuth();return useQuery({queryKey:['fiscal-commissions',user?.id],enabled:!!user,refetchOnMount:'always',refetchOnWindowFocus:true,queryFn:async()=>{
  if(!user)return [];
+ const owner=await getDataOwnerId(user.id);
  async function load(table:'ordini'|'scadenziario_fatture'|'movimenti_provvigione'|'aziende'|'commission_receipts'){
- const result:any[]=[];for(let from=0;;from+=1000){let q=supabase.from(table).select('*').eq('user_id',user.id).order('id').range(from,from+999);if(table==='ordini'||table==='aziende')q=q.is('deleted_at',null);const {data,error}=await q;if(error)throw error;result.push(...data);if(data.length<1000)break;}return result;
+ const result:any[]=[];for(let from=0;;from+=1000){let q=supabase.from(table).select('*').eq('user_id',owner).order('id').range(from,from+999);if(table==='ordini'||table==='aziende')q=q.is('deleted_at',null);const {data,error}=await q;if(error)throw error;result.push(...data);if(data.length<1000)break;}return result;
  }
  const [orders,invoices,movements,companies,receipts]=await Promise.all([load('ordini'),load('scadenziario_fatture'),load('movimenti_provvigione'),load('aziende'),load('commission_receipts')]);
  const companyMap=new Map(companies.map(c=>[c.id,c]));

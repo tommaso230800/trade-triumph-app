@@ -126,11 +126,14 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
         windowWidth: CAPTURE_WIDTH,
       });
 
-      const imgData = canvas.toDataURL("image/png");
+      // JPEG ad alta qualità invece di PNG: stesso aspetto, file molte volte più
+      // leggero → PDF, caricamento e invio email molto più rapidi (anche in 4G).
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
+        compress: true,
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -141,7 +144,7 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
       const imgX = (pdfWidth - imgWidth * ratio) / 2;
       const imgY = 10;
 
-      pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+      pdf.addImage(imgData, "JPEG", imgX, imgY, imgWidth * ratio, imgHeight * ratio, undefined, "FAST");
       return pdf;
     } catch (error) {
       console.error("Error exporting PDF:", error);
@@ -311,7 +314,7 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
                       <TableCell className="py-2 text-xs text-muted-foreground">
                         {riga.prodotto_brand || "—"}
                       </TableCell>
-                      <TableCell className="text-right py-2">
+                      <TableCell className="whitespace-nowrap text-right tabular-nums py-2">
                         <span className="text-foreground text-sm">
                           {riga.is_omaggio ? "—" : formatCurrency(riga.prezzo_unitario)}
                         </span>
@@ -327,7 +330,7 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
                       </TableCell>
                       <TableCell className="text-center text-foreground text-sm py-2">{riga.quantita_cartoni}</TableCell>
                       <TableCell className="text-center font-medium text-foreground text-sm py-2">{pezziTotali}</TableCell>
-                      <TableCell className="text-right font-semibold text-foreground text-sm py-2">
+                      <TableCell className="whitespace-nowrap text-right font-semibold tabular-nums text-foreground text-sm py-2">
                         {riga.is_omaggio ? <span className="text-success">Omaggio</span> : formatCurrency(rigaSubtotale)}
                       </TableCell>
                     </TableRow>
