@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -99,19 +98,35 @@ export function OrdineRigaEditor({
             )}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+      </div>
+
+      {/* Azioni riga: card con icona e scritta, grandi da toccare */}
+      {((!isOmaggio && onAddOmaggio) || onRemove) && (
+        <div className={`mt-3 grid gap-2 ${!isOmaggio && onAddOmaggio && onRemove ? "grid-cols-1 min-[360px]:grid-cols-2" : "grid-cols-1"}`}>
           {!isOmaggio && onAddOmaggio && (
-            <Button type="button" variant="ghost" size="icon" className="h-11 w-11 text-order-muted hover:text-success" onClick={onAddOmaggio} title="Aggiungi riga omaggio" aria-label="Aggiungi riga omaggio">
-              <Gift className="h-4 w-4" />
-            </Button>
+            <button
+              type="button"
+              onClick={onAddOmaggio}
+              aria-label="Aggiungi riga omaggio"
+              className="flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-success/40 bg-success/10 px-2 text-xs font-bold text-success transition-colors hover:bg-success/15"
+            >
+              <Gift className="h-4 w-4 shrink-0" />
+              OMAGGIO
+            </button>
           )}
           {onRemove && (
-            <Button type="button" variant="ghost" size="icon" className="h-11 w-11 text-order-muted hover:text-destructive" onClick={onRemove} title="Elimina riga" aria-label="Elimina riga">
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <button
+              type="button"
+              onClick={onRemove}
+              aria-label="Elimina prodotto dall'ordine"
+              className="flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-destructive/40 bg-destructive/10 px-2 text-xs font-bold text-destructive transition-colors hover:bg-destructive/15"
+            >
+              <Trash2 className="h-4 w-4 shrink-0" />
+              ELIMINA PRODOTTO
+            </button>
           )}
         </div>
-      </div>
+      )}
 
       {/* Quantità e prezzo */}
       <div className="mt-4 grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_1.3fr]">
