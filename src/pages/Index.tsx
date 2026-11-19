@@ -10,7 +10,6 @@ import { StatTile } from "@/components/dashboard/modern/StatTile";
 import { ModernTopStrip } from "@/components/dashboard/modern/ModernTopStrip";
 import { useKPIYoY } from "@/hooks/useKPIYoY";
 import { useAdvancedKPIStats, type AdvancedKPIFilters } from "@/hooks/useAdvancedKPIStats";
-import { useReorderPairs } from "@/hooks/useReorderPairs";
 import { useAziende } from "@/hooks/useAziende";
 import { useOrdini, type Ordine } from "@/hooks/useOrdini";
 import { useOrdiniRighe } from "@/hooks/useOrdiniRighe";
@@ -34,7 +33,6 @@ import {
   Receipt,
   TrendingUp,
   Building2,
-  AlertTriangle,
   Package,
 } from "lucide-react";
 import agencyLogo from "@/assets/agency-logo.jpg";
@@ -191,7 +189,6 @@ const Index = () => {
   const { data: yoy, isLoading: yoyLoading } = useKPIYoY(kpiFilters);
   const { data: stats, isLoading: statsLoading } = useAdvancedKPIStats(kpiFilters);
 
-  const { data: pairData, isLoading: forecastLoading, isError: reorderError, refetch: refreshReorders } = useReorderPairs();
   const { data: aziendeList, isLoading: aziendeLoading } = useAziende();
   const { data: ordini, isLoading: ordiniLoading } = useOrdini();
   const { data: clienti } = useClienti();
@@ -208,7 +205,7 @@ const Index = () => {
     [aziendeList]
   );
 
-  const isLoading = yoyLoading || statsLoading || forecastLoading || aziendeLoading || ordiniLoading;
+  const isLoading = yoyLoading || statsLoading || aziendeLoading || ordiniLoading;
 
   const firstName =
     (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
@@ -311,8 +308,6 @@ const Index = () => {
   const fornitoriVisibili = fornitoriEspanso ? fornitori : fornitori.slice(0, 5);
   const fornitoreMax = Math.max(1, ...fornitori.map((f) => f.curr));
 
-  const daRicontattare = useMemo(() => (pairData || []).filter(p=>p.da_ricontattare).map(p=>({...p,fatturatoCliente:yoy?.clientiYoY.get(p.cliente_id)?.curr ?? 0,ritardo:p.giorni_ritardo,giorniUltimoOrdine:p.giorni_trascorsi})).sort((a,b)=>b.ritardo-a.ritardo).slice(0,8),[pairData,yoy]);
-
   const attivitaRecente = useMemo(() => {
     // Stessa regola di KPI/Ordini: esclusi annullato e stand_by, data_ordine come riferimento
     return [...(ordini || [])]
@@ -392,13 +387,6 @@ const Index = () => {
       [],
       ["Fornitore", "Fatturato"],
       ...fornitori.map((f) => [f.nome, String(Math.round(f.curr))]),
-      [],
-      ["Da ricontattare", "Ultimo ordine (giorni)", "Fatturato anno"],
-      ...daRicontattare.map((c) => [
-        c.cliente_nome,
-        c.giorniUltimoOrdine === null ? "N/D" : String(c.giorniUltimoOrdine),
-        String(Math.round(c.fatturatoCliente)),
-      ]),
     ];
     const csv = rows.map((r) => r.map((c) => csvCell(c ?? "", ";", true)).join(";")).join("\n");
     const url = URL.createObjectURL(new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" }));
@@ -739,82 +727,8 @@ const Index = () => {
           </div>
 
 
-          {/* 4 + 5 — DA RICONTATTARE + ULTIMI ORDINI: in fondo, dopo KPI e grafici */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-start">
-            <DashCard
-              className="lg:col-span-2"
-              title="Da ricontattare"
-              icon={<AlertTriangle className="h-4 w-4" />}
-              action={
-                <Link to="/riordino" className="flex items-center gap-0.5 text-xs font-semibold text-scatto-info">
-                  Vedi tutti <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              }
-              bodyClassName="p-0 sm:p-0"
-            >
-              {isLoading ? (
-                <div className="space-y-2 p-4 sm:p-5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full rounded-xl" />
-                  ))}
-                </div>
-              ) : reorderError ? (<div role="alert" className="p-4 text-sm">Riordini non disponibili. <Button variant="outline" onClick={()=>refreshReorders()}>Riprova</Button></div>) : daRicontattare.length === 0 ? (
-                <div className="py-10 text-center">
-                  <p className="text-sm font-semibold text-scatto-ink">Nessun cliente in ritardo</p>
-                  <p className="mt-1 text-xs text-scatto-muted">
-                    Tutti i clienti sono in linea col loro ritmo di riordino.
-                  </p>
-                </div>
-              ) : (
-                <ul className="divide-y divide-scatto-line">
-                  {daRicontattare.map((c) => {
-                    const az = aziendaMap.get(c.azienda_id);
-                    const color = aziendaColorValue(c.azienda_id, aziendaColorMap);
-                    return (
-                      <li key={c.id}>
-                        <Link
-                          to={`/ordini?cliente=${c.cliente_id}&azienda=${c.azienda_id}&storico=1`}
-                          className="flex min-h-[64px] items-center gap-3 px-4 py-3 transition-colors hover:bg-scatto-ink/[0.02] sm:px-5"
-                        >
-                          <span
-                            className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold"
-                            style={{ backgroundColor: softBg(color), color }}
-                          >
-                            {az?.logo_url ? (
-                              <img src={az.logo_url} alt={az.nome} className="h-full w-full object-cover" />
-                            ) : (
-                              initials(c.cliente_nome)
-                            )}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-base font-bold tracking-tight text-scatto-ink">
-                              {c.cliente_nome}
-                            </p>
-                            <p className="truncate text-xs text-scatto-muted">
-                              {c.azienda_nome} · {c.ultimo_ordine_data.split("-").reverse().join("/")} · ultimo ordine:{" "}
-                              {c.giorniUltimoOrdine === null
-                                ? "N/D"
-                                : c.giorniUltimoOrdine === 0
-                                ? "oggi"
-                                : `${c.giorniUltimoOrdine} giorni fa`}
-                            </p>
-                          </div>
-                          <div className="flex-shrink-0 text-right">
-                            <p className="font-display text-sm font-bold tabular-nums text-scatto-ink">
-                              {formatCompact(c.ultimo_importo)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">Importo ultimo ordine</p><p className="text-xs font-medium text-scatto-danger">
-                              +{c.ritardo} {c.ritardo === 1 ? "giorno" : "giorni"}
-                            </p>
-                          </div>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </DashCard>
-
+          {/* ULTIMI ORDINI: in fondo, dopo KPI e grafici */}
+          <div className="grid grid-cols-1 gap-4 lg:items-start">
             <DashCard
               title="Ultimi ordini"
               icon={<Package className="h-4 w-4" />}
