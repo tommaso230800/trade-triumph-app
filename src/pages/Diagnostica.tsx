@@ -1,6 +1,6 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useErrorLog, useBackendHealth } from "@/hooks/useDiagnostica";
-import { useIsAdmin } from "@/hooks/useUserRole";
+import { useCanOperate } from "@/hooks/useUserRole";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, AlertCircle, CheckCircle2, ShieldOff, Loader2, Database } from "lucide-react";
@@ -8,16 +8,16 @@ import { format } from "date-fns";
 import { NotificationDiagnostics } from "@/components/notifiche/NotificationDiagnostics";
 
 export default function Diagnostica() {
-  const isAdmin = useIsAdmin();
+  const { allowed: isAdmin, isLoading: accessLoading } = useCanOperate();
   const { data: health } = useBackendHealth();
   const { data: errors = [], isLoading } = useErrorLog();
 
-  if (!isAdmin) {
+  if (!isAdmin && !accessLoading) {
     return (
       <MainLayout>
         <Card className="p-8 text-center surface-noir">
           <ShieldOff className="h-12 w-12 mx-auto text-brand-red mb-3" />
-          <h2 className="font-bold text-xl">Accesso riservato agli admin</h2>
+          <h2 className="font-bold text-xl">Accesso riservato ai membri dell’agenzia</h2>
         </Card>
       </MainLayout>
     );

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { useCurrentMember } from "./useAgency";
 
 export type AppRole = "admin" | "agente" | "collaboratore" | "amministrazione" | "brand_ambassador" | "readonly";
 
@@ -31,4 +32,14 @@ export function useAllUsersRoles() {
       return data ?? [];
     },
   });
+}
+
+/**
+ * Accesso alle funzioni operative (Diagnostica, controlli manuali):
+ * stesso permesso per tutti i membri attivi dell'agenzia, oltre agli admin.
+ */
+export function useCanOperate() {
+  const isAdmin = useIsAdmin();
+  const { me, isLoading } = useCurrentMember();
+  return { allowed: isAdmin || !!me?.active, isLoading };
 }

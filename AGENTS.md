@@ -38,3 +38,6 @@
 - Never render an empty screen: page errors are caught by error boundaries (route and app level) that log to `error_log`, and MainLayout shows a sign-in prompt instead of `null` when the session is missing.
 - Deleted (soft-deleted) products stay readable in orders (rows, names, amounts) but are never offered for new orders: pickers, imports and "Riassortimento" use only active catalog products.
 - Reorder alerts: one push per client–company cycle plus one daily digest per owner from 08:00 Europe/Rome (`riordino_riepilogo:<owner>:<date>`) while pairs stay late.
+- Reminders (`ai_promemoria`) are the only PERSONAL data: no agency owner rewrite, owner = signed-in user (trigger), own-rows RLS for everyone including admins (0033), explicit `user_id` filters in `usePromemoria`, excluded from the persisted query cache, pushed only to the owner's devices. Everything else stays agency-shared.
+- A device belongs to the account signed in on it: sign-out goes through `src/lib/esci.ts` (unregisters the push endpoint first) and NotificationBell relinks the device whenever the signed-in user changes.
+- Operational features (Diagnostica, manual reorder/reminder checks) are open to every active agency member; only user/password management stays with the agency owner.

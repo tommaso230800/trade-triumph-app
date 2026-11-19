@@ -22,8 +22,12 @@ Deno.serve(async (req) => {
     const client = createClient(url, Deno.env.get('SUPABASE_ANON_KEY') ?? '', { global: { headers: { Authorization: auth } } });
     const { data: { user } } = await client.auth.getUser();
     if (!user) return json({ error: 'Sessione scaduta.' }, 401);
-    const { data: isAdmin } = await admin.rpc('is_admin', { _user_id: user.id });
-    if (!isAdmin) return json({ error: 'Riservato agli admin.' }, 403);
+    // Stessi permessi operativi per tutti i membri dell'agenzia (oltre agli admin).
+    const [{ data: isAdmin }, { data: isMember }] = await Promise.all([
+      admin.rpc('is_admin', { _user_id: user.id }),
+      admin.rpc('is_agency_member', { _uid: user.id }),
+    ]);
+    if (!isAdmin && !isMember) return json({ error: 'Riservato ai membri dell’agenzia.' }, 403);
     trigger = 'manuale';
   }
 
