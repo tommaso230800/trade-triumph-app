@@ -358,7 +358,7 @@ const Provvigioni = () => {
         </div>
 
         {/* STICKY FILTER BAR */}
-        <div className="border-b border-scatto-line pb-4 lg:sticky lg:top-0 lg:z-20 lg:bg-scatto-bg/95 lg:py-3 lg:backdrop-blur">
+        <div className="border-b border-scatto-line pb-4 lg:sticky lg:top-0 lg:z-20 lg:-mx-8 lg:bg-scatto-bg/95 lg:px-8 lg:py-3 lg:backdrop-blur lg:panel:mx-0 lg:panel:px-0">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 min-w-0 flex-1 basis-full sm:basis-56">
               <Building2 className="h-4 w-4 text-scatto-muted shrink-0" />
@@ -417,11 +417,11 @@ const Provvigioni = () => {
             )}
           </header>
           <div className="grid grid-cols-2 divide-x divide-y divide-scatto-line md:grid-cols-5 md:divide-y-0">
-            <EconomicoCell label="Oggi" value={analytics.contoEconomico.guadagnoOggi} />
-            <EconomicoCell label="Questo mese" value={analytics.contoEconomico.guadagnoMese} big />
+            <EconomicoCell label="Oggi" value={analytics.contoEconomico.guadagnoOggi} accent="text-scatto-success panel:text-scatto-ink" />
+            <EconomicoCell label="Questo mese" value={analytics.contoEconomico.guadagnoMese} accent="text-scatto-accent panel:text-scatto-ink" big />
             <EconomicoCell label="Quest'anno" value={analytics.contoEconomico.guadagnoAnno} />
             <EconomicoCell label="Media/giorno" value={analytics.contoEconomico.mediaGiornaliera} accent="text-scatto-muted" />
-            <EconomicoCell label={`Previsione ${format(now, "MMM", { locale: it })}`} value={analytics.contoEconomico.previsioneFineMese} accent="text-scatto-muted" />
+            <EconomicoCell label={`Previsione ${format(now, "MMM", { locale: it })}`} value={analytics.contoEconomico.previsioneFineMese} accent="text-scatto-warning panel:text-scatto-muted" />
           </div>
         </section>
 

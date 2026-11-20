@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme, themeConfigs, ThemeStyle } from "@/hooks/useTheme";
+import { useTheme, themeConfigs, ThemeStyle, designConfigs, DesignStyle } from "@/hooks/useTheme";
 import { toast } from "sonner";
 import { 
   User, 
@@ -32,8 +32,7 @@ import {
   Check,
   BellRing,
   Send,
-  AlertTriangle,
-} from "lucide-react";
+  AlertTriangle, LayoutTemplate } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IntegrityCheckPanel } from "@/components/metrics/IntegrityCheckPanel";
 import { OneDrivePanel } from "@/components/impostazioni/OneDrivePanel";
@@ -41,7 +40,7 @@ import { AccountSecurityCard } from "@/components/impostazioni/AccountSecurityCa
 
 const Impostazioni = () => {
   const { user } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, design, setDesign } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     full_name: "",
@@ -132,6 +131,64 @@ const Impostazioni = () => {
           </p>
         </div>
 
+        {/* Design: cambia l'intera interfaccia (layout, sidebar, superfici, colori) */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-4 p-4 sm:p-6">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-info/10 flex items-center justify-center flex-shrink-0">
+                <LayoutTemplate className="h-5 w-5 text-info" />
+              </div>
+              <div>
+                <CardTitle>Design</CardTitle>
+                <CardDescription>Cambia l'aspetto completo dell'app su questo dispositivo</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+              {(Object.entries(designConfigs) as [DesignStyle, typeof designConfigs[DesignStyle]][]).map(([key, config]) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={design === key}
+                  onClick={() => {
+                    setDesign(key);
+                    toast.success(`Design "${config.name}" applicato`);
+                  }}
+                  className={cn(
+                    "relative rounded-xl border p-4 text-left transition-colors duration-200 touch-target sm:p-6",
+                    design === key ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border hover:border-primary/50 hover:bg-muted/30"
+                  )}
+                >
+                  {/* Anteprima schematica: sidebar + due card */}
+                  <div
+                    aria-hidden
+                    className={cn(
+                      "mb-3 flex h-16 gap-1 overflow-hidden p-1",
+                      key === "pannelli" ? "rounded-xl bg-[#121419]" : "rounded-md border bg-[#f2f5fa]"
+                    )}
+                  >
+                    <div className={cn("w-1/4", key === "pannelli" ? "rounded-lg bg-[#1a1d23]" : "bg-[#e2e8f0]")} />
+                    <div className="flex flex-1 flex-col gap-1">
+                      <div className={cn("flex-1", key === "pannelli" ? "rounded-lg bg-[#1a1d23]" : "rounded-sm border bg-white")} />
+                      <div className={cn("flex-1", key === "pannelli" ? "rounded-lg bg-[#1a1d23]" : "rounded-sm border bg-white")}>
+                        <div className={cn("m-1 h-1 w-1/3 rounded-full", key === "pannelli" ? "bg-[#3b82f6]" : "bg-[#2563eb]")} />
+                      </div>
+                    </div>
+                  </div>
+                  <h3 className="text-base font-semibold">{config.name}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{config.description}</p>
+                  {design === key && (
+                    <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
+                      <Check className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Theme Section */}
         <Card className="shadow-card transition-all duration-300">
           <CardHeader className="pb-4 p-4 sm:p-6">
@@ -141,19 +198,23 @@ const Impostazioni = () => {
               </div>
               <div>
                 <CardTitle >Tema Interfaccia</CardTitle>
-                <CardDescription>Scegli l'aspetto che preferisci</CardDescription>
+                <CardDescription>
+                  {design === "pannelli"
+                    ? "Il design Pannelli scuri usa una palette propria: il tema si applica con il design Classico."
+                    : "Scegli i colori che preferisci"}
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {(Object.entries(themeConfigs) as [ThemeStyle, typeof themeConfigs[ThemeStyle]][]).filter(([, config]) => !config.hidden).map(([key, config]) => (
+            <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4", design === "pannelli" && "opacity-60")}>
+              {(Object.entries(themeConfigs) as [ThemeStyle, typeof themeConfigs[ThemeStyle]][]).map(([key, config]) => (
                 <button
                   key={key}
                   onClick={() => handleThemeChange(key)}
                   className={cn(
                     "relative rounded-xl border p-4 text-left transition-colors duration-200 touch-target sm:p-6",
-                    themeConfigs[theme].mode === config.mode
+                    theme === key
                       ? "border-primary bg-primary/5 ring-1 ring-primary/30"
                       : "border-border hover:border-primary/50 hover:bg-muted/30"
                   )}
@@ -177,7 +238,7 @@ const Impostazioni = () => {
                   <h3 className="font-semibold text-base sm:text-base">{config.name}</h3>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">{config.description}</p>
                   
-                  {themeConfigs[theme].mode === config.mode && (
+                  {theme === key && (
                     <div className="absolute top-3 right-3 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
                       <Check className="h-4 w-4 text-primary-foreground" />
                     </div>

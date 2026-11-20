@@ -141,16 +141,16 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
               to={item.href}
               onClick={closeMobile}
               className={cn(
-                "flex items-center gap-3 rounded-full px-4 py-2 pr-12 text-sm font-medium transition-colors duration-150 touch-target",
+                "flex items-center gap-3 rounded-lg px-3 py-2 pr-12 panel:rounded-full panel:px-4 text-sm font-medium transition-colors duration-150 touch-target",
                 isActive
-                  ? "bg-sidebar-accent text-sidebar-primary"
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground panel:bg-sidebar-accent panel:text-sidebar-primary"
                   : childActive
                     ? "text-sidebar-item bg-sidebar-accent"
                     : "text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               <item.icon
-                className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-sidebar-primary" : "text-sidebar-item-icon")}
+                className={cn("h-[18px] w-[18px] flex-shrink-0", isActive ? "text-sidebar-primary-foreground panel:text-sidebar-primary" : "text-sidebar-item-icon")}
               />
               <span className="truncate flex-1 text-sm">{item.name}</span>
             </Link>
@@ -159,7 +159,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
                   variant="ghost"
                   size="icon"
                   aria-label={`Sottomenu ${item.name}`}
-                  className={cn("absolute right-0 top-0 rounded-full text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:scale-100", isActive && "text-sidebar-primary")}
+                  className={cn("absolute right-0 top-0 rounded-lg panel:rounded-full text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:scale-100", isActive && "text-sidebar-primary-foreground hover:bg-sidebar-primary hover:text-sidebar-primary-foreground panel:text-sidebar-primary panel:hover:bg-sidebar-accent")}
                 >
                   <ChevronDown className={cn(
                     "h-4 w-4 transition-transform duration-200 motion-reduce:transition-none",
@@ -169,7 +169,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
               </CollapsibleTrigger>
             </div>
             <CollapsibleContent className="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-              <div className="ml-6 max-h-72 space-y-1 overflow-y-auto border-l border-sidebar-border pl-3">
+              <div className="ml-4 space-y-1 border-l border-sidebar-border pl-3 max-h-[300px] overflow-y-auto">
                 {item.children?.map((child) => {
                   const isChildItemActive = location.pathname === child.href;
                   return (
@@ -178,9 +178,9 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
                       to={child.href}
                       onClick={closeMobile}
                       className={cn(
-                        "flex min-h-11 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150",
+                        "flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 panel:rounded-full panel:px-4 text-sm font-medium transition-colors duration-150",
                         isChildItemActive
-                          ? "bg-sidebar-accent text-sidebar-primary"
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground panel:bg-sidebar-accent panel:text-sidebar-primary"
                           : "text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       )}
                     >
@@ -200,14 +200,14 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         to={item.href}
         onClick={closeMobile}
         className={cn(
-          "flex items-center gap-3 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150 touch-target",
+          "flex items-center gap-3 rounded-lg px-3 py-2 panel:rounded-full panel:px-4 text-sm font-medium transition-colors duration-150 touch-target",
           isActive
-            ? "bg-sidebar-accent text-sidebar-primary"
+            ? "bg-sidebar-primary text-sidebar-primary-foreground panel:bg-sidebar-accent panel:text-sidebar-primary"
             : "text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
         <item.icon
-          className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-sidebar-primary" : "text-sidebar-item-icon")}
+          className={cn("h-[18px] w-[18px] flex-shrink-0", isActive ? "text-sidebar-primary-foreground panel:text-sidebar-primary" : "text-sidebar-item-icon")}
         />
         <span className="truncate text-sm">{item.name}</span>
       </Link>
@@ -226,11 +226,11 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
             className={cn(
               "flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
               isActive
-                ? "bg-sidebar-accent text-sidebar-primary"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground panel:bg-sidebar-accent panel:text-sidebar-primary"
                 : "text-sidebar-rail-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             )}
           >
-            <item.icon className="h-5 w-5" />
+            <item.icon className="h-[18px] w-[18px]" />
           </Link>
         </TooltipTrigger>
         <TooltipContent side="right">{item.name}</TooltipContent>
@@ -239,14 +239,14 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
   };
 
   const BottomActionsSection = () => (
-    <div className="shrink-0 space-y-1 border-t border-sidebar-border p-3">
+    <div className="shrink-0 border-t border-sidebar-border p-3 space-y-1 safe-bottom">
       <Link
         to="/impostazioni"
         onClick={closeMobile}
         className={cn(
-          "flex items-center gap-3 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150 touch-target",
+          "flex items-center gap-3 rounded-lg px-3 py-2 panel:rounded-full panel:px-4 text-sm font-medium transition-colors duration-150 touch-target",
           location.pathname === "/impostazioni"
-            ? "bg-sidebar-accent text-sidebar-primary"
+            ? "bg-sidebar-primary text-sidebar-primary-foreground panel:bg-sidebar-accent panel:text-sidebar-primary"
             : "text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
@@ -259,9 +259,9 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         to="/diagnostica"
         onClick={closeMobile}
         className={cn(
-          "flex items-center gap-3 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-150 touch-target",
+          "flex items-center gap-3 rounded-lg px-3 py-2 panel:rounded-full panel:px-4 text-sm font-medium transition-colors duration-150 touch-target",
           location.pathname === "/diagnostica"
-            ? "bg-sidebar-accent text-sidebar-primary"
+            ? "bg-sidebar-primary text-sidebar-primary-foreground panel:bg-sidebar-accent panel:text-sidebar-primary"
             : "text-sidebar-item hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         )}
       >
@@ -271,7 +271,7 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
       <Button
         variant="ghost"
         onClick={handleSignOut}
-        className="flex w-full justify-start items-center gap-3 rounded-full px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors duration-150 touch-target"
+        className="flex w-full justify-start items-center gap-3 rounded-lg px-3 py-2 panel:rounded-full panel:px-4 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors duration-150 touch-target"
       >
         <LogOut className="h-5 w-5 flex-shrink-0" />
         <span className="truncate text-sm">Esci</span>
@@ -284,13 +284,13 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          className="fixed inset-0 z-40 bg-foreground/40 panel:bg-black/60 lg:hidden"
           onClick={closeMobile}
         />
       )}
 
-      {/* Desktop: un'unica colonna a pannello, staccata dai bordi come una card. */}
-      <aside className="fixed bottom-4 left-4 top-4 z-50 hidden w-64 flex-col overflow-hidden rounded-xl border border-sidebar-border bg-sidebar lg:flex">
+      {/* Design "Pannelli": un'unica colonna staccata dai bordi come una card. */}
+      <aside className="fixed bottom-4 left-4 top-4 z-50 hidden w-64 flex-col overflow-hidden rounded-xl border border-sidebar-border bg-sidebar lg:panel:flex">
         <div className="flex items-center gap-3 px-4 pb-2 pt-4">
           <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
             <img src={agencyLogo} alt="AMG Logo" className="h-full w-full object-contain p-1" />
@@ -308,16 +308,36 @@ export function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         <BottomActionsSection />
       </aside>
 
+      {/* Design Classico: binario icone (sempre visibile) + pannello con le etichette */}
+      <aside className="hidden lg:flex lg:panel:hidden fixed inset-y-0 left-0 z-50">
+        <div className="flex h-full w-16 flex-col items-center gap-1 overflow-y-auto bg-sidebar-rail py-3">
+          <div className="mb-2 flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-card">
+            <img src={agencyLogo} alt="AMG Logo" className="w-full h-full object-contain p-1" />
+          </div>
+          {navigation.map((item) => (
+            <NavRailItem key={item.name} item={item} />
+          ))}
+        </div>
+        <div className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar">
+          <nav className="min-h-0 flex-1 space-y-1 px-3 py-4 overflow-y-auto">
+            {navigation.map((item) => (
+              <NavItemComponent key={item.name} item={item} />
+            ))}
+          </nav>
+          <BottomActionsSection />
+        </div>
+      </aside>
+
       {/* Mobile sidebar - with safe areas */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 max-w-full rounded-r-xl bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-200 motion-reduce:transition-none ease-out lg:hidden safe-top safe-bottom",
+          "fixed inset-y-0 left-0 z-50 w-72 max-w-full bg-sidebar panel:rounded-r-xl border-r border-sidebar-border flex flex-col transition-transform duration-200 motion-reduce:transition-none ease-out lg:hidden safe-top safe-bottom",
           mobileOpen ? "translate-x-0 shadow-lg" : "-translate-x-full"
         )}
       >
         {/* Logo */}
         <div className="flex h-16 sm:h-20 items-center gap-3 px-3 sm:px-4 border-b border-sidebar-border">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
+          <div className="flex h-10 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-lg bg-card shadow-sm overflow-hidden flex-shrink-0 panel:rounded-full panel:bg-white">
             <img src={agencyLogo} alt="AMG Logo" className="w-full h-full object-contain p-1" />
           </div>
           <div className="flex-1 min-w-0">

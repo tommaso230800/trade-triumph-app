@@ -30,7 +30,7 @@ import { MapCanvas, type PesoHeatmap } from "@/components/mappa/MapCanvas";
 import { CustomerCard } from "@/components/mappa/CustomerCard";
 import { STATO_COLORI, type MapStyleId } from "@/lib/googleMaps";
 import { useMappaClienti, distanzaKm, type ClienteMappa } from "@/hooks/useMappaClienti";
-import { useTheme, isDarkTheme } from "@/hooks/useTheme";
+import { useIsDarkUI } from "@/hooks/useTheme";
 import { formatEuroInt } from "@/lib/format";
 
 const euro = { format: (n: number) => formatEuroInt(n) };
@@ -64,10 +64,10 @@ const RAGGI = [5, 10, 25, 50];
 export default function MappaClienti() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { theme } = useTheme();
+  const darkUI = useIsDarkUI();
   const { clienti, isLoading, senzaCoordinate } = useMappaClienti();
 
-  const [styleId, setStyleId] = useState<MapStyleId>(isDarkTheme(theme) ? "dark" : "standard");
+  const [styleId, setStyleId] = useState<MapStyleId>(darkUI ? "dark" : "standard");
   const [tridimensionale, setTridimensionale] = useState(false);
   const [pannelloAperto, setPannelloAperto] = useState(false);
   const [ricerca, setRicerca] = useState("");
@@ -130,8 +130,8 @@ export default function MappaClienti() {
 
   // Adatta lo stile della mappa al tema dell'app.
   useEffect(() => {
-    setStyleId((cur) => (cur === "satellite" ? cur : isDarkTheme(theme) ? "dark" : "standard"));
-  }, [theme]);
+    setStyleId((cur) => (cur === "satellite" ? cur : darkUI ? "dark" : "standard"));
+  }, [darkUI]);
 
   const aziendeDisponibili = useMemo(() => {
     const s = new Set<string>();

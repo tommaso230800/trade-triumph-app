@@ -285,7 +285,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
 
   return (
     <MainLayout>
-      <div>
+      <div className="-m-4 -mt-6 min-h-[100dvh] bg-scatto-bg p-4 pt-6 lg:-m-8 lg:p-8 panel:m-0 panel:min-h-0 panel:p-0">
         <div className="space-y-6">
           <PageHeader
             title={title || "Analytics"}

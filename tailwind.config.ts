@@ -160,9 +160,9 @@ export default {
         },
       },
       borderRadius: {
-        // Card morbide e ampie (stile pannello), campi e pulsanti più compatti.
-        "2xl": "1.5rem",
-        xl: "1.25rem",
+        // xl/2xl via token: il design "Pannelli" li rende più morbidi (index.css).
+        "2xl": "var(--radius-2xl)",
+        xl: "var(--radius-xl)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
@@ -269,5 +269,10 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    // Variante `panel:` = stili attivi solo con il design "Pannelli scuri"
+    // (classe .design-panel su <html>, scelta in Impostazioni → Design).
+    ({ addVariant }: { addVariant: (name: string, def: string) => void }) => addVariant("panel", ".design-panel &"),
+  ],
 } satisfies Config;
