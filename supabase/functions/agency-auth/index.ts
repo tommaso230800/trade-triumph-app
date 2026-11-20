@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { corsHeaders } from '../_shared/cors.ts';
 import { z } from 'npm:zod@3';
 import {
   internalIdentity, isEmailLike, lockMinutesLeft, LOCK_WINDOW_MINUTES, MAX_IP_FAILURES, MAX_USER_FAILURES,

@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { corsHeaders } from '../_shared/cors.ts';
 import { authenticateCronRequest } from '../_shared/cron-auth.ts';
 import { todayRome } from '../_shared/reorder/rome.ts';
 import { computeOwnerAlerts, reorderMessage, reorderDigestKey, reorderDigestMessage, romeHour, DIGEST_DALLE_ORE, type OwnerOrder } from '../_shared/reorderAlerts.ts';

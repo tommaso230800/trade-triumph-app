@@ -1,6 +1,6 @@
 // Called by the service worker when a push is shown or tapped: proves real receipt on the device.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { corsHeaders } from '../_shared/cors.ts';
 import { z } from 'npm:zod@3';
 
 const schema = z.object({ delivery: z.string().uuid(), token: z.string().uuid(), evento: z.enum(['ricevuta', 'aperta']) });

@@ -3,7 +3,7 @@
 // salva allegati e dati estratti, e tenta l'abbinamento con un ordine CRM.
 // Risponde SEMPRE 200 al provider: gli errori restano in email_ingest.errore_testo.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { corsHeaders } from '../_shared/cors.ts';
 import { resolveAzienda } from "../_shared/resolveAzienda.ts";
 import { resolveCliente } from "../_shared/resolveCliente.ts";
 import { cercaOrdineCandidato } from "../_shared/matchOrdineCandidati.ts";

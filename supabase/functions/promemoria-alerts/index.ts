@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { corsHeaders } from '../_shared/cors.ts';
 import { authenticateCronRequest } from '../_shared/cron-auth.ts';
 import { dispatchPending } from '../_shared/pushDispatch.ts';
 import { FINESTRA_ORE, promemoriaDaNotificare, promemoriaMessage, type PromemoriaRow } from '../_shared/promemoriaAlerts.ts';

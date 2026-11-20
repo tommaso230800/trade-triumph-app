@@ -46,7 +46,7 @@ const MIME_VALIDI = new Set([
 ]);
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  const hash = await crypto.subtle.digest("SHA-256", bytes as Uint8Array<ArrayBuffer>);
   return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
@@ -384,7 +384,7 @@ Deno.serve(async (req) => {
             const msgReport: Record<string, unknown> = { mailbox: mailbox.indirizzo, imap_uid: uid };
             let emailImportLogId: string | null = null;
             try {
-              const msg = await client.fetchOne(String(uid), { envelope: true, source: true }, { uid: true });
+              const msg = (await client.fetchOne(String(uid), { envelope: true, source: true }, { uid: true })) || null;
               const messageId = msg?.envelope?.messageId || `${mailbox.indirizzo}-uid-${uid}`;
               const oggetto = msg?.envelope?.subject ?? null;
               const mittente = msg?.envelope?.from?.[0]?.address ?? null;
@@ -422,7 +422,7 @@ Deno.serve(async (req) => {
                 emailImportLogId = logRow.id;
               }
 
-              const parsed = await simpleParser(msg!.source as Uint8Array);
+              const parsed = await simpleParser(msg!.source as unknown as Parameters<typeof simpleParser>[0]);
               const allegati = (parsed.attachments || []).filter(
                 (a) => ESTENSIONI_VALIDE.test(a.filename || "") || MIME_VALIDI.has(a.contentType)
               );

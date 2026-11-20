@@ -1,4 +1,4 @@
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { generateChatCompletion, GatewayError, type GeminiChatMessage } from "npm:@lovable.dev/ai-gateway@0.1.11";
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
 
     await db.from("documenti").update({ stato_elaborazione: "in_elaborazione", errore_elaborazione: null }).eq("id", doc.id);
 
-    const media: Exclude<GeminiChatMessage["content"], string | null | undefined> = [];
+    const media: Exclude<Extract<GeminiChatMessage, { role: "user" }>["content"], string | null | undefined> = [];
     const readFile = async () => {
       if (!doc.storage_path.startsWith("onedrive://")) return db.storage.from("documenti").download(doc.storage_path);
       const conn=Deno.env.get("MICROSOFT_ONEDRIVE_API_KEY");
