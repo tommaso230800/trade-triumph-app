@@ -156,7 +156,7 @@ function DeltaBadge({ deltaPct, size = "sm" }: { deltaPct: number | null; size?:
   return (
     <span
       className={`inline-flex items-center rounded-full font-semibold tabular-nums ${
-        size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-xs"
+        size === "md" ? "px-2 py-1 text-xs" : "px-2 py-0.5 text-xs"
       } ${
         deltaPct === null
           ? "bg-scatto-ink/5 text-scatto-muted"
@@ -399,19 +399,19 @@ const Index = () => {
 
   return (
     <MainLayout>
-      <div className="-m-4 -mt-6 min-h-[100dvh] bg-scatto-bg p-4 pt-6 text-scatto-ink lg:-m-8 lg:p-8">
+      <div className="-m-4 -mt-6 min-h-[100dvh] bg-scatto-bg p-4 pt-6 text-scatto-ink lg:-m-8 lg:p-8 panel:m-0 panel:min-h-0 panel:p-0">
         <div className="mx-auto max-w-[1400px] space-y-6">
           {/* 1 — HEADER */}
           <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-scatto-surface p-1.5 shadow-card">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-scatto-surface p-2 shadow-card panel:rounded-full panel:bg-white panel:p-1 panel:shadow-none lg:panel:hidden">
                 <img src={agencyLogo} alt="Logo Mazzi Group" className="h-full w-full object-contain" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-scatto-muted">
+                <p className="text-xs font-semibold uppercase tracking-wider text-scatto-muted">
                   Mazzi Group
                 </p>
-                <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink lg:text-3xl">
+                <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink">
                   {greeting}{firstName ? `, ${firstName}` : ""}.
                 </h1>
                 {isLoading ? (
@@ -423,16 +423,14 @@ const Index = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex flex-1 rounded-xl bg-scatto-ink/[0.06] p-1 sm:flex-initial">
+              <div className="chip-group flex-1 sm:flex-initial">
                 {(Object.keys(periodLabels) as Period[]).map((p) => (
                   <button
                     key={p}
+                    type="button"
                     onClick={() => setPeriod(p)}
-                    className={`min-h-[36px] flex-1 rounded-lg px-3 text-xs font-semibold transition-colors sm:flex-initial ${
-                      period === p
-                        ? "bg-card text-foreground shadow-card"
-                        : "text-scatto-muted hover:text-scatto-ink"
-                    }`}
+                    aria-pressed={period === p}
+                    className="chip flex-1 sm:flex-initial"
                   >
                     {periodLabels[p]}
                   </button>
@@ -440,10 +438,10 @@ const Index = () => {
               </div>
               <button
                 onClick={handleExport}
-                className="flex min-h-[44px] items-center gap-2 rounded-xl bg-scatto-surface px-4 text-xs font-semibold text-scatto-ink shadow-card"
+                className="chip" aria-label="Esporta CSV"
               >
                 <Download className="h-4 w-4" />
-                Esporta
+                <span className="panel:hidden panel:sm:inline">Esporta</span>
               </button>
             </div>
           </header>
@@ -475,15 +473,6 @@ const Index = () => {
                   series: (yoy?.monthlyComparison || []).map((m) => m.curr),
                   chart: "bars",
                 },
-                {
-                  label: "Clienti serviti",
-                  sub: "nel periodo",
-                  value: clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D",
-                  deltaPct: clientiDelta,
-                  deltaLabel: `vs ${yearPrev}`,
-                  series: (yoy?.monthlyComparison || []).map((m) => m.curr),
-                  chart: "bars",
-                },
               ]}
             />
           )}
@@ -492,10 +481,10 @@ const Index = () => {
           {/* 2 — KPI: fatturato protagonista + tessere di supporto */}
           {isLoading ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr,1fr]">
-              <Skeleton className="h-[260px] rounded-xl" />
+              <Skeleton className="h-64 rounded-xl" />
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-[120px] rounded-xl" />
+                  <Skeleton key={i} className="h-28 rounded-xl" />
                 ))}
               </div>
             </div>
@@ -515,16 +504,20 @@ const Index = () => {
                       <span className="text-xs text-scatto-muted">{heroConfrontoText[period]}</span>
                     </div>
                   </div>
-                  <span className="flex-shrink-0 rounded-lg border border-scatto-line p-2.5 text-scatto-muted">
+                  <span className="flex-shrink-0 rounded-lg border border-scatto-line p-2 text-scatto-muted">
                     <Euro className="h-5 w-5" />
                   </span>
                 </div>
 
-                <svg viewBox="0 0 300 56" preserveAspectRatio="none" className="h-14 w-full" aria-hidden="true">
+                <svg viewBox="0 0 300 56" preserveAspectRatio="none" className="h-14 w-full panel:h-20" aria-hidden="true">
+                  {sparkPath && (
+                    <path d={`${sparkPath} L297 56 L3 56 Z`} fill="hsl(var(--scatto-accent) / 0.18)" stroke="none" className="hidden panel:block" />
+                  )}
                   <path
                     d={sparkPath}
                     fill="none"
                     stroke="hsl(var(--scatto-ink))"
+                    className="panel:stroke-scatto-accent"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -541,9 +534,9 @@ const Index = () => {
                         {Math.round(Math.min((obiettivoMensile.fatturatoMese / obiettivoMensile.obiettivo) * 100, 100))}%
                       </span>
                     </div>
-                    <div className="my-3 h-2 w-full overflow-hidden rounded-full bg-scatto-ink/5">
+                    <div className="my-3 h-2 w-full overflow-hidden rounded-full bg-scatto-ink/5 panel:bg-muted">
                       <div
-                        className="h-full rounded-full bg-scatto-ink"
+                        className="h-full rounded-full bg-scatto-ink panel:bg-primary"
                         style={{
                           width: `${Math.min((obiettivoMensile.fatturatoMese / obiettivoMensile.obiettivo) * 100, 100)}%`,
                         }}
@@ -586,25 +579,25 @@ const Index = () => {
                 <DashCard bodyClassName="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-scatto-muted">Cartoni</p>
-                    <p className="mt-1 font-display text-xl font-bold tabular-nums text-scatto-ink">
+                    <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
                       {formatNumberIT(cartoniTotali)}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-scatto-muted">Pezzi</p>
-                    <p className="mt-1 font-display text-xl font-bold tabular-nums text-scatto-ink">
+                    <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
                       {formatNumberIT(pezziTotali)}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-scatto-muted">Margine</p>
-                    <p className="mt-1 font-display text-xl font-bold tabular-nums text-scatto-ink">
+                    <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
                       {marginePct === null ? "N/D" : `${formatNumber(marginePct, 1)}%`}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-scatto-muted">Fornitori</p>
-                    <p className="mt-1 font-display text-xl font-bold tabular-nums text-scatto-ink">
+                    <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
                       {formatNumberIT(fornitori.length)}
                     </p>
                   </div>
@@ -643,17 +636,17 @@ const Index = () => {
               }
             >
               <div className="mb-4 flex items-center gap-3 text-xs text-scatto-muted">
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-2">
                   <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-accent" />
                   {yoy?.yearCurr ?? now.getFullYear()}
                 </span>
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-2">
                   <i className="inline-block h-[3px] w-4 rounded-full bg-scatto-muted/60" />
                   {yoy?.yearPrev ?? now.getFullYear() - 1}
                 </span>
               </div>
               {isLoading ? (
-                <Skeleton className="h-[220px] w-full rounded-xl" />
+                <Skeleton className="h-56 w-full rounded-xl" />
               ) : (
                 <DashRevenueChart
                   data={yoy?.monthlyComparison || []}
@@ -672,7 +665,7 @@ const Index = () => {
                   ))}
                 </div>
               ) : fornitori.length === 0 ? (
-                <p className="py-8 text-center text-sm text-scatto-muted">N/D</p>
+                <p className="py-8 text-center text-sm text-scatto-muted">Nessun fatturato nel periodo</p>
               ) : (
                 <>
                   <div className="space-y-3">
@@ -680,7 +673,7 @@ const Index = () => {
                       const color = aziendaColorValue(f.id, aziendaColorMap);
                       return (
                         <div key={f.id}>
-                          <div className="mb-1.5 flex items-center gap-2">
+                          <div className="mb-2 flex items-center gap-2">
                             <span className="flex min-w-0 flex-1 items-center gap-2 text-sm font-semibold text-scatto-ink">
                               <i
                                 className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
@@ -715,7 +708,7 @@ const Index = () => {
                   {fornitori.length > 5 && (
                     <button
                       onClick={() => setFornitoriEspanso((v) => !v)}
-                      className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-scatto-muted touch-target"
+                      className="mt-4 flex items-center gap-2 text-xs font-semibold text-scatto-muted touch-target"
                     >
                       {fornitoriEspanso ? "Mostra solo i primi 5" : `Mostra tutti e ${fornitori.length}`}
                       <ChevronRight className={`h-3.5 w-3.5 transition-transform ${fornitoriEspanso ? "rotate-90" : ""}`} />
@@ -740,13 +733,19 @@ const Index = () => {
               bodyClassName="p-0 sm:p-0"
             >
               {isLoading ? (
-                <div className="space-y-2 p-4 sm:p-5">
+                <div className="space-y-2 p-4 sm:p-6">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Skeleton key={i} className="h-12 w-full rounded-xl" />
                   ))}
                 </div>
               ) : attivitaRecente.length === 0 ? (
-                <p className="py-8 text-center text-sm text-scatto-muted">Nessun ordine recente</p>
+                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                  <Package className="h-6 w-6 text-scatto-muted" aria-hidden="true" />
+                  <p className="text-sm text-scatto-muted">Nessun ordine recente</p>
+                  <Link to="/ordini?nuovo=1" className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                    Crea ordine
+                  </Link>
+                </div>
               ) : (
                 <ul className="divide-y divide-scatto-line">
                   {attivitaRecente.map((o) => {
@@ -757,7 +756,7 @@ const Index = () => {
                         <button
                           type="button"
                           onClick={() => setSelectedOrderId(o.id)}
-                          className="flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-scatto-ink/[0.03] sm:px-5 touch-target"
+                          className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-muted/50 sm:px-6 touch-target"
                         >
                           <span
                             className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold"
@@ -790,7 +789,7 @@ const Index = () => {
 
       {/* Scheda ordine: righe + totale, resta in dashboard (non naviga a /ordini) */}
       <Drawer open={!!selectedOrderId} onOpenChange={(open) => { if (!open) setSelectedOrderId(null); }}>
-        <DrawerContent className="max-h-[86vh] rounded-t-[22px] bg-scatto-surface">
+        <DrawerContent className="max-h-[86vh] rounded-t-xl bg-scatto-surface">
           {selectedOrder && (
             <>
               <div
@@ -798,12 +797,12 @@ const Index = () => {
                 style={{ backgroundColor: aziendaColorValue(selectedOrder.azienda_id, aziendaColorMap) }}
               >
                 <span className="truncate">{selectedOrder.aziende?.nome || "N/D"}</span>
-                <span className="ml-auto flex-shrink-0 rounded-full bg-white/[0.24] px-2.5 py-0.5 text-xs font-bold">
+                <span className="ml-auto flex-shrink-0 rounded-full bg-white/25 px-2 py-0.5 text-xs font-semibold">
                   {statusLabels[selectedOrder.status]}
                 </span>
               </div>
               <div className="flex-1 overflow-y-auto px-4 pt-4">
-                <div className="mb-3.5 flex items-center gap-3">
+                <div className="mb-4 flex items-center gap-3">
                   <div className="min-w-0">
                     <p className="truncate text-base font-bold tracking-tight text-scatto-ink">
                       {selectedOrder.clienti?.nome || "N/D"}
@@ -813,7 +812,7 @@ const Index = () => {
                     </p>
                   </div>
                   <div className="ml-auto flex-shrink-0 text-right">
-                    <p className="text-lg font-bold tabular-nums text-scatto-ink">
+                    <p className="text-base font-bold tabular-nums text-scatto-ink">
                       {formatCurrencyPrecise(selectedOrderTotale)}
                     </p>
                     <p className="text-xs text-scatto-muted">
@@ -822,7 +821,7 @@ const Index = () => {
                   </div>
                 </div>
 
-                <p className="mb-0.5 mt-4 text-xs font-bold uppercase tracking-[0.11em] text-scatto-muted">
+                <p className="mb-0.5 mt-4 text-xs font-semibold uppercase tracking-wider text-scatto-muted">
                   Righe
                 </p>
                 {!selectedOrderRighe ? (
@@ -844,8 +843,8 @@ const Index = () => {
                       pezziPerCartone: r.prodotti?.pezzi_per_cartone || 1,
                     });
                     return (
-                      <div key={r.id} className="flex items-baseline gap-2.5 border-b border-scatto-line py-2 text-sm last:border-0">
-                        <span className="min-w-[34px] flex-shrink-0 font-bold tabular-nums text-scatto-muted">{qty}</span>
+                      <div key={r.id} className="flex items-baseline gap-2 border-b border-scatto-line py-2 text-sm last:border-0">
+                        <span className="w-10 flex-shrink-0 text-right font-semibold tabular-nums text-scatto-muted">{qty}</span>
                         <span className="flex-1 truncate font-medium text-scatto-ink">{r.prodotti?.nome || "Prodotto"}</span>
                         <span className="flex-shrink-0 font-bold tabular-nums text-scatto-ink">{formatCurrencyPrecise(importo)}</span>
                       </div>
@@ -853,17 +852,17 @@ const Index = () => {
                   })
                 )}
 
-                <div className="mt-1.5 flex items-baseline border-t-2 border-scatto-ink pt-3 font-bold text-scatto-ink">
+                <div className="mt-2 flex items-baseline border-t-2 border-scatto-ink pt-3 font-bold text-scatto-ink">
                   <span className="text-sm">Totale imponibile</span>
                   <span className="ml-auto text-base tabular-nums">{formatCurrencyPrecise(selectedOrderTotale)}</span>
                 </div>
               </div>
 
-              <div className="flex gap-2.5 px-4 py-4 safe-bottom">
+              <div className="flex gap-2 px-4 py-4 safe-bottom">
                 <DrawerClose asChild>
                   <button
                     type="button"
-                    className="flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-scatto-muted shadow-card touch-target"
+                    className="flex-1 rounded-lg border border-scatto-line px-4 py-3 text-sm font-semibold text-scatto-ink touch-target"
                   >
                     Chiudi
                   </button>

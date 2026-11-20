@@ -175,15 +175,14 @@ const Aziende = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <p className="text-sm font-medium text-primary">Aziende</p>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">
-              Aziende Partner
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
+              Aziende
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Gestisci le aziende e i loro prodotti
             </p>
           </div>
@@ -388,7 +387,7 @@ const Aziende = () => {
               <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Cerca azienda..."
-                className="pl-11 h-11 rounded-xl bg-card shadow-sm border-border/50 focus:border-primary/50"
+                className="pl-11"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -400,12 +399,10 @@ const Aziende = () => {
                 {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-40 rounded-xl" />)}
               </div>
             ) : !aziende?.length ? (
-              <div className="text-center py-16 space-y-4">
-                <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
-                  <Search className="h-10 w-10 text-muted-foreground/50" />
-                </div>
-                <p className="text-muted-foreground text-lg">Nessuna azienda trovata</p>
-                <Button className="mt-4 gap-2" onClick={() => setIsDialogOpen(true)}>
+              <div className="space-y-3 rounded-xl border bg-card p-6 text-center shadow-card">
+                <Search className="mx-auto h-6 w-6 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Nessuna azienda trovata</p>
+                <Button className="gap-2" onClick={() => setIsDialogOpen(true)}>
                   <Plus className="h-4 w-4" />
                   Aggiungi la prima azienda
                 </Button>
@@ -414,7 +411,7 @@ const Aziende = () => {
               <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {aziende.filter(a=>{const m=resolveMandate(fiscal.mandates.data??[],a.id,new Date().toLocaleDateString('sv-SE'));return subjectFilter==='all'||(subjectFilter==='unassigned'?!m:m?.subject_id===subjectFilter);}).map((azienda, idx) => (
                   <div key={azienda.id} className="min-w-0">
-                    <label className="flex items-center gap-3 py-2 text-xs text-muted-foreground"><Checkbox aria-label={`Seleziona azienda ${azienda.nome}`} checked={selectedCompanies.includes(azienda.id)} onCheckedChange={checked=>setSelectedCompanies(prev=>checked===true?[...prev,azienda.id]:prev.filter(id=>id!==azienda.id))}/>Intestatario: {fiscal.subjects.data?.find(s=>s.id===resolveMandate(fiscal.mandates.data??[],azienda.id,new Date().toLocaleDateString('sv-SE'))?.subject_id)?.name??'Da assegnare'}</label>
+                    <label className="flex min-h-11 items-center gap-3 text-xs text-muted-foreground"><Checkbox aria-label={`Seleziona azienda ${azienda.nome}`} checked={selectedCompanies.includes(azienda.id)} onCheckedChange={checked=>setSelectedCompanies(prev=>checked===true?[...prev,azienda.id]:prev.filter(id=>id!==azienda.id))}/>Intestatario: {fiscal.subjects.data?.find(s=>s.id===resolveMandate(fiscal.mandates.data??[],azienda.id,new Date().toLocaleDateString('sv-SE'))?.subject_id)?.name??'Da assegnare'}</label>
                     <AziendaCard
                       azienda={azienda}
                       onEdit={openEditDialog}

@@ -12,7 +12,7 @@ export function RevenueMarginChart({ data }: RevenueMarginChartProps) {
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs font-medium text-scatto-muted">
         <span>Ogni mese ha il suo colore, ripetuto identico nel grafico ordini</span>
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-2">
           <i className="inline-block h-[3px] w-3 rounded-full bg-scatto-warning" />
           Margine %
         </span>

@@ -34,7 +34,7 @@ export function QuickStatTiles({ stats }: { stats: QuickStat[] }) {
                   </span>
                   {hasDelta && (
                     <span
-                      className={`rounded-md px-1.5 py-0.5 text-xs font-semibold tabular-nums ${
+                      className={`rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums ${
                         positive ? "bg-scatto-success/10 text-scatto-success" : "bg-scatto-danger/10 text-scatto-danger"
                       }`}
                     >

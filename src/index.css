@@ -4,7 +4,8 @@
 
 @layer base {
   :root {
-    /* ===== Vibrant Workspace – chiaro leggibile con sidebar dark ===== */
+    /* ===== Design Classico (predefinito): chiaro leggibile. Il design
+       "Pannelli scuri" è in .design-panel più sotto. ===== */
     --background: 210 33% 96%;
     --foreground: 222 36% 14%;
 
@@ -37,7 +38,10 @@
     --input: 220 22% 80%;
     --ring: 221 83% 53%;
 
-    --radius: 1rem;
+    /* rounded-lg = 8px (campi, pulsanti), rounded-xl = 12px (card) */
+    --radius-xl: 0.75rem;
+    --radius-2xl: 1rem;
+    --radius: 0.5rem;
 
     /* Status */
     --success: 152 76% 30%;
@@ -121,8 +125,7 @@
     --scatto-info: var(--info);
     --scatto-violet: var(--info);
 
-    /* Modulo ordine — direzione "Carta tecnica". Ambito locale ai componenti
-       di creazione ordine: carta calda, grafite e blu operativo. */
+    /* Modulo ordine: superfici allineate al design attivo. */
     --order-paper: 43 26% 95%;
     --order-paper-deep: 41 20% 89%;
     --order-ink: 0 0% 18%;
@@ -194,13 +197,134 @@
     --commission-unpaid: 28 92% 48%;
     --commission-contested: 280 65% 52%;
   }
+
+  /* Design "Pannelli scuri" (Impostazioni → Design): grafite fredda, un
+     solo accento blu, card morbide da 20px, campi incassati. Ha la sua
+     palette: i temi colore non si applicano. */
+  .design-panel {
+    color-scheme: dark;
+    --background: 220 16% 8%;
+    --foreground: 210 20% 95%;
+    --card: 220 14% 12%;
+    --card-foreground: 210 20% 95%;
+    --popover: 220 14% 15%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 210 20% 92%;
+    --muted: 220 13% 16%;
+    --muted-foreground: 218 12% 66%;
+    --accent: 220 13% 20%;
+    --accent-foreground: 210 20% 96%;
+    --destructive: 0 78% 63%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 12% 19%;
+    --input: 220 12% 24%;
+    --ring: 217 91% 60%;
+    --success: 152 58% 48%;
+    --success-foreground: 152 80% 8%;
+    --warning: 38 92% 56%;
+    --warning-foreground: 30 80% 8%;
+    --danger: 0 78% 63%;
+    --danger-foreground: 0 0% 100%;
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+    --commission-unpaid: 28 92% 60%;
+    --commission-contested: 280 70% 70%;
+    --order-paper: 220 14% 12%;
+    --order-paper-deep: 220 13% 16%;
+    --order-ink: 210 20% 95%;
+    --order-blue: 217 91% 60%;
+    --order-surface: 220 14% 15%;
+    --order-line: 220 12% 21%;
+    --order-muted: 218 12% 66%;
+    --sidebar-background: 220 14% 12%;
+    --sidebar-foreground: 210 20% 92%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 13% 18%;
+    --sidebar-accent-foreground: 210 20% 96%;
+    --sidebar-border: 220 12% 18%;
+    --sidebar-ring: 217 91% 60%;
+    --sidebar-rail-background: 220 16% 10%;
+    --sidebar-rail-foreground: 218 12% 72%;
+    --sidebar-item-foreground: 218 14% 78%;
+    --sidebar-item-icon: 218 12% 62%;
+    --shadow-card: 0 1px 2px 0 hsl(220 40% 2% / 0.45);
+    --shadow-card-hover: 0 1px 2px 0 hsl(220 40% 2% / 0.45);
+    --shadow-glow: 0 1px 2px 0 hsl(220 40% 2% / 0.45);
+    --radius: 0.75rem;
+    --radius-xl: 1.25rem;
+    --radius-2xl: 1.5rem;
+  }
+
+  /* Documenti da stampare/proforma: la classe .light riporta i token alla
+     palette chiara anche dentro il design Pannelli scuri. */
+  .light {
+    --background: 210 33% 96%;
+    --foreground: 222 36% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 34% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 34% 14%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 216 30% 92%;
+    --secondary-foreground: 222 28% 18%;
+    --muted: 216 28% 94%;
+    --muted-foreground: 222 16% 34%;
+    --accent: 152 75% 50%;
+    --accent-foreground: 152 100% 10%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 22% 86%;
+    --input: 220 22% 80%;
+    --ring: 221 83% 53%;
+    --success: 152 76% 30%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 40%;
+    --warning-foreground: 30 80% 8%;
+    --danger: 0 72% 50%;
+    --danger-foreground: 0 0% 100%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
+    --commission-unpaid: 28 92% 48%;
+    --commission-contested: 280 65% 52%;
+    --order-paper: 43 26% 95%;
+    --order-paper-deep: 41 20% 89%;
+    --order-ink: 0 0% 18%;
+    --order-blue: 217 91% 53%;
+    --order-surface: 0 0% 100%;
+    --order-line: 38 12% 82%;
+    --order-muted: 30 5% 44%;
+    --sidebar-background: 210 20% 97%;
+    --sidebar-foreground: 222 20% 14%;
+    --sidebar-primary: 217 78% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 26% 90%;
+    --sidebar-accent-foreground: 222 20% 14%;
+    --sidebar-border: 214 16% 82%;
+    --sidebar-ring: 217 78% 38%;
+    --sidebar-rail-background: 214 18% 91%;
+    --sidebar-rail-foreground: 222 20% 25%;
+    --sidebar-item-foreground: 222 20% 21%;
+    --sidebar-item-icon: 217 16% 35%;
+    --shadow-card: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-card-hover: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-glow: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    color-scheme: light;
+  }
 }
 
 @layer base {
   * { @apply border-border; }
 
   html {
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    /* Notch e barra inferiore sono gestiti dai singoli contenitori (.safe-top,
+       BottomNav, dialog a schermo intero): qui solo i lati, per non sommare
+       due volte lo stesso inset. */
+    padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
     scroll-behavior: smooth;
     height: 100%;
     min-height: 100dvh;
@@ -237,12 +361,12 @@
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: hsl(222 22% 18%);
+    background: hsl(var(--border));
     border-radius: 8px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
-  ::-webkit-scrollbar-thumb:hover { background: hsl(220 80% 50%); background-clip: padding-box; border: 2px solid transparent; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); background-clip: padding-box; border: 2px solid transparent; }
 
   ::selection { background: hsl(var(--primary) / 0.2); }
 }
@@ -334,13 +458,13 @@
 
   .touch-target { min-height: 44px; min-width: 44px; }
 
-  .hover-lift { @apply transition-all duration-300 ease-smooth; }
+  .hover-lift { @apply transition-colors duration-200 ease-smooth; }
   .hover-lift:hover { box-shadow: var(--shadow-card-hover); }
 
   .hover-scale { @apply transition-transform duration-200 ease-smooth; }
   .hover-scale:hover { transform: none; }
 
-  .hover-glow { transition: box-shadow 0.4s ease, transform 0.4s ease, border-color 0.4s ease; }
+  .hover-glow { transition: border-color 0.2s ease; }
   .hover-glow:hover { border-color: hsl(var(--primary) / 0.4); }
 
   .shimmer {
@@ -360,7 +484,7 @@
     background-size: 200% 200%;
     transform: scaleX(0);
     transform-origin: bottom right;
-    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    transition: transform 0.2s cubic-bezier(0.4,0,0.2,1);
   }
   .story-link:hover::after { transform: scaleX(1); transform-origin: bottom left; }
 
@@ -404,7 +528,7 @@
 
 @layer components {
   .card-interactive {
-    @apply rounded-2xl transition-all duration-300 ease-smooth;
+    @apply rounded-xl transition-colors duration-200 ease-smooth;
     background: var(--gradient-card);
     border: 1px solid hsl(var(--border));
     box-shadow: var(--shadow-card);
@@ -415,14 +539,36 @@
   }
 
   .page-title {
-    @apply font-display text-display-sm lg:text-display-md tracking-tight text-foreground;
+    @apply font-display text-2xl font-bold tracking-tight text-foreground;
   }
   .section-heading {
-    @apply font-display text-heading-lg text-card-foreground;
+    @apply font-display text-base font-semibold text-card-foreground;
   }
   .stat-value {
-    @apply font-display text-display-sm lg:text-display-md tracking-tight;
+    @apply font-display text-3xl font-bold tracking-tight tabular-nums;
   }
+
+  /* Chip di filtro (periodo, stato…). Classico: pulsanti bordati, selezione
+     piena; dentro .chip-group diventano un controllo segmentato.
+     Pannelli scuri: pillole neutre, accento solo sulla selezione.
+     La chip attiva si marca con aria-pressed="true". */
+  .chip {
+    @apply inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-border bg-card px-3 text-xs font-semibold text-foreground transition-colors duration-150;
+  }
+  .chip:hover { @apply bg-muted; }
+  .chip[aria-pressed="true"] { @apply border-primary bg-primary text-primary-foreground; }
+  .chip-group { @apply flex rounded-lg bg-muted p-1; }
+  .chip-group .chip { @apply rounded-md border-transparent bg-transparent text-muted-foreground; }
+  .chip-group .chip[aria-pressed="true"] { @apply bg-card text-foreground shadow-card; }
+
+  .design-panel .chip,
+  .design-panel .chip-group .chip {
+    @apply rounded-full border-transparent bg-secondary text-muted-foreground shadow-none sm:px-4;
+  }
+  .design-panel .chip:hover { @apply text-foreground; }
+  .design-panel .chip[aria-pressed="true"],
+  .design-panel .chip-group .chip[aria-pressed="true"] { @apply border-primary/60 bg-primary/10 text-primary; }
+  .design-panel .chip-group { @apply gap-2 bg-transparent p-0; }
 
   .btn-gold {
     background: var(--gradient-primary);
@@ -445,6 +591,60 @@
 }
 
 @media print {
+  :root, .dark, .design-panel {
+    --background: 210 33% 96%;
+    --foreground: 222 36% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 34% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 34% 14%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 216 30% 92%;
+    --secondary-foreground: 222 28% 18%;
+    --muted: 216 28% 94%;
+    --muted-foreground: 222 16% 34%;
+    --accent: 152 75% 50%;
+    --accent-foreground: 152 100% 10%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 22% 86%;
+    --input: 220 22% 80%;
+    --ring: 221 83% 53%;
+    --success: 152 76% 30%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 40%;
+    --warning-foreground: 30 80% 8%;
+    --danger: 0 72% 50%;
+    --danger-foreground: 0 0% 100%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
+    --commission-unpaid: 28 92% 48%;
+    --commission-contested: 280 65% 52%;
+    --order-paper: 43 26% 95%;
+    --order-paper-deep: 41 20% 89%;
+    --order-ink: 0 0% 18%;
+    --order-blue: 217 91% 53%;
+    --order-surface: 0 0% 100%;
+    --order-line: 38 12% 82%;
+    --order-muted: 30 5% 44%;
+    --sidebar-background: 210 20% 97%;
+    --sidebar-foreground: 222 20% 14%;
+    --sidebar-primary: 217 78% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 26% 90%;
+    --sidebar-accent-foreground: 222 20% 14%;
+    --sidebar-border: 214 16% 82%;
+    --sidebar-ring: 217 78% 38%;
+    --sidebar-rail-background: 214 18% 91%;
+    --sidebar-rail-foreground: 222 20% 25%;
+    --sidebar-item-foreground: 222 20% 21%;
+    --sidebar-item-icon: 217 16% 35%;
+    --shadow-card: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-card-hover: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-glow: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --radius: 0.75rem;
+  }
   body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .print\:hidden { display: none !important; }
   [role="dialog"] {
@@ -457,6 +657,17 @@
   table { page-break-inside: auto; }
   tr { page-break-inside: avoid; page-break-after: auto; }
 }
+
+/* Tooltip e assi Recharts: i default sono pensati per sfondo bianco. */
+.recharts-default-tooltip {
+  background-color: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 12px;
+  color: hsl(var(--popover-foreground));
+}
+.recharts-cartesian-axis-tick-value { fill: hsl(var(--muted-foreground)); }
+.recharts-cartesian-grid line { stroke: hsl(var(--border)); }
+.recharts-legend-item-text { color: hsl(var(--muted-foreground)) !important; }
 
 /* Every CRM table becomes labelled compact rows on phones, including audit tables. */
 .crm-page { width: 100%; }

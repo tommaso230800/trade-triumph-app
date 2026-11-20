@@ -2,9 +2,24 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 
 export type ThemeStyle = "modern" | "classic" | "minimal" | "vibrant" | "dark";
 
+/**
+ * Design dell'interfaccia, indipendente dal tema colore:
+ * - "classico": l'aspetto storico dell'app (predefinito su ogni dispositivo)
+ * - "pannelli": grafite scura a pannelli, accento blu, sidebar staccata,
+ *   card morbide. Ha una palette propria, quindi il tema colore non si applica.
+ */
+export type DesignStyle = "classico" | "pannelli";
+
+export const designConfigs: Record<DesignStyle, { name: string; description: string }> = {
+  classico: { name: "Classico", description: "L'aspetto di sempre, chiaro" },
+  pannelli: { name: "Pannelli scuri", description: "Scuro a pannelli, angoli morbidi, accento blu" },
+};
+
 interface ThemeContextType {
   theme: ThemeStyle;
   setTheme: (theme: ThemeStyle) => void;
+  design: DesignStyle;
+  setDesign: (design: DesignStyle) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -65,8 +80,18 @@ export const themeConfigs: Record<ThemeStyle, { name: string; description: strin
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeStyle>(() => {
     const saved = localStorage.getItem("app-theme");
-    return (saved as ThemeStyle) || "modern";
+    return saved && saved in themeConfigs ? (saved as ThemeStyle) : "modern";
   });
+
+  const [design, setDesignState] = useState<DesignStyle>(() => {
+    const saved = localStorage.getItem("app-design");
+    return saved === "pannelli" ? "pannelli" : "classico";
+  });
+
+  const setDesign = (newDesign: DesignStyle) => {
+    setDesignState(newDesign);
+    localStorage.setItem("app-design", newDesign);
+  };
 
   const setTheme = (newTheme: ThemeStyle) => {
     setThemeState(newTheme);
@@ -79,21 +104,26 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Sidebar colors are paired in global CSS; discard the legacy one-color override.
     root.style.removeProperty("--sidebar-background");
     
-    // Apply colors
+    const panel = design === "pannelli";
+    root.classList.toggle("design-panel", panel);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", panel ? "#121419" : "#f2f5fa");
+
+    // Apply colors (non con "Pannelli scuri", che ha la sua palette)
     Object.entries(config.colors).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
+      if (panel) root.style.removeProperty(key);
+      else root.style.setProperty(key, value);
     });
 
     // Apply dark class for dark theme
-    if (theme === "dark") {
+    if (theme === "dark" || panel) {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
     }
-  }, [theme]);
+  }, [theme, design]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, design, setDesign }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -105,4 +135,10 @@ export function useTheme() {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
+}
+
+/** Vero quando l'interfaccia è scura (tema Scuro o design Pannelli scuri). */
+export function useIsDarkUI() {
+  const { theme, design } = useTheme();
+  return design === "pannelli" || theme === "dark";
 }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { MetricTile } from "@/components/ui/metric-tile";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -139,7 +140,7 @@ const ConsorzioDettaglio = () => {
     return (
       <MainLayout>
         <div className="flex flex-col items-center justify-center py-16 animate-fade-in">
-          <h1 className="text-xl font-bold text-foreground mb-4">Consorzio non trovato</h1>
+          <h1 className="font-display mb-4 text-2xl font-bold text-foreground tracking-tight">Consorzio non trovato</h1>
           <Link to="/clienti">
             <Button variant="outline" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
@@ -153,89 +154,31 @@ const ConsorzioDettaglio = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6 animate-fade-in px-2 sm:px-0">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <Link to="/clienti">
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl">
+        <div className="flex items-center gap-3">
+          <Button asChild variant="ghost" size="icon" aria-label="Torna ai clienti">
+            <Link to="/clienti">
               <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <div className="flex-1">
+            </Link>
+          </Button>
+          <div className="min-w-0 flex-1">
             <h1 className="page-title">{consorzioNome}</h1>
-            <p className="text-body-md text-muted-foreground mt-1">
+            <p className="mt-1 text-sm text-muted-foreground">
               Analisi fatturati e clienti del consorzio
             </p>
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="shadow-card hover-lift">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Clienti</p>
-                  <p className="text-xl sm:text-2xl font-bold">{consorzioData?.clientiCount || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card hover-lift">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
-                  <Euro className="h-5 w-5 sm:h-6 sm:w-6 text-success" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Fatturato</p>
-                  <p className="text-lg sm:text-2xl font-bold truncate">
-                    {formatCurrency(consorzioData?.totaleFatturato || 0)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card hover-lift">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
-                  <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-accent" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Aziende</p>
-                  <p className="text-xl sm:text-2xl font-bold">
-                    {consorzioData?.fatturatoPerAzienda.length || 0}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-card hover-lift">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
-                  <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-warning" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs sm:text-sm text-muted-foreground truncate">Media/Cliente</p>
-                  <p className="text-lg sm:text-2xl font-bold truncate">
-                    {formatCurrency(
-                      consorzioData?.clientiCount 
-                        ? (consorzioData.totaleFatturato / consorzioData.clientiCount) 
-                        : 0
-                    )}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <MetricTile label="Fatturato" value={formatCurrency(consorzioData?.totaleFatturato || 0)} className="col-span-2 lg:col-span-1" />
+          <MetricTile label="Clienti" value={consorzioData?.clientiCount || 0} />
+          <MetricTile label="Aziende" value={consorzioData?.fatturatoPerAzienda.length || 0} />
+          <MetricTile
+            label="Media per cliente"
+            value={formatCurrency(consorzioData?.clientiCount ? consorzioData.totaleFatturato / consorzioData.clientiCount : 0)}
+            className="col-span-2 lg:col-span-1"
+          />
         </div>
 
         {isLoading ? (
@@ -243,10 +186,10 @@ const ConsorzioDettaglio = () => {
         ) : (
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Fatturato per Azienda */}
-            <Card className="shadow-card hover-lift">
+            <Card className="shadow-card">
               <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
-                <CardTitle className="text-heading-sm flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-accent" />
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   Fatturato per Azienda
                 </CardTitle>
               </CardHeader>
@@ -266,7 +209,7 @@ const ConsorzioDettaglio = () => {
                         <CollapsibleTrigger asChild>
                           <div
                             className={cn(
-                              "flex items-center justify-between p-3 sm:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in cursor-pointer",
+                              "flex items-center justify-between p-3 sm:p-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer",
                               `stagger-${Math.min(index + 1, 6)}`
                             )}
                           >
@@ -332,10 +275,10 @@ const ConsorzioDettaglio = () => {
             </Card>
 
             {/* Clienti del Consorzio */}
-            <Card className="shadow-card hover-lift">
+            <Card className="shadow-card">
               <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
-                <CardTitle className="text-heading-sm flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
                   Clienti ({consorzioData?.clientiCount || 0})
                 </CardTitle>
               </CardHeader>
@@ -351,7 +294,7 @@ const ConsorzioDettaglio = () => {
                         key={cliente.id}
                         to={`/clienti/${cliente.id}`}
                         className={cn(
-                          "flex items-center gap-3 p-3 sm:p-4 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors animate-fade-in block",
+                          "flex items-center gap-3 p-3 sm:p-4 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors block",
                           `stagger-${Math.min(index + 1, 6)}`
                         )}
                       >

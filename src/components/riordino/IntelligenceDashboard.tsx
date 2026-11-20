@@ -190,7 +190,7 @@ export function IntelligenceDashboard() {
       <Card className="surface-noir">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Activity className="h-4 w-4 text-primary" />
+            <Activity className="h-4 w-4 text-muted-foreground" />
             Evoluzione del portafoglio clienti
           </CardTitle>
           <p className="text-xs text-muted-foreground">
@@ -302,15 +302,15 @@ function KpiBtn({ icon, label, value, active, onClick, loading }: {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border p-3 text-left transition hover-lift ${
+      className={`rounded-xl border p-3 text-left transition ${
         active ? "border-primary bg-primary/10 ring-1 ring-primary/30" : "border-border bg-card"
       }`}
     >
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
         {icon}
         <span className="min-w-0 break-words leading-tight">{label}</span>
       </div>
-      <div className="mt-1.5 text-right font-display text-xl font-bold tabular-nums">
+      <div className="mt-2 text-right font-display text-xl font-bold tabular-nums">
         {loading ? "…" : value ?? 0}
       </div>
     </button>
@@ -321,7 +321,7 @@ function PairCard({ pair, onApri, onOrdina }: { pair: EnrichedPair; onApri: () =
   const stato = STATO_BADGE[pair.stato];
   const rall = RALLENTAMENTO_BADGE[pair.rallentamento];
   return (
-    <article className="flex flex-col rounded-xl border border-border bg-card p-4 transition hover-lift">
+    <article className="flex flex-col rounded-xl border border-border bg-card p-4 transition">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <Link to={`/clienti/${pair.cliente_id}`} className="block truncate text-sm font-semibold hover:text-primary">
@@ -343,7 +343,7 @@ function PairCard({ pair, onApri, onOrdina }: { pair: EnrichedPair; onApri: () =
         </Badge>
       )}
 
-      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
         <span className="text-muted-foreground">Ultimo ordine</span>
         <span className="text-right tabular-nums">{fmtD(pair.ultimo_ordine)}</span>
         <span className="text-muted-foreground">Frequenza abituale</span>
@@ -367,10 +367,10 @@ function PairCard({ pair, onApri, onOrdina }: { pair: EnrichedPair; onApri: () =
       </div>
 
       <div className="mt-3 flex gap-2">
-        <Button size="sm" variant="outline" className="h-9 flex-1 gap-1.5 text-xs" onClick={onApri}>
+        <Button size="sm" variant="outline" className="h-9 flex-1 gap-2 text-xs" onClick={onApri}>
           <BarChart3 className="h-3.5 w-3.5" /> Grafici
         </Button>
-        <Button size="sm" className="h-9 flex-1 gap-1.5 text-xs" onClick={onOrdina}>
+        <Button size="sm" className="h-9 flex-1 gap-2 text-xs" onClick={onOrdina}>
           <ShoppingCart className="h-3.5 w-3.5" /> Crea ordine
         </Button>
       </div>
@@ -449,7 +449,7 @@ function CentroAllarmi({ pairs, onApri }: { pairs: EnrichedPair[]; onApri: (p: E
                 {s.items.length}
               </Badge>
             </summary>
-            <div className="space-y-1.5 border-t border-border p-3">
+            <div className="space-y-2 border-t border-border p-3">
               {s.items.slice(0, 10).map((p) => (
                 <button
                   key={p.key}

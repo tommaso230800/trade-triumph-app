@@ -1,0 +1,63 @@
+import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
+
+type Tone = "default" | "primary" | "success" | "warning" | "danger" | "info";
+
+const toneText: Record<Tone, string> = {
+  default: "text-muted-foreground",
+  primary: "text-primary",
+  success: "text-success",
+  warning: "text-warning",
+  danger: "text-destructive",
+  info: "text-info",
+};
+
+/**
+ * Tessera numerica compatta condivisa (conteggi e totali di supporto in
+ * testa alle pagine): etichetta, numero e, opzionale, icona di stato.
+ * Il colore di `tone` va solo sull'icona e comunica uno stato, mai decoro.
+ * Con `onClick` diventa un filtro toccabile (`active` evidenzia la selezione).
+ */
+export function MetricTile({
+  label,
+  value,
+  icon,
+  tone = "default",
+  hint,
+  onClick,
+  active,
+  className,
+}: {
+  label: string;
+  value: ReactNode;
+  icon?: ReactNode;
+  tone?: Tone;
+  hint?: ReactNode;
+  onClick?: () => void;
+  active?: boolean;
+  className?: string;
+}) {
+  const body = (
+    <>
+      <div className="flex items-center justify-between gap-2">
+        <p className="min-w-0 truncate text-xs font-medium text-muted-foreground">{label}</p>
+        {icon && <span className={cn("shrink-0 [&_svg]:h-4 [&_svg]:w-4", toneText[tone])}>{icon}</span>}
+      </div>
+      <p className="mt-2 break-words font-display text-2xl font-bold tracking-tight tabular-nums text-card-foreground">{value}</p>
+      {hint && <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>}
+    </>
+  );
+  const base = cn(
+    "min-w-0 rounded-xl border bg-card p-4 text-left shadow-card",
+    active ? "border-primary ring-1 ring-primary/30" : "border-border",
+    className,
+  );
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} aria-pressed={active} className={cn(base, "min-h-11 transition-colors hover:border-primary/50")}>
+        {body}
+      </button>
+    );
+  }
+  return <div className={base}>{body}</div>;
+}

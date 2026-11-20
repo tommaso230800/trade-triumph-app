@@ -440,7 +440,7 @@ export function ContrattoFormDialog({
                                 step="0.1"
                                 value={obj.percentuale_premio || ""} 
                                 onChange={(e) => updateObbiettivo(index, { percentuale_premio: parseFloat(e.target.value) || 0 })} 
-                                className="bg-white dark:bg-background pr-8"
+                                className="bg-white dark:bg-background panel:bg-background pr-8"
                                 placeholder="es. 2.5"
                               />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
@@ -454,7 +454,7 @@ export function ContrattoFormDialog({
                                   type="number" 
                                   value={obj.soglia_fatturato || ""} 
                                   onChange={(e) => updateObbiettivo(index, { soglia_fatturato: parseFloat(e.target.value) || 0 })} 
-                                  className="bg-white dark:bg-background pr-8"
+                                  className="bg-white dark:bg-background panel:bg-background pr-8"
                                   placeholder="es. 65000"
                                 />
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
@@ -467,7 +467,7 @@ export function ContrattoFormDialog({
                           value={obj.descrizione}
                           onChange={(e) => updateObbiettivo(index, { descrizione: e.target.value })}
                           placeholder="Descrizione opzionale (es. Primo scaglione)"
-                          className="bg-white dark:bg-background text-sm"
+                          className="bg-white dark:bg-background panel:bg-background text-sm"
                         />
 
                         {/* Summary */}
@@ -476,7 +476,7 @@ export function ContrattoFormDialog({
                           <span className="text-muted-foreground">
                             {obj.tipo === "incondizionato" 
                               ? `${obj.percentuale_premio}% incondizionato sul fatturato totale`
-                              : `${obj.percentuale_premio}% al raggiungimento di €${(obj.soglia_fatturato || 0).toLocaleString("it-IT")}`
+                              : `${obj.percentuale_premio}% al raggiungimento di ${(obj.soglia_fatturato || 0).toLocaleString("it-IT")} €`
                             }
                           </span>
                         </div>

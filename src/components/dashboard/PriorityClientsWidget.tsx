@@ -74,7 +74,7 @@ export function PriorityClientsWidget() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-primary" />
+            <Zap className="h-4 w-4 text-muted-foreground" />
             Clienti Priorità Giorno
           </CardTitle>
         </CardHeader>
@@ -91,8 +91,8 @@ export function PriorityClientsWidget() {
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Zap className="h-5 w-5 text-primary" />
+          <CardTitle className="font-semibold flex items-center gap-2 text-base">
+            <Zap className="h-4 w-4 text-muted-foreground" />
             Clienti Priorità Giorno
           </CardTitle>
           <Button variant="ghost" size="sm" onClick={() => refetch()}>
@@ -142,7 +142,7 @@ export function PriorityClientsWidget() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className={cn("p-1.5 rounded-lg bg-background/50", config.color)}>
+                      <div className={cn("p-2 rounded-lg bg-background/50", config.color)}>
                         <Icon className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">

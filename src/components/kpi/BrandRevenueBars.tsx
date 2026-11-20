@@ -16,7 +16,7 @@ export function BrandRevenueBars({ brands }: BrandRevenueBarsProps) {
       <div className="space-y-3">
         {top.map((b) => (
           <div key={b.id}>
-            <div className="mb-1.5 flex items-baseline justify-between gap-2">
+            <div className="mb-2 flex items-baseline justify-between gap-2">
               <span className="min-w-0 break-words text-sm font-semibold text-scatto-ink">{b.name}</span>
               <span className="flex-shrink-0 font-display text-sm font-semibold tabular-nums text-scatto-ink">
                 {formatCompact(b.fatturato_totale)}

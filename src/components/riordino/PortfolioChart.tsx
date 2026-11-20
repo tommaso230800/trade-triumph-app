@@ -64,7 +64,7 @@ export function PortfolioChart({ ordersByPair, aziendaFilter, tolleranza, mesi =
                 <div className="rounded-lg border border-border bg-popover p-3 text-xs shadow-card">
                   <p className="font-semibold">{label}</p>
                   {payload.map((e: any) => (
-                    <p key={e.dataKey} className="mt-0.5 flex items-center gap-1.5">
+                    <p key={e.dataKey} className="mt-0.5 flex items-center gap-2">
                       <span className="inline-block h-2 w-2 rounded-full" style={{ background: e.color }} />
                       {e.name}: <span className="font-semibold tabular-nums">{e.value}</span>
                     </p>

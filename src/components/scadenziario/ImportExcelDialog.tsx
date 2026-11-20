@@ -432,7 +432,7 @@ export const ImportExcelDialog = () => {
                           <td className="px-3 py-2">{row.azienda}</td>
                           <td className="px-3 py-2">{row.numero_fattura}</td>
                           <td className="px-3 py-2">{row.data_scadenza}</td>
-                          <td className="px-3 py-2 text-right">€{row.importo.toFixed(2)}</td>
+                          <td className="px-3 py-2 text-right">{row.importo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</td>
                           <td className="px-3 py-2 text-right">{row.provvigione}%</td>
                         </tr>
                       ))}

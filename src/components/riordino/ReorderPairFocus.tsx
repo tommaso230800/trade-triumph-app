@@ -19,7 +19,7 @@ export function ReorderPairFocus() {
   const close = () => { const next = new URLSearchParams(params); next.delete("cliente"); next.delete("azienda"); setParams(next, { replace: true }); };
 
   return (
-    <section aria-label="Scheda riordino" className="space-y-4 rounded-xl border border-primary/30 bg-card p-4 shadow-sm lg:p-6">
+    <section aria-label="Scheda riordino" className="space-y-4 rounded-xl border border-primary/30 bg-card p-4 shadow-card lg:p-6">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs text-muted-foreground">Scheda riordino</p>

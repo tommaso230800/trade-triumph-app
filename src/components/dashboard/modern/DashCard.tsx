@@ -29,13 +29,13 @@ export function DashCard({
       )}
     >
       {title && (
-        <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
+        <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-6">
           {icon && <span className="text-scatto-muted">{icon}</span>}
           <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">{title}</h2>
           {action && <div className="ml-auto">{action}</div>}
         </header>
       )}
-      <div className={cn("flex-1 p-4 sm:p-5", bodyClassName)}>{children}</div>
+      <div className={cn("flex-1 p-4 sm:p-6", bodyClassName)}>{children}</div>
     </section>
   );
 }

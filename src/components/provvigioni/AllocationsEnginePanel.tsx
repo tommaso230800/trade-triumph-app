@@ -53,7 +53,7 @@ export function AllocationsEnginePanel({ estrattoId, all, from, to, compact, tit
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-base">
           <span className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-primary" />
+            <Layers className="h-4 w-4 text-muted-foreground" />
             {title ?? "Motore riconciliazione M:N"}
           </span>
           <Badge variant="outline" className="text-xs">Fase 2</Badge>

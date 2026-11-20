@@ -33,16 +33,16 @@ export function StatCard({ icon: Icon, label, value, delta, caption, tone = "inf
   return (
     <div className="rounded-xl border border-scatto-line bg-scatto-surface p-4 shadow-card">
       <div className="flex items-center gap-2">
-        <span className={cn("flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-scatto-ink/[0.05]", toneIconClass[tone])}>
+        <span className={cn("flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-muted", toneIconClass[tone])}>
           <Icon className="h-3.5 w-3.5" />
         </span>
         <p className="break-words text-xs font-medium text-scatto-muted">{label}</p>
       </div>
-      <p className="mt-2.5 break-words font-display text-xl sm:text-2xl font-bold tabular-nums tracking-tight text-scatto-ink">
+      <p className="mt-2 break-words font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
         {value}
       </p>
       {(delta || caption) && (
-        <p className="mt-1 flex items-center gap-1.5 text-xs">
+        <p className="mt-1 flex items-center gap-2 text-xs">
           {delta && (
             <span className={cn("inline-flex items-center gap-0.5 font-semibold", deltaClass[delta.direction])}>
               {deltaArrow[delta.direction]} {delta.label}

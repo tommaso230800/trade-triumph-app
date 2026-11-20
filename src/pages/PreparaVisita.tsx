@@ -55,14 +55,11 @@ const PreparaVisita = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6 max-w-5xl mx-auto animate-rise-in pb-24">
+      <div className="mx-auto max-w-5xl space-y-6">
         {/* Header */}
-        <div className="flex items-start gap-3 sm:gap-4">
-          <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
-            <Brain className="h-5 w-5 sm:h-6 sm:w-6" />
-          </div>
+        <div>
           <div className="min-w-0">
-            <h1 className="text-heading-lg font-display font-bold leading-tight">
+            <h1 className="font-display text-2xl font-bold leading-tight tracking-tight">
               Prepara Visita
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -72,8 +69,8 @@ const PreparaVisita = () => {
         </div>
 
         {/* Client selector */}
-        <Card className="surface-glass border-primary/20 shadow-card">
-          <CardContent className="p-4 sm:p-5 space-y-3">
+        <Card>
+          <CardContent className="space-y-3 p-4 sm:p-6">
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -137,7 +134,7 @@ const PreparaVisita = () => {
                 )}
                 {typeof selectedClient.fatturato === "number" && selectedClient.fatturato > 0 && (
                   <Badge variant="outline">
-                    € {Math.round(selectedClient.fatturato).toLocaleString("it-IT")}
+                    {Math.round(selectedClient.fatturato).toLocaleString("it-IT")} €
                   </Badge>
                 )}
               </div>
@@ -196,7 +193,7 @@ const PreparaVisita = () => {
         {latest && (
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
-              <h2 className="text-heading-sm font-display font-semibold">
+              <h2 className=" font-display font-semibold">
                 Preparazione attuale
               </h2>
               <Badge variant="secondary" className="text-xs">
@@ -210,7 +207,7 @@ const PreparaVisita = () => {
         {/* History */}
         {previous.length > 0 && (
           <div className="space-y-2">
-            <h2 className="text-heading-sm font-display font-semibold px-1">
+            <h2 className=" font-display font-semibold px-1">
               Preparazioni precedenti
             </h2>
             {previous.map((p) => (

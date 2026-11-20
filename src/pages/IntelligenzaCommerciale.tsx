@@ -280,17 +280,16 @@ export default function IntelligenzaCommerciale() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-heading font-bold flex items-center gap-2">
-            <Sparkles className="w-7 h-7 text-primary" />
+          <h1 className="font-display text-2xl font-bold tracking-tight">
             Intelligenza Commerciale
           </h1>
           <p className="text-sm text-muted-foreground">
             Panoramica, previsioni, clienti, prodotti, prezzi, ordini, provvigioni e opportunità
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full gap-2 sm:w-auto">
           <Select value={aziendaFilter} onValueChange={setAziendaFilter}>
-            <SelectTrigger className="w-[220px]">
+            <SelectTrigger className="w-full sm:w-56">
               <SelectValue placeholder="Azienda" />
             </SelectTrigger>
             <SelectContent>
@@ -306,14 +305,14 @@ export default function IntelligenzaCommerciale() {
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
           <TabsList className="inline-flex w-max md:grid md:w-full md:grid-cols-8">
-            <TabsTrigger value="panoramica" className="gap-1.5"><LayoutDashboard className="w-4 h-4" />Panoramica</TabsTrigger>
-            <TabsTrigger value="previsione" className="gap-1.5"><Calculator className="w-4 h-4" />Previsione</TabsTrigger>
-            <TabsTrigger value="clienti" className="gap-1.5"><Users className="w-4 h-4" />Clienti</TabsTrigger>
-            <TabsTrigger value="prodotti" className="gap-1.5"><Package className="w-4 h-4" />Prodotti</TabsTrigger>
-            <TabsTrigger value="prezzi" className="gap-1.5"><ShieldAlert className="w-4 h-4" />Prezzi</TabsTrigger>
-            <TabsTrigger value="ordini" className="gap-1.5"><ShoppingCart className="w-4 h-4" />Ordini</TabsTrigger>
-            <TabsTrigger value="provvigioni" className="gap-1.5"><Wallet className="w-4 h-4" />Provvigioni</TabsTrigger>
-            <TabsTrigger value="opportunita" className="gap-1.5"><Lightbulb className="w-4 h-4" />Opportunità</TabsTrigger>
+            <TabsTrigger value="panoramica" className="gap-2"><LayoutDashboard className="w-4 h-4" />Panoramica</TabsTrigger>
+            <TabsTrigger value="previsione" className="gap-2"><Calculator className="w-4 h-4" />Previsione</TabsTrigger>
+            <TabsTrigger value="clienti" className="gap-2"><Users className="w-4 h-4" />Clienti</TabsTrigger>
+            <TabsTrigger value="prodotti" className="gap-2"><Package className="w-4 h-4" />Prodotti</TabsTrigger>
+            <TabsTrigger value="prezzi" className="gap-2"><ShieldAlert className="w-4 h-4" />Prezzi</TabsTrigger>
+            <TabsTrigger value="ordini" className="gap-2"><ShoppingCart className="w-4 h-4" />Ordini</TabsTrigger>
+            <TabsTrigger value="provvigioni" className="gap-2"><Wallet className="w-4 h-4" />Provvigioni</TabsTrigger>
+            <TabsTrigger value="opportunita" className="gap-2"><Lightbulb className="w-4 h-4" />Opportunità</TabsTrigger>
           </TabsList>
         </div>
 
@@ -367,7 +366,7 @@ export default function IntelligenzaCommerciale() {
             <>
               <Card className="surface-glass">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center justify-between flex-wrap gap-2">
+                  <CardTitle className="font-semibold text-base flex items-center justify-between flex-wrap gap-2">
                     <span>Chiusura {data.monthSim.mese}</span>
                     <Badge variant="outline">
                       Giorno {data.monthSim.giorni_trascorsi}/{data.monthSim.giorni_totali} · {data.monthSim.giorni_rimanenti} rimanenti
@@ -429,9 +428,9 @@ export default function IntelligenzaCommerciale() {
             ))}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Input placeholder="Cerca cliente…" value={searchCli} onChange={(e) => setSearchCli(e.target.value)} className="max-w-md" />
+            <Input placeholder="Cerca cliente…" value={searchCli} onChange={(e) => setSearchCli(e.target.value)} className="sm:max-w-md" />
             <Select value={segFilter} onValueChange={setSegFilter}>
-              <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutti segmenti</SelectItem>
                 {Object.keys(SEG_COLORS).map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -439,7 +438,7 @@ export default function IntelligenzaCommerciale() {
             </Select>
           </div>
           <Card>
-            <CardHeader><CardTitle className="text-lg">Clienti — RFM</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="font-semibold text-base">Clienti — RFM</CardTitle></CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               {isLoading ? <ListSkeleton rows={5} className="rounded-none border-0" />
                 : filteredRfm.length === 0 ? <div className="p-6 text-center text-muted-foreground">Nessun cliente.</div>
@@ -484,7 +483,7 @@ export default function IntelligenzaCommerciale() {
         <TabsContent value="prodotti" className="space-y-4 mt-4">
           <Input placeholder="Cerca prodotto…" value={searchProd} onChange={(e) => setSearchProd(e.target.value)} className="max-w-md" />
           <Card>
-            <CardHeader><CardTitle className="text-lg">Top prodotti per fatturato</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="font-semibold text-base">Top prodotti per fatturato</CardTitle></CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               {filteredProducts.length === 0 ? <div className="p-6 text-center text-muted-foreground">Nessun prodotto.</div>
                 : (
@@ -544,7 +543,7 @@ export default function IntelligenzaCommerciale() {
           <div className="flex gap-2 flex-wrap">
             <Input placeholder="Cerca prodotto o cliente…" value={searchProd} onChange={(e) => setSearchProd(e.target.value)} className="max-w-md" />
             <Select value={sevFilter} onValueChange={setSevFilter}>
-              <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tutte severità</SelectItem>
                 <SelectItem value="critica">Critica</SelectItem>
@@ -554,7 +553,7 @@ export default function IntelligenzaCommerciale() {
             </Select>
           </div>
           <Card>
-            <CardHeader><CardTitle className="text-lg">Anomalie di prezzo</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="font-semibold text-base">Anomalie di prezzo</CardTitle></CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               {isLoading ? <ListSkeleton rows={5} className="rounded-none border-0" />
                 : filteredAnomalies.length === 0 ? <div className="p-6 text-center text-muted-foreground">Nessuna anomalia aperta.</div>
@@ -579,8 +578,8 @@ export default function IntelligenzaCommerciale() {
                             <TableCell className="font-medium">{p?.nome || a.prodotto_id.slice(0, 8)}</TableCell>
                             <TableCell>{c ? <Link to={`/clienti/${a.cliente_id}`} className="hover:text-primary">{c.nome}</Link> : "—"}</TableCell>
                             <TableCell>{a.data_ordine?.slice(0, 10)}</TableCell>
-                            <TableCell className="text-right">€ {a.prezzo_netto.toFixed(3)}</TableCell>
-                            <TableCell className="text-right text-muted-foreground">€ {a.media_netto_prodotto.toFixed(3)}</TableCell>
+                            <TableCell className="text-right">{a.prezzo_netto.toLocaleString("it-IT", { minimumFractionDigits: 3, maximumFractionDigits: 3 })} €</TableCell>
+                            <TableCell className="text-right text-muted-foreground">{a.media_netto_prodotto.toLocaleString("it-IT", { minimumFractionDigits: 3, maximumFractionDigits: 3 })} €</TableCell>
                             <TableCell className={cn("text-right font-medium", a.scostamento_pct < 0 ? "text-destructive" : "text-success")}>
                               {a.scostamento_pct > 0 ? "+" : ""}{formatNumber(a.scostamento_pct, 1)}%
                             </TableCell>
@@ -615,7 +614,7 @@ export default function IntelligenzaCommerciale() {
                 <Card key={s} className="surface-noir">
                   <CardContent className="p-4">
                     <Badge variant="outline" className={cn("mb-2", STATUS_COLORS[s])}>{s}</Badge>
-                    <div className="text-xl font-bold">{v.n}</div>
+                    <div className="text-2xl font-bold tracking-tight tabular-nums">{v.n}</div>
                     <div className="text-xs text-muted-foreground">{eur(v.totale)}</div>
                   </CardContent>
                 </Card>
@@ -623,7 +622,7 @@ export default function IntelligenzaCommerciale() {
             })}
           </div>
           <Card>
-            <CardHeader><CardTitle className="text-lg">Ordini recenti</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="font-semibold text-base">Ordini recenti</CardTitle></CardHeader>
             <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -664,7 +663,7 @@ export default function IntelligenzaCommerciale() {
                 <Card key={st} className="surface-noir">
                   <CardContent className="p-4">
                     <div className="text-xs uppercase text-muted-foreground">{st.replace("_", " ")}</div>
-                    <div className="text-xl font-bold">{v.n}</div>
+                    <div className="text-2xl font-bold tracking-tight tabular-nums">{v.n}</div>
                     <div className="text-xs text-success">{eur(v.provvigione)}</div>
                   </CardContent>
                 </Card>
@@ -752,7 +751,7 @@ function KPI({ label, value, icon: Icon, tone }: { label: string; value: string;
         <div className="flex items-start justify-between">
           <div className="min-w-0">
             <div className="text-xs text-muted-foreground line-clamp-2">{label}</div>
-            <div className={cn("text-xl md:text-2xl font-bold tabular-nums truncate", toneClass)}>{value}</div>
+            <div className={cn("text-2xl font-bold tracking-tight tabular-nums truncate", toneClass)}>{value}</div>
           </div>
           <Icon className={cn("w-5 h-5 flex-shrink-0", tone ? toneClass : "text-muted-foreground")} />
         </div>

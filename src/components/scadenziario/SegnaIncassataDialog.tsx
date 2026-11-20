@@ -56,12 +56,12 @@ export const SegnaIncassataDialog = ({ fattura, open, onOpenChange }: Props) => 
             </div>
             <div>
               <p className="text-muted-foreground">Importo</p>
-              <p className="font-medium text-lg">€{Number(fattura.importo).toFixed(2)}</p>
+              <p className="font-medium text-lg">{Number(fattura.importo).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
             </div>
             <div>
               <p className="text-muted-foreground">Provvigione</p>
               <p className="font-medium text-lg text-success">
-                €{Number(fattura.provvigione_calcolata).toFixed(2)}
+                {Number(fattura.provvigione_calcolata).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
               </p>
             </div>
           </div>

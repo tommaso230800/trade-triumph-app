@@ -155,11 +155,11 @@ export function FrequencyChart({ pair, height = 280 }: Props) {
         </div>;
       })()}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR.regolare }} /> Regolare</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR.anomalo }} /> Anomalo</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR.persistente }} /> Persistente</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-4" style={{ background: "hsl(var(--primary))" }} /> Baseline storica</span>
-        <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-4" style={{ background: "hsl(var(--warning))" }} /> Operativa + tolleranza</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR.regolare }} /> Regolare</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR.anomalo }} /> Anomalo</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR.persistente }} /> Persistente</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-0.5 w-4" style={{ background: "hsl(var(--primary))" }} /> Baseline storica</span>
+        <span className="flex items-center gap-2"><span className="inline-block h-0.5 w-4" style={{ background: "hsl(var(--warning))" }} /> Operativa + tolleranza</span>
         <span className="text-success">Frequenza operativa</span>
         <span className="text-info">Frequenza recente</span>
       </div>

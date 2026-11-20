@@ -90,7 +90,7 @@ function Preferenze() {
         <h2 id="pref-title" className="text-base font-semibold">Categorie</h2>
         <p className="text-xs text-muted-foreground">Le categorie disattivate non generano nuovi avvisi per il tuo profilo. Gli altri utenti non cambiano.</p>
       </div>
-      <ul className="divide-y rounded-xl border bg-card shadow-sm">
+      <ul className="divide-y rounded-xl border bg-card shadow-card">
         {CATEGORIE_PREFERENZE.map((c) => (
           <li key={c.id} className="flex min-h-14 items-center justify-between gap-4 p-4">
             <label htmlFor={`pref-${c.id}`} className="min-w-0 cursor-pointer">
@@ -145,7 +145,7 @@ export default function CentroNotifiche() {
       <div className="min-w-0 space-y-6">
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold">Centro notifiche</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">Centro notifiche</h1>
             <p className="text-xs text-muted-foreground">{unread > 0 ? `${unread} da leggere` : "Tutto letto"}</p>
           </div>
         </header>

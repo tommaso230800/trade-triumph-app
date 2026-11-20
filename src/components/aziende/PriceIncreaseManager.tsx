@@ -109,7 +109,7 @@ export function PriceIncreaseManager() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
             Aumenti di Prezzo
           </CardTitle>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

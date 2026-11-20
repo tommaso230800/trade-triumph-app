@@ -124,9 +124,9 @@ export function AccountSecurityCard() {
           </DialogHeader>
           <form onSubmit={submitOwn} className="space-y-3">
             <input type="text" name="username" autoComplete="username" value={me?.username ?? ""} readOnly hidden />
-            <div className="space-y-1.5"><Label htmlFor="pw-current">Password attuale</Label><Input id="pw-current" type="password" autoComplete="current-password" className="h-12 text-base" value={current} onChange={(e) => setCurrent(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label htmlFor="pw-new">Nuova password</Label><Input id="pw-new" type="password" autoComplete="new-password" className="h-12 text-base" value={next} onChange={(e) => setNext(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label htmlFor="pw-confirm">Ripeti la nuova password</Label><Input id="pw-confirm" type="password" autoComplete="new-password" className="h-12 text-base" value={confirm} onChange={(e) => setConfirm(e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="pw-current">Password attuale</Label><Input id="pw-current" type="password" autoComplete="current-password" className="h-12 text-base" value={current} onChange={(e) => setCurrent(e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="pw-new">Nuova password</Label><Input id="pw-new" type="password" autoComplete="new-password" className="h-12 text-base" value={next} onChange={(e) => setNext(e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="pw-confirm">Ripeti la nuova password</Label><Input id="pw-confirm" type="password" autoComplete="new-password" className="h-12 text-base" value={confirm} onChange={(e) => setConfirm(e.target.value)} /></div>
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <DialogFooter><Button type="submit" className="h-12 w-full" disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Salva nuova password</Button></DialogFooter>
           </form>
@@ -140,8 +140,8 @@ export function AccountSecurityCard() {
             <DialogDescription>Comunica la nuova password direttamente al collega.</DialogDescription>
           </DialogHeader>
           <form onSubmit={submitMember} className="space-y-3">
-            <div className="space-y-1.5"><Label htmlFor="mpw-new">Nuova password</Label><Input id="mpw-new" type="password" autoComplete="new-password" className="h-12 text-base" value={next} onChange={(e) => setNext(e.target.value)} /></div>
-            <div className="space-y-1.5"><Label htmlFor="mpw-confirm">Ripeti la password</Label><Input id="mpw-confirm" type="password" autoComplete="new-password" className="h-12 text-base" value={confirm} onChange={(e) => setConfirm(e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="mpw-new">Nuova password</Label><Input id="mpw-new" type="password" autoComplete="new-password" className="h-12 text-base" value={next} onChange={(e) => setNext(e.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="mpw-confirm">Ripeti la password</Label><Input id="mpw-confirm" type="password" autoComplete="new-password" className="h-12 text-base" value={confirm} onChange={(e) => setConfirm(e.target.value)} /></div>
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
             <DialogFooter><Button type="submit" className="h-12 w-full" disabled={saving}>{saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Imposta password</Button></DialogFooter>
           </form>

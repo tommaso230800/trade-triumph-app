@@ -88,7 +88,7 @@ export function SalesChart({ data, type = "area" }: SalesChartProps) {
           tickLine={false}
           axisLine={false}
           width={48}
-          tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
+          tickFormatter={(value) => `${(value / 1000).toFixed(0)}k €`}
         />
         <Tooltip
           contentStyle={{

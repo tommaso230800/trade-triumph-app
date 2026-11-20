@@ -249,34 +249,39 @@ const Ordini = () => {
   };
 
   // Azioni per riga, condivise fra vista mobile (card) e desktop (tabella)
+  // Menu "tre puntini" volutamente corto: solo le azioni di tutti i giorni.
   const buildAttiviActions = (ordine: Ordine): OrdineCardAction[] => [
-    { label: "Visualizza Proforma", icon: FileText, onClick: () => handleShowProforma(ordine) },
-    { label: "Modifica Ordine", icon: Edit, onClick: () => openEditDialog(ordine) },
-    {
-      label: "Segna come Completato",
-      icon: CheckCircle2,
-      onClick: () => updateStatus.mutate({ id: ordine.id, status: "completato" }),
-    },
-    {
-      label: "Conferma Ordine",
-      icon: FileCheck2,
-      onClick: () => setConfermaTarget({ id: ordine.id, codice: ordine.codice }),
-    },
-    {
-      label: "Metti in attesa",
-      icon: Clock,
-      onClick: () => updateStatus.mutate({ id: ordine.id, status: "in_attesa" }),
-    },
-    {
-      label: "Metti in Stand-by",
-      icon: PauseCircle,
-      onClick: () => setStandByTarget({ id: ordine.id, codice: ordine.codice }),
-    },
+    { label: "Visualizza proforma", icon: FileText, onClick: () => handleShowProforma(ordine) },
+    { label: "Modifica ordine", icon: Edit, onClick: () => openEditDialog(ordine) },
+    ...(ordine.verificato_conferma
+      ? []
+      : [{
+          label: "Segna come verificato",
+          icon: CheckCircle2,
+          onClick: () =>
+            bulkSetVerificato.mutate([ordine.id], {
+              onSuccess: (r) =>
+                r.updatedCount > 0
+                  ? toast.success(`Ordine ${ordine.codice} verificato`)
+                  : toast.error("Ordine non aggiornato: permessi insufficienti o ordine non più presente."),
+            }),
+        }]),
     {
       label: "Annulla",
       icon: Ban,
       destructive: true,
-      onClick: () => updateStatus.mutate({ id: ordine.id, status: "annullato" }),
+      onClick: () => {
+        const statoPrecedente = ordine.status;
+        updateStatus.mutate(
+          { id: ordine.id, status: "annullato" },
+          {
+            onSuccess: () =>
+              toast(`Ordine ${ordine.codice} annullato`, {
+                action: { label: "Ripristina", onClick: () => updateStatus.mutate({ id: ordine.id, status: statoPrecedente }) },
+              }),
+          },
+        );
+      },
     },
   ];
 
@@ -434,7 +439,7 @@ const Ordini = () => {
 
         {/* Direzione "Scatto": pannello con scope proprio (token --scatto-*,
             non tocca il tema globale dell'app). */}
-        <div className={`space-y-6 rounded-xl bg-scatto-bg p-4 lg:p-6 ${selectionMode ? "pb-40 lg:pb-32" : ""}`}>
+        <div className={`space-y-6 rounded-xl bg-scatto-bg p-4 lg:p-6 panel:px-0 panel:pt-0 ${selectionMode ? "pb-40 lg:pb-32" : "panel:pb-0"}`}>
           {/* Intestazione */}
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="min-w-0 space-y-1">
@@ -476,7 +481,7 @@ const Ordini = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
-                className="h-11 flex-1 gap-2 rounded-lg bg-scatto-accent font-semibold text-white hover:bg-scatto-accent/90 sm:flex-none sm:px-5"
+                className="h-11 flex-1 gap-2 rounded-lg bg-scatto-accent font-semibold text-white hover:bg-scatto-accent/90 sm:flex-none sm:px-6"
                 onClick={() => setIsDialogOpen(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -484,6 +489,8 @@ const Ordini = () => {
               </Button>
             </div>
           </div>
+
+          <OrdiniStatsRow stats={stats} mom={mom} isLoading={isLoading} />
 
           <OrdiniFilters
             searchTerm={searchTerm}
@@ -506,7 +513,6 @@ const Ordini = () => {
             onReset={hasActiveFilters ? resetFilters : undefined}
           />
 
-          <OrdiniStatsRow stats={stats} mom={mom} isLoading={isLoading} />
           <OrderDraftsPanel
             clientNames={new Map((clienti ?? []).map((c) => [c.id, c.nome] as [string, string]))}
             companyNames={new Map((aziende ?? []).map((a) => [a.id, a.nome] as [string, string]))}

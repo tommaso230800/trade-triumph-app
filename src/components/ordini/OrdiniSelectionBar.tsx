@@ -39,7 +39,7 @@ export function OrdiniSelectionBar({
 }: OrdiniSelectionBarProps) {
   return (
     <div className="fixed inset-x-0 bottom-[76px] z-40 border-t border-scatto-line bg-scatto-surface/95 shadow-card backdrop-blur-md lg:bottom-0 lg:left-80">
-      <div className="mx-auto flex max-w-5xl flex-col gap-2.5 px-4 py-3">
+      <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-bold text-scatto-ink">
             {count} {count === 1 ? "ordine selezionato" : "ordini selezionati"}
@@ -69,7 +69,7 @@ export function OrdiniSelectionBar({
             size="sm"
             disabled={count === 0 || pending}
             onClick={onVerify}
-            className="touch-target min-w-fit gap-1.5 whitespace-nowrap bg-scatto-success font-bold text-white hover:bg-scatto-success/90"
+            className="touch-target min-w-fit gap-2 whitespace-nowrap bg-scatto-success font-bold text-white hover:bg-scatto-success/90"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             Segna come verificati
@@ -79,7 +79,7 @@ export function OrdiniSelectionBar({
             variant="outline"
             disabled={count === 0 || pending}
             onClick={onWait}
-            className="touch-target min-w-fit gap-1.5 whitespace-nowrap border-scatto-line text-scatto-ink hover:bg-scatto-bg"
+            className="touch-target min-w-fit gap-2 whitespace-nowrap border-scatto-line text-scatto-ink hover:bg-scatto-bg"
           >
             <Clock className="h-4 w-4" />
             Metti in attesa
@@ -89,7 +89,7 @@ export function OrdiniSelectionBar({
             variant="outline"
             disabled={count === 0 || pending}
             onClick={onCancelOrders}
-            className="touch-target min-w-fit gap-1.5 whitespace-nowrap border-scatto-danger/40 text-scatto-danger hover:bg-scatto-danger/10"
+            className="touch-target min-w-fit gap-2 whitespace-nowrap border-scatto-danger/40 text-scatto-danger hover:bg-scatto-danger/10"
           >
             <Ban className="h-4 w-4" />
             Annulla selezionati
@@ -100,7 +100,7 @@ export function OrdiniSelectionBar({
                 size="sm"
                 variant="outline"
                 disabled={count === 0}
-                className="touch-target min-w-fit gap-1.5 whitespace-nowrap border-scatto-line text-scatto-ink hover:bg-scatto-bg"
+                className="touch-target min-w-fit gap-2 whitespace-nowrap border-scatto-line text-scatto-ink hover:bg-scatto-bg"
               >
                 <Download className="h-4 w-4" />
                 Esporta

@@ -39,7 +39,7 @@ export function DashRevenueChart({ data, currentMonthIndex, yearCurr, yearPrev }
       <ComposedChart data={chartData} margin={{ top: 8, right: 4, left: 4, bottom: 0 }}>
         <defs>
           <linearGradient id="dashRevenueFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(var(--scatto-accent))" stopOpacity={0.12} />
+            <stop offset="0%" stopColor="hsl(var(--scatto-accent))" stopOpacity={0.12} className="panel:[stop-opacity:0.35]" />
             <stop offset="100%" stopColor="hsl(var(--scatto-accent))" stopOpacity={0} />
           </linearGradient>
         </defs>

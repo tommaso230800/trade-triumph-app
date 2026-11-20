@@ -17,7 +17,7 @@ export function OrderDraftsPanel({ clientNames, companyNames, onResume }: { clie
   const [deleting, setDeleting] = useState<OrderDraftRow | null>(null);
   if (drafts.isLoading || drafts.isError || !drafts.data?.length) return null;
   return (
-    <section className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm">
+    <section className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-card">
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <h2 className="flex items-center gap-2 text-base font-semibold"><FileClock className="h-4 w-4 text-warning" /> Bozze <span className="text-sm font-normal tabular-nums text-muted-foreground">{drafts.data.length}</span></h2>
         <span className="text-xs text-muted-foreground">Non conteggiate nei totali</span>

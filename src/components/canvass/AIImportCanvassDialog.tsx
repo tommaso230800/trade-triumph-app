@@ -260,7 +260,7 @@ export function AIImportCanvassDialog({ open, onOpenChange }: Props) {
       <DialogContent className="max-w-6xl max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+            <Sparkles className="h-4 w-4 text-muted-foreground" />
             Importazione AI - Canvass & Promozioni
           </DialogTitle>
           <DialogDescription>
@@ -269,7 +269,7 @@ export function AIImportCanvassDialog({ open, onOpenChange }: Props) {
         </DialogHeader>
 
         {step === "input" && (
-          <div className="space-y-5">
+          <div className="space-y-6">
             <div>
               <Label>Azienda di riferimento *</Label>
               <Select value={aziendaId} onValueChange={setAziendaId}>

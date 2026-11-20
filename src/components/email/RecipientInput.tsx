@@ -58,9 +58,9 @@ export function RecipientInput({ label, value, other, otherLabel, onChange, cont
   };
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-medium">{label}</label>
-      <div className={`flex min-h-12 flex-wrap items-center gap-1.5 rounded-lg border bg-muted/30 p-1.5 ${focus ? "border-primary ring-2 ring-primary/20" : "border-border"} ${disabled ? "opacity-60" : ""}`} onClick={() => inputRef.current?.focus()}>
+      <div className={`flex min-h-12 flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-2 ${focus ? "border-primary ring-2 ring-primary/20" : "border-border"} ${disabled ? "opacity-60" : ""}`} onClick={() => inputRef.current?.focus()}>
         {value.map((email) => {
           const contact = contacts.find((c) => normalizeEmail(c.email) === email && c.azienda_id === aziendaId) ?? contacts.find((c) => normalizeEmail(c.email) === email);
           const foreign = contact && contact.azienda_id !== aziendaId && !known.has(email);

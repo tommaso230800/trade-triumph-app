@@ -16,8 +16,8 @@ export function MonthlyGoalCard({ meseLabel, fatturatoMese, obiettivo }: Monthly
 
   return (
     <SectionCard>
-      <div className="mb-2.5 flex items-baseline justify-between gap-2">
-        <h2 className="flex items-center gap-1.5 font-display text-sm font-semibold tracking-tight text-scatto-ink">
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <h2 className="flex items-center gap-2 font-display text-sm font-semibold tracking-tight text-scatto-ink">
           🎯 Obiettivo {meseLabel}
         </h2>
         <span className="font-display text-xs font-medium tabular-nums text-scatto-muted">

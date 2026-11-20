@@ -386,7 +386,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
         <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4 sm:px-6">
           <section className="space-y-3">
             <h4 className="text-sm font-semibold">Cliente e azienda</h4>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-sm">Data Ordine</Label>
               <Input
                 type="date"
@@ -395,7 +395,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
               />
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-sm">Cliente</Label>
                 <Select
                   value={editFormData.cliente_id}
@@ -413,7 +413,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-sm">Azienda Fornitrice</Label>
                 <Select
                   value={editFormData.azienda_id}
@@ -492,7 +492,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
           <section className="space-y-3 border-t border-border pt-4">
             <h4 className="text-sm font-semibold">Pagamento e sconti</h4>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-sm">Tipo Pagamento</Label>
                 <Select
                   value={editFormData.tipo_pagamento}
@@ -510,7 +510,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-sm">Sconto (%)</Label>
                 <Input
                   type="text"
@@ -520,7 +520,7 @@ export function ModificaOrdineDialog({ ordine, open, onOpenChange }: ModificaOrd
                   placeholder="es. 10"
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-sm">Sconto Merce (€)</Label>
                 <Input
                   type="text"

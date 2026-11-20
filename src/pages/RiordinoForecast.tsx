@@ -127,13 +127,10 @@ export default function RiordinoForecast() {
     <MainLayout>
         <div className="min-w-0 space-y-6">
           <header className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-primary" />
-              <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight">
-                Riordino
-              </h1>
-            </div>
-            <p className="text-xs text-muted-foreground">Intelligence commerciale sulle abitudini di acquisto dei clienti, calcolata sugli ordini reali.</p>
+            <h1 className="font-display text-2xl font-bold tracking-tight">
+              Riordino
+            </h1>
+            <p className="text-sm text-muted-foreground">Intelligence commerciale sulle abitudini di acquisto dei clienti, calcolata sugli ordini reali.</p>
           </header>
           {isError && <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive p-4 text-sm">Non riesco ad aggiornare Riordino. Controlla la connessione e riprova.<Button variant="outline" onClick={()=>refetch()}>Riprova</Button></div>}
 
@@ -142,7 +139,7 @@ export default function RiordinoForecast() {
           <IntelligenceDashboard/>
 
           <ReorderPairs/>
-          <details><summary className="min-h-11 cursor-pointer text-base font-semibold">Previsioni per singolo prodotto</summary><div className="mt-4 space-y-6">
+          <details className="group"><summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-base font-semibold [&::-webkit-details-marker]:hidden">Previsioni per singolo prodotto<span className="text-xs font-normal text-muted-foreground group-open:hidden">Mostra</span><span className="hidden text-xs font-normal text-muted-foreground group-open:inline">Nascondi</span></summary><div className="mt-4 space-y-6">
           {/* KPI cards */}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <KpiCard
@@ -164,13 +161,13 @@ export default function RiordinoForecast() {
               tone="yellow"
             />
             <KpiCard
-              icon={<Users className="h-4 w-4 text-primary" />}
+              icon={<Users className="h-4 w-4 text-muted-foreground" />}
               label="Clienti urgenti"
               value={isLoading ? "…" : String(kpi?.clienti_da_contattare ?? 0)}
               tone="blue"
             />
             <KpiCard
-              icon={<TrendingUp className="h-4 w-4 text-success" />}
+              icon={<TrendingUp className="h-4 w-4 text-muted-foreground" />}
               label="Fatturato potenziale 30gg"
               value={isLoading ? "…" : fmtEur.format(kpi?.fatturato_potenziale_30gg ?? 0)}
               tone="green"
@@ -178,7 +175,7 @@ export default function RiordinoForecast() {
           </div>
 
           {/* Filtri */}
-          <Card className="surface-glass">
+          <Card>
             <CardContent className="flex flex-col gap-3 p-4 md:flex-row md:items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -216,10 +213,10 @@ export default function RiordinoForecast() {
 
           {/* Clienti da contattare */}
           {clientiGroup.length > 0 && tab !== "tutti" && (
-            <Card className="surface-noir">
+            <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base">
-                  <Phone className="h-4 w-4 text-primary" />
+                  <Phone className="h-4 w-4 text-muted-foreground" />
                   Clienti da contattare subito
                 </CardTitle>
               </CardHeader>
@@ -227,7 +224,7 @@ export default function RiordinoForecast() {
                 {clientiGroup.map((c) => (
                   <div
                     key={c.key}
-                    className="rounded-lg border border-border bg-card/50 p-3 transition hover-lift"
+                    className="rounded-lg border border-border bg-card/50 p-3 transition"
                   >
                     <Link to={`/clienti/${c.id}`} className="block truncate text-sm font-medium hover:text-primary">
                       {c.nome}
@@ -235,11 +232,11 @@ export default function RiordinoForecast() {
                     <div className="truncate text-xs text-muted-foreground">{c.azienda_nome}</div>
                     <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
                       <span>{c.righe.length} prodotti</span>
-                      <span className="text-success">{fmtEur.format(c.fatturato)}</span>
+                      <span className="tabular-nums text-foreground">{fmtEur.format(c.fatturato)}</span>
                     </div>
                     <Button
                       size="sm"
-                      className="mt-2 w-full gap-1.5"
+                      className="mt-2 w-full gap-2"
                       onClick={() =>
                         setOrdinaPrefill({ cliente_id: c.id, azienda_id: c.azienda_id, righe: c.righe })
                       }
@@ -254,10 +251,10 @@ export default function RiordinoForecast() {
           )}
 
           {/* Tabella */}
-          <Card className="surface-noir">
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Package className="h-4 w-4 text-primary" />
+                <Package className="h-4 w-4 text-muted-foreground" />
                 Ordini consigliati ({filtered.length})
               </CardTitle>
             </CardHeader>
@@ -334,7 +331,7 @@ export default function RiordinoForecast() {
                               </td>
                               <td className="p-3">
                                 <div className="flex items-center justify-end gap-2">
-                                  <Button size="sm" className="gap-1.5" onClick={() => apriOrdina(f)}>
+                                  <Button size="sm" className="gap-2" onClick={() => apriOrdina(f)}>
                                     <ShoppingCart className="h-3.5 w-3.5" />
                                     Ordina
                                   </Button>
@@ -379,7 +376,7 @@ export default function RiordinoForecast() {
                           </div>
                           <Button
                             size="sm"
-                            className="mt-2 w-full gap-1.5"
+                            className="mt-2 w-full gap-2"
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
@@ -426,21 +423,14 @@ function KpiCard({
   value: string;
   tone: "red" | "orange" | "yellow" | "blue" | "green";
 }) {
-  const toneRing: Record<string, string> = {
-    red: "ring-destructive/20",
-    orange: "ring-warning/20",
-    yellow: "ring-warning/20",
-    blue: "ring-primary/20",
-    green: "ring-success/20",
-  };
   return (
-    <Card className={`surface-glass ring-1 ${toneRing[tone]} hover-lift`}>
+    <Card data-tone={tone}>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {icon}
           <span className="min-w-0 break-words">{label}</span>
         </div>
-        <div className="mt-2 break-words text-right font-display text-xl font-bold tabular-nums md:text-2xl">{value}</div>
+        <div className="mt-2 break-words font-display text-2xl font-bold tracking-tight tabular-nums">{value}</div>
       </CardContent>
     </Card>
   );

@@ -40,7 +40,7 @@ export function ReportDetailDialog({ open, onOpenChange, report }: ReportDetailD
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-primary" />
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
             {report.titolo}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">

@@ -43,13 +43,13 @@ export function VisitCard({ visit, showClientName = true, onEdit, onDelete, comp
           <div className="flex-1 min-w-0 space-y-2">
             {/* Header */}
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-3.5 w-3.5" />
                 <span>{format(new Date(visit.data_visita), "d MMMM yyyy", { locale: it })}</span>
               </div>
               
               {showClientName && visit.clienti && (
-                <div className="flex items-center gap-1.5 text-sm font-medium">
+                <div className="flex items-center gap-2 text-sm font-medium">
                   <User className="h-3.5 w-3.5 text-primary" />
                   <span>{visit.clienti.nome}</span>
                 </div>

@@ -32,11 +32,10 @@ export function BottomNav({ onOpenMore, moreActive }: BottomNavProps) {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch justify-around border-t border-border bg-card/95 backdrop-blur-md safe-bottom lg:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch justify-around border-t border-border bg-card/95 backdrop-blur-md safe-bottom lg:hidden print:hidden"
     >
       {items.map((item) => {
-        const isActive = location.pathname === item.href;
+        const isActive = item.href === "/" ? location.pathname === "/" : location.pathname.startsWith(item.href);
         const Icon = item.icon;
         return (
           <Link
@@ -56,9 +55,10 @@ export function BottomNav({ onOpenMore, moreActive }: BottomNavProps) {
       <Button variant="ghost"
         onClick={onOpenMore}
         className={cn(
-          "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-xs font-medium touch-target",
+          "flex h-auto flex-1 flex-col items-center justify-center gap-0.5 rounded-none py-2 text-xs font-medium touch-target hover:bg-transparent",
           moreActive ? "text-primary" : "text-muted-foreground"
         )}
+        aria-label="Altre sezioni"
       >
         <Menu className="h-5 w-5" />
         <span>Altro</span>

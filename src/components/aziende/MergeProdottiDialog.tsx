@@ -143,7 +143,7 @@ export function MergeProdottiDialog({ open, onOpenChange, prodotti, initialSelec
                   I prodotti duplicati verranno spostati nel Cestino (recuperabili da lì per 30 giorni).
                 </p>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-sm">Nota (opzionale)</Label>
                 <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Motivo dell'unificazione..." />
               </div>

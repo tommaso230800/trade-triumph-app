@@ -160,7 +160,7 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
             </div>
             <div>
               <p className="text-muted-foreground text-xs">Provvigione maturata</p>
-              <p className="font-semibold text-primary">€{provvigioneMaturata.toFixed(2)}</p>
+              <p className="font-semibold text-primary">{provvigioneMaturata.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
             </div>
           </div>
 
@@ -224,7 +224,7 @@ export const PagamentoProvvigioneDialog = ({ fattura, open, onOpenChange, initia
                 <div className="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm flex items-center justify-between">
                   <span className="text-muted-foreground">Importo residuo</span>
                   <span className="font-semibold text-primary">
-                    €{importoResiduo.toFixed(2)}
+                    {importoResiduo.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                   </span>
                 </div>
               )}

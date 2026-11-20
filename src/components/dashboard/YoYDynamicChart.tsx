@@ -60,7 +60,7 @@ export function YoYDynamicChart({ data, yearCurr, yearPrev }: Props) {
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
           <XAxis dataKey="mese" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickMargin={8} />
           <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} width={48}
-            tickFormatter={v => `€${(v/1000).toFixed(0)}k`} />
+            tickFormatter={v => `${(v / 1000).toFixed(0)}k €`} />
           <Tooltip
             cursor={{ fill: "hsl(var(--muted) / 0.4)" }}
             contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 10, boxShadow: "var(--shadow-md)" }}

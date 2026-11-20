@@ -280,7 +280,7 @@ export function ImportPDFDialog({
       const delta = Math.abs(calcolato - dichiarato);
       if (dichiarato > 0 && delta > Math.max(0.5, dichiarato * 0.005)) {
         toast.warning(
-          `Imponibile non torna esattamente: calcolato ${calcolato.toFixed(2)}€ vs dichiarato ${dichiarato.toFixed(2)}€ (delta ${delta.toFixed(2)}€). Controlla sconti e omaggi.`,
+          `Imponibile non torna esattamente: calcolato ${calcolato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € vs dichiarato ${dichiarato.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € (delta ${delta.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €). Controlla sconti e omaggi.`,
           { duration: 8000 }
         );
       }
@@ -606,7 +606,7 @@ export function ImportPDFDialog({
             <>
               {/* Order Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-sm">Data Ordine</Label>
                   <Input
                     type="date"
@@ -615,7 +615,7 @@ export function ImportPDFDialog({
                   />
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-sm">Cliente</Label>
                   <Select value={selectedCliente} onValueChange={setSelectedCliente}>
                     <SelectTrigger>
@@ -631,7 +631,7 @@ export function ImportPDFDialog({
                   </Select>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label className="text-sm">Azienda Fornitrice</Label>
                   <Select value={selectedAzienda} onValueChange={handleAziendaChange}>
                     <SelectTrigger>
@@ -721,7 +721,7 @@ export function ImportPDFDialog({
                             <span className="flex items-center gap-2">
                               {riga.nome_prodotto}
                               {riga.is_omaggio && (
-                                <span className="text-xs uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-success/20 text-success border border-success/40">Omaggio</span>
+                                <span className="text-xs uppercase font-semibold tracking-wider px-2 py-0.5 rounded bg-success/20 text-success border border-success/40">Omaggio</span>
                               )}
                             </span>
                           </TableCell>

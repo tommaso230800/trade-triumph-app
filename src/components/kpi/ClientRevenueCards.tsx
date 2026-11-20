@@ -61,9 +61,9 @@ export function ClientRevenueCards({ clienti, yearPrev, aziendaColorMap, prevByI
                     />
                   ))}
                 </div>
-                <div className="mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1 text-xs text-scatto-muted">
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-scatto-muted">
                   {cliente.perAzienda.map((a) => (
-                    <span key={a.aziendaId} className="inline-flex items-center gap-1.5">
+                    <span key={a.aziendaId} className="inline-flex items-center gap-2">
                       <span
                         className="h-2 w-2 flex-shrink-0 rounded-sm"
                         style={{ backgroundColor: aziendaColorValue(a.aziendaId, aziendaColorMap) }}

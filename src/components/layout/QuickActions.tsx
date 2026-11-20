@@ -55,11 +55,14 @@ export function QuickActions({ compact = false }: { compact?: boolean }) {
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Chiudi azioni rapide" : "Apri azioni rapide"}
         className={cn(
-          compact ? "flex h-11 w-11 flex-col items-center justify-center gap-1 p-0 text-primary" : "flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
+          compact ? "flex h-14 w-14 flex-col items-center justify-center p-0 hover:bg-transparent" : "flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
         )}
       >
-        {open ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
-        {compact && <span className="text-xs">Nuovo</span>}
+        {compact ? (
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            {open ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+          </span>
+        ) : open ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
       </Button>
     </div>
   );

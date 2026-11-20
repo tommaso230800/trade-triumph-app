@@ -236,11 +236,11 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
       <div 
-        className="group rounded-xl bg-card shadow-card transition-all duration-300 hover:shadow-card-hover animate-fade-in overflow-hidden cursor-pointer"
+        className="group rounded-xl border bg-card shadow-card transition-all duration-300 hover:shadow-card-hover animate-fade-in overflow-hidden cursor-pointer"
         onClick={handleCardClick}
       >
         {/* Card Header */}
-        <div className="p-5">
+        <div className="p-4">
           <div className="flex min-w-0 items-start justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               {/* Logo or Initial */}
@@ -251,7 +251,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
                 {azienda.logo_url ? (
                   <img src={azienda.logo_url} alt={azienda.nome} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="gradient-primary w-full h-full flex items-center justify-center text-primary-foreground font-bold text-xl">
+                  <span className="flex h-full w-full items-center justify-center bg-muted font-display text-base font-bold text-muted-foreground">
                     {azienda.nome.charAt(0)}
                   </span>
                 )}

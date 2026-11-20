@@ -285,7 +285,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
 
   return (
     <MainLayout>
-      <div className="-m-4 -mt-6 min-h-[100dvh] bg-scatto-bg p-4 pt-6 lg:-m-8 lg:p-8">
+      <div className="-m-4 -mt-6 min-h-[100dvh] bg-scatto-bg p-4 pt-6 lg:-m-8 lg:p-8 panel:m-0 panel:min-h-0 panel:p-0">
         <div className="space-y-6">
           <PageHeader
             title={title || "Analytics"}
@@ -297,7 +297,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
                     variant="outline"
                     size="sm"
                     onClick={resetFilters}
-                    className="gap-2 rounded-xl border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
+                    className="gap-2 border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
                   >
                     <RotateCcw className="h-4 w-4" />
                     Reset Filtri
@@ -306,7 +306,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2 rounded-xl border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
+                  className="gap-2 border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
                   disabled={!stats}
                   onClick={() => stats && exportKPIToCSV({ ...stats, yoy: yoyValue, yoyPrevFatturato, topGrowers: clientiClassificati.crescita.slice(0, 5), topDecliners: clientiClassificati.calo.slice(0, 5), periodoLabel: getPeriodoLabel() } as any)}
                 >
@@ -332,7 +332,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
               value={periodo}
               onChange={setPeriodo}
               minYear={primoAnno ?? new Date().getFullYear()}
-              className="h-auto w-auto gap-1.5 rounded-full border border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm [&>svg]:text-scatto-muted"
+              className="h-11 w-auto gap-2 rounded-lg border border-scatto-line bg-scatto-surface px-4 text-sm font-medium text-scatto-ink [&>svg]:text-scatto-muted"
             />
 
             <MultiSelect
@@ -340,7 +340,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
               values={selectedClienti}
               onValuesChange={setSelectedClienti}
               placeholder="Tutti i clienti"
-              className="h-auto w-auto min-h-0 rounded-full border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm"
+              className="h-auto min-h-11 w-auto rounded-lg border-scatto-line bg-scatto-surface px-4 text-sm font-medium text-scatto-ink"
             />
             {!lockedAziendaId && (
               <MultiSelect
@@ -348,7 +348,7 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
                 values={selectedAziende}
                 onValuesChange={setSelectedAziende}
                 placeholder="Tutte le aziende"
-                className="h-auto w-auto min-h-0 rounded-full border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm"
+                className="h-auto min-h-11 w-auto rounded-lg border-scatto-line bg-scatto-surface px-4 text-sm font-medium text-scatto-ink"
               />
             )}
             <MultiSelect
@@ -356,14 +356,14 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
               values={selectedBrands}
               onValuesChange={setSelectedBrands}
               placeholder="Tutti i marchi"
-              className="h-auto w-auto min-h-0 rounded-full border-scatto-line bg-scatto-surface px-4 py-2 text-sm font-medium text-scatto-ink shadow-sm"
+              className="h-auto min-h-11 w-auto rounded-lg border-scatto-line bg-scatto-surface px-4 text-sm font-medium text-scatto-ink"
             />
 
 
             {hasActiveFilters && (
               <button
                 onClick={resetFilters}
-                className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-scatto-muted hover:text-scatto-ink"
+                className="flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-scatto-muted hover:text-scatto-ink"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Reset
@@ -599,11 +599,11 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
 
           {/* Detailed Tabs */}
           <Tabs defaultValue="clienti" className="space-y-4">
-            <TabsList className="grid h-auto w-full max-w-lg grid-cols-4 rounded-xl border border-scatto-line bg-scatto-surface p-1">
-              <TabsTrigger value="clienti" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Clienti</TabsTrigger>
-              <TabsTrigger value="aziende" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Aziende</TabsTrigger>
-              <TabsTrigger value="brands" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Marchi</TabsTrigger>
-              <TabsTrigger value="prodotti" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Prodotti</TabsTrigger>
+            <TabsList className="grid h-11 w-full max-w-lg grid-cols-4 rounded-lg border border-scatto-line bg-scatto-surface p-1">
+              <TabsTrigger value="clienti" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Clienti</TabsTrigger>
+              <TabsTrigger value="aziende" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Aziende</TabsTrigger>
+              <TabsTrigger value="brands" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Marchi</TabsTrigger>
+              <TabsTrigger value="prodotti" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Prodotti</TabsTrigger>
             </TabsList>
 
             {/* Clienti Tab */}

@@ -17,9 +17,9 @@ interface ActivePromosSectionProps {
 }
 
 const tipoConfig = {
-  sconto_percentuale: { label: "Sconto", icon: Percent, color: "from-blue-500 to-blue-600" },
-  prezzo_fisso: { label: "Prezzo Fisso", icon: Tag, color: "from-green-500 to-green-600" },
-  premio_fine_anno: { label: "Premio", icon: Trophy, color: "from-amber-500 to-amber-600" },
+  sconto_percentuale: { label: "Sconto", icon: Percent },
+  prezzo_fisso: { label: "Prezzo Fisso", icon: Tag },
+  premio_fine_anno: { label: "Premio", icon: Trophy },
 };
 
 const formatCurrency = (value: number) => 
@@ -64,7 +64,7 @@ export function ActivePromosSection({ promos, onViewDetail }: ActivePromosSectio
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-primary" />
+              <Zap className="h-4 w-4 text-muted-foreground" />
               Promozioni Attive
             </CardTitle>
             <CardDescription>

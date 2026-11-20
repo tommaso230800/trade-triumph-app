@@ -25,13 +25,13 @@ const statusTone: Record<Ordine["status"], string> = {
 export function OrderStatusPill({ ordine }: { ordine: Ordine }) {
   if (ordine.verificato_conferma) {
     return (
-      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-scatto-success/15 px-2.5 py-1 text-xs font-semibold text-scatto-success">
+      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-scatto-success/15 px-2 py-1 text-xs font-semibold text-scatto-success">
         <CheckCircle2 className="h-3.5 w-3.5" /> Verificato
       </span>
     );
   }
   return (
-    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[ordine.status]}`}>
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 text-xs font-semibold ${statusTone[ordine.status]}`}>
       {scattoStatusBadge[ordine.status].label}
     </span>
   );
@@ -108,7 +108,7 @@ export function OrdiniTable({ rows, selectionMode, selectedIds, onToggleSelect }
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-9 w-9 shrink-0 rounded-lg border-scatto-line bg-transparent p-0 text-scatto-ink hover:bg-scatto-bg"
+                        className="h-11 w-11 shrink-0 rounded-lg border-scatto-line bg-transparent p-0 text-scatto-ink hover:bg-scatto-bg"
                         title={primaryAction.label}
                         aria-label={primaryAction.label}
                         onClick={primaryAction.onClick}
@@ -119,7 +119,7 @@ export function OrdiniTable({ rows, selectionMode, selectedIds, onToggleSelect }
                     )}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-9 w-9 text-scatto-muted hover:bg-scatto-bg hover:text-scatto-ink" aria-label="Altre azioni">
+                        <Button variant="ghost" size="icon" className="h-11 w-11 text-scatto-muted hover:bg-scatto-bg hover:text-scatto-ink" aria-label="Altre azioni">
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>

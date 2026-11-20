@@ -180,14 +180,14 @@ export function PairDetailDialog({ pair, onClose, onOrdina, prodottiNomi }: Prop
                 {pair.priorita}
               </Badge>
             </p>
-            <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-muted-foreground">
+            <ul className="mt-2 list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
               {pair.priorita_motivi.map((m, i) => <li key={i}>{m}</li>)}
             </ul>
           </div>
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-2 border-t border-border px-4 py-3 sm:px-6">
-          <Button size="sm" className="gap-1.5" onClick={() => onOrdina(pair)}>
+          <Button size="sm" className="gap-2" onClick={() => onOrdina(pair)}>
             <ShoppingCart className="h-3.5 w-3.5" /> Crea ordine
           </Button>
           <Button asChild size="sm" variant="outline">

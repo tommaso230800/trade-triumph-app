@@ -70,7 +70,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         <button
           type="button"
           onClick={() => navigate(authRedirect())}
-          className="min-h-11 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground"
+          className="min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
         >
           Accedi
         </button>
@@ -82,10 +82,10 @@ export function MainLayout({ children }: MainLayoutProps) {
     <div className="relative min-h-screen min-h-[100dvh] bg-background safe-top overflow-hidden">
       <Sidebar mobileOpen={mobileMenuOpen} onMobileOpenChange={setMobileMenuOpen} />
       <main
-        className="lg:pl-80 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden text-foreground"
+        className="lg:pl-80 lg:panel:pl-72 min-h-screen min-h-[100dvh] overflow-y-auto overflow-x-hidden text-foreground"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        <div className="crm-page min-w-0 p-4 pt-6 pb-24 lg:pt-6 lg:p-8 lg:pb-8"><div className="mb-6 flex items-center gap-2"><div className="min-w-0 flex-1 lg:flex-none"><InternalSearch /></div><NotificationBell className="lg:ml-auto" /></div>{children}</div>
+        <div className="crm-page min-w-0 p-4 pt-6 pb-24 lg:pt-6 lg:p-8 lg:pb-8 panel:mx-auto panel:max-w-screen-2xl panel:md:p-6 panel:md:pb-28 panel:lg:p-8 panel:lg:pt-4"><div className="mb-6 flex items-center gap-2"><div className="min-w-0 flex-1 lg:flex-none"><InternalSearch /></div><NotificationBell className="lg:ml-auto" /></div>{children}</div>
       </main>
       <div className="hidden lg:block"><QuickActions /></div>
       <BottomNav

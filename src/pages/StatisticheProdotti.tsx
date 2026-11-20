@@ -121,20 +121,20 @@ export default function StatisticheProdotti() {
         />
 
         {/* Filtri: richiudibili su telefono, sempre aperti da tablet in su */}
-        <section className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
+        <section className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-card sm:p-6">
           <button type="button" className="flex min-h-11 w-full items-center justify-between text-left text-sm font-semibold sm:hidden" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((o) => !o)}>
             <span>Filtri{activeFilterCount > 0 ? ` · ${activeFilterCount} attivi` : ""}</span>
             <span className="text-xs font-normal text-muted-foreground">{filtersOpen ? "Chiudi" : "Modifica"}</span>
           </button>
           <div className={`${filtersOpen ? "grid" : "hidden"} gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-4`}>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Anno</Label>
               <Select value={String(f.year)} onValueChange={(v) => set({ year: Number(v), compareYear: f.compareYear === "none" ? "none" : defaultCompareYear(Number(v)) })}>
                 <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                 <SelectContent>{yearOptions.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Periodo</Label>
               <Select value={f.mode} onValueChange={(v) => set({ mode: v as PeriodMode })}>
                 <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
@@ -147,7 +147,7 @@ export default function StatisticheProdotti() {
               </Select>
             </div>
             {f.mode === "month" && (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Mese</Label>
                 <Select value={String(f.month)} onValueChange={(v) => set({ month: Number(v) })}>
                   <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
@@ -157,11 +157,11 @@ export default function StatisticheProdotti() {
             )}
             {f.mode === "custom" && (
               <div className="grid grid-cols-2 gap-2 sm:col-span-2">
-                <div className="min-w-0 space-y-1.5"><Label className="text-xs text-muted-foreground">Dal</Label><Input type="date" className="h-11 min-w-0" value={f.from} onChange={(e) => e.target.value && set({ from: e.target.value })} /></div>
-                <div className="min-w-0 space-y-1.5"><Label className="text-xs text-muted-foreground">Al</Label><Input type="date" className="h-11 min-w-0" value={f.to} min={f.from} onChange={(e) => e.target.value && set({ to: e.target.value })} /></div>
+                <div className="min-w-0 space-y-2"><Label className="text-xs text-muted-foreground">Dal</Label><Input type="date" className="h-11 min-w-0" value={f.from} onChange={(e) => e.target.value && set({ from: e.target.value })} /></div>
+                <div className="min-w-0 space-y-2"><Label className="text-xs text-muted-foreground">Al</Label><Input type="date" className="h-11 min-w-0" value={f.to} min={f.from} onChange={(e) => e.target.value && set({ to: e.target.value })} /></div>
               </div>
             )}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Confronta con</Label>
               <Select value={String(f.compareYear)} onValueChange={(v) => set({ compareYear: v === "none" ? "none" : Number(v) })}>
                 <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
@@ -173,22 +173,22 @@ export default function StatisticheProdotti() {
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Azienda</Label>
               <SearchableSelect value={f.azienda || "__all"} onValueChange={(v) => set({ azienda: v === "__all" ? "" : v, prodotto: "" })} placeholder="Tutte le aziende" searchPlaceholder="Cerca azienda…"
                 options={[{ value: "__all", label: "Tutte le aziende" }, ...(aziende ?? []).map((a) => ({ value: a.id, label: a.nome }))]} />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Cliente</Label>
               <SearchableSelect value={f.cliente || "__all"} onValueChange={(v) => set({ cliente: v === "__all" ? "" : v })} placeholder="Tutti i clienti" searchPlaceholder="Cerca cliente…"
                 options={[{ value: "__all", label: "Tutti i clienti" }, ...(clienti ?? []).map((c) => ({ value: c.id, label: c.nome }))]} />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Prodotto</Label>
               <SearchableSelect value={f.prodotto || "__all"} onValueChange={(v) => set({ prodotto: v === "__all" ? "" : v })} placeholder="Tutti i prodotti" searchPlaceholder="Cerca prodotto…"
                 options={[{ value: "__all", label: "Tutti i prodotti" }, ...(catalogo ?? []).map((p) => ({ value: p.id, label: p.nome, searchTerms: [p.codice ?? ""] }))]} />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">Ordina per</Label>
               <Select value={`${f.sort}:${f.dir}`} onValueChange={(v) => { const [s, d] = v.split(":"); set({ sort: s as SortKey, dir: d as "asc" | "desc" }); }}>
                 <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
@@ -207,7 +207,7 @@ export default function StatisticheProdotti() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input value={search} onChange={(e) => { setSearch(e.target.value); setVisible(PAGE); }} placeholder="Cerca per nome o codice" className="h-11 pl-9 text-base sm:text-sm" />
             </div>
-            <label className="flex min-h-[44px] items-center gap-3 text-sm">
+            <label className="flex min-h-11 items-center gap-3 text-sm">
               <Switch checked={f.includeUnsold} onCheckedChange={(v) => set({ includeUnsold: v })} />
               Includi prodotti senza vendite
             </label>
@@ -226,9 +226,9 @@ export default function StatisticheProdotti() {
             { label: "Pezzi venduti", value: num(sum.pezzi), v: variation(sum.pezzi, prevSum.pezzi, previousAvailable) },
             { label: "Prodotti venduti", value: num(sum.venduti), v: null },
           ].map((k) => (
-            <div key={k.label} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div key={k.label} className="rounded-xl border border-border bg-card p-4 shadow-card">
               <p className="text-xs text-muted-foreground">{k.label}</p>
-              {loading ? <Skeleton className="mt-2 h-8 w-24" /> : <p className="mt-1 font-display text-2xl font-bold tabular-nums tracking-tight sm:text-3xl">{k.value}</p>}
+              {loading ? <Skeleton className="mt-2 h-8 w-24" /> : <p className="mt-1 font-display text-2xl font-bold tabular-nums tracking-tight">{k.value}</p>}
               {k.v && prevRange && !loading && <div className="mt-1"><VarBadge v={k.v} money={k.money} /></div>}
             </div>
           ))}
@@ -278,7 +278,7 @@ export default function StatisticheProdotti() {
         ) : (
           <>
             {/* Desktop */}
-            <div className="hidden overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:block">
+            <div className="hidden overflow-hidden rounded-xl border border-border bg-card shadow-card lg:block">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-xs text-muted-foreground">
                   <tr>
@@ -322,7 +322,7 @@ export default function StatisticheProdotti() {
         )}
 
         <Collapsible className="rounded-xl border border-border bg-card p-4 text-sm">
-          <CollapsibleTrigger className="flex min-h-[44px] w-full items-center gap-2 text-left font-semibold"><Info className="h-4 w-4 text-info" /> Come sono calcolati questi numeri</CollapsibleTrigger>
+          <CollapsibleTrigger className="flex min-h-11 w-full items-center gap-2 text-left font-semibold"><Info className="h-4 w-4 text-info" /> Come sono calcolati questi numeri</CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 pt-2 text-muted-foreground">
             <p><strong className="text-foreground">Valore ordini</strong>: è il valore da ordini (non da fatture), al netto dell’IVA. Il totale di ogni ordine è ripartito sulle sue righe in proporzione al valore netto della riga dopo gli sconti a cascata; così la somma per prodotto coincide con il totale degli ordini che hanno il dettaglio prodotto.</p>
             <p><strong className="text-foreground">Ordini inclusi</strong>: tutti tranne annullati e in stand-by. Un ordine in stand-by viene conteggiato quando viene reso disponibile. La data usata è la data dell’ordine.</p>
@@ -357,7 +357,7 @@ function DesktopRow({ r, previousAvailable }: { r: MergedProductRow; previousAva
 function MobileRow({ r, previousAvailable }: { r: MergedProductRow; previousAvailable: boolean }) {
   const [open, setOpen] = useState(false);
   return (
-    <button type="button" onClick={() => setOpen((o) => !o)} className="w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm">
+    <button type="button" onClick={() => setOpen((o) => !o)} className="w-full rounded-xl border border-border bg-card p-4 text-left shadow-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-medium leading-snug">{r.nome ?? "Prodotto non più in catalogo"}</p>

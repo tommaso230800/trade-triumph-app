@@ -47,10 +47,10 @@ export function ClientStatusBadge({
     <Badge
       variant="outline"
       className={cn(
-        "gap-1.5",
+        "gap-2",
         config.bgClass,
         size === "sm" && "text-xs py-0.5 px-2",
-        size === "lg" && "text-sm py-1.5 px-3"
+        size === "lg" && "text-sm py-2 px-3"
       )}
     >
       {showIcon && (

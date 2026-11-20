@@ -113,7 +113,7 @@ export function SalesOverviewPanel({
           {/* Legenda fornitori */}
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
             {top.map((a) => (
-              <span key={a.id} className="flex items-center gap-1.5 text-xs text-scatto-muted">
+              <span key={a.id} className="flex items-center gap-2 text-xs text-scatto-muted">
                 <span
                   className="h-2.5 w-2.5 rounded-sm"
                   style={{ backgroundColor: aziendaColorValue(a.id, colorMap) }}
@@ -122,7 +122,7 @@ export function SalesOverviewPanel({
               </span>
             ))}
             {hasAltri && (
-              <span className="flex items-center gap-1.5 text-xs text-scatto-muted">
+              <span className="flex items-center gap-2 text-xs text-scatto-muted">
                 <span className="h-2.5 w-2.5 rounded-sm bg-scatto-muted/40" />
                 Altri
               </span>
@@ -190,7 +190,7 @@ export function SalesOverviewPanel({
           </h2>
 
           <div className="rounded-xl border border-scatto-line bg-scatto-bg/60 p-4 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-scatto-muted">
+            <p className="text-xs font-semibold uppercase tracking-wider text-scatto-muted">
               Fatturato totale
             </p>
             <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
@@ -204,7 +204,7 @@ export function SalesOverviewPanel({
               const quota = totaleRipartizione > 0 ? (a.fatturato_totale / totaleRipartizione) * 100 : 0;
               const color = aziendaColorValue(a.id, colorMap);
               return (
-                <div key={a.id} className="space-y-1.5">
+                <div key={a.id} className="space-y-2">
                   <div className="flex items-center gap-2">
                     <span className="h-3 w-1 rounded-full" style={{ backgroundColor: color }} />
                     <span className="min-w-0 flex-1 break-words text-xs font-medium text-scatto-ink">{a.nome}</span>

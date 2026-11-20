@@ -44,10 +44,10 @@ export function CompanyEmailContacts({ aziendaId }: { aziendaId: string }) {
   };
 
   return (
-    <section className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
+    <section className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-card sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-base font-semibold"><Mail className="h-4 w-4 text-primary" /> Contatti email</h2>
+          <h2 className="flex items-center gap-2 text-base font-semibold"><Mail className="h-4 w-4 text-muted-foreground" /> Contatti email</h2>
           <p className="text-xs text-muted-foreground">Destinatari per l’invio degli ordini, condivisi con tutto il team</p>
         </div>
         <Button className="h-11 shrink-0 gap-2" onClick={() => open()}><Plus className="h-4 w-4" /> Aggiungi</Button>
@@ -85,10 +85,10 @@ export function CompanyEmailContacts({ aziendaId }: { aziendaId: string }) {
           </DialogHeader>
           {draft && (
             <form onSubmit={submit} className="space-y-3">
-              <div className="space-y-1.5"><Label htmlFor="ct-nome">Nome o descrizione</Label><Input id="ct-nome" className="h-12 text-base" value={draft.nome} onChange={(e) => setDraft({ ...draft, nome: e.target.value })} placeholder="Es. Ufficio ordini" /></div>
-              <div className="space-y-1.5"><Label htmlFor="ct-email">Indirizzo email</Label><Input id="ct-email" type="email" inputMode="email" autoCapitalize="none" className="h-12 text-base" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="ordini@azienda.it" /></div>
-              <div className="space-y-1.5"><Label htmlFor="ct-ruolo">Ruolo o ufficio (facoltativo)</Label><Input id="ct-ruolo" className="h-12 text-base" value={draft.ruolo} onChange={(e) => setDraft({ ...draft, ruolo: e.target.value })} /></div>
-              <div className="space-y-1.5">
+              <div className="space-y-2"><Label htmlFor="ct-nome">Nome o descrizione</Label><Input id="ct-nome" className="h-12 text-base" value={draft.nome} onChange={(e) => setDraft({ ...draft, nome: e.target.value })} placeholder="Es. Ufficio ordini" /></div>
+              <div className="space-y-2"><Label htmlFor="ct-email">Indirizzo email</Label><Input id="ct-email" type="email" inputMode="email" autoCapitalize="none" className="h-12 text-base" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="ordini@azienda.it" /></div>
+              <div className="space-y-2"><Label htmlFor="ct-ruolo">Ruolo o ufficio (facoltativo)</Label><Input id="ct-ruolo" className="h-12 text-base" value={draft.ruolo} onChange={(e) => setDraft({ ...draft, ruolo: e.target.value })} /></div>
+              <div className="space-y-2">
                 <Label>Negli ordini</Label>
                 <RadioGroup value={draft.ruoloInvio} onValueChange={(v) => setDraft({ ...draft, ruoloInvio: v as Draft["ruoloInvio"] })} className="grid gap-1">
                   {([["to", "Destinatario predefinito A"], ["cc", "Destinatario predefinito CC"], ["none", "Solo suggerimento"]] as const).map(([v, l]) => (

@@ -230,7 +230,7 @@ export default function PromemoriaPage() {
       <div className="mx-auto max-w-3xl space-y-6 pb-16 lg:pb-0">
         <header className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold">Promemoria</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">Promemoria</h1>
             <p className="text-sm text-muted-foreground tabular-nums">
               {isLoading
                 ? " "

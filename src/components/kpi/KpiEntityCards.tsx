@@ -35,7 +35,7 @@ export function KpiEntityCards({ items, emptyLabel }: KpiEntityCardsProps) {
             </p>
           </div>
           {item.facts.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-scatto-muted">
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-scatto-muted">
               {item.facts.map((fact, i) => (
                 <span key={i}>{fact}</span>
               ))}

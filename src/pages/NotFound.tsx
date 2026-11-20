@@ -14,7 +14,7 @@ const NotFound = () => {
     <div className="flex min-h-[100dvh] items-center justify-center bg-background p-6">
       <div className="max-w-sm space-y-3 text-center">
         <Compass className="mx-auto h-6 w-6 text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Pagina non trovata</h1>
+        <h1 className="font-display text-2xl font-bold tracking-tight">Pagina non trovata</h1>
         <p className="text-sm text-muted-foreground">
           Il collegamento potrebbe essere vecchio o la pagina è stata spostata.
         </p>

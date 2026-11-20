@@ -59,18 +59,18 @@ export function VisitsSection({ clienteId }: Props) {
           <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Report visite ({reports.length})</h4>
           {reports.map((r) => (
             <Card key={r.id}>
-              <CardContent className="p-3 space-y-1.5">
+              <CardContent className="p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="font-medium text-sm">{new Date(r.data_visita).toLocaleDateString("it-IT")}{r.esito && ` · ${r.esito}`}</div>
                   <div className="flex gap-1">
-                    {r.ordine_preso && <Badge className="bg-success/10 text-success border-success/30">Ordine €{Number(r.valore_ordine).toFixed(2)}</Badge>}
+                    {r.ordine_preso && <Badge className="bg-success/10 text-success border-success/30">Ordine {Number(r.valore_ordine).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</Badge>}
                     {r.interesse_cliente && <Badge variant="outline">{r.interesse_cliente}</Badge>}
                   </div>
                 </div>
                 {r.prossima_azione && <div className="text-xs"><strong>Prossima azione:</strong> {r.prossima_azione}{r.data_follow_up && ` (entro ${new Date(r.data_follow_up).toLocaleDateString("it-IT")})`}</div>}
                 {r.obiezioni && <div className="text-xs text-muted-foreground"><strong>Obiezioni:</strong> {r.obiezioni}</div>}
                 {Array.isArray(r.concorrenza_rilevata) && r.concorrenza_rilevata.length > 0 && (
-                  <div className="text-xs"><strong>Concorrenza:</strong> {r.concorrenza_rilevata.map((c: any) => `${c.nome}${c.prezzo_acquisto ? ` €${c.prezzo_acquisto}` : ""}`).join(", ")}</div>
+                  <div className="text-xs"><strong>Concorrenza:</strong> {r.concorrenza_rilevata.map((c: any) => `${c.nome}${c.prezzo_acquisto ? ` ${c.prezzo_acquisto} €` : ""}`).join(", ")}</div>
                 )}
                 {r.note && <div className="text-xs text-muted-foreground italic">{r.note}</div>}
               </CardContent>

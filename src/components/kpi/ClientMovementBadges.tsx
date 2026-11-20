@@ -15,7 +15,7 @@ export function ClientMovementBadges({ crescita, stabili, calo }: ClientMovement
 
   return (
     <SectionCard title="Movimento clienti · vs anno precedente">
-      <div className="flex gap-2.5">
+      <div className="flex gap-2">
         {items.map((it) => (
           <div key={it.label} className={`flex-1 rounded-xl py-3 text-center ${it.className}`}>
             <p className="font-display text-2xl font-bold tabular-nums">{it.n}</p>
