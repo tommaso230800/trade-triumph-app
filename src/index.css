@@ -4,53 +4,55 @@
 
 @layer base {
   :root {
-    /* ===== Vibrant Workspace – chiaro leggibile con sidebar dark ===== */
-    --background: 210 33% 96%;
-    --foreground: 222 36% 14%;
+    color-scheme: dark;
+    /* ===== Tema scuro (predefinito): grafite fredda, un solo accento blu.
+       Il tema chiaro è in .light più sotto. ===== */
+    --background: 220 16% 8%;
+    --foreground: 210 20% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 34% 15%;
+    --card: 220 14% 12%;
+    --card-foreground: 210 20% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 34% 14%;
+    --popover: 220 14% 15%;
+    --popover-foreground: 210 20% 95%;
 
     /* Blu elettrico primario */
-    --primary: 221 83% 53%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 220 100% 75%;
 
-    --secondary: 216 30% 92%;
-    --secondary-foreground: 222 28% 18%;
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 210 20% 92%;
 
-    --muted: 216 28% 94%;
-    --muted-foreground: 222 16% 34%;
+    --muted: 220 13% 16%;
+    --muted-foreground: 218 12% 66%;
 
     /* Accent: verde acido */
-    --accent: 152 75% 50%;
-    --accent-foreground: 152 100% 10%;
+    --accent: 220 13% 20%;
+    --accent-foreground: 210 20% 96%;
 
     /* Rosso */
-    --destructive: 0 72% 50%;
+    --destructive: 0 78% 63%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 22% 86%;
-    --input: 220 22% 80%;
-    --ring: 221 83% 53%;
+    --border: 220 12% 19%;
+    --input: 220 12% 24%;
+    --ring: 217 91% 60%;
 
-    /* rounded-lg = 8px (campi, pulsanti), rounded-xl = 12px (card): vedi CLAUDE.md */
-    --radius: 0.5rem;
+    /* rounded-lg = 12px (campi, pulsanti), rounded-xl = 20px (card): vedi CLAUDE.md */
+    --radius: 0.75rem;
 
     /* Status */
-    --success: 152 76% 30%;
-    --success-foreground: 0 0% 100%;
-    --warning: 32 95% 40%;
+    --success: 152 58% 48%;
+    --success-foreground: 152 80% 8%;
+    --warning: 38 92% 56%;
     --warning-foreground: 30 80% 8%;
-    --danger: 0 72% 50%;
+    --danger: 0 78% 63%;
     --danger-foreground: 0 0% 100%;
-    --info: 221 83% 53%;
+    --info: 217 91% 60%;
     --info-foreground: 0 0% 100%;
-    --commission-unpaid: 28 92% 48%;
-    --commission-contested: 280 65% 52%;
+    --commission-unpaid: 28 92% 60%;
+    --commission-contested: 280 70% 70%;
 
     /* Brand multi accent */
     --accent-blue: 221 83% 53%;
@@ -122,29 +124,28 @@
     --scatto-info: var(--info);
     --scatto-violet: var(--info);
 
-    /* Modulo ordine — direzione "Carta tecnica". Ambito locale ai componenti
-       di creazione ordine: carta calda, grafite e blu operativo. */
-    --order-paper: 43 26% 95%;
-    --order-paper-deep: 41 20% 89%;
-    --order-ink: 0 0% 18%;
-    --order-blue: 217 91% 53%;
-    --order-surface: 0 0% 100%;
-    --order-line: 38 12% 82%;
-    --order-muted: 30 5% 44%;
+    /* Modulo ordine: superfici allineate al tema (scuro qui, chiaro in .light). */
+    --order-paper: 220 14% 12%;
+    --order-paper-deep: 220 13% 16%;
+    --order-ink: 210 20% 95%;
+    --order-blue: 217 91% 60%;
+    --order-surface: 220 14% 15%;
+    --order-line: 220 12% 21%;
+    --order-muted: 218 12% 66%;
 
     /* Sidebar */
-    --sidebar-background: 210 20% 97%;
-    --sidebar-foreground: 222 20% 14%;
-    --sidebar-primary: 217 78% 38%;
+    --sidebar-background: 220 14% 12%;
+    --sidebar-foreground: 210 20% 92%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 214 26% 90%;
-    --sidebar-accent-foreground: 222 20% 14%;
-    --sidebar-border: 214 16% 82%;
-    --sidebar-ring: 217 78% 38%;
-    --sidebar-rail-background: 214 18% 91%;
-    --sidebar-rail-foreground: 222 20% 25%;
-    --sidebar-item-foreground: 222 20% 21%;
-    --sidebar-item-icon: 217 16% 35%;
+    --sidebar-accent: 220 13% 18%;
+    --sidebar-accent-foreground: 210 20% 96%;
+    --sidebar-border: 220 12% 18%;
+    --sidebar-ring: 217 91% 60%;
+    --sidebar-rail-background: 220 16% 10%;
+    --sidebar-rail-foreground: 218 12% 72%;
+    --sidebar-item-foreground: 218 14% 78%;
+    --sidebar-item-icon: 218 12% 62%;
 
     /* Gradients */
     /* Gradients — neutralizzati: niente sfumature decorative (vedi CLAUDE.md).
@@ -164,15 +165,17 @@
     --shadow-lg: 0 18px 42px -14px hsl(220 22% 20% / 0.2);
     --shadow-xl: 0 28px 56px -18px hsl(220 22% 18% / 0.24);
     /* Un solo livello di ombra leggera; niente glow colorati. */
-    --shadow-card: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
-    --shadow-card-hover: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
-    --shadow-glow: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-card: 0 1px 2px 0 hsl(220 40% 2% / 0.45);
+    --shadow-card-hover: 0 1px 2px 0 hsl(220 40% 2% / 0.45);
+    --shadow-glow: 0 1px 2px 0 hsl(220 40% 2% / 0.45);
     --shadow-glow-green: none;
     --shadow-glow-red: none;
     --shadow-glow-yellow: none;
   }
 
-  .dark {
+  /* Tema chiaro (scelta in Impostazioni) e documenti da stampare/proforma:
+     la classe .light riporta tutti i token alla palette chiara. */
+  .light {
     --background: 210 33% 96%;
     --foreground: 222 36% 14%;
     --card: 0 0% 100%;
@@ -192,8 +195,40 @@
     --border: 220 22% 86%;
     --input: 220 22% 80%;
     --ring: 221 83% 53%;
+    --success: 152 76% 30%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 40%;
+    --warning-foreground: 30 80% 8%;
+    --danger: 0 72% 50%;
+    --danger-foreground: 0 0% 100%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
     --commission-unpaid: 28 92% 48%;
     --commission-contested: 280 65% 52%;
+    --order-paper: 43 26% 95%;
+    --order-paper-deep: 41 20% 89%;
+    --order-ink: 0 0% 18%;
+    --order-blue: 217 91% 53%;
+    --order-surface: 0 0% 100%;
+    --order-line: 38 12% 82%;
+    --order-muted: 30 5% 44%;
+    --sidebar-background: 210 20% 97%;
+    --sidebar-foreground: 222 20% 14%;
+    --sidebar-primary: 217 78% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 26% 90%;
+    --sidebar-accent-foreground: 222 20% 14%;
+    --sidebar-border: 214 16% 82%;
+    --sidebar-ring: 217 78% 38%;
+    --sidebar-rail-background: 214 18% 91%;
+    --sidebar-rail-foreground: 222 20% 25%;
+    --sidebar-item-foreground: 222 20% 21%;
+    --sidebar-item-icon: 217 16% 35%;
+    --shadow-card: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-card-hover: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-glow: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --radius: 0.75rem;
+    color-scheme: light;
   }
 }
 
@@ -428,6 +463,14 @@
     @apply font-display text-3xl font-bold tracking-tight tabular-nums;
   }
 
+  /* Chip di filtro a pillola (periodo, stato…): neutre, accento solo sulla
+     selezione. Usare aria-pressed="true" sulla chip attiva. */
+  .chip {
+    @apply inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent bg-secondary px-3 text-xs sm:px-4 font-semibold text-muted-foreground transition-colors duration-150;
+  }
+  .chip:hover { @apply text-foreground; }
+  .chip[aria-pressed="true"] { @apply border-primary/60 bg-primary/10 text-primary; }
+
   .btn-gold {
     background: var(--gradient-primary);
     color: hsl(0 0% 100%);
@@ -449,6 +492,60 @@
 }
 
 @media print {
+  :root {
+    --background: 210 33% 96%;
+    --foreground: 222 36% 14%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 34% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 34% 14%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 216 30% 92%;
+    --secondary-foreground: 222 28% 18%;
+    --muted: 216 28% 94%;
+    --muted-foreground: 222 16% 34%;
+    --accent: 152 75% 50%;
+    --accent-foreground: 152 100% 10%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 22% 86%;
+    --input: 220 22% 80%;
+    --ring: 221 83% 53%;
+    --success: 152 76% 30%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 95% 40%;
+    --warning-foreground: 30 80% 8%;
+    --danger: 0 72% 50%;
+    --danger-foreground: 0 0% 100%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
+    --commission-unpaid: 28 92% 48%;
+    --commission-contested: 280 65% 52%;
+    --order-paper: 43 26% 95%;
+    --order-paper-deep: 41 20% 89%;
+    --order-ink: 0 0% 18%;
+    --order-blue: 217 91% 53%;
+    --order-surface: 0 0% 100%;
+    --order-line: 38 12% 82%;
+    --order-muted: 30 5% 44%;
+    --sidebar-background: 210 20% 97%;
+    --sidebar-foreground: 222 20% 14%;
+    --sidebar-primary: 217 78% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 26% 90%;
+    --sidebar-accent-foreground: 222 20% 14%;
+    --sidebar-border: 214 16% 82%;
+    --sidebar-ring: 217 78% 38%;
+    --sidebar-rail-background: 214 18% 91%;
+    --sidebar-rail-foreground: 222 20% 25%;
+    --sidebar-item-foreground: 222 20% 21%;
+    --sidebar-item-icon: 217 16% 35%;
+    --shadow-card: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-card-hover: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --shadow-glow: 0 1px 3px 0 hsl(220 30% 20% / 0.08);
+    --radius: 0.75rem;
+  }
   body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .print\:hidden { display: none !important; }
   [role="dialog"] {
@@ -461,6 +558,17 @@
   table { page-break-inside: auto; }
   tr { page-break-inside: avoid; page-break-after: auto; }
 }
+
+/* Tooltip e assi Recharts: i default sono pensati per sfondo bianco. */
+.recharts-default-tooltip {
+  background-color: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 12px;
+  color: hsl(var(--popover-foreground));
+}
+.recharts-cartesian-axis-tick-value { fill: hsl(var(--muted-foreground)); }
+.recharts-cartesian-grid line { stroke: hsl(var(--border)); }
+.recharts-legend-item-text { color: hsl(var(--muted-foreground)) !important; }
 
 /* Every CRM table becomes labelled compact rows on phones, including audit tables. */
 .crm-page { width: 100%; }

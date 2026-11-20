@@ -399,12 +399,12 @@ const Index = () => {
 
   return (
     <MainLayout>
-      <div className="-m-4 -mt-6 min-h-[100dvh] bg-scatto-bg p-4 pt-6 text-scatto-ink lg:-m-8 lg:p-8">
+      <div className="text-scatto-ink">
         <div className="mx-auto max-w-[1400px] space-y-6">
           {/* 1 — HEADER */}
           <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-scatto-surface p-2 shadow-card">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-1 lg:hidden">
                 <img src={agencyLogo} alt="Logo Mazzi Group" className="h-full w-full object-contain" />
               </div>
               <div className="min-w-0">
@@ -423,16 +423,14 @@ const Index = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex flex-1 rounded-lg bg-muted p-1 sm:flex-initial">
+              <div className="flex flex-1 gap-2 sm:flex-initial">
                 {(Object.keys(periodLabels) as Period[]).map((p) => (
                   <button
                     key={p}
+                    type="button"
                     onClick={() => setPeriod(p)}
-                    className={`min-h-11 flex-1 rounded-md px-3 text-xs font-semibold transition-colors sm:flex-initial ${
-                      period === p
-                        ? "bg-card text-foreground shadow-card"
-                        : "text-scatto-muted hover:text-scatto-ink"
-                    }`}
+                    aria-pressed={period === p}
+                    className="chip flex-1 sm:flex-initial"
                   >
                     {periodLabels[p]}
                   </button>
@@ -440,10 +438,10 @@ const Index = () => {
               </div>
               <button
                 onClick={handleExport}
-                className="flex min-h-11 items-center gap-2 rounded-lg border border-scatto-line bg-scatto-surface px-4 text-xs font-semibold text-scatto-ink transition-colors hover:bg-secondary"
+                className="chip" aria-label="Esporta CSV"
               >
                 <Download className="h-4 w-4" />
-                Esporta
+                <span className="hidden sm:inline">Esporta</span>
               </button>
             </div>
           </header>
@@ -511,11 +509,14 @@ const Index = () => {
                   </span>
                 </div>
 
-                <svg viewBox="0 0 300 56" preserveAspectRatio="none" className="h-14 w-full" aria-hidden="true">
+                <svg viewBox="0 0 300 56" preserveAspectRatio="none" className="h-20 w-full" aria-hidden="true">
+                  {sparkPath && (
+                    <path d={`${sparkPath} L297 56 L3 56 Z`} fill="hsl(var(--scatto-accent) / 0.18)" stroke="none" />
+                  )}
                   <path
                     d={sparkPath}
                     fill="none"
-                    stroke="hsl(var(--scatto-ink))"
+                    stroke="hsl(var(--scatto-accent))"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -532,9 +533,9 @@ const Index = () => {
                         {Math.round(Math.min((obiettivoMensile.fatturatoMese / obiettivoMensile.obiettivo) * 100, 100))}%
                       </span>
                     </div>
-                    <div className="my-3 h-2 w-full overflow-hidden rounded-full bg-scatto-ink/5">
+                    <div className="my-3 h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className="h-full rounded-full bg-scatto-ink"
+                        className="h-full rounded-full bg-primary"
                         style={{
                           width: `${Math.min((obiettivoMensile.fatturatoMese / obiettivoMensile.obiettivo) * 100, 100)}%`,
                         }}

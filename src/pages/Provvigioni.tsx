@@ -358,7 +358,7 @@ const Provvigioni = () => {
         </div>
 
         {/* STICKY FILTER BAR */}
-        <div className="border-b border-scatto-line pb-4 lg:sticky lg:top-0 lg:z-20 lg:-mx-8 lg:bg-scatto-bg/95 lg:px-8 lg:py-3 lg:backdrop-blur">
+        <div className="border-b border-scatto-line pb-4 lg:sticky lg:top-0 lg:z-20 lg:bg-scatto-bg/95 lg:py-3 lg:backdrop-blur">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 min-w-0 flex-1 basis-full sm:basis-56">
               <Building2 className="h-4 w-4 text-scatto-muted shrink-0" />
@@ -417,11 +417,11 @@ const Provvigioni = () => {
             )}
           </header>
           <div className="grid grid-cols-2 divide-x divide-y divide-scatto-line md:grid-cols-5 md:divide-y-0">
-            <EconomicoCell label="Oggi" value={analytics.contoEconomico.guadagnoOggi} accent="text-scatto-success" />
-            <EconomicoCell label="Questo mese" value={analytics.contoEconomico.guadagnoMese} accent="text-scatto-accent" big />
+            <EconomicoCell label="Oggi" value={analytics.contoEconomico.guadagnoOggi} />
+            <EconomicoCell label="Questo mese" value={analytics.contoEconomico.guadagnoMese} big />
             <EconomicoCell label="Quest'anno" value={analytics.contoEconomico.guadagnoAnno} />
             <EconomicoCell label="Media/giorno" value={analytics.contoEconomico.mediaGiornaliera} accent="text-scatto-muted" />
-            <EconomicoCell label={`Previsione ${format(now, "MMM", { locale: it })}`} value={analytics.contoEconomico.previsioneFineMese} accent="text-scatto-warning" />
+            <EconomicoCell label={`Previsione ${format(now, "MMM", { locale: it })}`} value={analytics.contoEconomico.previsioneFineMese} accent="text-scatto-muted" />
           </div>
         </section>
 
@@ -720,11 +720,8 @@ const Provvigioni = () => {
                         key={s}
                         type="button"
                         onClick={() => setStatoFilter(s)}
-                        className={`min-h-11 rounded-lg border px-3 text-xs font-semibold transition-colors ${
-                          statoFilter === s
-                            ? "border-scatto-accent bg-scatto-accent text-white"
-                            : "border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
-                        }`}
+                        aria-pressed={statoFilter === s}
+                        className="chip"
                       >
                         {s === "tutte" ? "Tutte" : STATO_CONFIG[s].label}
                       </button>
@@ -742,11 +739,8 @@ const Provvigioni = () => {
                       key={q}
                       type="button"
                       onClick={() => setTrimestreFilter(q)}
-                      className={`min-h-11 rounded-lg border px-3 text-xs font-semibold transition-colors ${
-                        trimestreFilter === q
-                          ? "border-scatto-accent bg-scatto-accent text-white"
-                          : "border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
-                      }`}
+                      aria-pressed={trimestreFilter === q}
+                        className="chip"
                     >
                       {q === 0 ? "Tutti" : `Q${q}`}
                     </button>

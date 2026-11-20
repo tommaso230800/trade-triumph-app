@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowUp, ArrowDown, Euro, ShoppingCart, Clock } from "lucide-react";
+import { ArrowUp, ArrowDown, Euro, ShoppingCart } from "lucide-react";
 import { formatCurrency } from "./ordiniShared";
 
 interface OrdiniStatsRowProps {
@@ -19,68 +19,47 @@ interface OrdiniStatsRowProps {
  */
 export function OrdiniStatsRow({ stats, mom, isLoading }: OrdiniStatsRowProps) {
   if (isLoading) {
-    return <Skeleton className="h-[132px] w-full rounded-xl bg-scatto-surface" />;
+    return <Skeleton className="h-24 w-full rounded-xl bg-scatto-surface" />;
   }
 
   const variazione = mom?.variazionePct ?? null;
   const hasDelta = variazione !== null && Math.abs(variazione) > 0.05;
   const inCrescita = hasDelta && (variazione as number) > 0;
 
+  // Una sola striscia orizzontale, anche su iPhone: valore e numero degli
+  // ordini attivi affiancati, separati da una linea sottile.
   return (
-    <div className="grid grid-cols-1 divide-y divide-scatto-line overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-      <div className="flex items-start justify-between gap-3 p-4 sm:p-6">
-        <div className="min-w-0">
-          <p className="text-sm text-scatto-muted">Valore ordini attivi</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <span className="font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
-              {formatCurrency(stats.valoreTotale)}
-            </span>
-            {hasDelta && (
-              <span
-                className={`flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
-                  inCrescita
-                    ? "bg-scatto-success/10 text-scatto-success"
-                    : "bg-scatto-danger/10 text-scatto-danger"
-                }`}
-              >
-                {inCrescita ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                {Math.abs(variazione as number).toFixed(1)}%
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-xs text-scatto-muted">Rispetto al mese precedente</p>
-        </div>
-        <span className="flex-shrink-0 rounded-lg border border-scatto-line p-2 text-scatto-muted">
-          <Euro className="h-4 w-4" />
-        </span>
+    <div className="grid grid-cols-2 divide-x divide-scatto-line overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card">
+      <div className="min-w-0 p-4 sm:p-6">
+        <p className="flex items-center gap-2 text-xs text-scatto-muted">
+          <Euro className="hidden h-4 w-4 sm:block" />
+          Valore ordini attivi
+        </p>
+        <p className="mt-1 break-words font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
+          {formatCurrency(stats.valoreTotale)}
+        </p>
+        {hasDelta && (
+          <span
+            className={`mt-1 inline-flex items-center gap-1 text-xs font-semibold tabular-nums ${
+              inCrescita ? "text-scatto-success" : "text-scatto-danger"
+            }`}
+          >
+            {inCrescita ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+            {Math.abs(variazione as number).toLocaleString("it-IT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
+            <span className="hidden font-normal text-scatto-muted sm:inline">vs mese prec.</span>
+          </span>
+        )}
       </div>
 
-      <div className="flex items-start justify-between gap-3 p-4 sm:p-6">
-        <div className="min-w-0">
-          <p className="text-sm text-scatto-muted">Ordini attivi</p>
-          <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
-            {stats.totale}
-          </p>
-          <p className="mt-1 text-xs text-scatto-muted">Esclusi annullati e stand-by</p>
-        </div>
-        <span className="flex-shrink-0 rounded-lg border border-scatto-line p-2 text-scatto-muted">
-          <ShoppingCart className="h-4 w-4" />
-        </span>
-      </div>
-
-      <div className="flex items-start justify-between gap-3 p-4 sm:p-6">
-        <div className="min-w-0">
-          <p className="text-sm text-scatto-muted">Da verificare</p>
-          <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
-            {stats.daVerificare}
-          </p>
-          <p className="mt-1 text-xs text-scatto-muted">
-            {stats.inAttesa > 0 ? `${stats.inAttesa} in attesa` : "Nessun ordine in attesa"}
-          </p>
-        </div>
-        <span className="flex-shrink-0 rounded-lg border border-scatto-line p-2 text-scatto-muted">
-          <Clock className="h-4 w-4" />
-        </span>
+      <div className="min-w-0 p-4 sm:p-6">
+        <p className="flex items-center gap-2 text-xs text-scatto-muted">
+          <ShoppingCart className="hidden h-4 w-4 sm:block" />
+          Ordini attivi
+        </p>
+        <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
+          {stats.totale}
+        </p>
+        <p className="mt-1 hidden text-xs text-scatto-muted sm:block">Esclusi annullati e stand-by</p>
       </div>
     </div>
   );

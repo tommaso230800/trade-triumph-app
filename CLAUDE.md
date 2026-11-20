@@ -25,6 +25,7 @@ Solo multipli di 4px: gap-2 (8), gap-3 (12), gap-4 (16), gap-6 (24), gap-8 (32).
 Mai valori arbitrari tipo p-[13px].
 
 ═══ COLORE ═══
+Tema predefinito SCURO (grafite fredda, stile pannello: sfondo #121419, card leggermente più chiare); tema Chiaro selezionabile in Impostazioni per l'uso in pieno sole. I token stanno in index.css (:root = scuro, .light = chiaro): mai colori scritti a mano, così entrambi i temi funzionano. Documenti stampabili/proforma usano la classe .light.
 Un solo accento: il primary blu. Tutto il resto è neutro.
 Colori di stato SOLO per comunicare stato, mai per decorare:
 - verde = pagato/confermato/in crescita
@@ -36,7 +37,8 @@ Vietati: gradient decorativi, glow colorati, testo con gradient, sfondi animati.
 
 ═══ SUPERFICI ═══
 - Card: bordo 1px sottile + un solo livello di ombra leggera. Mai ombre pesanti o multiple.
-- Raggio angoli: rounded-xl per le card, rounded-lg per campi e pulsanti. Coerente ovunque.
+- Raggio angoli: rounded-xl (20px) per le card, rounded-lg (12px) per campi e pulsanti, rounded-full per chip di filtro (classe .chip con aria-pressed) e voci della sidebar. Coerente ovunque.
+- Campi di input "incassati" (bg-background) dentro le card; sidebar desktop come pannello staccato dai bordi.
 - Elevazione: massimo 2 livelli in tutta l'app (superficie base, elemento sollevato).
 
 ═══ MOVIMENTO ═══

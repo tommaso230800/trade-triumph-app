@@ -160,6 +160,9 @@ export default {
         },
       },
       borderRadius: {
+        // Card morbide e ampie (stile pannello), campi e pulsanti più compatti.
+        "2xl": "1.5rem",
+        xl: "1.25rem",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",

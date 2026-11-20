@@ -146,14 +146,14 @@ const Impostazioni = () => {
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {(Object.entries(themeConfigs) as [ThemeStyle, typeof themeConfigs[ThemeStyle]][]).map(([key, config]) => (
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {(Object.entries(themeConfigs) as [ThemeStyle, typeof themeConfigs[ThemeStyle]][]).filter(([, config]) => !config.hidden).map(([key, config]) => (
                 <button
                   key={key}
                   onClick={() => handleThemeChange(key)}
                   className={cn(
                     "relative rounded-xl border p-4 text-left transition-colors duration-200 touch-target sm:p-6",
-                    theme === key
+                    themeConfigs[theme].mode === config.mode
                       ? "border-primary bg-primary/5 ring-1 ring-primary/30"
                       : "border-border hover:border-primary/50 hover:bg-muted/30"
                   )}
@@ -177,7 +177,7 @@ const Impostazioni = () => {
                   <h3 className="font-semibold text-base sm:text-base">{config.name}</h3>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">{config.description}</p>
                   
-                  {theme === key && (
+                  {themeConfigs[theme].mode === config.mode && (
                     <div className="absolute top-3 right-3 h-6 w-6 rounded-full bg-primary flex items-center justify-center">
                       <Check className="h-4 w-4 text-primary-foreground" />
                     </div>

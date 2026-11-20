@@ -203,7 +203,7 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
         </DialogHeader>
 
         {/* Printable Content */}
-        <div ref={contentRef} className="proforma-content space-y-6 p-4 bg-white text-black print:p-8">
+        <div ref={contentRef} className="light proforma-content space-y-6 rounded-lg bg-white p-4 text-black print:p-8">
           {/* Header with Logo */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">

@@ -89,7 +89,7 @@ export default function Auth() {
       {/* Identità del portale (solo desktop) */}
       <div className="hidden border-r border-border bg-card lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div className="flex items-center gap-4">
-          <div className="h-14 w-14 overflow-hidden rounded-xl border border-border bg-background">
+          <div className="h-14 w-14 overflow-hidden rounded-full bg-white">
             <img src={agencyLogo} alt="Logo AMG" className="h-full w-full object-contain p-2" />
           </div>
           <div>
@@ -129,7 +129,7 @@ export default function Auth() {
       <div className="flex min-h-[100dvh] flex-col items-center justify-center px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] sm:p-8">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center lg:text-left">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-border bg-card lg:hidden">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white lg:hidden">
               <img src={agencyLogo} alt="Logo AMG" className="h-full w-full object-contain p-2" />
             </div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">

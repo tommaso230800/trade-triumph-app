@@ -83,7 +83,7 @@ export function OrdineCard({
         style={{ backgroundColor: aziendaColor, color: fasciaTextColor }}
       >
         <div className="flex min-w-0 items-center gap-2">
-          <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-white text-xs font-bold text-scatto-ink">
+          <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center overflow-hidden rounded-md bg-white text-xs font-bold text-black">
             {aziendaLogo ? (
               <img src={aziendaLogo} alt="" className="h-full w-full object-cover" />
             ) : (

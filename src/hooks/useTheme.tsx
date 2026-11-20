@@ -9,63 +9,44 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const themeConfigs: Record<ThemeStyle, { name: string; description: string; colors: Record<string, string> }> = {
+/**
+ * Due aspetti reali: Scuro (predefinito) e Chiaro. Le altre chiavi restano per
+ * compatibilità con le preferenze già salvate sui dispositivi e ricadono sullo
+ * Scuro; `hidden` le toglie dalla scelta in Impostazioni. `colors` serve solo
+ * per l'anteprima: la palette vera è nei token di index.css (:root / .light).
+ */
+export const themeConfigs: Record<ThemeStyle, { name: string; description: string; mode: "dark" | "light"; hidden?: boolean; colors: Record<string, string> }> = {
   modern: {
-    name: "Moderno",
-    description: "Design pulito con accenti blu",
+    name: "Scuro",
+    description: "Grafite con accento blu, riposante e leggibile",
+    mode: "dark",
     colors: {
-      "--primary": "217 91% 50%",
-      "--accent": "152 69% 45%",
-      "--background": "210 20% 98%",
-      "--card": "0 0% 100%",
-    }
-  },
-  classic: {
-    name: "Classico",
-    description: "Elegante con toni caldi",
-    colors: {
-      "--primary": "25 95% 53%",
-      "--accent": "38 92% 50%",
-      "--background": "30 15% 97%",
-      "--card": "30 20% 99%",
+      "--primary": "217 91% 60%",
+      "--accent": "220 14% 12%",
+      "--background": "220 16% 8%",
     }
   },
   minimal: {
-    name: "Minimal",
-    description: "Bianco e nero essenziale",
+    name: "Chiaro",
+    description: "Sfondo chiaro, utile in pieno sole",
+    mode: "light",
     colors: {
-      "--primary": "220 10% 25%",
-      "--accent": "220 10% 40%",
-      "--background": "0 0% 100%",
-      "--card": "220 10% 98%",
+      "--primary": "221 83% 53%",
+      "--accent": "0 0% 100%",
+      "--background": "210 33% 96%",
     }
   },
-  vibrant: {
-    name: "Vibrante",
-    description: "Colori vivaci e energici",
-    colors: {
-      "--primary": "262 83% 58%",
-      "--accent": "330 81% 60%",
-      "--background": "270 30% 98%",
-      "--card": "270 40% 100%",
-    }
-  },
-  dark: {
-    name: "Scuro",
-    description: "Tema scuro per gli occhi",
-    colors: {
-      "--primary": "217 91% 60%",
-      "--accent": "152 69% 50%",
-      "--background": "220 25% 8%",
-      "--card": "220 25% 12%",
-    }
-  }
+  classic: { name: "Scuro", description: "", mode: "dark", hidden: true, colors: {} },
+  vibrant: { name: "Scuro", description: "", mode: "dark", hidden: true, colors: {} },
+  dark: { name: "Scuro", description: "", mode: "dark", hidden: true, colors: {} },
 };
+
+export const isDarkTheme = (theme: ThemeStyle) => themeConfigs[theme].mode === "dark";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeStyle>(() => {
     const saved = localStorage.getItem("app-theme");
-    return (saved as ThemeStyle) || "modern";
+    return saved && saved in themeConfigs ? (saved as ThemeStyle) : "modern";
   });
 
   const setTheme = (newTheme: ThemeStyle) => {
@@ -75,21 +56,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    const config = themeConfigs[theme];
-    // Sidebar colors are paired in global CSS; discard the legacy one-color override.
-    root.style.removeProperty("--sidebar-background");
-    
-    // Apply colors
-    Object.entries(config.colors).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
-    });
-
-    // Apply dark class for dark theme
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    // Le versioni precedenti scrivevano i colori inline: si ripuliscono così
+    // comandano solo i token di index.css.
+    ["--sidebar-background", "--primary", "--accent", "--background", "--card"].forEach((k) => root.style.removeProperty(k));
+    const dark = isDarkTheme(theme);
+    root.classList.toggle("dark", dark);
+    root.classList.toggle("light", !dark);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#121419" : "#f2f5fa");
   }, [theme]);
 
   return (

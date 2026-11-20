@@ -374,7 +374,7 @@ export function PromoFormDialog({
                               value={form.cartoni_acquisto || ""} 
                               onChange={(e) => setForm(f => ({ ...f, cartoni_acquisto: parseInt(e.target.value) || 0 }))} 
                               placeholder="Es. 10"
-                              className="bg-white dark:bg-background h-12 text-lg"
+                              className="h-12 text-lg"
                             />
                           </div>
                           <div className="space-y-2">
@@ -387,7 +387,7 @@ export function PromoFormDialog({
                               value={form.cartoni_omaggio || ""} 
                               onChange={(e) => setForm(f => ({ ...f, cartoni_omaggio: parseInt(e.target.value) || 0 }))} 
                               placeholder="Es. 1"
-                              className="bg-white dark:bg-background h-12 text-lg"
+                              className="h-12 text-lg"
                             />
                           </div>
                         </div>
@@ -417,7 +417,7 @@ export function PromoFormDialog({
                           ...f, 
                           periodi_aggiuntivi: [...f.periodi_aggiuntivi, { data_inizio: "", data_fine: "" }] 
                         }))}
-                        className="bg-white dark:bg-background"
+                        className="bg-background"
                       >
                         <Plus className="h-3 w-3 mr-1" />
                         Aggiungi
@@ -443,7 +443,7 @@ export function PromoFormDialog({
                               newPeriodi[idx].data_inizio = e.target.value;
                               setForm(f => ({ ...f, periodi_aggiuntivi: newPeriodi }));
                             }}
-                            className="bg-white dark:bg-background"
+                            className="bg-background"
                           />
                         </div>
                         <div className="col-span-2">
@@ -456,7 +456,7 @@ export function PromoFormDialog({
                               newPeriodi[idx].data_fine = e.target.value;
                               setForm(f => ({ ...f, periodi_aggiuntivi: newPeriodi }));
                             }}
-                            className="bg-white dark:bg-background"
+                            className="bg-background"
                           />
                         </div>
                         <Button 
