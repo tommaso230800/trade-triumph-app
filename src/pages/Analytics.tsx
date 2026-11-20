@@ -17,8 +17,6 @@ import { usePeriodoFiltro, usePrimoAnnoOrdini } from "@/hooks/usePeriodoFiltro";
 import { isDefaultPeriodo, periodoLabel, periodoRange } from "@/lib/periodFilter";
 
 import { MonthlyGoalCard } from "@/components/kpi/MonthlyGoalCard";
-import { RevenueMarginChart } from "@/components/kpi/RevenueMarginChart";
-import { OrdersMonthlyChart } from "@/components/kpi/OrdersMonthlyChart";
 import { ClientMovementBadges } from "@/components/kpi/ClientMovementBadges";
 import { TopClientsGrowthDecline } from "@/components/kpi/TopClientsGrowthDecline";
 import { TopClientsRevenueBars } from "@/components/kpi/TopClientsRevenueBars";
@@ -547,25 +545,6 @@ const Analytics = ({ lockedAziendaId, title, description }: AnalyticsProps = {})
               obiettivo={obiettivoMensile.obiettivo}
             />
           )}
-
-          <SectionKicker tone="info">Volumi</SectionKicker>
-
-          <SectionCard title="Fatturato e margine per mese">
-            <RevenueMarginChart
-              data={(stats?.ordiniPerMese || [])
-                .map((m, i) => ({ mese: mesiLabel[i], fatturato: m.fatturato, marginePct: m.marginePct, ordini: m.ordini }))
-                .filter((m) => m.fatturato > 0 || m.ordini > 0)
-                .map(({ mese, fatturato, marginePct }) => ({ mese, fatturato, marginePct }))}
-            />
-          </SectionCard>
-
-          <SectionCard title="Ordini per mese">
-            <OrdersMonthlyChart
-              data={(stats?.ordiniPerMese || [])
-                .map((m, i) => ({ mese: mesiLabel[i], ordini: m.ordini }))
-                .filter((m) => m.ordini > 0)}
-            />
-          </SectionCard>
 
           <SectionKicker tone="success">Clienti</SectionKicker>
 
