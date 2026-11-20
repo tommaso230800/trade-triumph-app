@@ -27,7 +27,8 @@ Mai valori arbitrari tipo p-[13px].
 ═══ DESIGN SELEZIONABILE ═══
 Due design, scelti in Impostazioni → Design (salvato per dispositivo):
 - Classico (PREDEFINITO su ogni dispositivo): chiaro, quello storico. Le regole qui sotto valgono per lui.
-- Pannelli scuri: grafite scura, accento blu, sidebar a pannello staccata, card da 20px, chip a pillola, campi incassati.
+- Pannelli scuri: grafite scura, accento blu, card da 20px, chip a pillola, campi incassati.
+La sidebar (pannello staccato dai bordi, voci a pillola) è la stessa in entrambi i design: cambiano solo i colori.
 Implementazione: classe .design-panel su <html> (useTheme). Token in index.css (:root = Classico, .design-panel = Pannelli). Le differenze di layout si scrivono con la variante Tailwind `panel:` (es. `rounded-lg panel:rounded-full`). Ogni modifica UI va verificata in ENTRAMBI i design. Mai colori scritti a mano: usare i token, così funzionano tutti e due. Proforma/stampa usano la classe .light (sempre chiari).
 
 ═══ COLORE ═══
