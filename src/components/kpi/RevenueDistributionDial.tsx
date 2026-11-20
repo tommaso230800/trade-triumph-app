@@ -88,7 +88,7 @@ export function RevenueDistributionDial({
             })}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-scatto-muted">
+            <p className="text-xs font-semibold uppercase tracking-wider text-scatto-muted">
               {totaleLabel}
             </p>
             <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">

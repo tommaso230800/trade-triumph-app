@@ -36,7 +36,7 @@ export function OrderAudit({ ids }: { ids: string[] }) {
   };
   return <section className="min-w-0 space-y-4 border-y border-border py-4">
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <h2 className="flex items-center gap-2 text-base font-semibold"><ShieldCheck className="h-4 w-4 text-primary" /> Controllo ordini</h2>
+      <h2 className="flex items-center gap-2 text-base font-semibold"><ShieldCheck className="h-4 w-4 text-muted-foreground" /> Controllo ordini</h2>
       <Button variant="outline" onClick={save} disabled={saving || orders.isLoading || !user} className="gap-2"><RefreshCw className={`h-4 w-4 ${saving ? "animate-spin" : ""}`} />Controlla e segnala</Button>
     </div>
     {orders.isError ? <div className="text-sm">Dati non disponibili. <Button variant="outline" onClick={() => orders.refetch()}>Riprova</Button></div> : orders.isLoading ? <div className="h-24 animate-pulse rounded-lg bg-muted" /> : <>

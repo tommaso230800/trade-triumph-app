@@ -120,7 +120,7 @@ export function YearComparisonChart({ data2026 }: YearComparisonChartProps) {
             fontSize={12}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `€${(value / 1000).toFixed(0)}k`}
+            tickFormatter={(value) => `${(value / 1000).toFixed(0)}k €`}
           />
           <Tooltip
             contentStyle={{

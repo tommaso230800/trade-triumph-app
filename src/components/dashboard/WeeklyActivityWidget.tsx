@@ -57,7 +57,7 @@ export function WeeklyActivityWidget() {
       </div>
 
       {/* Main stats - Modern Grid */}
-      <div className="grid grid-cols-3 gap-4 mb-5">
+      <div className="grid grid-cols-3 gap-4 mb-4">
         <div className="text-center p-4 rounded-xl bg-muted/50">
           <p className="text-2xl font-bold text-primary">{stats?.totalReports || 0}</p>
           <p className="text-xs text-muted-foreground mt-1">Report</p>
@@ -78,7 +78,7 @@ export function WeeklyActivityWidget() {
           {stats.activitiesByType.slice(0, 5).map(({ tipo, count }) => {
             const Icon = TIPO_ICONS[tipo] || TrendingUp;
             return (
-              <Badge key={tipo} variant="secondary" className="text-xs gap-1.5 py-1">
+              <Badge key={tipo} variant="secondary" className="text-xs gap-2 py-1">
                 <Icon className="h-3 w-3" />
                 {TIPO_LABELS[tipo] || tipo}: {count}
               </Badge>

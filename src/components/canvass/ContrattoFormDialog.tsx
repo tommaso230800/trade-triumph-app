@@ -476,7 +476,7 @@ export function ContrattoFormDialog({
                           <span className="text-muted-foreground">
                             {obj.tipo === "incondizionato" 
                               ? `${obj.percentuale_premio}% incondizionato sul fatturato totale`
-                              : `${obj.percentuale_premio}% al raggiungimento di €${(obj.soglia_fatturato || 0).toLocaleString("it-IT")}`
+                              : `${obj.percentuale_premio}% al raggiungimento di ${(obj.soglia_fatturato || 0).toLocaleString("it-IT")} €`
                             }
                           </span>
                         </div>

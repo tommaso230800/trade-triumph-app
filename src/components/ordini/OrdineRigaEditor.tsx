@@ -108,7 +108,7 @@ export function OrdineRigaEditor({
               type="button"
               onClick={onAddOmaggio}
               aria-label="Aggiungi riga omaggio"
-              className="flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-success/40 bg-success/10 px-2 text-xs font-bold text-success transition-colors hover:bg-success/15"
+              className="flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-success/40 bg-success/10 px-2 text-xs font-bold text-success transition-colors hover:bg-success/15"
             >
               <Gift className="h-4 w-4 shrink-0" />
               OMAGGIO
@@ -119,7 +119,7 @@ export function OrdineRigaEditor({
               type="button"
               onClick={onRemove}
               aria-label="Elimina prodotto dall'ordine"
-              className="flex min-h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-destructive/40 bg-destructive/10 px-2 text-xs font-bold text-destructive transition-colors hover:bg-destructive/15"
+              className="flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-destructive/40 bg-destructive/10 px-2 text-xs font-bold text-destructive transition-colors hover:bg-destructive/15"
             >
               <Trash2 className="h-4 w-4 shrink-0" />
               ELIMINA PRODOTTO
@@ -193,7 +193,7 @@ export function OrdineRigaEditor({
 
       {problems.length > 0 && (
         <ul className="mt-3 space-y-1" aria-live="polite">
-          {problems.map((p) => <li key={p} className="flex items-center gap-1.5 text-xs font-medium text-destructive"><AlertTriangle className="h-3 w-3 shrink-0" />{p}</li>)}
+          {problems.map((p) => <li key={p} className="flex items-center gap-2 text-xs font-medium text-destructive"><AlertTriangle className="h-3 w-3 shrink-0" />{p}</li>)}
         </ul>
       )}
 

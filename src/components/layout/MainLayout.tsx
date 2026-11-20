@@ -70,7 +70,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         <button
           type="button"
           onClick={() => navigate(authRedirect())}
-          className="min-h-11 rounded-lg bg-primary px-5 text-sm font-medium text-primary-foreground"
+          className="min-h-11 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
         >
           Accedi
         </button>

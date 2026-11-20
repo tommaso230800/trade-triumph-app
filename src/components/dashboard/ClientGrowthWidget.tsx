@@ -34,7 +34,7 @@ export function ClientGrowthWidget({ clienti }: ClientGrowthWidgetProps) {
   return (
     <div className="rounded-xl bg-card p-4 lg:p-6 shadow-card space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Confronto vs 2025</h3>
+        <h3 className="text-base font-semibold">Confronto vs 2025</h3>
         <div className="flex gap-2 text-xs">
           <span className="flex items-center gap-1 text-success">
             <TrendingUp className="h-3 w-3" /> {inCrescita.length}

@@ -62,7 +62,7 @@ function Stat({ label, value, icon, tone }: { label: string; value: string; icon
     tone === "purple" ? "text-[hsl(280_65%_70%)]" : "";
   return (
     <div className="rounded-lg border bg-card p-3">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
         {icon}<span>{label}</span>
       </div>
       <p className={`text-lg font-bold ${toneCls}`}>{value}</p>
@@ -101,7 +101,7 @@ export function MeseDetailSheet({ open, onOpenChange, detail }: Props) {
 
         <div className="p-6 space-y-6">
           {/* KPI grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             <Stat label="Provvigioni maturate" value={fmtEur(detail.provvigioniMaturate)} tone="primary" icon={<Euro className="h-3.5 w-3.5" />} />
             <Stat label="Pagate" value={fmtEur(detail.provvigioniPagate)} tone="success" icon={<CheckCircle2 className="h-3.5 w-3.5" />} />
             <Stat label="Non pagate" value={fmtEur(detail.provvigioniNonPagate)} tone="warning" icon={<Clock className="h-3.5 w-3.5" />} />
@@ -172,7 +172,7 @@ export function MeseDetailSheet({ open, onOpenChange, detail }: Props) {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="giorno" fontSize={10} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis fontSize={10} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                  <YAxis fontSize={10} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k €`} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => fmtEur(v)} />
                   <Area type="monotone" dataKey="fatturato" stroke="hsl(var(--success))" strokeWidth={2} fill="url(#fatG)" />
                 </AreaChart>
@@ -188,7 +188,7 @@ export function MeseDetailSheet({ open, onOpenChange, detail }: Props) {
                 <LineChart data={detail.giornaliero}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="giorno" fontSize={10} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis fontSize={10} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                  <YAxis fontSize={10} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k €`} />
                   <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => fmtEur(v)} />
                   <Line type="monotone" dataKey="provvigioni" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 2 }} />
                 </LineChart>
@@ -207,7 +207,7 @@ export function MeseDetailSheet({ open, onOpenChange, detail }: Props) {
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={detail.aziendeMese} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis type="number" fontSize={10} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                      <XAxis type="number" fontSize={10} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k €`} />
                       <YAxis type="category" dataKey="nome" fontSize={10} stroke="hsl(var(--muted-foreground))" width={90} />
                       <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => fmtEur(v)} />
                       <Bar dataKey="provvigioni" radius={[0, 4, 4, 0]}>

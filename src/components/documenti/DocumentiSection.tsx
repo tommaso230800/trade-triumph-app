@@ -87,7 +87,7 @@ export function DocumentiSection({ entita, entita_id, title = "Documenti", compa
       <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
           <Paperclip className="h-5 w-5 text-primary" />
-          <h3 className="font-semibold text-lg">{title}</h3>
+          <h3 className="font-semibold text-base">{title}</h3>
           <Badge variant="secondary">{docs.length}</Badge>
         </div>
         <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export function DocumentiSection({ entita, entita_id, title = "Documenti", compa
           {docs.map((d) => (
             <div
               key={d.id}
-              className="flex items-start gap-3 p-3 rounded-lg border border-border hover:border-primary/40 hover-lift bg-card"
+              className="flex items-start gap-3 p-3 rounded-lg border border-border hover:border-primary/40 bg-card"
             >
               <div className="mt-1">
                 <FileText className="h-5 w-5 text-primary" />

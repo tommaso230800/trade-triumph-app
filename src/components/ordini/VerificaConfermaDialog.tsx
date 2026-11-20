@@ -242,7 +242,7 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
       <DialogContent className="max-w-5xl max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileSearch className="h-5 w-5 text-primary" />
+            <FileSearch className="h-4 w-4 text-muted-foreground" />
             Verifica conferma azienda {ordineCodice ? `— ${ordineCodice}` : ""}
           </DialogTitle>
           <DialogDescription>
@@ -349,16 +349,16 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
               <div className="p-2 rounded border border-border">
                 <div className="text-muted-foreground text-xs">Totale CRM</div>
-                <div className="font-semibold">€ {esito.totale_crm.toFixed(2)}</div>
+                <div className="font-semibold">{esito.totale_crm.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</div>
               </div>
               <div className="p-2 rounded border border-border">
                 <div className="text-muted-foreground text-xs">Totale conferma</div>
-                <div className="font-semibold">€ {esito.totale_pdf.toFixed(2)}</div>
+                <div className="font-semibold">{esito.totale_pdf.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</div>
               </div>
               <div className="p-2 rounded border border-border">
                 <div className="text-muted-foreground text-xs">Δ conferma - CRM</div>
                 <div className={`font-semibold ${Math.abs(esito.delta_totale) < 0.01 ? "" : "text-destructive"}`}>
-                  € {esito.delta_totale.toFixed(2)}
+                  {esito.delta_totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                 </div>
               </div>
             </div>
@@ -398,10 +398,10 @@ export function VerificaConfermaDialog({ open, onOpenChange, ordineId, ordineCod
                         <TableCell className="text-right">{r.crm?.quantita_cartoni ?? "—"}</TableCell>
                         <TableCell className="text-right">{r.pdf?.quantita_cartoni ?? "—"}</TableCell>
                         <TableCell className="text-right">
-                          {r.crm ? `€ ${r.crm.prezzo_unitario.toFixed(2)}` : "—"}
+                          {r.crm ? `${r.crm.prezzo_unitario.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          {r.pdf ? `€ ${r.pdf.prezzo_per_cartone.toFixed(2)}` : "—"}
+                          {r.pdf ? `${r.pdf.prezzo_per_cartone.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : "—"}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground max-w-[240px]">
                           {r.differenze.join(" · ")}

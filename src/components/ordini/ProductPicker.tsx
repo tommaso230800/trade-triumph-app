@@ -45,7 +45,7 @@ export function ProductPicker({ open, onOpenChange, products, inOrder, onPick, o
   return (
     <Dialog open={open} onOpenChange={close}>
       <DialogContent className="inset-0 left-0 top-0 flex h-[100dvh] max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 bg-order-paper p-0 text-order-ink sm:left-1/2 sm:top-1/2 sm:h-[80dvh] sm:w-[calc(100vw-2rem)] sm:max-w-xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-order-line [&>button:last-child]:hidden">
-        <DialogHeader className="shrink-0 space-y-3 border-b border-order-line px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-6 sm:pt-5">
+        <DialogHeader className="shrink-0 space-y-3 border-b border-order-line px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-6 sm:pt-6">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <DialogTitle className="text-base font-semibold">Aggiungi prodotti</DialogTitle>

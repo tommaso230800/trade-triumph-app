@@ -149,7 +149,7 @@ const ClienteDettaglio = () => {
             </Link>
           </Button>
           <div className="min-w-0 flex-1">
-            <h1 className="break-words text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="break-words font-display text-2xl font-bold tracking-tight text-foreground">
               {cliente.nome}
             </h1>
             <p className="text-sm text-muted-foreground">{[cliente.azienda, cliente.citta].filter(Boolean).join(" · ") || "—"}</p>
@@ -170,104 +170,12 @@ const ClienteDettaglio = () => {
         {/* Azioni a un tocco */}
         <ClienteQuickActions cliente={cliente} />
 
-        {/* Preparazione visite AI + Storico */}
-        <VisitsSection clienteId={cliente.id} />
-
-        {/* Concorrenza cliente */}
-        <CompetitorSection clienteId={cliente.id} />
-
         {/* Info Cards */}
         <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-          {/* Contact Info */}
-          <div className="rounded-xl bg-card p-6 shadow-card space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-primary" />
-              Informazioni
-            </h3>
-            <div className="space-y-3 text-sm">
-              {cliente.partita_iva && (
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span>P.IVA: {cliente.partita_iva}</span>
-                </div>
-              )}
-              {cliente.codice_sdi && (
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span>SDI: {cliente.codice_sdi}</span>
-                </div>
-              )}
-              {(cliente.indirizzo || cliente.citta) && (
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <div>
-                    {cliente.indirizzo && <p>{cliente.indirizzo}</p>}
-                    <p>
-                      {cliente.cap} {cliente.citta} {cliente.provincia && `(${cliente.provincia})`}
-                    </p>
-                  </div>
-                </div>
-              )}
-              {cliente.consorzio && (
-                <div className="pt-2">
-                  <Badge variant="outline">{cliente.consorzio}</Badge>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Contact Details */}
-          <div className="rounded-xl bg-card p-6 shadow-card space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Mail className="h-5 w-5 text-primary" />
-              Contatti
-            </h3>
-            <div className="space-y-3 text-sm">
-              {cliente.email && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <a href={`mailto:${cliente.email}`} className="text-primary hover:underline">
-                    {cliente.email}
-                  </a>
-                </div>
-              )}
-              {cliente.pec && (
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-primary" />
-                  <a href={`mailto:${cliente.pec}`} className="text-primary hover:underline">
-                    {cliente.pec} (PEC)
-                  </a>
-                </div>
-              )}
-              {cliente.telefono && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <a href={`tel:${cliente.telefono}`} className="hover:underline">
-                    {cliente.telefono}
-                  </a>
-                </div>
-              )}
-              {cliente.email_aggiuntive && cliente.email_aggiuntive.length > 0 && (
-                <div className="pt-2">
-                  <p className="text-xs text-muted-foreground mb-1">Email aggiuntive:</p>
-                  {cliente.email_aggiuntive.map((email) => (
-                    <a
-                      key={email}
-                      href={`mailto:${email}`}
-                      className="text-primary hover:underline block"
-                    >
-                      {email}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Fatturato del cliente: anno in corso vs anno precedente */}
-          <div className="rounded-xl bg-card p-4 shadow-card space-y-4 sm:p-6">
+          <div className="rounded-xl border bg-card p-4 shadow-card space-y-4 sm:p-6">
             <h3 className="text-base font-semibold flex items-center gap-2">
-              <Euro className="h-4 w-4 text-primary" />
+              <Euro className="h-4 w-4 text-muted-foreground" />
               Fatturato {annoCorrente}
             </h3>
             <div className="space-y-1">
@@ -314,16 +222,99 @@ const ClienteDettaglio = () => {
               </p>
             )}
           </div>
+          {/* Contact Info */}
+          <div className="rounded-xl border bg-card p-4 shadow-card sm:p-6 space-y-4">
+            <h3 className="font-semibold text-base flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              Informazioni
+            </h3>
+            <div className="space-y-3 text-sm">
+              {cliente.partita_iva && (
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span>P.IVA: {cliente.partita_iva}</span>
+                </div>
+              )}
+              {cliente.codice_sdi && (
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span>SDI: {cliente.codice_sdi}</span>
+                </div>
+              )}
+              {(cliente.indirizzo || cliente.citta) && (
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <div>
+                    {cliente.indirizzo && <p>{cliente.indirizzo}</p>}
+                    <p>
+                      {cliente.cap} {cliente.citta} {cliente.provincia && `(${cliente.provincia})`}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {cliente.consorzio && (
+                <div className="pt-2">
+                  <Badge variant="outline">{cliente.consorzio}</Badge>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Contact Details */}
+          <div className="rounded-xl border bg-card p-4 shadow-card sm:p-6 space-y-4">
+            <h3 className="font-semibold text-base flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              Contatti
+            </h3>
+            <div className="space-y-3 text-sm">
+              {cliente.email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <a href={`mailto:${cliente.email}`} className="text-primary hover:underline">
+                    {cliente.email}
+                  </a>
+                </div>
+              )}
+              {cliente.pec && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  <a href={`mailto:${cliente.pec}`} className="text-primary hover:underline">
+                    {cliente.pec} (PEC)
+                  </a>
+                </div>
+              )}
+              {cliente.telefono && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <a href={`tel:${cliente.telefono}`} className="hover:underline">
+                    {cliente.telefono}
+                  </a>
+                </div>
+              )}
+              {cliente.email_aggiuntive && cliente.email_aggiuntive.length > 0 && (
+                <div className="pt-2">
+                  <p className="text-xs text-muted-foreground mb-1">Email aggiuntive:</p>
+                  {cliente.email_aggiuntive.map((email) => (
+                    <a
+                      key={email}
+                      href={`mailto:${email}`}
+                      className="text-primary hover:underline block"
+                    >
+                      {email}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
-
-
-
 
         {/* Frequenza Riordino per Azienda */}
         {reorderData.length > 0 && (
-          <div className="rounded-xl bg-card p-6 shadow-card">
-            <h3 className="font-semibold text-lg flex items-center gap-2 mb-4">
-              <RefreshCw className="h-5 w-5 text-primary" />
+          <div className="rounded-xl border bg-card p-4 shadow-card sm:p-6">
+            <h3 className="font-semibold text-base flex items-center gap-2 mb-4">
+              <RefreshCw className="h-4 w-4 text-muted-foreground" />
               Frequenza Riordino per Azienda
             </h3>
             <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -365,10 +356,10 @@ const ClienteDettaglio = () => {
           </div>
         )}
 
-        <div className="rounded-xl bg-card p-4 sm:p-6 shadow-card">
+        <div className="rounded-xl border bg-card p-4 shadow-card sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-base flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
               Storico Ordini
             </h3>
           </div>
@@ -448,11 +439,17 @@ const ClienteDettaglio = () => {
         <AcceptedConditions customerId={id}/>
         <section className="space-y-4"><h2 className="text-base font-semibold">File e documenti cliente</h2><FileArchive customerId={id}/></section>
 
+        {/* Preparazione visite AI + Storico */}
+        <VisitsSection clienteId={cliente.id} />
+
+        {/* Concorrenza cliente */}
+        <CompetitorSection clienteId={cliente.id} />
+
         {/* Promozioni Attive */}
-        <div className="rounded-xl bg-card p-6 shadow-card">
+        <div className="rounded-xl border bg-card p-4 shadow-card sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <Gift className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-base flex items-center gap-2">
+              <Gift className="h-4 w-4 text-muted-foreground" />
               Promozioni Attive
             </h3>
             <Badge variant="outline" className="bg-success/10 text-success">
@@ -535,10 +532,10 @@ const ClienteDettaglio = () => {
         </div>
 
         {/* Storico Promozioni Scadute */}
-        <div className="rounded-xl bg-card p-6 shadow-card">
+        <div className="rounded-xl border bg-card p-4 shadow-card sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <History className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-base flex items-center gap-2">
+              <History className="h-4 w-4 text-muted-foreground" />
               Storico Promozioni Scadute
             </h3>
             <Badge variant="outline" className="bg-muted text-muted-foreground">
@@ -686,10 +683,10 @@ const ClienteDettaglio = () => {
         </div>
 
         {/* Ultimi Report/Note */}
-        <div className="rounded-xl bg-card p-6 shadow-card">
+        <div className="rounded-xl border bg-card p-4 shadow-card sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-base flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
               Ultimi Report
             </h3>
             <Link to="/diario">

@@ -63,7 +63,7 @@ export function YoYDimensionPanel({ title, data, names, yearCurr, yearPrev, topN
       {items.length === 0 ? (
         <p className="text-xs text-scatto-muted py-2">Nessun dato</p>
       ) : (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {items.map((it) => (
             <div key={it.id} className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1 text-xs">
               <span className="min-w-0 flex-1 basis-32 break-words text-scatto-ink" title={nameOf(it.id)}>
@@ -107,7 +107,7 @@ export function YoYDimensionPanel({ title, data, names, yearCurr, yearPrev, topN
   return (
     <SectionCard>
       <div>
-        <h3 className="text-lg font-semibold text-scatto-ink">{title}</h3>
+        <h3 className="text-base font-semibold text-scatto-ink">{title}</h3>
         <p className="text-xs text-scatto-muted">
           Confronto {yearCurr} vs {yearPrev}
         </p>

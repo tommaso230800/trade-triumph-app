@@ -123,24 +123,24 @@ const Impostazioni = () => {
 
   return (
     <MainLayout>
-      <div className="space-y-6 sm:space-y-8 max-w-4xl animate-fade-in px-2 sm:px-0">
+      <div className="space-y-6 sm:space-y-6 max-w-4xl animate-fade-in px-2 sm:px-0">
         {/* Header */}
         <div className="space-y-2">
           <h1 className="page-title">Impostazioni</h1>
-          <p className="text-body-md text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Gestisci il tuo profilo e le preferenze dell'applicazione
           </p>
         </div>
 
         {/* Theme Section */}
-        <Card className="shadow-card hover-lift transition-all duration-300">
+        <Card className="shadow-card transition-all duration-300">
           <CardHeader className="pb-4 p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-info/10 flex items-center justify-center flex-shrink-0">
                 <Palette className="h-5 w-5 text-info" />
               </div>
               <div>
-                <CardTitle className="text-heading-sm">Tema Interfaccia</CardTitle>
+                <CardTitle >Tema Interfaccia</CardTitle>
                 <CardDescription>Scegli l'aspetto che preferisci</CardDescription>
               </div>
             </div>
@@ -152,10 +152,10 @@ const Impostazioni = () => {
                   key={key}
                   onClick={() => handleThemeChange(key)}
                   className={cn(
-                    "relative p-4 sm:p-5 rounded-xl border-2 transition-all duration-300 text-left group touch-target",
+                    "relative rounded-xl border p-4 text-left transition-colors duration-200 touch-target sm:p-6",
                     theme === key
-                      ? "border-primary bg-primary/5 shadow-card"
-                      : "border-border hover:border-primary/50 hover:bg-muted/30 active:scale-[0.98]"
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                      : "border-border hover:border-primary/50 hover:bg-muted/30"
                   )}
                 >
                   {/* Theme Preview */}
@@ -174,7 +174,7 @@ const Impostazioni = () => {
                     />
                   </div>
                   
-                  <h3 className="font-semibold text-base sm:text-lg">{config.name}</h3>
+                  <h3 className="font-semibold text-base sm:text-base">{config.name}</h3>
                   <p className="text-xs sm:text-sm text-muted-foreground mt-1">{config.description}</p>
                   
                   {theme === key && (
@@ -189,21 +189,21 @@ const Impostazioni = () => {
         </Card>
 
         {/* Profile Section */}
-        <Card className="shadow-card hover-lift transition-all duration-300">
+        <Card className="shadow-card transition-all duration-300">
           <CardHeader className="pb-4 p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <User className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-heading-sm">Profilo</CardTitle>
+                <CardTitle >Profilo</CardTitle>
                 <CardDescription>Informazioni personali e account</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6 p-4 sm:p-6 pt-0 sm:pt-0">
             <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-muted/50">
-              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-primary flex items-center justify-center text-xl sm:text-2xl font-bold text-primary-foreground flex-shrink-0">
+              <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-primary flex items-center justify-center text-2xl font-bold tracking-tight tabular-nums text-primary-foreground flex-shrink-0">
                 {user?.email?.charAt(0).toUpperCase() || "U"}
               </div>
               <div className="flex-1 min-w-0">
@@ -272,14 +272,14 @@ const Impostazioni = () => {
         </Card>
 
         {/* Notifications Section */}
-        <Card className="shadow-card hover-lift transition-all duration-300">
+        <Card className="shadow-card transition-all duration-300">
           <CardHeader className="pb-4 p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
                 <Bell className="h-5 w-5 text-warning" />
               </div>
               <div>
-                <CardTitle className="text-heading-sm">Notifiche</CardTitle>
+                <CardTitle >Notifiche</CardTitle>
                 <CardDescription>Gestisci le tue preferenze di notifica</CardDescription>
               </div>
             </div>
@@ -296,14 +296,14 @@ const Impostazioni = () => {
         <AccountSecurityCard />
 
         {/* Problematiche: esiti del controllo dati con stato di lavorazione */}
-        <Card className="shadow-card hover-lift transition-all duration-300">
+        <Card className="shadow-card transition-all duration-300">
           <CardHeader className="pb-4 p-4 sm:p-6">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="h-5 w-5 text-warning" />
               </div>
               <div>
-                <CardTitle className="text-heading-sm">Problematiche</CardTitle>
+                <CardTitle >Problematiche</CardTitle>
                 <CardDescription>Incongruenze rilevate dal controllo dati, con stato di lavorazione</CardDescription>
               </div>
             </div>

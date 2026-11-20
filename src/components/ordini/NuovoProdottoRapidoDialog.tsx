@@ -90,7 +90,7 @@ export function NuovoProdottoRapidoDialog({ open, onOpenChange, aziendaId, azien
   return (
     <Dialog open={open} onOpenChange={(v) => !saving && onOpenChange(v)}>
       <DialogContent className="inset-0 left-0 top-0 flex h-[100dvh] max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 bg-order-paper p-0 text-order-ink sm:left-1/2 sm:top-1/2 sm:h-auto sm:max-h-[88dvh] sm:w-[calc(100vw-2rem)] sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-order-line [&>button:last-child]:hidden">
-        <DialogHeader className="shrink-0 border-b border-order-line px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-6 sm:pt-5">
+        <DialogHeader className="shrink-0 border-b border-order-line px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-6 sm:pt-6">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <DialogTitle className="flex items-center gap-2 text-base font-semibold">
@@ -118,7 +118,7 @@ export function NuovoProdottoRapidoDialog({ open, onOpenChange, aziendaId, azien
                     {[duplicate.codice, duplicate.formato].filter(Boolean).length > 0 && ` · ${[duplicate.codice, duplicate.formato].filter(Boolean).join(" · ")}`}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <Button type="button" size="sm" className="h-9 gap-1.5 rounded-lg bg-order-blue text-primary-foreground hover:bg-order-blue/90" onClick={useExisting}>
+                    <Button type="button" size="sm" className="h-9 gap-2 rounded-lg bg-order-blue text-primary-foreground hover:bg-order-blue/90" onClick={useExisting}>
                       <Check className="h-4 w-4" /> Usa questo
                     </Button>
                     <Button type="button" size="sm" variant="outline" className="h-9 rounded-lg border-order-line" onClick={() => setDuplicateOverride(true)}>

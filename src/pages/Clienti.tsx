@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { MetricTile } from "@/components/ui/metric-tile";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -287,9 +288,9 @@ const Clienti = () => {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in animate-fill-both">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Portfolio Clienti</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight">Clienti</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Gestisci i tuoi clienti e monitora le performance
             </p>
@@ -521,28 +522,15 @@ const Clienti = () => {
           </Dialog>
         </div>
 
-        {/* Stats */}
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-xs lg:text-sm text-muted-foreground">Totale Clienti</p>
-            <p className="text-xl lg:text-2xl font-bold text-card-foreground">{stats.totale}</p>
-          </div>
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-xs lg:text-sm text-muted-foreground">Clienti Premium</p>
-            <p className="text-xl lg:text-2xl font-bold text-primary">{stats.premium}</p>
-          </div>
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-xs lg:text-sm text-muted-foreground">Nuovi</p>
-            <p className="text-xl lg:text-2xl font-bold text-success">{stats.nuovi}</p>
-          </div>
-          <div className="rounded-lg bg-card p-4 shadow-card">
-            <p className="text-xs lg:text-sm text-muted-foreground">Fatturato Medio</p>
-            <p className="text-xl lg:text-2xl font-bold text-card-foreground">{formatCurrency(stats.fatturatoMedio)}</p>
-          </div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <MetricTile label="Clienti" value={stats.totale} />
+          <MetricTile label="Premium" value={stats.premium} />
+          <MetricTile label="Nuovi" value={stats.nuovi} />
+          <MetricTile label="Fatturato medio" value={formatCurrency(stats.fatturatoMedio)} />
         </div>
 
-        {/* Search & Filters - Improved */}
-        <div className="flex flex-col sm:flex-row gap-3 p-4 rounded-xl bg-card border shadow-sm">
+        {/* Ricerca e filtri */}
+        <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input

@@ -79,7 +79,7 @@ export function OrdineCard({
     >
       {/* Fascia col colore identità dell'azienda fornitrice: logo/iniziali + nome a sinistra, stato a destra */}
       <div
-        className="flex items-center justify-between gap-2 px-3.5 py-2.5"
+        className="flex items-center justify-between gap-2 px-4 py-3"
         style={{ backgroundColor: aziendaColor, color: fasciaTextColor }}
       >
         <div className="flex min-w-0 items-center gap-2">
@@ -94,17 +94,17 @@ export function OrdineCard({
         </div>
 
         {verificato ? (
-          <span className="flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-scatto-success px-2.5 py-0.5 text-xs font-bold text-white">
+          <span className="flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-scatto-success px-2 py-0.5 text-xs font-bold text-white">
             <CheckCircle2 className="h-3 w-3" />
             Verificato
           </span>
         ) : ordine.status === "in_attesa" || ordine.status === "stand_by" ? (
-          <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-scatto-warning px-2.5 py-0.5 text-xs font-bold text-scatto-ink">
+          <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-scatto-warning px-2 py-0.5 text-xs font-bold text-scatto-ink">
             {status.label}
           </span>
         ) : (
           <span
-            className="flex-shrink-0 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold"
+            className="flex-shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold"
             style={{ backgroundColor: fasciaIsDark ? "rgba(0,0,0,.12)" : "rgba(255,255,255,.22)" }}
           >
             {status.label}
@@ -116,7 +116,7 @@ export function OrdineCard({
         <button
           type="button"
           onClick={onToggleSelect}
-          className="flex w-full items-center gap-3 p-3.5 text-left touch-target"
+          className="flex w-full items-center gap-3 p-4 text-left touch-target"
         >
           <Checkbox
             checked={!!selected}
@@ -140,7 +140,7 @@ export function OrdineCard({
       ) : (
         <Collapsible open={open} onOpenChange={setOpen}>
           <CollapsibleTrigger asChild>
-            <button type="button" className="group flex w-full items-center gap-3 p-3.5 text-left touch-target">
+            <button type="button" className="group flex w-full items-center gap-3 p-4 text-left touch-target">
               <div className="min-w-0 flex-1">
                 <p className={`truncate text-base font-bold ${muted ? "text-scatto-muted line-through" : "text-scatto-ink"}`}>
                   {ordine.clienti?.nome || "—"}
@@ -158,7 +158,7 @@ export function OrdineCard({
           </CollapsibleTrigger>
 
           <CollapsibleContent>
-          <div className="space-y-4 border-t border-scatto-line px-5 pb-5 pt-4">
+          <div className="space-y-4 border-t border-scatto-line px-4 pb-4 pt-4">
             <div className="grid grid-cols-2 gap-y-2 text-sm">
               <span className="text-scatto-muted">Ordine</span>
               <span className="text-right text-scatto-ink">
@@ -198,7 +198,7 @@ export function OrdineCard({
               {primaryAction && (
                 <Button
                   size="sm"
-                  className="touch-target flex-1 gap-1.5 bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90"
+                  className="touch-target flex-1 gap-2 bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90"
                   onClick={primaryAction.onClick}
                   disabled={primaryAction.pending}
                 >

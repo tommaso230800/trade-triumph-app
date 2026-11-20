@@ -4,26 +4,26 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          "border-primary/25 bg-primary/12 text-[hsl(var(--primary))] hover:bg-primary/20",
+          "border-primary/20 bg-primary/10 text-primary",
         secondary:
-          "border-border bg-secondary text-secondary-foreground hover:border-primary/40",
+          "border-border bg-secondary text-secondary-foreground",
         destructive:
-          "border-destructive/35 bg-destructive/12 text-[hsl(var(--accent-red))] hover:bg-destructive/18",
+          "border-destructive/30 bg-destructive/10 text-destructive",
         success:
-          "border-success/35 bg-success/12 text-[hsl(var(--accent-green))] hover:bg-success/18",
+          "border-success/30 bg-success/10 text-success",
         warning:
-          "border-warning/35 bg-warning/14 text-[hsl(var(--warning-foreground))] hover:bg-warning/22",
+          "border-warning/30 bg-warning/10 text-warning",
         info:
-          "border-info/35 bg-info/12 text-[hsl(var(--primary))] hover:bg-info/18",
+          "border-info/20 bg-info/10 text-info",
         spectrum:
-          "border-primary/25 bg-primary/12 text-[hsl(var(--primary))]",
+          "border-primary/20 bg-primary/10 text-primary",
         outline:
-          "border-border bg-card text-foreground hover:border-primary/50 hover:text-primary",
+          "border-border bg-card text-foreground",
       },
     },
     defaultVariants: {

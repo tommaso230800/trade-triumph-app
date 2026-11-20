@@ -17,7 +17,7 @@ interface Props {
 }
 
 const CHIPS = (current: string | null, opts: string[], onChange: (v: string) => void) => (
-  <div className="flex flex-wrap gap-1.5">
+  <div className="flex flex-wrap gap-2">
     {opts.map((o) => (
       <button key={o} type="button" onClick={() => onChange(o)} className={`px-3 py-1 rounded-full text-xs border transition-colors ${current === o ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border hover:border-primary/40"}`}>{o}</button>
     ))}
@@ -100,7 +100,7 @@ export function VisitReportDialog({ open, onOpenChange, clienteId, visitPreparat
             {conc.map((c, i) => (
               <div key={i} className="flex items-center gap-2 p-2 rounded bg-muted/40">
                 <Badge variant="outline">{c.nome}{c.marca && ` · ${c.marca}`}</Badge>
-                {c.prezzo_acquisto && <span className="text-xs">€{c.prezzo_acquisto.toFixed(2)}</span>}
+                {c.prezzo_acquisto && <span className="text-xs">{c.prezzo_acquisto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>}
                 <Button size="icon" variant="ghost" className="h-6 w-6 ml-auto" onClick={() => setConc(conc.filter((_, j) => j !== i))}><X className="h-3 w-3" /></Button>
               </div>
             ))}

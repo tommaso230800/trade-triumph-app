@@ -331,11 +331,10 @@ ${analysisData.alertMessage ? `⚠️ ALERT: ${analysisData.alertMessage}` : ""}
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Brain className="h-7 w-7 text-primary" />
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
             AI Commerciale
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Motore decisionale basato su dati reali
           </p>
         </div>
@@ -401,7 +400,7 @@ ${analysisData.alertMessage ? `⚠️ ALERT: ${analysisData.alertMessage}` : ""}
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-primary" />
+                      <Sparkles className="h-4 w-4 text-muted-foreground" />
                       Analisi Automatica
                     </CardTitle>
                     {getRiskBadge()}
@@ -536,7 +535,7 @@ ${analysisData.alertMessage ? `⚠️ ALERT: ${analysisData.alertMessage}` : ""}
                       placeholder="Descrivi la situazione specifica o lascia vuoto per analisi generale..."
                       value={situazione}
                       onChange={(e) => setSituazione(e.target.value)}
-                      className="min-h-[80px]"
+                      className="min-h-20"
                     />
                   </div>
 
@@ -581,7 +580,7 @@ ${analysisData.alertMessage ? `⚠️ ALERT: ${analysisData.alertMessage}` : ""}
             <Card className="h-[calc(100dvh-200px)] min-h-[400px] flex flex-col">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-primary" />
+                  <Bot className="h-4 w-4 text-muted-foreground" />
                   Strategia Consigliata
                 </CardTitle>
               </CardHeader>

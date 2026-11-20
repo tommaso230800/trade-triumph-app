@@ -41,20 +41,20 @@ export function ReorderHeatmap({ data }: ReorderHeatmapProps) {
           </Fragment>
         ))}
       </div>
-      <div className="mt-3 flex flex-wrap gap-x-3.5 gap-y-1 text-xs text-scatto-muted">
-        <span className="inline-flex items-center gap-1.5">
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-scatto-muted">
+        <span className="inline-flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-sm bg-scatto-ink/[0.06]" />
           Nessun ordine
         </span>
-        <span className="inline-flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-sm bg-scatto-danger/70" />
           Bassa (1)
         </span>
-        <span className="inline-flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-sm bg-scatto-warning/70" />
           Media (2)
         </span>
-        <span className="inline-flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-sm bg-scatto-success" />
           Alta (3+)
         </span>

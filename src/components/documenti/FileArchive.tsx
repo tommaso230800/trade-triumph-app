@@ -392,7 +392,7 @@ export function FileArchive({ companyId, customerId, onSelect }: { companyId?: s
             <div className="space-y-4">
               <Button variant="ghost" onClick={() => setOpenCompany(null)}><ArrowLeft className="mr-2 h-4 w-4" />Tutte le cartelle</Button>
               <h3 className="flex items-center gap-2 text-base font-semibold">
-                <FolderOpen className="h-5 w-5 text-primary" />
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
                 {openCompany === '__none__' ? 'Senza azienda' : companyName(openCompany)}
               </h3>
               {CATEGORIE_DOCUMENTO.map(cat => {

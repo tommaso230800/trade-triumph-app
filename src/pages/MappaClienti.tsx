@@ -309,7 +309,7 @@ export default function MappaClienti() {
               )}
             </div>
             {suggerimenti.length > 0 && (
-              <div className="mt-1 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+              <div className="mt-1 overflow-hidden rounded-xl border border-border bg-card shadow-card">
                 {suggerimenti.map((s) => (
                   <button
                     key={s.id}
@@ -317,7 +317,7 @@ export default function MappaClienti() {
                       setSelectedId(s.id);
                       setRicerca("");
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted"
+                    className="flex min-h-11 w-full items-center gap-2 px-3 text-left text-sm hover:bg-muted"
                   >
                     <span
                       className="h-2 w-2 flex-shrink-0 rounded-full"
@@ -342,7 +342,7 @@ export default function MappaClienti() {
                 key={s.id}
                 onClick={() => setStyleId(s.id)}
                 className={cn(
-                  "block w-full px-3 py-2 text-xs font-medium transition-colors",
+                  "block min-h-11 w-full px-3 text-xs font-medium transition-colors",
                   styleId === s.id ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                 )}
               >
@@ -362,7 +362,7 @@ export default function MappaClienti() {
           <button
             onClick={trovaPosizione}
             aria-label="Dove sono"
-            className="touch-target rounded-xl border border-border bg-card/95 p-2.5 shadow-card backdrop-blur-md"
+            className="touch-target rounded-xl border border-border bg-card/95 p-2 shadow-card backdrop-blur-md"
           >
             <Locate className={cn("h-4 w-4", posizione && "text-primary")} />
           </button>
@@ -372,7 +372,7 @@ export default function MappaClienti() {
         <div className="absolute left-3 top-20 z-20 hidden flex-col gap-2 sm:flex">
           <div className="rounded-xl border border-border bg-card/95 px-3 py-2 shadow-card backdrop-blur-md">
             <p className="text-xs text-muted-foreground">Clienti a mappa</p>
-            <p className="text-lg font-bold tabular-nums leading-tight">{totaliVisibili.clienti}</p>
+            <p className="font-display text-2xl font-bold leading-tight tracking-tight tabular-nums">{totaliVisibili.clienti}</p>
             <p className="text-xs tabular-nums text-muted-foreground">
               {euro.format(totaliVisibili.fatturato)}
             </p>
@@ -402,18 +402,18 @@ export default function MappaClienti() {
           className={cn(
             "absolute z-30 transition-transform duration-200",
             "inset-x-0 bottom-0 sm:inset-auto sm:right-3 sm:top-20 sm:bottom-3 sm:w-[340px]",
-            !pannelloAperto && "translate-y-[calc(100%-3.25rem)] sm:translate-y-0 sm:translate-x-[calc(100%+1rem)]",
+            !pannelloAperto && "translate-y-[calc(100%-3.5rem)] sm:translate-y-0 sm:translate-x-[calc(100%+1rem)]",
           )}
         >
-          <div className="flex h-full max-h-[75dvh] flex-col overflow-hidden rounded-t-2xl border border-border bg-card/95 shadow-xl backdrop-blur-md sm:max-h-none sm:rounded-xl">
+          <div className="flex h-full max-h-[75dvh] flex-col overflow-hidden rounded-t-xl border border-border bg-card/95 shadow-lg backdrop-blur-md sm:max-h-none sm:rounded-xl">
             <button
               onClick={() => setPannelloAperto((v) => !v)}
-              className="flex h-13 items-center justify-between px-4 py-3 text-sm font-semibold"
+              className="flex h-14 shrink-0 items-center justify-between px-4 text-sm font-semibold"
             >
               <span className="flex items-center gap-2">
                 <Layers className="h-4 w-4" /> Livelli e filtri
               </span>
-              <ChevronUp className={cn("h-4 w-4 transition-transform", pannelloAperto && "rotate-180")} />
+              <ChevronUp className={cn("h-4 w-4 transition-transform duration-200", pannelloAperto && "rotate-180")} />
             </button>
 
             <div
@@ -449,13 +449,13 @@ export default function MappaClienti() {
               {layers.heatmap && (
                 <section className="space-y-2">
                   <p className="text-xs text-muted-foreground">Peso heatmap</p>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {PESI.map((p) => (
                       <button
                         key={p.id}
                         onClick={() => setPesoHeatmap(p.id)}
                         className={cn(
-                          "rounded-lg border border-border px-2.5 py-1 text-xs",
+                          "rounded-lg border border-border px-2 py-1 text-xs",
                           pesoHeatmap === p.id ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                         )}
                       >
@@ -469,11 +469,11 @@ export default function MappaClienti() {
               {/* Aziende mandanti */}
               <section className="space-y-2">
                 <p className="text-xs text-muted-foreground">Azienda mandante</p>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setAziendaFiltro(null)}
                     className={cn(
-                      "rounded-lg border border-border px-2.5 py-1 text-xs",
+                      "rounded-lg border border-border px-2 py-1 text-xs",
                       !aziendaFiltro ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                     )}
                   >
@@ -484,7 +484,7 @@ export default function MappaClienti() {
                       key={a}
                       onClick={() => setAziendaFiltro(a === aziendaFiltro ? null : a)}
                       className={cn(
-                        "rounded-lg border border-border px-2.5 py-1 text-xs",
+                        "rounded-lg border border-border px-2 py-1 text-xs",
                         aziendaFiltro === a ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                       )}
                     >
@@ -497,7 +497,7 @@ export default function MappaClienti() {
               {/* Vicino a me */}
               <section className="space-y-2">
                 <p className="text-xs text-muted-foreground">Clienti vicino a me</p>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {RAGGI.map((r) => (
                     <button
                       key={r}
@@ -506,7 +506,7 @@ export default function MappaClienti() {
                         setRaggioKm(raggioKm === r ? null : r);
                       }}
                       className={cn(
-                        "rounded-lg border border-border px-2.5 py-1 text-xs",
+                        "rounded-lg border border-border px-2 py-1 text-xs",
                         raggioKm === r ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                       )}
                     >
@@ -549,7 +549,7 @@ export default function MappaClienti() {
                             spostaTappa(dragIndex.current, i);
                           dragIndex.current = null;
                         }}
-                        className="flex items-center gap-2 rounded-lg border border-border px-2 py-1.5 text-sm"
+                        className="flex items-center gap-2 rounded-lg border border-border px-2 py-2 text-sm"
                       >
                         <GripVertical className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground" />
                         <span className="w-4 text-xs tabular-nums text-muted-foreground">{i + 1}</span>
@@ -626,7 +626,7 @@ export default function MappaClienti() {
                       <button
                         onClick={() => setSelectedId(c.id)}
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted",
+                          "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm hover:bg-muted",
                           selectedId === c.id && "bg-muted",
                         )}
                       >

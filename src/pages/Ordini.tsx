@@ -476,7 +476,7 @@ const Ordini = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
-                className="h-11 flex-1 gap-2 rounded-lg bg-scatto-accent font-semibold text-white hover:bg-scatto-accent/90 sm:flex-none sm:px-5"
+                className="h-11 flex-1 gap-2 rounded-lg bg-scatto-accent font-semibold text-white hover:bg-scatto-accent/90 sm:flex-none sm:px-6"
                 onClick={() => setIsDialogOpen(true)}
               >
                 <Plus className="h-4 w-4" />

@@ -75,7 +75,7 @@ export function DeviceSection() {
         <p className="text-xs text-muted-foreground">Ogni avviso arriva a tutti i dispositivi attivi del tuo profilo, anche ad app chiusa.</p>
       </div>
 
-      <div className="space-y-3 rounded-xl border bg-card p-4 shadow-sm">
+      <div className="space-y-3 rounded-xl border bg-card p-4 shadow-card">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"><Smartphone className="h-5 w-5" /></div>
           <div className="min-w-0 flex-1 space-y-1">
@@ -106,7 +106,7 @@ export function DeviceSection() {
       ) : (
         <ul className="space-y-3">
           {devices.map((d) => (
-            <li key={d.id} className="space-y-3 rounded-xl border bg-card p-4 shadow-sm">
+            <li key={d.id} className="space-y-3 rounded-xl border bg-card p-4 shadow-card">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="break-words text-sm font-semibold">{d.nome || "Dispositivo"}{thisDevice?.id === d.id && <span className="ml-2 text-xs font-normal text-muted-foreground">(questo)</span>}</p>

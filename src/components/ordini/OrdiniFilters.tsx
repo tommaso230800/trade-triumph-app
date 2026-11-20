@@ -46,7 +46,7 @@ function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
     <button
       type="button"
       onClick={onRemove}
-      className="inline-flex min-h-9 max-w-full items-center gap-1.5 rounded-full border border-scatto-accent/30 bg-scatto-accent/10 py-1 pl-3 pr-2 text-xs font-semibold text-scatto-accent transition-colors duration-150 hover:bg-scatto-accent/15"
+      className="inline-flex min-h-9 max-w-full items-center gap-2 rounded-full border border-scatto-accent/30 bg-scatto-accent/10 py-1 pl-3 pr-2 text-xs font-semibold text-scatto-accent transition-colors duration-150 hover:bg-scatto-accent/15"
       aria-label={`Rimuovi filtro ${label}`}
     >
       <span className="truncate">{label}</span>

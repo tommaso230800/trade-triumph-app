@@ -496,7 +496,7 @@ export function ImportProductsPDFDialog({
                                   {[
                                     product.codice && `cod. ${product.codice}`,
                                     product.formato,
-                                    product.prezzo_listino !== null && `${product.prezzo_listino.toFixed(2)} €${product.prezzo_riferimento ? `/${product.prezzo_riferimento}` : ""}`,
+                                    product.prezzo_listino !== null && `${product.prezzo_listino.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €${product.prezzo_riferimento ? `/${product.prezzo_riferimento}` : ""}`,
                                     product.pagina && `pag. ${product.pagina}`,
                                   ].filter(Boolean).join(" · ")}
                                 </p>

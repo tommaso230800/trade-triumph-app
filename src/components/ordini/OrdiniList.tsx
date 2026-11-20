@@ -131,7 +131,7 @@ export function OrdiniList({
         const someSelected = selectionMode && !allSelected && groupIds.some((id) => selectedIds?.has(id));
         return (
           <div key={dayKey(group.date)} className="space-y-2">
-            <div className="flex items-center gap-2.5 px-1">
+            <div className="flex items-center gap-2 px-1">
               {selectionMode && (
                 <Checkbox
                   checked={allSelected ? true : someSelected ? "indeterminate" : false}

@@ -211,7 +211,7 @@ export function SegnalazioneDialog({ open, onOpenChange, tipoDefault = "reclamo"
             ) : null}
 
             {candidati.length > 0 && (
-              <div className="space-y-1.5 max-h-52 overflow-y-auto">
+              <div className="space-y-2 max-h-52 overflow-y-auto">
                 {candidati.map((c, i) => (
                   <button
                     key={i}
@@ -221,7 +221,7 @@ export function SegnalazioneDialog({ open, onOpenChange, tipoDefault = "reclamo"
                     <div className="flex justify-between gap-2">
                       <div>
                         <div className="font-semibold">{c.ordine_codice || "—"} · {c.cliente_nome || "—"}</div>
-                        <div className="text-muted-foreground">{c.azienda_nome || "—"} · {c.data_ordine ?? ""} {c.totale != null ? `· €${c.totale.toFixed(2)}` : ""}</div>
+                        <div className="text-muted-foreground">{c.azienda_nome || "—"} · {c.data_ordine ?? ""} {c.totale != null ? `· ${c.totale.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : ""}</div>
                         <div className="text-muted-foreground italic mt-0.5">{c.motivi.join(" · ")}</div>
                       </div>
                       <Badge variant="outline" className={c.score >= 80 ? "bg-success/15 text-success border-success/30" : c.score >= 50 ? "bg-warning/15 text-warning border-warning/30" : "bg-muted"}>

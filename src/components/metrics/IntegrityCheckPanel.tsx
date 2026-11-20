@@ -95,14 +95,14 @@ export function IntegrityCheckPanel() {
   };
 
   return (
-    <Card className="shadow-card hover-lift transition-all duration-300">
+    <Card className="shadow-card transition-all duration-300">
       <CardHeader className="pb-4 p-4 sm:p-6">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
             <ShieldCheck className="h-5 w-5 text-success" />
           </div>
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-heading-sm">Integrity Check</CardTitle>
+            <CardTitle >Integrity Check</CardTitle>
             <CardDescription>
               Confronto tra <code>ordini.totale</code> e la somma delle righe (post-sconti, esclusi omaggi).
             </CardDescription>
@@ -152,7 +152,7 @@ export function IntegrityCheckPanel() {
               <button
                 key={t.k}
                 onClick={() => setFilter(t.k)}
-                className={`px-3 py-1.5 text-xs rounded-md transition-colors flex-1 sm:flex-initial ${
+                className={`px-3 py-2 text-xs rounded-md transition-colors flex-1 sm:flex-initial ${
                   filter === t.k ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"
                 }`}
               >

@@ -48,25 +48,25 @@ type Cell = {
 
 export function ModernTopStrip({ cells }: { cells: Cell[] }) {
   return (
-    <div className="grid grid-cols-1 divide-y divide-scatto-line overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+    <div className={`grid grid-cols-1 divide-y divide-scatto-line overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card sm:divide-x sm:divide-y-0 ${cells.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
       {cells.map((c) => {
         const hasDelta = c.deltaPct !== undefined && c.deltaPct !== null && Number.isFinite(c.deltaPct);
         const positive = hasDelta && (c.deltaPct as number) >= 0;
         return (
-          <div key={c.label} className="flex items-end justify-between gap-3 p-4 sm:p-5">
+          <div key={c.label} className="flex min-w-0 items-end justify-between gap-3 p-4 sm:p-6">
             <div className="min-w-0">
               <p className="text-xs text-scatto-muted">{c.label}</p>
               {c.sub && <p className="text-sm font-semibold text-scatto-ink">{c.sub}</p>}
               <p className="mt-2 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
                 {c.value}
               </p>
-              <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+              <p className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <span
                   className={`font-semibold tabular-nums ${
                     !hasDelta ? "text-scatto-muted" : positive ? "text-scatto-success" : "text-scatto-danger"
                   }`}
                 >
-                  {hasDelta ? `${positive ? "+" : "−"}${Math.abs(c.deltaPct as number).toFixed(1)}%` : "N/D"}
+                  {hasDelta ? `${positive ? "+" : "−"}${Math.abs(c.deltaPct as number).toLocaleString("it-IT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%` : "N/D"}
                 </span>
                 {c.deltaLabel && <span className="text-scatto-muted">{c.deltaLabel}</span>}
               </p>

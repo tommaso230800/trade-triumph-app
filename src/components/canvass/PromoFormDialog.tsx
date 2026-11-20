@@ -700,7 +700,7 @@ export function PromoFormDialog({
                           <p className="font-medium">{p.nome}</p>
                           <p className="text-xs text-muted-foreground">
                             {p.codice && `Cod: ${p.codice} • `}
-                            €{p.prezzo_listino?.toFixed(2)}
+                            {p.prezzo_listino?.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                           </p>
                         </div>
                       </button>

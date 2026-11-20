@@ -37,7 +37,8 @@
     --input: 220 22% 80%;
     --ring: 221 83% 53%;
 
-    --radius: 1rem;
+    /* rounded-lg = 8px (campi, pulsanti), rounded-xl = 12px (card): vedi CLAUDE.md */
+    --radius: 0.5rem;
 
     /* Status */
     --success: 152 76% 30%;
@@ -200,7 +201,10 @@
   * { @apply border-border; }
 
   html {
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    /* Notch e barra inferiore sono gestiti dai singoli contenitori (.safe-top,
+       BottomNav, dialog a schermo intero): qui solo i lati, per non sommare
+       due volte lo stesso inset. */
+    padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
     scroll-behavior: smooth;
     height: 100%;
     min-height: 100dvh;
@@ -237,12 +241,12 @@
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: hsl(222 22% 18%);
+    background: hsl(var(--border));
     border-radius: 8px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
-  ::-webkit-scrollbar-thumb:hover { background: hsl(220 80% 50%); background-clip: padding-box; border: 2px solid transparent; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); background-clip: padding-box; border: 2px solid transparent; }
 
   ::selection { background: hsl(var(--primary) / 0.2); }
 }
@@ -334,13 +338,13 @@
 
   .touch-target { min-height: 44px; min-width: 44px; }
 
-  .hover-lift { @apply transition-all duration-300 ease-smooth; }
+  .hover-lift { @apply transition-colors duration-200 ease-smooth; }
   .hover-lift:hover { box-shadow: var(--shadow-card-hover); }
 
   .hover-scale { @apply transition-transform duration-200 ease-smooth; }
   .hover-scale:hover { transform: none; }
 
-  .hover-glow { transition: box-shadow 0.4s ease, transform 0.4s ease, border-color 0.4s ease; }
+  .hover-glow { transition: border-color 0.2s ease; }
   .hover-glow:hover { border-color: hsl(var(--primary) / 0.4); }
 
   .shimmer {
@@ -360,7 +364,7 @@
     background-size: 200% 200%;
     transform: scaleX(0);
     transform-origin: bottom right;
-    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    transition: transform 0.2s cubic-bezier(0.4,0,0.2,1);
   }
   .story-link:hover::after { transform: scaleX(1); transform-origin: bottom left; }
 
@@ -404,7 +408,7 @@
 
 @layer components {
   .card-interactive {
-    @apply rounded-2xl transition-all duration-300 ease-smooth;
+    @apply rounded-xl transition-colors duration-200 ease-smooth;
     background: var(--gradient-card);
     border: 1px solid hsl(var(--border));
     box-shadow: var(--shadow-card);
@@ -415,13 +419,13 @@
   }
 
   .page-title {
-    @apply font-display text-display-sm lg:text-display-md tracking-tight text-foreground;
+    @apply font-display text-2xl font-bold tracking-tight text-foreground;
   }
   .section-heading {
-    @apply font-display text-heading-lg text-card-foreground;
+    @apply font-display text-base font-semibold text-card-foreground;
   }
   .stat-value {
-    @apply font-display text-display-sm lg:text-display-md tracking-tight;
+    @apply font-display text-3xl font-bold tracking-tight tabular-nums;
   }
 
   .btn-gold {

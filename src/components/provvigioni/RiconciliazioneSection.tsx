@@ -517,12 +517,12 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
       </div>
 
       {/* Filter chips */}
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button
             key={f.k}
             onClick={() => setFilter(f.k)}
-            className={`text-xs px-2.5 py-1 rounded-full border transition ${filter === f.k ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
+            className={`text-xs px-2 py-1 rounded-full border transition ${filter === f.k ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}`}
           >
             {f.label} · {rows.filter(f.test).length}
           </button>
@@ -605,7 +605,7 @@ function EstrattoRighe({ estratto }: { estratto: EstrattoDoc }) {
                       <div className="flex flex-col gap-1">
                         <StatusBadge status={r.match_status} verified={r.verificata} />
                         {isCrmOnly && r.stato_verifica && (
-                          <span className="text-xs px-1.5 py-0.5 rounded border border-border bg-muted text-muted-foreground w-fit">
+                          <span className="text-xs px-2 py-0.5 rounded border border-border bg-muted text-muted-foreground w-fit">
                             {STATO_VERIFICA_LABEL[r.stato_verifica] ?? r.stato_verifica}
                           </span>
                         )}
@@ -772,12 +772,12 @@ export function RiconciliazioneSection() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3 flex-wrap">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <Sparkles className="h-4 w-4 text-muted-foreground" />
               Confronto Provvigioni Azienda vs CRM
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">

@@ -24,7 +24,7 @@ export function CompetitorSection({ clienteId }: Props) {
     <Card>
       <CardContent className="p-4 space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2"><Target className="h-5 w-5 text-primary" /><h3 className="font-semibold">Concorrenza cliente</h3><Badge variant="outline">{items.length}</Badge></div>
+          <div className="flex items-center gap-2"><Target className="h-4 w-4 text-muted-foreground" /><h3 className="font-semibold">Concorrenza cliente</h3><Badge variant="outline">{items.length}</Badge></div>
           <Button size="sm" onClick={() => { setEditing(undefined); setOpen(true); }}><Plus className="h-4 w-4 mr-1" />Aggiungi</Button>
         </div>
 
@@ -32,7 +32,7 @@ export function CompetitorSection({ clienteId }: Props) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {items.map((c) => (
-            <div key={c.id} className="border border-border rounded-lg p-3 space-y-1.5 bg-card hover:border-primary/40 transition-colors">
+            <div key={c.id} className="border border-border rounded-lg p-3 space-y-2 bg-card hover:border-primary/40 transition-colors">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <div className="font-medium truncate">{c.nome} {c.marca && <span className="text-muted-foreground text-sm">· {c.marca}</span>}</div>
@@ -43,9 +43,9 @@ export function CompetitorSection({ clienteId }: Props) {
                 </div>
               </div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                {c.prezzo_acquisto > 0 && <span>Acq: <strong>€{c.prezzo_acquisto.toFixed(2)}</strong></span>}
-                {c.prezzo_vendita > 0 && <span>Vend: <strong>€{c.prezzo_vendita.toFixed(2)}</strong></span>}
-                {c.nostro_prezzo && <span className="text-primary">Nostro: <strong>€{Number(c.nostro_prezzo).toFixed(2)}</strong></span>}
+                {c.prezzo_acquisto > 0 && <span>Acq: <strong>{c.prezzo_acquisto.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</strong></span>}
+                {c.prezzo_vendita > 0 && <span>Vend: <strong>{c.prezzo_vendita.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</strong></span>}
+                {c.nostro_prezzo && <span className="text-primary">Nostro: <strong>{Number(c.nostro_prezzo).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</strong></span>}
               </div>
               {c.condizioni && <div className="text-xs text-muted-foreground line-clamp-1">{c.condizioni}</div>}
               <div className="flex items-center justify-between pt-1">

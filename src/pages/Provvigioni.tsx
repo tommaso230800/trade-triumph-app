@@ -90,6 +90,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
@@ -345,9 +346,9 @@ const Provvigioni = () => {
   return (
     <MainLayout>
       <CommissionDetail commission={fiscalDetail} onClose={()=>setFiscalDetail(null)}/>
-      <div className="space-y-6 animate-rise-in pb-8">
+      <div className="space-y-6 pb-8">
         {/* Pannello con scope proprio (token --scatto-*), coerente con Ordini. */}
-        <div className="space-y-6 rounded-xl bg-scatto-bg p-4 lg:p-6">
+        <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
@@ -357,9 +358,9 @@ const Provvigioni = () => {
         </div>
 
         {/* STICKY FILTER BAR */}
-        <div className="sticky top-0 z-20 -mx-4 lg:-mx-6 px-4 lg:px-6 py-3 bg-scatto-bg/90 backdrop-blur-xl border-b border-scatto-line">
+        <div className="border-b border-scatto-line pb-4 lg:sticky lg:top-0 lg:z-20 lg:-mx-8 lg:bg-scatto-bg/95 lg:px-8 lg:py-3 lg:backdrop-blur">
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 flex-1 min-w-[220px]">
+            <div className="flex items-center gap-2 min-w-0 flex-1 basis-full sm:basis-56">
               <Building2 className="h-4 w-4 text-scatto-muted shrink-0" />
               <Select value={aziendaId} onValueChange={(v) => setAziendaId(v)}>
                 <SelectTrigger className={provInputCls}>
@@ -377,7 +378,7 @@ const Provvigioni = () => {
             <Select value={subjectFilter} onValueChange={setSubjectFilter}><SelectTrigger className="w-full sm:w-56" aria-label="Intestatario provvigioni"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Tutti gli intestatari</SelectItem><SelectItem value="unassigned">Da assegnare</SelectItem>{fiscal.subjects.data?.map(s=><SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
             <PeriodoSelector value={periodo} onChange={setPeriodo} />
 
-            <div className="flex items-center gap-2 flex-1 min-w-[180px]">
+            <div className="flex items-center gap-2 min-w-0 flex-1 basis-full sm:basis-44">
               <Users className="h-4 w-4 text-scatto-muted shrink-0" />
               <Select value={clienteId} onValueChange={(v) => setClienteId(v)}>
                 <SelectTrigger className={provInputCls}>
@@ -392,7 +393,7 @@ const Provvigioni = () => {
               </Select>
             </div>
 
-            <div className="relative flex-1 min-w-[200px]">
+            <div className="relative min-w-0 flex-1 basis-full sm:basis-48">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-scatto-muted" />
               <Input
                 placeholder="Cerca ordine, cliente, azienda..."
@@ -406,11 +407,11 @@ const Provvigioni = () => {
 
         {/* CONTO ECONOMICO PERSONALE: striscia piatta, un dato protagonista */}
         <section className="overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card">
-          <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
+          <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-6">
             <Wallet className="h-4 w-4 text-scatto-muted" />
             <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">Il tuo Conto Economico</h2>
             {aziendaId !== "tutte" && (
-              <span className="ml-auto rounded-full bg-scatto-accent/10 px-2.5 py-0.5 text-xs font-semibold text-scatto-accent">
+              <span className="ml-auto rounded-full bg-scatto-accent/10 px-2 py-0.5 text-xs font-semibold text-scatto-accent">
                 {aziende?.find((a) => a.id === aziendaId)?.nome}
               </span>
             )}
@@ -425,7 +426,7 @@ const Provvigioni = () => {
         </section>
 
         {/* MAIN TABS */}
-        <Tabs defaultValue={params.get("voce")?"provvigioni":"overview"} className="space-y-5">
+        <Tabs defaultValue={params.get("voce")?"provvigioni":"overview"} className="space-y-6">
           <TabsList className="w-full flex-wrap h-auto justify-start gap-1 rounded-xl border border-scatto-line bg-scatto-surface p-1">
             <TabsTrigger value="overview" className={provTabCls}><LineChartIcon className="h-4 w-4" />Panoramica</TabsTrigger>
             <TabsTrigger value="provvigioni" className={provTabCls}><Euro className="h-4 w-4" />Provvigioni</TabsTrigger>
@@ -438,22 +439,31 @@ const Provvigioni = () => {
           </TabsList>
 
           {/* OVERVIEW */}
-          <TabsContent value="overview" className="space-y-5">
+          <TabsContent value="overview" className="space-y-6">
           {/* KPI CARDS */}
-          <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
             <KPICard icon={<Euro />} label="Provvigioni maturate" value={fmtEur(analytics.kpi.provvigioniMaturate)} />
             <KPICard icon={<CheckCircle2 />} label="Liquidate" value={fmtEur(analytics.kpi.provvigioniLiquidate)} accent="success" />
             <KPICard icon={<Clock />} label="Da incassare" value={fmtEur(analytics.kpi.provvigioniDaIncassare)} accent="warning" />
-            <KPICard icon={<TrendingUp />} label="Fatturato generato" value={fmtEur(analytics.kpi.fatturato)} />
-            <KPICard icon={<FileText />} label="Numero ordini" value={String(analytics.kpi.nOrdini)} />
-            <KPICard icon={<Receipt />} label="Ticket medio" value={fmtEur(analytics.kpi.ticketMedio)} />
-            <KPICard icon={<Percent />} label="% media provv." value={`${formatNumber(analytics.kpi.pctMediaProvv, 2)}%`} />
-            <GrowthCard label="Vs mese scorso" value={analytics.kpi.growthMoM} />
-            <GrowthCard label="Vs stesso mese A-1" value={analytics.kpi.growthYoY} />
             <ObjectiveCard target={analytics.kpi.obiettivoMensile} current={analytics.kpi.provvMese} pct={analytics.kpi.completamentoObiettivo} />
           </div>
+          {/* Indicatori di supporto: a portata di tocco, non tutti in vista. */}
+          <details className="group rounded-xl border border-scatto-line bg-scatto-surface shadow-card">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-4 text-sm font-semibold text-scatto-ink [&::-webkit-details-marker]:hidden">
+              Altri indicatori
+              <ChevronDown className="h-4 w-4 text-scatto-muted transition-transform duration-200 group-open:rotate-180" />
+            </summary>
+            <div className="grid grid-cols-2 gap-3 border-t border-scatto-line p-4 md:grid-cols-3 lg:grid-cols-6">
+              <KPICard icon={<TrendingUp />} label="Fatturato generato" value={fmtEur(analytics.kpi.fatturato)} />
+              <KPICard icon={<FileText />} label="Numero ordini" value={String(analytics.kpi.nOrdini)} />
+              <KPICard icon={<Receipt />} label="Ticket medio" value={fmtEur(analytics.kpi.ticketMedio)} />
+              <KPICard icon={<Percent />} label="% media provv." value={`${formatNumber(analytics.kpi.pctMediaProvv, 2)}%`} />
+              <GrowthCard label="Vs mese scorso" value={analytics.kpi.growthMoM} />
+              <GrowthCard label="Vs stesso mese A-1" value={analytics.kpi.growthYoY} />
+            </div>
+          </details>
             {aziendeDuplicate.length > 0 && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-scatto-danger/30 bg-scatto-danger/5 p-3.5 text-sm text-scatto-danger">
+              <div className="flex items-start gap-2 rounded-xl border border-scatto-danger/30 bg-scatto-danger/5 p-4 text-sm text-scatto-danger">
                 <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                 <p>
                   <b className="font-semibold">Da sistemare nei dati:</b>{" "}
@@ -489,7 +499,7 @@ const Provvigioni = () => {
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--scatto-line))" />
                           <XAxis dataKey="mese" stroke="hsl(var(--scatto-muted))" fontSize={11} />
-                          <YAxis stroke="hsl(var(--scatto-muted))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                          <YAxis stroke="hsl(var(--scatto-muted))" fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k €`} />
                           <Tooltip
                             contentStyle={{ background: "hsl(var(--scatto-surface))", border: "1px solid hsl(var(--scatto-line))", borderRadius: 8 }}
                             formatter={(v: number) => [fmtEur(v), "Provvigioni"]}
@@ -529,7 +539,7 @@ const Provvigioni = () => {
                         <ComposedChart data={data}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--scatto-line))" />
                           <XAxis dataKey="mese" stroke="hsl(var(--scatto-muted))" fontSize={11} />
-                          <YAxis yAxisId="left" stroke="hsl(var(--scatto-muted))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                          <YAxis yAxisId="left" stroke="hsl(var(--scatto-muted))" fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k €`} />
                           <YAxis yAxisId="right" orientation="right" stroke="hsl(var(--scatto-success))" fontSize={11} tickFormatter={(v) => `${formatNumber(v, 1)}%`} domain={["dataMin - 1", "dataMax + 1"]} />
                           <Tooltip
                             contentStyle={{ background: "hsl(var(--scatto-surface))", border: "1px solid hsl(var(--scatto-line))", borderRadius: 8 }}
@@ -569,7 +579,7 @@ const Provvigioni = () => {
                         const color = aziendaColorValue(a.id, aziendaColorMap);
                         return (
                           <div key={a.id}>
-                            <div className="mb-1.5 flex items-center gap-2">
+                            <div className="mb-2 flex items-center gap-2">
                               <span className="h-2.5 w-2.5 flex-shrink-0 rounded-sm" style={{ backgroundColor: color }} />
                               <span className="min-w-0 flex-1 truncate text-sm font-medium text-scatto-ink">{a.nome}</span>
                               <span className="flex-shrink-0 text-sm font-semibold tabular-nums text-scatto-ink">{fmtEur(a.provvigioni)}</span>
@@ -654,7 +664,7 @@ const Provvigioni = () => {
 
             {/* LIQUIDATO PER TRIMESTRE (Dashboard trimestrale) */}
             <section className={provCardCls}>
-              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-scatto-line px-4 py-3 sm:px-5">
+              <header className="flex flex-wrap items-center justify-between gap-3 border-b border-scatto-line px-4 py-3 sm:px-6">
                 <div className="flex items-center gap-2">
                   <CalendarClock className="h-4 w-4 text-scatto-muted" />
                   <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">Liquidato per trimestre di pagamento</h2>
@@ -663,7 +673,7 @@ const Provvigioni = () => {
                   Basato sul trimestre in cui l'azienda ha effettivamente liquidato la provvigione
                 </p>
               </header>
-              <div className="p-4 sm:p-5">
+              <div className="p-4 sm:p-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {analytics.perTrimestrePagamento.map((t) => {
                     const active = trimestreFilter === t.trimestre;
@@ -677,7 +687,7 @@ const Provvigioni = () => {
                           <span className="text-sm font-semibold text-scatto-ink">Q{t.trimestre}</span>
                           <span className="text-xs text-scatto-muted">{["Gen-Mar","Apr-Giu","Lug-Set","Ott-Dic"][t.trimestre-1]}</span>
                         </div>
-                        <p className={`text-xl font-bold tabular-nums ${active ? "text-scatto-accent" : "text-scatto-ink"}`}>{fmtEur(t.liquidato)}</p>
+                        <p className={`break-words font-display text-2xl font-bold tracking-tight tabular-nums ${active ? "text-scatto-accent" : "text-scatto-ink"}`}>{fmtEur(t.liquidato)}</p>
                         <p className="text-xs text-scatto-muted mt-1">{t.conteggio} provvigioni</p>
                       </button>
                     );
@@ -688,7 +698,7 @@ const Provvigioni = () => {
                     <BarChart data={analytics.perTrimestrePagamento.map((t) => ({ name: `Q${t.trimestre}`, liquidato: t.liquidato }))}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--scatto-line))" />
                       <XAxis dataKey="name" stroke="hsl(var(--scatto-muted))" fontSize={11} />
-                      <YAxis stroke="hsl(var(--scatto-muted))" fontSize={11} tickFormatter={(v) => `€${(v / 1000).toFixed(0)}k`} />
+                      <YAxis stroke="hsl(var(--scatto-muted))" fontSize={11} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k €`} />
                       <Tooltip contentStyle={{ background: "hsl(var(--scatto-surface))", border: "1px solid hsl(var(--scatto-line))", borderRadius: 8 }} formatter={(v: number) => fmtEur(v)} />
                       <Bar dataKey="liquidato" radius={[6, 6, 0, 0]}>
                         {analytics.perTrimestrePagamento.map((t, i) => (
@@ -702,7 +712,7 @@ const Provvigioni = () => {
             </section>
 
             <section className={provCardCls}>
-              <div className="flex flex-col gap-3 border-b border-scatto-line px-4 py-3 sm:px-5">
+              <div className="flex flex-col gap-3 border-b border-scatto-line px-4 py-3 sm:px-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-2">
                     {(["tutte", "pagata", "da_pagare", "scaduta", "parziale", "contestazione"] as const).map((s) => (
@@ -710,7 +720,7 @@ const Provvigioni = () => {
                         key={s}
                         type="button"
                         onClick={() => setStatoFilter(s)}
-                        className={`min-h-[36px] rounded-lg border px-3 text-xs font-semibold transition-colors ${
+                        className={`min-h-11 rounded-lg border px-3 text-xs font-semibold transition-colors ${
                           statoFilter === s
                             ? "border-scatto-accent bg-scatto-accent text-white"
                             : "border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
@@ -732,7 +742,7 @@ const Provvigioni = () => {
                       key={q}
                       type="button"
                       onClick={() => setTrimestreFilter(q)}
-                      className={`min-h-[32px] rounded-lg border px-3 text-xs font-semibold transition-colors ${
+                      className={`min-h-11 rounded-lg border px-3 text-xs font-semibold transition-colors ${
                         trimestreFilter === q
                           ? "border-scatto-accent bg-scatto-accent text-white"
                           : "border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg"
@@ -742,7 +752,7 @@ const Provvigioni = () => {
                     </button>
                   ))}
                   {selectedRows.length > 0 && (
-                    <div className="ml-auto flex items-center gap-2 rounded-lg border border-scatto-accent/40 bg-scatto-accent/5 px-3 py-1.5">
+                    <div className="ml-auto flex items-center gap-2 rounded-lg border border-scatto-accent/40 bg-scatto-accent/5 px-3 py-2">
                       <span className="text-xs font-medium text-scatto-ink">{selectedRows.length} selezionate</span>
                       <Button size="sm" onClick={() => setBulkOpen(true)} className="h-7 bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90">
                         <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
@@ -768,12 +778,12 @@ const Provvigioni = () => {
                       return (
                         <div
                           key={r.id}
-                          className={`rounded-xl border bg-scatto-surface p-3.5 ${
+                          className={`rounded-xl border bg-scatto-surface p-4 ${
                             r.statoProvvigione === "scaduta" ? "border-scatto-danger/50" : "border-scatto-line"
                           } ${selectedIds.has(r.id) ? "ring-2 ring-scatto-accent ring-offset-2 ring-offset-scatto-bg" : ""}`}
                         >
                           <div className="flex items-start justify-between gap-2">
-                            <div className="flex min-w-0 items-start gap-2.5">
+                            <div className="flex min-w-0 items-start gap-2">
                               {selectable && (
                                 <input
                                   type="checkbox"
@@ -799,14 +809,14 @@ const Provvigioni = () => {
                           <div className="mt-3 flex items-end justify-between gap-3">
                             <div>
                               <p className="text-xs text-scatto-muted">Maturata</p>
-                              <p className="font-display text-xl font-bold tabular-nums tracking-tight text-scatto-ink">{fmtEur(r.provvigioneMaturata)}</p>
+                              <p className="font-display text-2xl font-bold tabular-nums tracking-tight text-scatto-ink">{fmtEur(r.provvigioneMaturata)}</p>
                               <p className="mt-0.5 text-xs tabular-nums text-scatto-muted">
                                 Base {fmtEur(r.imponibile)} · {r.percentualeProvv}% · Pagata <span className="font-semibold text-scatto-success">{fmtEur(r.provvigionePagata)}</span>
                               </p>
                             </div>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button size="sm" className="h-9 gap-1.5 whitespace-nowrap bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90">
+                                <Button size="sm" className="h-9 gap-2 whitespace-nowrap bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90">
                                   <CircleDot className="h-3.5 w-3.5" />
                                   Stato
                                 </Button>
@@ -880,7 +890,7 @@ const Provvigioni = () => {
                         <SortableHead k="provvigioneMaturata" label="Maturata" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="right" />
                         <SortableHead k="provvigionePagata" label="Pagata" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} align="right" />
                         <SortableHead k="statoProvvigione" label="Stato" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                        <TableHead className="w-[130px]">Trimestre</TableHead>
+                        <TableHead className="w-32">Trimestre</TableHead>
                         <TableHead className="w-10" />
                       </TableRow>
                     </TableHeader>
@@ -940,7 +950,7 @@ const Provvigioni = () => {
                               <TableCell>
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button size="sm" className="h-8 gap-1.5 whitespace-nowrap bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90">
+                                    <Button size="sm" className="h-8 gap-2 whitespace-nowrap bg-scatto-accent font-bold text-white hover:bg-scatto-accent/90">
                                       <CircleDot className="h-3.5 w-3.5" />
                                       Aggiorna stato
                                     </Button>
@@ -993,7 +1003,7 @@ const Provvigioni = () => {
                         <h3 className="truncate font-display text-base font-semibold tracking-tight text-scatto-ink">{a.nome}</h3>
                         <p className="text-xs text-scatto-muted">{a.ordini} ordini · {a.clienti} clienti</p>
                       </div>
-                      <span className="shrink-0 rounded-full bg-scatto-accent/10 px-2.5 py-0.5 text-xs font-semibold text-scatto-accent">{formatNumber(a.incidenza, 0)}%</span>
+                      <span className="shrink-0 rounded-full bg-scatto-accent/10 px-2 py-0.5 text-xs font-semibold text-scatto-accent">{formatNumber(a.incidenza, 0)}%</span>
                     </header>
                     <div className="space-y-3 p-4">
                       <div className="grid grid-cols-2 gap-3 text-sm">
@@ -1030,14 +1040,14 @@ const Provvigioni = () => {
           {/* BONUS */}
           <TabsContent value="bonus">
             <section className={provCardCls}>
-              <header className="flex flex-wrap items-center justify-between gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
+              <header className="flex flex-wrap items-center justify-between gap-2 border-b border-scatto-line px-4 py-3 sm:px-6">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-4 w-4 text-scatto-warning" />
                   <h2 className="font-display text-base font-semibold tracking-tight text-scatto-ink">Premi &amp; Bonus</h2>
                 </div>
                 <p className="text-xs text-scatto-muted">Traccia i tuoi obiettivi e bonus (sezione in evoluzione)</p>
               </header>
-              <div className="p-4 sm:p-5">
+              <div className="p-4 sm:p-6">
                 <div className="py-12 text-center text-scatto-muted">
                   <Trophy className="mx-auto mb-3 h-12 w-12 opacity-30" />
                   <p className="text-sm">Nessun bonus configurato.</p>
@@ -1205,9 +1215,9 @@ function PeriodoSelector({ value, onChange }: { value: PeriodoFilter; onChange: 
 
 function EconomicoCell({ label, value, accent, big }: { label: string; value: number; accent?: string; big?: boolean }) {
   return (
-    <div className="p-4 sm:p-5">
-      <p className="text-xs uppercase tracking-wide text-scatto-muted">{label}</p>
-      <p className={`mt-1 font-display font-bold tracking-tight tabular-nums ${big ? "text-3xl" : "text-xl"} ${accent || "text-scatto-ink"}`}>{fmtEur(value)}</p>
+    <div className="min-w-0 p-4 sm:p-6">
+      <p className="text-xs text-scatto-muted">{label}</p>
+      <p className={`mt-1 break-words font-display font-bold tracking-tight tabular-nums ${big ? "text-3xl" : "text-base sm:text-2xl"} ${accent || "text-scatto-ink"}`}>{fmtEur(value)}</p>
     </div>
   );
 }
@@ -1221,7 +1231,7 @@ function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label:
           <p className="text-xs text-scatto-muted">{label}</p>
           <span className={accentClass}>{icon}</span>
         </div>
-        <p className="truncate text-lg font-bold tabular-nums tracking-tight text-scatto-ink">{value}</p>
+        <p className="truncate font-display text-2xl font-bold tabular-nums tracking-tight text-scatto-ink">{value}</p>
       </div>
     </div>
   );
@@ -1238,7 +1248,7 @@ function GrowthCard({ label, value }: { label: string; value: number }) {
         <p className="text-xs text-scatto-muted mb-2">{label}</p>
         <div className={`flex items-center gap-1 ${color}`}>
           <Icon className="h-5 w-5" />
-          <p className="text-lg font-bold tabular-nums">{value > 0 ? "+" : ""}{formatNumber(value, 1)}%</p>
+          <p className="font-display text-2xl font-bold tracking-tight tabular-nums">{value > 0 ? "+" : ""}{formatNumber(value, 1)}%</p>
         </div>
       </div>
     </div>
@@ -1253,7 +1263,7 @@ function ObjectiveCard({ target, current, pct }: { target: number; current: numb
           <p className="text-xs text-scatto-muted">Obiettivo mensile</p>
           <Target className="h-4 w-4 text-scatto-accent" />
         </div>
-        <p className="text-lg font-bold tabular-nums text-scatto-ink">{formatNumber(pct, 0)}%</p>
+        <p className="font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">{formatNumber(pct, 0)}%</p>
         <Progress value={Math.min(100, pct)} className="h-1.5" />
         <p className="text-xs tabular-nums text-scatto-muted">{fmtEur(current)} / {fmtEur(target)}</p>
       </div>
@@ -1264,11 +1274,11 @@ function ObjectiveCard({ target, current, pct }: { target: number; current: numb
 function ChartCard({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className={`${provCardCls} min-w-0`}>
-      <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
+      <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-6">
         {icon && <span className="text-scatto-muted">{icon}</span>}
         <h2 className="font-display text-sm font-semibold tracking-tight text-scatto-ink">{title}</h2>
       </header>
-      <div className="min-w-0 p-4 sm:p-5">{children}</div>
+      <div className="min-w-0 p-4 sm:p-6">{children}</div>
     </section>
   );
 }
@@ -1338,9 +1348,9 @@ function Heatmap({
       ))}
       {/* Legenda */}
       <div className="flex items-center justify-end gap-3 pt-2 text-xs text-scatto-muted">
-        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-danger) / 0.7)" }} />Basso</div>
-        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-warning) / 0.75)" }} />Medio</div>
-        <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-success) / 0.85)" }} />Alto</div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-danger) / 0.7)" }} />Basso</div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-warning) / 0.75)" }} />Medio</div>
+        <div className="flex items-center gap-2"><span className="w-3 h-3 rounded" style={{ background: "hsl(var(--scatto-success) / 0.85)" }} />Alto</div>
       </div>
     </div>
   );
@@ -1364,7 +1374,7 @@ function StatoSummaryCard({ label, value, icon, accent }: { label: string; value
           {icon}
           <span className="text-xs text-scatto-muted">{label}</span>
         </div>
-        <p className={`text-lg font-bold tabular-nums ${c}`}>{fmtEur(value)}</p>
+        <p className={`break-words font-display text-2xl font-bold tracking-tight tabular-nums ${c}`}>{fmtEur(value)}</p>
       </div>
     </div>
   );
@@ -1384,7 +1394,7 @@ function SortableHead({ k, label, sortKey, sortDir, onSort, align }: { k: SortKe
 function ClientiList({ title, icon, clienti, badge }: { title: string; icon: React.ReactNode; clienti: any[]; badge: "top" | "inattivi" | "crescita" }) {
   return (
     <section className={provCardCls}>
-      <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-5">
+      <header className="flex items-center gap-2 border-b border-scatto-line px-4 py-3 sm:px-6">
         <span className="text-scatto-muted">{icon}</span>
         <h2 className="font-display text-sm font-semibold tracking-tight text-scatto-ink">{title}</h2>
       </header>

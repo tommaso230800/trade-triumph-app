@@ -48,19 +48,19 @@ export function KPICard({
 
   return (
     <div className={cn(
-      "group relative overflow-hidden rounded-xl bg-card p-4 lg:p-6 border shadow-card",
+      "relative min-w-0 overflow-hidden rounded-xl border bg-card p-4 shadow-card lg:p-6",
       cardStyles[variant]
     )}>
       
       <div className="relative flex items-start justify-between gap-3">
         <div className="space-y-2 min-w-0 flex-1">
-          <p className="text-xs lg:text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-xs font-medium text-muted-foreground">{title}</p>
           <p className="text-3xl font-bold tracking-tight tabular-nums text-card-foreground">
             {value}
           </p>
           {change !== undefined && (
-            <div className={cn("flex items-center gap-1.5 text-xs font-medium flex-wrap", getTrendColor())}>
-              <span className="flex items-center gap-1 bg-current/10 rounded-full px-2 py-0.5">
+            <div className={cn("flex items-center gap-2 text-xs font-medium flex-wrap", getTrendColor())}>
+              <span className="flex items-center gap-1">
                 {getTrendIcon()}
                 <span className="tabular-nums">{change > 0 ? "+" : ""}{change.toLocaleString("it-IT")}%</span>
               </span>
@@ -70,7 +70,7 @@ export function KPICard({
         </div>
         <div
           className={cn(
-            "flex h-11 w-11 lg:h-12 lg:w-12 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-105 flex-shrink-0",
+            "flex h-10 w-10 items-center justify-center rounded-lg flex-shrink-0",
             iconContainerStyles[variant]
           )}
         >

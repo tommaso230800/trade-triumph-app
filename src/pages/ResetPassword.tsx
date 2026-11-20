@@ -43,7 +43,7 @@ export default function ResetPassword() {
 
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
+      <div className="w-full max-w-md rounded-xl border border-border bg-card p-4 shadow-card sm:p-6">
         <h1 className="font-display text-2xl font-bold tracking-tight">Nuova password</h1>
         {done ? (
           <p className="mt-4 flex items-center gap-2 text-sm text-success"><CheckCircle2 className="h-4 w-4" /> Password aggiornata. Accesso in corso…</p>

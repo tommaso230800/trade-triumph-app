@@ -218,7 +218,7 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
               </div>
             </div>
             <div className="text-right">
-              <h2 className="text-lg font-semibold text-primary">PROFORMA</h2>
+              <h2 className="text-base font-semibold text-primary">PROFORMA</h2>
               <p className="text-sm font-mono text-foreground">{data.codice}</p>
               <p className="text-sm text-muted-foreground">
                 {format(dataOrdine, "dd MMMM yyyy", { locale: it })}
@@ -298,7 +298,7 @@ export function ProformaDialog({ open, onOpenChange, data: originalData }: Profo
                         <p className="font-medium text-foreground text-sm">
                           {riga.prodotto_nome}
                           {riga.is_omaggio && (
-                            <span className="ml-2 inline-flex items-center gap-1 text-xs font-semibold uppercase px-1.5 py-0.5 rounded bg-success/10 text-success">
+                            <span className="ml-2 inline-flex items-center gap-1 text-xs font-semibold uppercase px-2 py-0.5 rounded bg-success/10 text-success">
                               <Gift className="h-3 w-3" /> Omaggio
                             </span>
                           )}

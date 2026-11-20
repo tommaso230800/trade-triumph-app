@@ -46,23 +46,23 @@ export function StatTile({
                 }`}
               >
                 {positive ? "+" : "−"}
-                {Math.abs(deltaPct as number).toFixed(1)}%
+                {Math.abs(deltaPct as number).toLocaleString("it-IT", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%
               </span>
             ) : (
-              <span className="rounded-full bg-scatto-ink/5 px-2 py-0.5 text-xs font-semibold text-scatto-muted">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-scatto-muted">
                 N/D
               </span>
             )}
           </div>
           {hint && <p className="mt-1 text-xs text-scatto-muted">{hint}</p>}
         </div>
-        <span className="flex-shrink-0 rounded-lg border border-scatto-line p-2.5 text-scatto-muted">{icon}</span>
+        <span className="flex-shrink-0 rounded-lg border border-scatto-line p-2 text-scatto-muted">{icon}</span>
       </div>
 
       {href && (
         <Link
           to={href}
-          className="inline-flex min-h-[44px] w-fit items-center gap-1.5 rounded-lg border border-scatto-line px-4 text-sm font-medium text-scatto-ink transition-colors hover:bg-scatto-ink/[0.03]"
+          className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg border border-scatto-line px-4 text-sm font-medium text-scatto-ink transition-colors hover:bg-muted/50"
         >
           {hrefLabel}
           <ArrowRight className="h-4 w-4" />

@@ -509,7 +509,7 @@ const AziendaDettaglio = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground">{azienda.nome}</h1>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">{azienda.nome}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{azienda.settore || "Nessun settore"}</p>
           </div>
           <Button variant="outline" onClick={openEditAziendaDialog}>
@@ -519,7 +519,7 @@ const AziendaDettaglio = () => {
         </div>
 
         {/* Company Info Card */}
-        <div className="rounded-xl bg-card shadow-card p-6">
+        <div className="rounded-xl border bg-card p-4 shadow-card sm:p-6">
           <div className="flex flex-col sm:flex-row gap-6">
             {/* Logo */}
             <div 
@@ -601,11 +601,11 @@ const AziendaDettaglio = () => {
         <AcceptedConditions companyId={azienda.id}/>
 
         {/* Products Section */}
-        <div className="rounded-xl bg-card shadow-card overflow-hidden">
+        <div className="rounded-xl border bg-card shadow-card overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2 p-4 border-b">
             <div className="flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold">Prodotti ({prodotti?.length || 0})</h2>
+              <h2 className="text-base font-semibold">Prodotti ({prodotti?.length || 0})</h2>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={() => setIsMergeHistoryOpen(true)}>

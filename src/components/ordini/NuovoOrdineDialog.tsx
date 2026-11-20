@@ -1010,7 +1010,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="inset-0 left-0 top-0 flex h-[100dvh] max-h-none w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 bg-order-paper p-0 text-order-ink sm:left-1/2 sm:top-1/2 sm:h-[min(92dvh,900px)] sm:w-[calc(100vw-2rem)] sm:max-w-3xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border sm:border-order-line lg:max-w-6xl">
         {/* Intestazione compatta: titolo, totale, avanzamento */}
-        <DialogHeader className="shrink-0 space-y-4 border-b border-order-line bg-order-paper px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-6 sm:pt-5">
+        <DialogHeader className="shrink-0 space-y-4 border-b border-order-line bg-order-paper px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] text-left sm:px-6 sm:pt-6">
           <div className="flex items-start justify-between gap-4 pr-10">
             <div className="min-w-0">
               <DialogTitle className="text-xl font-bold sm:text-2xl">Nuovo ordine</DialogTitle>
@@ -1071,18 +1071,18 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
 
         <div className="flex min-h-0 flex-1 overflow-hidden">
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
-            <div className="mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-6">
+            <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6 sm:py-6">
             {/* ── 1. Cliente ─────────────────────────────── */}
             <section className={currentStep === 0 ? "space-y-6" : "hidden"}>
               <div>
                 <SectionTitle n="01" title="Cliente" hint="Facoltativo" />
-                <div className="min-w-0 space-y-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:p-5">
+                <div className="min-w-0 space-y-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:p-6">
                   <SearchableSelect options={clientiOptions} value={formData.cliente_id} onValueChange={(v) => setFormData({ ...formData, cliente_id: v })} placeholder="Cerca e seleziona il cliente" searchPlaceholder="Nome, città, P.IVA…" emptyMessage="Nessun cliente trovato" className={fieldCls} />
                   {selectedCliente && (
                     <div className="min-w-0 rounded-lg bg-order-paper p-3">
                       <div className="flex items-start justify-between gap-3">
                         <p className="min-w-0 break-words text-sm font-semibold leading-snug">{selectedCliente.nome}</p>
-                        <span className="shrink-0 rounded-full bg-order-blue/10 px-2.5 py-0.5 text-xs font-semibold text-order-blue">{clienteStatusLabel}</span>
+                        <span className="shrink-0 rounded-full bg-order-blue/10 px-2 py-0.5 text-xs font-semibold text-order-blue">{clienteStatusLabel}</span>
                       </div>
                       <p className="mt-1 break-words text-xs text-order-muted">
                         {[selectedCliente.indirizzo, selectedCliente.citta, selectedCliente.provincia].filter(Boolean).join(" · ") || "Indirizzo N/D"}
@@ -1098,8 +1098,8 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
 
               <div>
                 <SectionTitle n="02" title="Fornitore e data" />
-                <div className="grid min-w-0 gap-4 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:grid-cols-2 sm:p-5">
-                  <div className="min-w-0 space-y-1.5">
+                <div className="grid min-w-0 gap-4 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:grid-cols-2 sm:p-6">
+                  <div className="min-w-0 space-y-2">
                     <Label className="text-xs text-order-muted">Azienda fornitrice <span className="text-destructive">*</span></Label>
                     <SearchableSelect
                       options={aziendeOptions}
@@ -1116,7 +1116,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                     />
                     {!formData.azienda_id && <p className="text-xs text-order-muted">Necessaria per scegliere i prodotti.</p>}
                   </div>
-                  <div className="min-w-0 space-y-1.5">
+                  <div className="min-w-0 space-y-2">
                     <Label htmlFor="nuovo-ordine-data" className="text-xs text-order-muted">Data ordine</Label>
                     <div className="relative min-w-0">
                       <CalendarDays className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-order-muted" />
@@ -1193,34 +1193,34 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
             <section className={currentStep === 2 ? "space-y-6" : "hidden"}>
               <div>
                 <SectionTitle n="01" title="Pagamento e sconti" />
-                <div className="grid min-w-0 grid-cols-2 gap-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:p-5">
-                  <div className="col-span-2 min-w-0 space-y-1.5">
+                <div className="grid min-w-0 grid-cols-2 gap-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:p-6">
+                  <div className="col-span-2 min-w-0 space-y-2">
                     <Label className="text-xs text-order-muted">Pagamento</Label>
                     <Select value={formData.tipo_pagamento} onValueChange={(v) => setFormData({ ...formData, tipo_pagamento: v })}>
                       <SelectTrigger className={fieldCls} aria-label="Tipo pagamento"><SelectValue /></SelectTrigger>
                       <SelectContent>{TIPI_PAGAMENTO.map((tipo) => <SelectItem key={tipo} value={tipo} className="min-h-11">{tipo}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div className="min-w-0 space-y-1.5"><Label htmlFor="no-sconto" className="text-xs text-order-muted">Sconto in fattura %</Label><Input id="no-sconto" type="text" inputMode="decimal" className={`${fieldCls} text-right tabular-nums`} value={formData.sconto} onChange={(e) => setFormData({ ...formData, sconto: e.target.value })} placeholder="0" /></div>
-                  <div className="min-w-0 space-y-1.5"><Label htmlFor="no-merce" className="text-xs text-order-muted">Sconto merce €</Label><Input id="no-merce" type="text" inputMode="decimal" className={`${fieldCls} text-right tabular-nums`} value={formData.sconto_merce} onChange={(e) => setFormData({ ...formData, sconto_merce: e.target.value })} placeholder="0,00" /></div>
+                  <div className="min-w-0 space-y-2"><Label htmlFor="no-sconto" className="text-xs text-order-muted">Sconto in fattura %</Label><Input id="no-sconto" type="text" inputMode="decimal" className={`${fieldCls} text-right tabular-nums`} value={formData.sconto} onChange={(e) => setFormData({ ...formData, sconto: e.target.value })} placeholder="0" /></div>
+                  <div className="min-w-0 space-y-2"><Label htmlFor="no-merce" className="text-xs text-order-muted">Sconto merce €</Label><Input id="no-merce" type="text" inputMode="decimal" className={`${fieldCls} text-right tabular-nums`} value={formData.sconto_merce} onChange={(e) => setFormData({ ...formData, sconto_merce: e.target.value })} placeholder="0,00" /></div>
                   {(parseDecimalInput(formData.sconto) < 0 || parseDecimalInput(formData.sconto) >= 100) && <p className="col-span-2 text-xs text-destructive">Lo sconto in fattura deve essere tra 0 e 99,99%.</p>}
-                  <div className="col-span-2 min-w-0 space-y-1.5"><Label htmlFor="no-cond" className="text-xs text-order-muted">Condizioni commerciali</Label><Textarea id="no-cond" className="min-h-20 rounded-lg border-order-line bg-order-paper text-base sm:text-sm" value={formData.condizioni_commerciali} onChange={(e) => setFormData({ ...formData, condizioni_commerciali: e.target.value })} placeholder="Es. promo in corso, premi, accordi particolari" /></div>
+                  <div className="col-span-2 min-w-0 space-y-2"><Label htmlFor="no-cond" className="text-xs text-order-muted">Condizioni commerciali</Label><Textarea id="no-cond" className="min-h-20 rounded-lg border-order-line bg-order-paper text-base sm:text-sm" value={formData.condizioni_commerciali} onChange={(e) => setFormData({ ...formData, condizioni_commerciali: e.target.value })} placeholder="Es. promo in corso, premi, accordi particolari" /></div>
                 </div>
               </div>
               <div>
                 <SectionTitle n="02" title="Consegna" hint="Facoltativo" />
-                <div className="grid min-w-0 gap-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:grid-cols-2 sm:p-5">
-                  <div className="min-w-0 space-y-1.5"><Label htmlFor="no-cons-data" className="text-xs text-order-muted">Data consegna prevista</Label><div className="min-w-0 overflow-hidden"><Input id="no-cons-data" type="date" className={`${fieldCls} block min-w-0 max-w-full appearance-none text-left`} value={formData.data_consegna_prevista} onChange={(e) => setFormData({ ...formData, data_consegna_prevista: e.target.value })} /></div></div>
-                  <div className="min-w-0 space-y-1.5"><Label htmlFor="no-cons-dest" className="text-xs text-order-muted">Destinazione</Label><Input id="no-cons-dest" className={fieldCls} value={formData.destinazione_consegna} onChange={(e) => setFormData({ ...formData, destinazione_consegna: e.target.value })} placeholder="Se diversa dalla sede del cliente" /></div>
-                  <div className="min-w-0 space-y-1.5 sm:col-span-2"><Label htmlFor="no-cons-note" className="text-xs text-order-muted">Note di consegna</Label><Input id="no-cons-note" className={fieldCls} value={formData.note_consegna} onChange={(e) => setFormData({ ...formData, note_consegna: e.target.value })} placeholder="Orari, scarico, referente" /></div>
-                  <div className="min-w-0 space-y-1.5 sm:col-span-2"><Label htmlFor="no-note" className="text-xs text-order-muted">Note per il fornitore</Label><Textarea id="no-note" className="min-h-20 rounded-lg border-order-line bg-order-paper text-base sm:text-sm" value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Indicazioni riportate sulla proforma" /></div>
+                <div className="grid min-w-0 gap-3 rounded-xl border border-order-line bg-order-surface p-4 shadow-sm sm:grid-cols-2 sm:p-6">
+                  <div className="min-w-0 space-y-2"><Label htmlFor="no-cons-data" className="text-xs text-order-muted">Data consegna prevista</Label><div className="min-w-0 overflow-hidden"><Input id="no-cons-data" type="date" className={`${fieldCls} block min-w-0 max-w-full appearance-none text-left`} value={formData.data_consegna_prevista} onChange={(e) => setFormData({ ...formData, data_consegna_prevista: e.target.value })} /></div></div>
+                  <div className="min-w-0 space-y-2"><Label htmlFor="no-cons-dest" className="text-xs text-order-muted">Destinazione</Label><Input id="no-cons-dest" className={fieldCls} value={formData.destinazione_consegna} onChange={(e) => setFormData({ ...formData, destinazione_consegna: e.target.value })} placeholder="Se diversa dalla sede del cliente" /></div>
+                  <div className="min-w-0 space-y-2 sm:col-span-2"><Label htmlFor="no-cons-note" className="text-xs text-order-muted">Note di consegna</Label><Input id="no-cons-note" className={fieldCls} value={formData.note_consegna} onChange={(e) => setFormData({ ...formData, note_consegna: e.target.value })} placeholder="Orari, scarico, referente" /></div>
+                  <div className="min-w-0 space-y-2 sm:col-span-2"><Label htmlFor="no-note" className="text-xs text-order-muted">Note per il fornitore</Label><Textarea id="no-note" className="min-h-20 rounded-lg border-order-line bg-order-paper text-base sm:text-sm" value={formData.note} onChange={(e) => setFormData({ ...formData, note: e.target.value })} placeholder="Indicazioni riportate sulla proforma" /></div>
                 </div>
               </div>
             </section>
 
             {/* ── 4. Riepilogo e invio ───────────────────── */}
             <section className={currentStep === 3 ? "space-y-4" : "hidden"}>
-              <div className="rounded-xl border border-order-blue/30 bg-order-surface p-4 shadow-sm sm:p-5">
+              <div className="rounded-xl border border-order-blue/30 bg-order-surface p-4 shadow-sm sm:p-6">
                 <TotalsStrip />
                 <div className="mt-3"><QtyNotes /></div>
                 <AccisaNote />
@@ -1255,7 +1255,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
               <ReviewBlock title={`Prodotti · ${righeOrdine.length}`} step={1}>
                 <ul className="divide-y divide-order-line">
                   {righeOrdine.map((r, i) => (
-                    <li key={`${r.prodotto_id}-${i}`} className="flex items-start justify-between gap-3 py-2.5">
+                    <li key={`${r.prodotto_id}-${i}`} className="flex items-start justify-between gap-3 py-3">
                       <div className="min-w-0">
                         <p className="break-words text-sm leading-snug">{r.prodotto_nome}</p>
                         <p className="mt-0.5 text-xs tabular-nums text-order-muted">
@@ -1301,7 +1301,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
 
           {/* Riepilogo laterale (solo computer) */}
           <aside className="hidden w-80 shrink-0 flex-col border-l border-order-line bg-order-surface lg:flex">
-            <div className="flex-1 space-y-5 overflow-y-auto p-6">
+            <div className="flex-1 space-y-6 overflow-y-auto p-6">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-order-muted">Riepilogo</p>
                 <p className="mt-2 break-words text-sm font-semibold leading-snug">{selectedClienteName || "Nessun cliente"}</p>
@@ -1329,7 +1329,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
 
         {/* Totali sempre visibili su telefono e tablet, sopra i pulsanti */}
         {currentStep > 0 && currentStep < LAST_STEP && (
-          <div className="shrink-0 border-t border-order-line bg-order-paper px-4 py-2.5 sm:px-6 lg:hidden">
+          <div className="shrink-0 border-t border-order-line bg-order-paper px-4 py-3 sm:px-6 lg:hidden">
             <TotalsStrip compact />
           </div>
         )}

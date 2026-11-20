@@ -168,10 +168,10 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
     <div className="rounded-xl bg-card p-4 shadow-card sm:p-6">
       <div className="mb-4 flex items-center gap-2">
         <Tag className="h-5 w-5 text-primary" />
-        <h3 className="text-lg font-semibold">Listino personalizzato</h3>
+        <h3 className="text-base font-semibold">Listino personalizzato</h3>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label className="text-sm">Azienda</Label>
         <Select value={selectedAziendaId} onValueChange={setSelectedAziendaId}>
           <SelectTrigger>
@@ -265,11 +265,11 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
                   </div>
                 </div>
 
-                <div className="mt-2.5 flex items-center gap-2 border-t border-border pt-2">
+                <div className="mt-2 flex items-center gap-2 border-t border-border pt-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 gap-1.5 text-xs"
+                    className="h-8 gap-2 text-xs"
                     onClick={() => openEditDialog(prodotto.id)}
                   >
                     <Pencil className="h-3 w-3" />
@@ -279,7 +279,7 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-8 gap-1.5 text-xs text-muted-foreground"
+                      className="h-8 gap-2 text-xs text-muted-foreground"
                       onClick={() => setDeleteTarget(custom)}
                     >
                       <RotateCcw className="h-3 w-3" />
@@ -302,7 +302,7 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
             <DialogDescription>{editingProdotto?.nome}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-sm">Prezzo (€)</Label>
               <Input
                 type="text"
@@ -312,7 +312,7 @@ export function ListinoPersonalizzatoSection({ clienteId }: ListinoPersonalizzat
                 placeholder="es. 6,20"
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label className="text-sm">Nota (opzionale)</Label>
               <Textarea value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="Motivo del prezzo riservato..." />
             </div>

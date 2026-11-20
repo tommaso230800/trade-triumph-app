@@ -25,13 +25,13 @@ const statusTone: Record<Ordine["status"], string> = {
 export function OrderStatusPill({ ordine }: { ordine: Ordine }) {
   if (ordine.verificato_conferma) {
     return (
-      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-scatto-success/15 px-2.5 py-1 text-xs font-semibold text-scatto-success">
+      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-scatto-success/15 px-2 py-1 text-xs font-semibold text-scatto-success">
         <CheckCircle2 className="h-3.5 w-3.5" /> Verificato
       </span>
     );
   }
   return (
-    <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone[ordine.status]}`}>
+    <span className={`inline-flex whitespace-nowrap rounded-full px-2 py-1 text-xs font-semibold ${statusTone[ordine.status]}`}>
       {scattoStatusBadge[ordine.status].label}
     </span>
   );

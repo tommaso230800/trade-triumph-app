@@ -17,7 +17,7 @@ interface TopClientsGrowthDeclineProps {
 
 function ClientRow({ rank, c, positive }: { rank: number; c: ClienteVariazione; positive: boolean }) {
   return (
-    <div className="flex items-start gap-2 border-b border-scatto-line py-2.5 last:border-b-0">
+    <div className="flex items-start gap-2 border-b border-scatto-line py-3 last:border-b-0">
       <span className="w-4 flex-shrink-0 font-display text-xs font-bold text-scatto-muted">{rank}</span>
       <div className="min-w-0 flex-1">
         <p className="break-words text-sm font-semibold text-scatto-ink">{c.nome}</p>

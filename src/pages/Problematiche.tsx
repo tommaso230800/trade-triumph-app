@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { runDataAudit, saveDataIssues } from "@/lib/dataAudit";
+import { MetricTile } from "@/components/ui/metric-tile";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -142,22 +143,10 @@ export default function Problematiche() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs text-muted-foreground">Segnalazioni</p>
-            <p className="text-2xl font-bold tabular-nums">{counts.totale}</p>
-          </div>
-          <div className="rounded-xl border border-warning/20 bg-warning/5 p-4">
-            <p className="text-xs text-muted-foreground">Da verificare</p>
-            <p className="text-2xl font-bold tabular-nums text-warning">{counts.da_verificare}</p>
-          </div>
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-            <p className="text-xs text-muted-foreground">In lavorazione</p>
-            <p className="text-2xl font-bold tabular-nums text-primary">{counts.in_lavorazione}</p>
-          </div>
-          <div className="rounded-xl border border-success/20 bg-success/5 p-4">
-            <p className="text-xs text-muted-foreground">Risolte</p>
-            <p className="text-2xl font-bold tabular-nums text-success">{counts.risolto}</p>
-          </div>
+          <MetricTile label="Segnalazioni" value={counts.totale} />
+          <MetricTile label="Da verificare" value={counts.da_verificare} icon={<span className="block h-2 w-2 rounded-full bg-warning" />} tone="warning" />
+          <MetricTile label="In lavorazione" value={counts.in_lavorazione} icon={<span className="block h-2 w-2 rounded-full bg-info" />} tone="info" />
+          <MetricTile label="Risolte" value={counts.risolto} icon={<span className="block h-2 w-2 rounded-full bg-success" />} tone="success" />
         </div>
 
         {counts.ultimoControllo && (
@@ -248,7 +237,7 @@ export default function Problematiche() {
                 {issue.link && (
                   <Link
                     to={issue.link}
-                    className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                    className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary hover:underline"
                   >
                     <ExternalLink className="h-3.5 w-3.5" />
                     Apri i dati coinvolti

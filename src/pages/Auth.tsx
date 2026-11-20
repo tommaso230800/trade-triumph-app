@@ -90,14 +90,14 @@ export default function Auth() {
       <div className="hidden border-r border-border bg-card lg:flex lg:flex-col lg:justify-between lg:p-12">
         <div className="flex items-center gap-4">
           <div className="h-14 w-14 overflow-hidden rounded-xl border border-border bg-background">
-            <img src={agencyLogo} alt="Logo AMG" className="h-full w-full object-contain p-1.5" />
+            <img src={agencyLogo} alt="Logo AMG" className="h-full w-full object-contain p-2" />
           </div>
           <div>
             <p className="font-display text-xl font-bold tracking-tight text-foreground">AMG HO.RE.CA</p>
             <p className="text-sm text-muted-foreground">Mazzi Group · Business &amp; Strategy</p>
           </div>
         </div>
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div className="space-y-3">
             <h2 className="font-display text-4xl font-bold tracking-tight text-foreground">
               Il lavoro dell’agenzia,
@@ -129,8 +129,8 @@ export default function Auth() {
       <div className="flex min-h-[100dvh] flex-col items-center justify-center px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] sm:p-8">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center lg:text-left">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-border bg-card lg:hidden">
-              <img src={agencyLogo} alt="Logo AMG" className="h-full w-full object-contain p-1.5" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl border border-border bg-card lg:hidden">
+              <img src={agencyLogo} alt="Logo AMG" className="h-full w-full object-contain p-2" />
             </div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
               {mode === "login" ? "Accedi al portale" : "Recupera password"}
@@ -142,7 +142,7 @@ export default function Auth() {
             </p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-card sm:p-6">
             {mode === "reset" && resetMessage ? (
               <div className="space-y-4 text-center">
                 <CheckCircle2 className="mx-auto h-10 w-10 text-success" />
@@ -189,7 +189,7 @@ export default function Auth() {
                       <button
                         type="button"
                         onClick={() => { setMode("reset"); setErrorMsg(null); }}
-                        className="min-h-[44px] px-1 text-sm font-medium text-primary hover:underline"
+                        className="min-h-11 px-1 text-sm font-medium text-primary hover:underline"
                       >
                         Password dimenticata?
                       </button>

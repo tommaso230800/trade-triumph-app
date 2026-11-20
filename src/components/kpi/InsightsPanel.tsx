@@ -17,7 +17,7 @@ export function InsightsPanel({ insights }: InsightsPanelProps) {
     <SectionCard title="Cosa dicono i numeri">
       <div className="space-y-3">
         {insights.map((ins, i) => (
-          <div key={i} className="flex items-start gap-2.5 text-sm leading-snug text-scatto-ink">
+          <div key={i} className="flex items-start gap-2 text-sm leading-snug text-scatto-ink">
             <span className="flex-shrink-0 text-base leading-none">{ins.emoji}</span>
             <p>
               <span className="font-semibold">{ins.bold}</span> {ins.text}
