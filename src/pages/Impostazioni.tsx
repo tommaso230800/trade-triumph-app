@@ -165,7 +165,7 @@ const Impostazioni = () => {
                     const pv = {
                       classico: { box: "rounded-md border bg-[#f2f5fa]", side: "bg-[#e2e8f0]", card: "rounded-sm border bg-white", dot: "rounded-full bg-[#2563eb]" },
                       pannelli: { box: "rounded-xl bg-[#121419]", side: "rounded-lg bg-[#1a1d23]", card: "rounded-lg bg-[#1a1d23]", dot: "rounded-full bg-[#3b82f6]" },
-                      unslop: { box: "rounded-sm border border-[#ddd9d1] bg-[#f8f7f4]", side: "border-r border-[#ddd9d1] bg-[#f1efe9]", card: "rounded-[3px] border border-[#ddd9d1] bg-white", dot: "rounded-none bg-[#23408f]" },
+                      unslop: { box: "rounded-md border border-black/10 bg-[#fafafa]", side: "rounded-sm border border-black/10 bg-white", card: "rounded-sm border border-black/10 bg-white", dot: "rounded-full bg-[#1b46c2]" },
                     }[key];
                     return (
                       <div aria-hidden className={cn("mb-3 flex h-16 gap-1 overflow-hidden p-1", pv.box)}>
@@ -181,6 +181,9 @@ const Impostazioni = () => {
                   })()}
                   <h3 className="text-base font-semibold">{config.name}</h3>
                   <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{config.description}</p>
+                  {key === "unslop" && (
+                    <p className="mt-1 text-xs text-muted-foreground">Valori dallo skill unslop di Damir Sokolovsky (@heydamir), CC BY 4.0</p>
+                  )}
                   {design === key && (
                     <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
                       <Check className="h-4 w-4 text-primary-foreground" />

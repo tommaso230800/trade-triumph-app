@@ -7,15 +7,15 @@ export type ThemeStyle = "modern" | "classic" | "minimal" | "vibrant" | "dark";
  * - "classico": l'aspetto storico dell'app (predefinito su ogni dispositivo)
  * - "pannelli": grafite scura a pannelli, accento blu, sidebar staccata,
  *   card morbide. Ha una palette propria, quindi il tema colore non si applica.
- * - "unslop": chiaro e sobrio secondo i principi dello skill "unslop"
- *   (@heydamir, CC BY 4.0). Palette propria, il tema colore non si applica.
+ * - "unslop": valori dello skill unslop (github.com/heydamir/unslop, di
+ *   Damir Sokolovsky, CC BY 4.0). Palette propria, il tema colore non si applica.
  */
 export type DesignStyle = "classico" | "pannelli" | "unslop";
 
 export const designConfigs: Record<DesignStyle, { name: string; description: string }> = {
   classico: { name: "Classico", description: "L'aspetto di sempre, chiaro" },
   pannelli: { name: "Pannelli scuri", description: "Scuro a pannelli, angoli morbidi, accento blu" },
-  unslop: { name: "Unslop", description: "Sobrio su carta, superfici piatte, cifre da registro" },
+  unslop: { name: "Unslop", description: "Interfaccia quieta, un solo accento, cifre da bolla" },
 };
 
 interface ThemeContextType {
@@ -111,7 +111,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const unslop = design === "unslop";
     root.classList.toggle("design-panel", panel);
     root.classList.toggle("design-unslop", unslop);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", panel ? "#121419" : unslop ? "#f8f7f4" : "#f2f5fa");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", panel ? "#121419" : unslop ? "#fafafa" : "#f2f5fa");
 
     // Apply colors (solo con il design Classico: gli altri hanno la loro palette)
     Object.entries(config.colors).forEach(([key, value]) => {
