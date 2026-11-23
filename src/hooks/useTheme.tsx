@@ -7,12 +7,15 @@ export type ThemeStyle = "modern" | "classic" | "minimal" | "vibrant" | "dark";
  * - "classico": l'aspetto storico dell'app (predefinito su ogni dispositivo)
  * - "pannelli": grafite scura a pannelli, accento blu, sidebar staccata,
  *   card morbide. Ha una palette propria, quindi il tema colore non si applica.
+ * - "unslop": chiaro e sobrio secondo i principi dello skill "unslop"
+ *   (@heydamir, CC BY 4.0). Palette propria, il tema colore non si applica.
  */
-export type DesignStyle = "classico" | "pannelli";
+export type DesignStyle = "classico" | "pannelli" | "unslop";
 
 export const designConfigs: Record<DesignStyle, { name: string; description: string }> = {
   classico: { name: "Classico", description: "L'aspetto di sempre, chiaro" },
   pannelli: { name: "Pannelli scuri", description: "Scuro a pannelli, angoli morbidi, accento blu" },
+  unslop: { name: "Unslop", description: "Sobrio su carta, superfici piatte, cifre da registro" },
 };
 
 interface ThemeContextType {
@@ -85,7 +88,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const [design, setDesignState] = useState<DesignStyle>(() => {
     const saved = localStorage.getItem("app-design");
-    return saved === "pannelli" ? "pannelli" : "classico";
+    return saved === "pannelli" || saved === "unslop" ? saved : "classico";
   });
 
   const setDesign = (newDesign: DesignStyle) => {
@@ -105,17 +108,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.removeProperty("--sidebar-background");
     
     const panel = design === "pannelli";
+    const unslop = design === "unslop";
     root.classList.toggle("design-panel", panel);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", panel ? "#121419" : "#f2f5fa");
+    root.classList.toggle("design-unslop", unslop);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", panel ? "#121419" : unslop ? "#f8f7f4" : "#f2f5fa");
 
-    // Apply colors (non con "Pannelli scuri", che ha la sua palette)
+    // Apply colors (solo con il design Classico: gli altri hanno la loro palette)
     Object.entries(config.colors).forEach(([key, value]) => {
-      if (panel) root.style.removeProperty(key);
+      if (design !== "classico") root.style.removeProperty(key);
       else root.style.setProperty(key, value);
     });
 
     // Apply dark class for dark theme
-    if (theme === "dark" || panel) {
+    if (panel || (theme === "dark" && !unslop)) {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
@@ -140,5 +145,5 @@ export function useTheme() {
 /** Vero quando l'interfaccia è scura (tema Scuro o design Pannelli scuri). */
 export function useIsDarkUI() {
   const { theme, design } = useTheme();
-  return design === "pannelli" || theme === "dark";
+  return design === "pannelli" || (theme === "dark" && design !== "unslop");
 }

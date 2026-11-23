@@ -259,6 +259,68 @@
     --radius-2xl: 1.5rem;
   }
 
+  /* Design "Unslop" (Impostazioni → Design). Ispirato ai principi dello skill
+     "unslop" di Damir Sokolovsky (@heydamir, CC BY 4.0): niente sfumature,
+     bagliori, ombre decorative o emoji come etichette; palette sobria, un solo
+     accento, superfici piatte con bordi sottili, una caratteristica distintiva
+     (qui: cifre grandi in carattere monospaziato, come un registro contabile).
+     Ha la sua palette: i temi colore non si applicano. */
+  .design-unslop {
+    color-scheme: light;
+    --background: 40 20% 97%;
+    --foreground: 220 18% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 18% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 18% 11%;
+    --primary: 224 64% 38%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 14% 93%;
+    --secondary-foreground: 220 18% 14%;
+    --muted: 40 14% 94%;
+    --muted-foreground: 220 8% 38%;
+    --accent: 40 14% 92%;
+    --accent-foreground: 220 18% 11%;
+    --destructive: 0 66% 44%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 10% 85%;
+    --input: 40 8% 78%;
+    --ring: 224 64% 38%;
+    --success: 150 60% 28%;
+    --success-foreground: 0 0% 100%;
+    --warning: 32 90% 36%;
+    --warning-foreground: 30 80% 8%;
+    --danger: 0 66% 44%;
+    --danger-foreground: 0 0% 100%;
+    --info: 224 64% 38%;
+    --info-foreground: 0 0% 100%;
+    --order-paper: 40 20% 97%;
+    --order-paper-deep: 40 14% 92%;
+    --order-ink: 220 18% 11%;
+    --order-blue: 224 64% 38%;
+    --order-surface: 0 0% 100%;
+    --order-line: 40 10% 85%;
+    --order-muted: 220 8% 38%;
+    --sidebar-background: 40 18% 95%;
+    --sidebar-foreground: 220 18% 12%;
+    --sidebar-primary: 224 64% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 14% 90%;
+    --sidebar-accent-foreground: 220 18% 11%;
+    --sidebar-border: 40 10% 85%;
+    --sidebar-ring: 224 64% 38%;
+    --sidebar-rail-background: 40 16% 92%;
+    --sidebar-rail-foreground: 220 10% 28%;
+    --sidebar-item-foreground: 220 12% 22%;
+    --sidebar-item-icon: 220 8% 40%;
+    --shadow-card: 0 0 0 0 transparent;
+    --shadow-card-hover: 0 0 0 0 transparent;
+    --shadow-glow: 0 0 0 0 transparent;
+    --radius: 0.375rem;
+    --radius-xl: 0.5rem;
+    --radius-2xl: 0.625rem;
+  }
+
   /* Documenti da stampare/proforma: la classe .light riporta i token alla
      palette chiara anche dentro il design Pannelli scuri. */
   .light {
@@ -591,7 +653,7 @@
 }
 
 @media print {
-  :root, .dark, .design-panel {
+  :root, .dark, .design-panel, .design-unslop {
     --background: 210 33% 96%;
     --foreground: 222 36% 14%;
     --card: 0 0% 100%;
@@ -724,4 +786,20 @@ a[href*="lovable.dev"][style*="position:fixed"] {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Unslop: titoli sobri nello stesso carattere del testo; cifre grandi in
+   monospaziato tabellare (la caratteristica distintiva del design). */
+.design-unslop h1, .design-unslop h2, .design-unslop h3,
+.design-unslop h4, .design-unslop h5, .design-unslop h6,
+.design-unslop .font-display {
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  letter-spacing: -0.015em;
+}
+.design-unslop .text-3xl.tabular-nums,
+.design-unslop .text-4xl.tabular-nums,
+.design-unslop .stat-value {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 600;
+  letter-spacing: -0.03em;
 }
