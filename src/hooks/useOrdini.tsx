@@ -208,7 +208,7 @@ export function useCreateOrdine() {
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       // The database records the "new order" notification; deliver it now (scheduled run is the backup).
       kickPushDispatch();
-      toast.success("Ordine creato con successo!");
+      toast.success("Ordine creato con successo");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -233,7 +233,7 @@ export function useUpdateOrdineStatus() {
       queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
       queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
-      toast.success("Stato ordine aggiornato!");
+      toast.success("Stato ordine aggiornato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -387,7 +387,7 @@ export function useUpdateProvvigionePagata() {
       queryClient.invalidateQueries({ queryKey: ["reorder_forecast_v1"] });
       queryClient.invalidateQueries({ queryKey: ["reorder_tracking"] });
       queryClient.invalidateQueries({ queryKey: ["reorder_alerts"] });
-      toast.success("Stato provvigione aggiornato!");
+      toast.success("Stato provvigione aggiornato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -426,7 +426,7 @@ export function useUpdateOrdine() {
       queryClient.invalidateQueries({ queryKey: ["stats"] });
       queryClient.invalidateQueries({ queryKey: ["kpi_stats"] });
       queryClient.invalidateQueries({ queryKey: ["cliente_ordini"] });
-      toast.success("Ordine aggiornato con successo!");
+      toast.success("Ordine aggiornato con successo");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);

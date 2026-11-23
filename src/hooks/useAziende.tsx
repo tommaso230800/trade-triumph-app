@@ -60,7 +60,7 @@ export function useCreateAzienda() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["aziende"] });
-      toast.success("Azienda creata con successo!");
+      toast.success("Azienda creata con successo");
     },
     onError: (error) => {
       toast.error("Errore nella creazione: " + error.message);
@@ -81,7 +81,7 @@ export function useUpdateAzienda() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["aziende"] });
-      toast.success("Azienda aggiornata!");
+      toast.success("Azienda aggiornata");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -99,7 +99,7 @@ export function useDeleteAzienda() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["aziende"] });
-      toast.success("Azienda eliminata!");
+      toast.success("Azienda eliminata");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);

@@ -413,12 +413,11 @@ export default function RiordinoForecast() {
 }
 
 function KpiCard({
-  icon,
   label,
   value,
   tone,
 }: {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   label: string;
   value: string;
   tone: "red" | "orange" | "yellow" | "blue" | "green";
@@ -427,7 +426,8 @@ function KpiCard({
     <Card data-tone={tone}>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {icon}
+          {/* Stato come pallino colorato al posto dell'icona */}
+          <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${{ red: "bg-destructive", orange: "bg-warning", yellow: "bg-warning", blue: "bg-muted-foreground/40", green: "bg-muted-foreground/40" }[tone]}`} />
           <span className="min-w-0 break-words">{label}</span>
         </div>
         <div className="mt-2 break-words font-display text-2xl font-bold tracking-tight tabular-nums">{value}</div>

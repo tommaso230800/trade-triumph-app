@@ -51,7 +51,7 @@ export function useCreateBrand() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
-      toast.success("Marchio creato!");
+      toast.success("Marchio creato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -72,7 +72,7 @@ export function useUpdateBrand() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
-      toast.success("Marchio aggiornato!");
+      toast.success("Marchio aggiornato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -90,7 +90,7 @@ export function useDeleteBrand() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
-      toast.success("Marchio eliminato!");
+      toast.success("Marchio eliminato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);

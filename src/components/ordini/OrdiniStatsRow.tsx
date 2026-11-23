@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowUp, ArrowDown, Euro, ShoppingCart } from "lucide-react";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import { formatCurrency } from "./ordiniShared";
 
 interface OrdiniStatsRowProps {
@@ -32,7 +32,6 @@ export function OrdiniStatsRow({ stats, mom, isLoading }: OrdiniStatsRowProps) {
     <div className="grid grid-cols-2 divide-x divide-scatto-line overflow-hidden rounded-xl border border-scatto-line bg-scatto-surface shadow-card">
       <div className="min-w-0 p-4 sm:p-6">
         <p className="flex items-center gap-2 text-xs text-scatto-muted">
-          <Euro className="hidden h-4 w-4 sm:block" />
           Valore ordini attivi
         </p>
         <p className="mt-1 whitespace-nowrap font-display text-xl font-bold tracking-tight tabular-nums text-scatto-ink min-[400px]:text-2xl">
@@ -53,7 +52,6 @@ export function OrdiniStatsRow({ stats, mom, isLoading }: OrdiniStatsRowProps) {
 
       <div className="min-w-0 p-4 sm:p-6">
         <p className="flex items-center gap-2 text-xs text-scatto-muted">
-          <ShoppingCart className="hidden h-4 w-4 sm:block" />
           Ordini attivi
         </p>
         <p className="mt-1 font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
