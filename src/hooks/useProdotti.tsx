@@ -82,7 +82,7 @@ export function useCreateProdotto() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prodotti"] });
-      toast.success("Prodotto aggiunto!");
+      toast.success("Prodotto aggiunto");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -103,7 +103,7 @@ export function useUpdateProdotto() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prodotti"] });
-      toast.success("Prodotto aggiornato!");
+      toast.success("Prodotto aggiornato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);

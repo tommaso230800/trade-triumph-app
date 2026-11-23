@@ -475,7 +475,7 @@ export function ImportPDFDialog({
 
       setLocalProdotti(prev => [...prev, ...newProducts]);
       setMappedRighe(updatedRighe);
-      toast.success(`${newProducts.length} prodotti creati con successo!`);
+      toast.success(`${newProducts.length} prodotti creati con successo`);
       onProductsCreated?.();
     } catch (error) {
       console.error("Error creating products:", error);

@@ -75,7 +75,7 @@ export function useCreateCliente() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clienti"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
-      toast.success("Cliente aggiunto con successo!");
+      toast.success("Cliente aggiunto con successo");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -97,7 +97,7 @@ export function useUpdateCliente() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clienti"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
-      toast.success("Cliente aggiornato!");
+      toast.success("Cliente aggiornato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -116,7 +116,7 @@ export function useDeleteCliente() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clienti"] });
       queryClient.invalidateQueries({ queryKey: ["stats"] });
-      toast.success("Cliente eliminato!");
+      toast.success("Cliente eliminato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);

@@ -228,7 +228,7 @@ export function useCreateCanvass() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["canvass"] });
-      toast.success("Promozione creata!");
+      toast.success("Promozione creata");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -308,7 +308,7 @@ export function useUpdateCanvass() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["canvass"] });
-      toast.success("Promozione aggiornata!");
+      toast.success("Promozione aggiornata");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -326,7 +326,7 @@ export function useDeleteCanvass() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["canvass"] });
-      toast.success("Promozione eliminata!");
+      toast.success("Promozione eliminata");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -390,7 +390,7 @@ export function useCreateContrattoCliente() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contratti_clienti"] });
-      toast.success("Contratto creato!");
+      toast.success("Contratto creato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -438,7 +438,7 @@ export function useUpdateContrattoCliente() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contratti_clienti"] });
-      toast.success("Contratto aggiornato!");
+      toast.success("Contratto aggiornato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -456,7 +456,7 @@ export function useDeleteContrattoCliente() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contratti_clienti"] });
-      toast.success("Contratto eliminato!");
+      toast.success("Contratto eliminato");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);

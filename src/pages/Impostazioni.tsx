@@ -101,7 +101,7 @@ const Impostazioni = () => {
         .eq("id", user.id);
 
       if (error) throw error;
-      toast.success("Profilo aggiornato con successo!");
+      toast.success("Profilo aggiornato con successo");
     } catch (err) {
       console.error(err);
       toast.error("Errore nell'aggiornamento del profilo");
@@ -117,7 +117,7 @@ const Impostazioni = () => {
 
   const handleSaveNotifications = () => {
     localStorage.setItem("notifications-settings", JSON.stringify(notifications));
-    toast.success("Preferenze notifiche salvate!");
+    toast.success("Preferenze notifiche salvate");
   };
 
   return (

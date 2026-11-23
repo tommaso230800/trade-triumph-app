@@ -2,21 +2,14 @@ import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StatCardProps {
-  icon: LucideIcon;
+  /** Non più mostrata: le card dei numeri sono solo numeri. */
+  icon?: LucideIcon;
   label: string;
   value: string;
   delta?: { label: string; direction: "up" | "down" | "flat" };
   caption?: string;
   tone?: "info" | "success" | "warning" | "danger" | "violet";
 }
-
-const toneIconClass: Record<NonNullable<StatCardProps["tone"]>, string> = {
-  info: "text-scatto-info",
-  success: "text-scatto-success",
-  warning: "text-scatto-warning",
-  danger: "text-scatto-danger",
-  violet: "text-scatto-violet",
-};
 
 const deltaClass: Record<"up" | "down" | "flat", string> = {
   up: "text-scatto-success",
@@ -26,18 +19,13 @@ const deltaClass: Record<"up" | "down" | "flat", string> = {
 
 const deltaArrow: Record<"up" | "down" | "flat", string> = { up: "↑", down: "↓", flat: "→" };
 
-// Tessera KPI unica per tutta la pagina: icona piccola tinteggiata, label,
-// numero grande, badge di variazione. Niente sfondo colorato pieno — il
-// colore vive solo su icona e badge, come nelle reference.
-export function StatCard({ icon: Icon, label, value, delta, caption, tone = "info" }: StatCardProps) {
+// Tessera KPI unica per tutta la pagina: label, numero grande, variazione con
+// il suo confronto. Niente icone di riempimento: il colore vive solo nella
+// variazione (verde/rosso = stato).
+export function StatCard({ label, value, delta, caption }: StatCardProps) {
   return (
     <div className="rounded-xl border border-scatto-line bg-scatto-surface p-4 shadow-card">
-      <div className="flex items-center gap-2">
-        <span className={cn("flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-muted", toneIconClass[tone])}>
-          <Icon className="h-3.5 w-3.5" />
-        </span>
-        <p className="break-words text-xs font-medium text-scatto-muted">{label}</p>
-      </div>
+      <p className="break-words text-xs font-medium text-scatto-muted">{label}</p>
       <p className="mt-2 break-words font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
         {value}
       </p>
