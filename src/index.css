@@ -259,66 +259,72 @@
     --radius-2xl: 1.5rem;
   }
 
-  /* Design "Unslop" (Impostazioni → Design). Ispirato ai principi dello skill
-     "unslop" di Damir Sokolovsky (@heydamir, CC BY 4.0): niente sfumature,
-     bagliori, ombre decorative o emoji come etichette; palette sobria, un solo
-     accento, superfici piatte con bordi sottili, una caratteristica distintiva
-     (qui: cifre grandi in carattere monospaziato, come un registro contabile).
-     Ha la sua palette: i temi colore non si applicano. */
+  /* Design "Unslop" (Impostazioni → Design), con i valori dello skill unslop
+     di Damir Sokolovsky (@heydamir, https://github.com/heydamir/unslop,
+     CC BY 4.0). Direzione per questo prodotto:
+     - Prodotto: CRM di un agente di commercio Food & Beverage, usato sul campo
+     - Carattere: pratico, preciso, un po' caldo
+     - Mondo: listini, bolle e registro ordini (carta e inchiostro)
+     - Momenti: il fatturato e i grafici; il resto dell'interfaccia resta quieto
+     - Firma: cifre e codici come su una bolla, in monospaziato tabellare
+     Superfici dalla rampa neutra "graphite" chiara (per le app lo skill vuole
+     sfondi neutri), testo in tre ruoli, un solo accento: il blu del marchio,
+     scurito per il contrasto. Bordi a filo (testo all'8%), ombre minime neutre,
+     raggi 8/12/16. Palette propria: i temi colore non si applicano. */
   .design-unslop {
     color-scheme: light;
-    --background: 40 20% 97%;
-    --foreground: 220 18% 11%;
+    --background: 0 0% 98%;            /* #fafafa */
+    --foreground: 0 0% 9%;             /* #171717 testo primario */
     --card: 0 0% 100%;
-    --card-foreground: 220 18% 11%;
+    --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 18% 11%;
-    --primary: 224 64% 38%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 224 76% 44%;            /* blu marchio scurito, ≥ 4,5:1 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 40 14% 93%;
-    --secondary-foreground: 220 18% 14%;
-    --muted: 40 14% 94%;
-    --muted-foreground: 220 8% 38%;
-    --accent: 40 14% 92%;
-    --accent-foreground: 220 18% 11%;
-    --destructive: 0 66% 44%;
+    --secondary: 240 5% 96%;           /* #f4f4f5 superficie rialzata */
+    --secondary-foreground: 0 0% 9%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 0 0% 32%;      /* #525252 testo secondario */
+    --accent: 240 5% 96%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 72% 51%;          /* #dc2626 */
     --destructive-foreground: 0 0% 100%;
-    --border: 40 10% 85%;
-    --input: 40 8% 78%;
-    --ring: 224 64% 38%;
-    --success: 150 60% 28%;
+    --border: 0 0% 92%;                /* filo: testo primario all'8% su bianco */
+    --input: 0 0% 85%;
+    --ring: 224 76% 44%;
+    --success: 142 76% 36%;            /* #16a34a */
     --success-foreground: 0 0% 100%;
     --warning: 32 90% 36%;
     --warning-foreground: 30 80% 8%;
-    --danger: 0 66% 44%;
+    --danger: 0 72% 51%;
     --danger-foreground: 0 0% 100%;
-    --info: 224 64% 38%;
+    --info: 224 76% 44%;
     --info-foreground: 0 0% 100%;
-    --order-paper: 40 20% 97%;
-    --order-paper-deep: 40 14% 92%;
-    --order-ink: 220 18% 11%;
-    --order-blue: 224 64% 38%;
+    --order-paper: 0 0% 98%;
+    --order-paper-deep: 240 5% 96%;
+    --order-ink: 0 0% 9%;
+    --order-blue: 224 76% 44%;
     --order-surface: 0 0% 100%;
-    --order-line: 40 10% 85%;
-    --order-muted: 220 8% 38%;
-    --sidebar-background: 40 18% 95%;
-    --sidebar-foreground: 220 18% 12%;
-    --sidebar-primary: 224 64% 38%;
+    --order-line: 0 0% 92%;
+    --order-muted: 0 0% 45%;           /* #737373 testo attenuato */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 224 76% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 40 14% 90%;
-    --sidebar-accent-foreground: 220 18% 11%;
-    --sidebar-border: 40 10% 85%;
-    --sidebar-ring: 224 64% 38%;
-    --sidebar-rail-background: 40 16% 92%;
-    --sidebar-rail-foreground: 220 10% 28%;
-    --sidebar-item-foreground: 220 12% 22%;
-    --sidebar-item-icon: 220 8% 40%;
-    --shadow-card: 0 0 0 0 transparent;
-    --shadow-card-hover: 0 0 0 0 transparent;
-    --shadow-glow: 0 0 0 0 transparent;
-    --radius: 0.375rem;
-    --radius-xl: 0.5rem;
-    --radius-2xl: 0.625rem;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 92%;
+    --sidebar-ring: 224 76% 44%;
+    --sidebar-rail-background: 0 0% 98%;
+    --sidebar-rail-foreground: 0 0% 32%;
+    --sidebar-item-foreground: 0 0% 20%;
+    --sidebar-item-icon: 0 0% 45%;
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-card-hover: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-glow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --radius: 0.5rem;                  /* controlli 8 */
+    --radius-xl: 0.75rem;              /* card 12 */
+    --radius-2xl: 1rem;                /* pannelli 16 */
   }
 
   /* Documenti da stampare/proforma: la classe .light riporta i token alla
@@ -788,18 +794,28 @@ a[href*="lovable.dev"][style*="position:fixed"] {
   }
 }
 
-/* Unslop: titoli sobri nello stesso carattere del testo; cifre grandi in
-   monospaziato tabellare (la caratteristica distintiva del design). */
+/* Unslop — tipografia (valori dello skill unslop, @heydamir, CC BY 4.0):
+   pesi 400/500, al massimo 600; gerarchia da dimensione e colore; niente
+   etichette maiuscole spaziate; cifre delle card 500 tabellari. */
 .design-unslop h1, .design-unslop h2, .design-unslop h3,
 .design-unslop h4, .design-unslop h5, .design-unslop h6,
 .design-unslop .font-display {
   font-family: 'DM Sans', -apple-system, sans-serif;
-  letter-spacing: -0.015em;
+  font-weight: 500;
+  letter-spacing: 0;
 }
-.design-unslop .text-3xl.tabular-nums,
+.design-unslop h1.text-2xl, .design-unslop h1.text-3xl { letter-spacing: -0.01em; }
+.design-unslop .font-bold, .design-unslop .font-extrabold, .design-unslop .font-black { font-weight: 600; }
+.design-unslop .uppercase { text-transform: none; letter-spacing: 0; }
+/* Firma: la cifra principale e i codici come su una bolla (le cifre delle
+   card restano nel carattere del testo, 500 tabellari, per stare nelle card
+   strette su iPhone). */
+.design-unslop .text-3xl.tabular-nums, .design-unslop .stat-value { font-weight: 500; }
 .design-unslop .text-4xl.tabular-nums,
-.design-unslop .stat-value {
+.design-unslop .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  font-weight: 500;
+  letter-spacing: -0.02em;
 }
+/* Movimento: una sola curva per tutto. */
+.design-unslop * { transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }

@@ -35,7 +35,7 @@ export function OrdiniStatsRow({ stats, mom, isLoading }: OrdiniStatsRowProps) {
           <Euro className="hidden h-4 w-4 sm:block" />
           Valore ordini attivi
         </p>
-        <p className="mt-1 break-words font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">
+        <p className="mt-1 whitespace-nowrap font-display text-xl font-bold tracking-tight tabular-nums text-scatto-ink min-[400px]:text-2xl">
           {formatCurrency(stats.valoreTotale)}
         </p>
         {hasDelta && (

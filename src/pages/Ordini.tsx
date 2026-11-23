@@ -468,7 +468,8 @@ const Ordini = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-11 shrink-0 gap-2 rounded-lg border-scatto-line bg-scatto-surface text-scatto-ink hover:bg-scatto-bg">
                     <Upload className="h-4 w-4" />
-                    <span>Importa</span>
+                    {/* Sotto i 360px solo icona: "Nuovo ordine" resta intero */}
+                    <span className="max-[359px]:sr-only">Importa</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="border-scatto-line bg-scatto-surface text-scatto-ink">
@@ -481,7 +482,7 @@ const Ordini = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
-                className="h-11 flex-1 gap-2 rounded-lg bg-scatto-accent font-semibold text-white hover:bg-scatto-accent/90 sm:flex-none sm:px-6"
+                className="h-11 min-w-0 flex-1 gap-2 rounded-lg bg-scatto-accent font-semibold text-white hover:bg-scatto-accent/90 sm:flex-none sm:px-6"
                 onClick={() => setIsDialogOpen(true)}
               >
                 <Plus className="h-4 w-4" />
