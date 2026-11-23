@@ -145,7 +145,7 @@ const Impostazioni = () => {
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 sm:gap-4">
               {(Object.entries(designConfigs) as [DesignStyle, typeof designConfigs[DesignStyle]][]).map(([key, config]) => (
                 <button
                   key={key}
@@ -161,21 +161,24 @@ const Impostazioni = () => {
                   )}
                 >
                   {/* Anteprima schematica: sidebar + due card */}
-                  <div
-                    aria-hidden
-                    className={cn(
-                      "mb-3 flex h-16 gap-1 overflow-hidden p-1",
-                      key === "pannelli" ? "rounded-xl bg-[#121419]" : "rounded-md border bg-[#f2f5fa]"
-                    )}
-                  >
-                    <div className={cn("w-1/4", key === "pannelli" ? "rounded-lg bg-[#1a1d23]" : "bg-[#e2e8f0]")} />
-                    <div className="flex flex-1 flex-col gap-1">
-                      <div className={cn("flex-1", key === "pannelli" ? "rounded-lg bg-[#1a1d23]" : "rounded-sm border bg-white")} />
-                      <div className={cn("flex-1", key === "pannelli" ? "rounded-lg bg-[#1a1d23]" : "rounded-sm border bg-white")}>
-                        <div className={cn("m-1 h-1 w-1/3 rounded-full", key === "pannelli" ? "bg-[#3b82f6]" : "bg-[#2563eb]")} />
+                  {(() => {
+                    const pv = {
+                      classico: { box: "rounded-md border bg-[#f2f5fa]", side: "bg-[#e2e8f0]", card: "rounded-sm border bg-white", dot: "rounded-full bg-[#2563eb]" },
+                      pannelli: { box: "rounded-xl bg-[#121419]", side: "rounded-lg bg-[#1a1d23]", card: "rounded-lg bg-[#1a1d23]", dot: "rounded-full bg-[#3b82f6]" },
+                      unslop: { box: "rounded-sm border border-[#ddd9d1] bg-[#f8f7f4]", side: "border-r border-[#ddd9d1] bg-[#f1efe9]", card: "rounded-[3px] border border-[#ddd9d1] bg-white", dot: "rounded-none bg-[#23408f]" },
+                    }[key];
+                    return (
+                      <div aria-hidden className={cn("mb-3 flex h-16 gap-1 overflow-hidden p-1", pv.box)}>
+                        <div className={cn("w-1/4", pv.side)} />
+                        <div className="flex flex-1 flex-col gap-1">
+                          <div className={cn("flex-1", pv.card)} />
+                          <div className={cn("flex-1", pv.card)}>
+                            <div className={cn("m-1 h-1 w-1/3", pv.dot)} />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
                   <h3 className="text-base font-semibold">{config.name}</h3>
                   <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{config.description}</p>
                   {design === key && (
@@ -199,15 +202,15 @@ const Impostazioni = () => {
               <div>
                 <CardTitle >Tema Interfaccia</CardTitle>
                 <CardDescription>
-                  {design === "pannelli"
-                    ? "Il design Pannelli scuri usa una palette propria: il tema si applica con il design Classico."
+                  {design !== "classico"
+                    ? `Il design ${designConfigs[design].name} usa una palette propria: il tema si applica con il design Classico.`
                     : "Scegli i colori che preferisci"}
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
-            <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4", design === "pannelli" && "opacity-60")}>
+            <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4", design !== "classico" && "opacity-60")}>
               {(Object.entries(themeConfigs) as [ThemeStyle, typeof themeConfigs[ThemeStyle]][]).map(([key, config]) => (
                 <button
                   key={key}
