@@ -9,13 +9,16 @@ export type ThemeStyle = "modern" | "classic" | "minimal" | "vibrant" | "dark";
  *   card morbide. Ha una palette propria, quindi il tema colore non si applica.
  * - "unslop": valori dello skill unslop (github.com/heydamir/unslop, di
  *   Damir Sokolovsky, CC BY 4.0). Palette propria, il tema colore non si applica.
+ * - "tremor": valori del tema di Tremor (github.com/tremorlabs/tremor,
+ *   Apache-2.0), libreria per cruscotti. Palette propria, il tema colore non si applica.
  */
-export type DesignStyle = "classico" | "pannelli" | "unslop";
+export type DesignStyle = "classico" | "pannelli" | "unslop" | "tremor";
 
 export const designConfigs: Record<DesignStyle, { name: string; description: string }> = {
   classico: { name: "Classico", description: "L'aspetto di sempre, chiaro" },
   pannelli: { name: "Pannelli scuri", description: "Scuro a pannelli, angoli morbidi, accento blu" },
   unslop: { name: "Unslop", description: "Interfaccia quieta, un solo accento, cifre da bolla" },
+  tremor: { name: "Tremor", description: "Stile da cruscotto: grigi chiari, bordi sottili, numeri in evidenza" },
 };
 
 interface ThemeContextType {
@@ -88,7 +91,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const [design, setDesignState] = useState<DesignStyle>(() => {
     const saved = localStorage.getItem("app-design");
-    return saved === "pannelli" || saved === "unslop" ? saved : "classico";
+    return saved === "pannelli" || saved === "unslop" || saved === "tremor" ? saved : "classico";
   });
 
   const setDesign = (newDesign: DesignStyle) => {
@@ -109,9 +112,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     
     const panel = design === "pannelli";
     const unslop = design === "unslop";
+    const tremor = design === "tremor";
     root.classList.toggle("design-panel", panel);
     root.classList.toggle("design-unslop", unslop);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", panel ? "#121419" : unslop ? "#fafafa" : "#f2f5fa");
+    root.classList.toggle("design-tremor", tremor);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", panel ? "#121419" : unslop ? "#fafafa" : tremor ? "#f9fafb" : "#f2f5fa");
 
     // Apply colors (solo con il design Classico: gli altri hanno la loro palette)
     Object.entries(config.colors).forEach(([key, value]) => {
@@ -120,7 +125,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     });
 
     // Apply dark class for dark theme
-    if (panel || (theme === "dark" && !unslop)) {
+    if (panel || (theme === "dark" && design === "classico")) {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
@@ -145,5 +150,5 @@ export function useTheme() {
 /** Vero quando l'interfaccia è scura (tema Scuro o design Pannelli scuri). */
 export function useIsDarkUI() {
   const { theme, design } = useTheme();
-  return design === "pannelli" || (theme === "dark" && design !== "unslop");
+  return design === "pannelli" || (theme === "dark" && design === "classico");
 }

@@ -327,6 +327,89 @@
     --radius-2xl: 1rem;                /* pannelli 16 */
   }
 
+  /* Design "Tremor" (Impostazioni → Design), con i valori del tema di Tremor
+     (https://github.com/tremorlabs/tremor, Apache-2.0), la libreria React per
+     cruscotti: rampa grigia di Tailwind, accento blu, bordi gray-200, ombra
+     "tremor-card", angoli 6px (controlli) e 8px (card). Unica deviazione: il
+     blu dei pulsanti è blue-600 invece di blue-500, per avere un testo bianco
+     leggibile (≥ 4,5:1); blue-500 resta per anelli di focus e grafici.
+     Palette propria: i temi colore non si applicano. */
+  .design-tremor {
+    color-scheme: light;
+    --background: 210 20% 98%;         /* gray-50 */
+    --foreground: 221 39% 11%;         /* gray-900 content-strong */
+    --card: 0 0% 100%;
+    --card-foreground: 221 39% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 221 39% 11%;
+    --primary: 221 83% 53%;            /* blue-600 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;          /* gray-100 background-subtle */
+    --secondary-foreground: 217 19% 27%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;    /* gray-500 content */
+    --accent: 220 14% 96%;
+    --accent-foreground: 217 19% 27%;  /* gray-700 content-emphasis */
+    --destructive: 0 72% 51%;          /* red-600 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;             /* gray-200 */
+    --input: 216 12% 84%;              /* gray-300 */
+    --ring: 217 91% 60%;               /* blue-500 */
+    --success: 163 94% 24%;            /* emerald-700 */
+    --success-foreground: 0 0% 100%;
+    --warning: 26 90% 37%;             /* amber-700 */
+    --warning-foreground: 0 0% 100%;
+    --danger: 0 72% 51%;
+    --danger-foreground: 0 0% 100%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
+    --commission-unpaid: 26 90% 37%;
+    --commission-contested: 263 70% 50%; /* violet-600 */
+    --order-paper: 210 20% 98%;
+    --order-paper-deep: 220 14% 96%;
+    --order-ink: 221 39% 11%;
+    --order-blue: 221 83% 53%;
+    --order-surface: 0 0% 100%;
+    --order-line: 220 13% 91%;
+    --order-muted: 220 9% 46%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 221 39% 11%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 221 39% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217 91% 60%;
+    --sidebar-rail-background: 210 20% 98%;
+    --sidebar-rail-foreground: 220 9% 46%;
+    --sidebar-item-foreground: 217 19% 27%;
+    --sidebar-item-icon: 218 11% 65%;  /* gray-400 content-subtle */
+    /* Colori grafici nell'ordine predefinito di Tremor */
+    --chart-1: 217 91% 60%;            /* blue-500 */
+    --chart-2: 160 84% 39%;            /* emerald-500 */
+    --chart-3: 258 90% 66%;            /* violet-500 */
+    --chart-4: 38 92% 50%;             /* amber-500 */
+    --chart-5: 220 9% 46%;             /* gray-500 */
+    --chart-6: 189 94% 43%;            /* cyan-500 */
+    --chart-7: 330 81% 60%;            /* pink-500 */
+    --chart-8: 84 81% 44%;             /* lime-500 */
+    --chart-9: 292 84% 61%;            /* fuchsia-500 */
+    --chart-10: 239 84% 67%;           /* indigo-500 */
+    --chart-11: 173 80% 40%;           /* teal-500 */
+    --chart-12: 25 95% 53%;            /* orange-500 */
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-card-hover: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-glow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);          /* tremor-input */
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* tremor-dropdown */
+    --shadow-lg: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --radius: 0.375rem;                /* tremor-small: campi e pulsanti */
+    --radius-xl: 0.5rem;               /* tremor-default: card */
+    --radius-2xl: 0.5rem;
+  }
+
   /* Documenti da stampare/proforma: la classe .light riporta i token alla
      palette chiara anche dentro il design Pannelli scuri. */
   .light {
@@ -659,7 +742,7 @@
 }
 
 @media print {
-  :root, .dark, .design-panel, .design-unslop {
+  :root, .dark, .design-panel, .design-unslop, .design-tremor {
     --background: 210 33% 96%;
     --foreground: 222 36% 14%;
     --card: 0 0% 100%;
@@ -793,6 +876,22 @@ a[href*="lovable.dev"][style*="position:fixed"] {
     scroll-behavior: auto !important;
   }
 }
+
+/* Tremor — tipografia: carattere di sistema (San Francisco su iPhone),
+   titoli semibold senza stretta spaziatura, metriche semibold tabellari,
+   etichette 12px grigie come "tremor-label". */
+.design-tremor body,
+.design-tremor h1, .design-tremor h2, .design-tremor h3,
+.design-tremor h4, .design-tremor h5, .design-tremor h6,
+.design-tremor .font-display {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+.design-tremor h1, .design-tremor h2, .design-tremor h3,
+.design-tremor h4, .design-tremor h5, .design-tremor h6,
+.design-tremor .font-display { font-weight: 600; letter-spacing: -0.01em; }
+.design-tremor .font-extrabold, .design-tremor .font-black { font-weight: 700; }
+.design-tremor .text-3xl.tabular-nums, .design-tremor .text-4xl.tabular-nums,
+.design-tremor .stat-value { font-weight: 600; letter-spacing: -0.02em; }
 
 /* Unslop — tipografia (valori dello skill unslop, @heydamir, CC BY 4.0):
    pesi 400/500, al massimo 600; gerarchia da dimensione e colore; niente
