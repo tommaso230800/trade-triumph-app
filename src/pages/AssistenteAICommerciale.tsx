@@ -294,7 +294,7 @@ ${analysisData.alertMessage ? `⚠️ ALERT: ${analysisData.alertMessage}` : ""}
 
   const handleCopyResponse = (content: string) => {
     navigator.clipboard.writeText(content);
-    toast.success("Risposta copiata");
+    toast.success("Risposta copiata!");
   };
 
   const handleReset = () => {

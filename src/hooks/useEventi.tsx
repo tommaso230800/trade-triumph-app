@@ -113,7 +113,7 @@ export function useCreateEvento() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["eventi"] });
-      toast.success("Evento creato");
+      toast.success("Evento creato!");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);
@@ -131,7 +131,7 @@ export function useDeleteEvento() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["eventi"] });
-      toast.success("Evento eliminato");
+      toast.success("Evento eliminato!");
     },
     onError: (error) => {
       toast.error("Errore: " + error.message);

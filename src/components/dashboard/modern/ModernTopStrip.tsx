@@ -1,9 +1,40 @@
 /**
  * Striscia superiore in stile "shadcn dashboard": tre celle piatte divise da
- * una linea sottile, ognuna con etichetta, numero protagonista e variazione
- * con il termine di confronto. Niente micro-grafici: il grafico vero è uno. I contenuti restano quelli dell'agente di commercio
+ * una linea sottile, ognuna con etichetta, numero protagonista, variazione e
+ * un micro-grafico. I contenuti restano quelli dell'agente di commercio
  * (fatturato, mese in corso, andamento) — nessuna metrica da e-commerce.
  */
+
+function sparkPath(values: number[], w = 120, h = 40) {
+  if (values.length === 0) return "";
+  if (values.length === 1) return `M0 ${h / 2} L${w} ${h / 2}`;
+  const max = Math.max(...values);
+  const min = Math.min(...values, 0);
+  const range = max - min || 1;
+  const step = w / (values.length - 1);
+  return values
+    .map((v, i) => {
+      const x = i * step;
+      const y = h - 2 - ((v - min) / range) * (h - 4);
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
+    })
+    .join(" ");
+}
+
+function Bars({ values }: { values: number[] }) {
+  const max = Math.max(1, ...values);
+  return (
+    <div className="flex h-10 items-end gap-[3px]">
+      {values.map((v, i) => (
+        <span
+          key={i}
+          className="w-[5px] rounded-sm bg-scatto-ink/70"
+          style={{ height: `${Math.max(6, (v / max) * 100)}%` }}
+        />
+      ))}
+    </div>
+  );
+}
 
 type Cell = {
   label: string;
@@ -11,9 +42,8 @@ type Cell = {
   value: string;
   deltaPct?: number | null;
   deltaLabel?: string;
-  /** Non più disegnati: le card dei numeri sono solo numeri (regola unslop). */
-  series?: number[];
-  chart?: "line" | "bars";
+  series: number[];
+  chart: "line" | "bars";
 };
 
 export function ModernTopStrip({ cells }: { cells: Cell[] }) {
@@ -40,6 +70,22 @@ export function ModernTopStrip({ cells }: { cells: Cell[] }) {
                 </span>
                 {c.deltaLabel && <span className="text-scatto-muted">{c.deltaLabel}</span>}
               </p>
+            </div>
+            <div className="flex-shrink-0 text-scatto-ink">
+              {c.chart === "bars" ? (
+                <Bars values={c.series.slice(-10)} />
+              ) : (
+                <svg viewBox="0 0 120 40" className="h-10 w-[120px]" aria-hidden="true">
+                  <path
+                    d={sparkPath(c.series)}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
             </div>
           </div>
         );

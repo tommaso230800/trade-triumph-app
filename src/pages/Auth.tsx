@@ -55,7 +55,7 @@ export default function Auth() {
       setErrorMsg(error);
       return;
     }
-    toast.success("Accesso effettuato");
+    toast.success("Bentornato!");
     navigate(redirectTo, { replace: true });
   };
 

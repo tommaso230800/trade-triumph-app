@@ -71,6 +71,7 @@ import {
   Building2,
   Users,
   Percent,
+  Target,
   Sparkles,
   Search,
   Download,
@@ -86,6 +87,9 @@ import {
   CalendarClock,
   LineChart as LineChartIcon,
   Trophy,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
   ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -1212,14 +1216,16 @@ function EconomicoCell({ label, value, accent, big }: { label: string; value: nu
   );
 }
 
-function KPICard({ label, value, accent }: { icon?: React.ReactNode; label: string; value: string; accent?: "success" | "warning" }) {
+function KPICard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: "success" | "warning" }) {
   const accentClass = accent === "success" ? "text-scatto-success" : accent === "warning" ? "text-scatto-warning" : "text-scatto-muted";
   return (
     <div className={provCardCls}>
       <div className="p-4">
-        <p className="mb-2 text-xs text-scatto-muted">{label}</p>
-        {/* Niente icona di riempimento: l'eventuale stato colora la cifra */}
-        <p className={`truncate font-display text-2xl font-bold tabular-nums tracking-tight ${accent ? accentClass : "text-scatto-ink"}`}>{value}</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-scatto-muted">{label}</p>
+          <span className={accentClass}>{icon}</span>
+        </div>
+        <p className="truncate font-display text-2xl font-bold tabular-nums tracking-tight text-scatto-ink">{value}</p>
       </div>
     </div>
   );
@@ -1228,12 +1234,16 @@ function KPICard({ label, value, accent }: { icon?: React.ReactNode; label: stri
 function GrowthCard({ label, value }: { label: string; value: number }) {
   const isPos = value > 0;
   const isNeg = value < 0;
+  const Icon = isPos ? ArrowUpRight : isNeg ? ArrowDownRight : Minus;
   const color = isPos ? "text-scatto-success" : isNeg ? "text-scatto-danger" : "text-scatto-muted";
   return (
     <div className={provCardCls}>
       <div className="p-4">
         <p className="text-xs text-scatto-muted mb-2">{label}</p>
-        <p className={`font-display text-2xl font-bold tracking-tight tabular-nums ${color}`}>{value > 0 ? "+" : ""}{formatNumber(value, 1)}%</p>
+        <div className={`flex items-center gap-1 ${color}`}>
+          <Icon className="h-5 w-5" />
+          <p className="font-display text-2xl font-bold tracking-tight tabular-nums">{value > 0 ? "+" : ""}{formatNumber(value, 1)}%</p>
+        </div>
       </div>
     </div>
   );
@@ -1243,7 +1253,10 @@ function ObjectiveCard({ target, current, pct }: { target: number; current: numb
   return (
     <div className={`${provCardCls} col-span-2 md:col-span-1`}>
       <div className="p-4 space-y-2">
-        <p className="text-xs text-scatto-muted">Obiettivo mensile</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-scatto-muted">Obiettivo mensile</p>
+          <Target className="h-4 w-4 text-scatto-accent" />
+        </div>
         <p className="font-display text-2xl font-bold tracking-tight tabular-nums text-scatto-ink">{formatNumber(pct, 0)}%</p>
         <Progress value={Math.min(100, pct)} className="h-1.5" />
         <p className="text-xs tabular-nums text-scatto-muted">{fmtEur(current)} / {fmtEur(target)}</p>

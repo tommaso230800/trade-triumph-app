@@ -743,7 +743,7 @@ export default function IntelligenzaCommerciale() {
   );
 }
 
-function KPI({ label, value, tone }: { label: string; value: string; icon?: unknown; tone?: "primary" | "emerald" | "red" }) {
+function KPI({ label, value, icon: Icon, tone }: { label: string; value: string; icon: any; tone?: "primary" | "emerald" | "red" }) {
   const toneClass = tone === "primary" ? "text-primary" : tone === "emerald" ? "text-success" : tone === "red" ? "text-destructive" : "text-foreground";
   return (
     <Card className="surface-noir">
@@ -753,6 +753,7 @@ function KPI({ label, value, tone }: { label: string; value: string; icon?: unkn
             <div className="text-xs text-muted-foreground line-clamp-2">{label}</div>
             <div className={cn("text-2xl font-bold tracking-tight tabular-nums truncate", toneClass)}>{value}</div>
           </div>
+          <Icon className={cn("w-5 h-5 flex-shrink-0", tone ? toneClass : "text-muted-foreground")} />
         </div>
       </CardContent>
     </Card>

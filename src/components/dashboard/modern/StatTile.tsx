@@ -5,7 +5,7 @@ import { DashCard } from "./DashCard";
 
 /**
  * Card statistica compatta (stile "Total Orders" del template shadcndashboard):
- * etichetta, numero protagonista, variazione con il suo confronto e
+ * etichetta, numero protagonista, badge di variazione, icona in riquadro e
  * link opzionale all'approfondimento.
  */
 export function StatTile({
@@ -16,16 +16,12 @@ export function StatTile({
   href,
   hrefLabel = "Vedi statistiche",
   hint,
-  deltaLabel,
 }: {
   label: string;
   value: string;
   deltaPct?: number | null;
-  /** Non più mostrata: le card dei numeri sono solo numeri. */
-  icon?: ReactNode;
+  icon: ReactNode;
   href?: string;
-  /** Termine di confronto della variazione, es. "vs novembre 2025". */
-  deltaLabel?: string;
   hrefLabel?: string;
   hint?: string;
 }) {
@@ -58,9 +54,9 @@ export function StatTile({
               </span>
             )}
           </div>
-          {deltaLabel && <p className="mt-1 text-xs text-scatto-muted">{deltaLabel}</p>}
           {hint && <p className="mt-1 text-xs text-scatto-muted">{hint}</p>}
         </div>
+        <span className="flex-shrink-0 rounded-lg border border-scatto-line p-2 text-scatto-muted">{icon}</span>
       </div>
 
       {href && (

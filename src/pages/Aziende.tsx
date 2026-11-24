@@ -132,7 +132,7 @@ const Aziende = () => {
           indirizzo: data.data.indirizzo || prev.indirizzo,
           citta: data.data.citta || prev.citta,
         }));
-        toast.success("Dati azienda recuperati");
+        toast.success("Dati azienda recuperati!");
       } else {
         toast.info(data?.message || "Nessun dato trovato per questa P.IVA");
       }

@@ -194,7 +194,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
       } else {
         setNewProduct({ ...newProduct, immagine_url: publicUrl });
       }
-      toast.success("Immagine caricata");
+      toast.success("Immagine caricata!");
     } catch (error: any) {
       toast.error("Errore upload: " + error.message);
     }
@@ -222,7 +222,7 @@ export function AziendaCard({ azienda, onEdit, onDelete }: AziendaCardProps) {
         .getPublicUrl(fileName);
 
       await updateAzienda.mutateAsync({ id: azienda.id, logo_url: publicUrl });
-      toast.success("Logo caricato");
+      toast.success("Logo caricato!");
     } catch (error: any) {
       toast.error("Errore upload: " + error.message);
     } finally {

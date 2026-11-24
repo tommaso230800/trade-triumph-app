@@ -1,5 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import { formatNumber } from "@/lib/format";
 
 export type QuickStat = {
   label: string;
@@ -7,13 +6,12 @@ export type QuickStat = {
   caption?: string;
   /** Variazione mostrata come pillola verde/rossa. */
   deltaPct?: number | null;
-  /** Non più mostrata: le card dei numeri sono solo numeri. */
-  icon?: LucideIcon;
+  icon: LucideIcon;
 };
 
 /**
  * Riga di tessere sintetiche in stile dashboard analytics: etichetta piccola,
- * numero protagonista e variazione. Niente icone di riempimento.
+ * numero protagonista, pillola di variazione e icona in un riquadro chiaro.
  */
 export function QuickStatTiles({ stats }: { stats: QuickStat[] }) {
   return (
@@ -21,6 +19,7 @@ export function QuickStatTiles({ stats }: { stats: QuickStat[] }) {
       {stats.map((s) => {
         const hasDelta = s.deltaPct !== undefined && s.deltaPct !== null && Number.isFinite(s.deltaPct);
         const positive = hasDelta && (s.deltaPct as number) >= 0;
+        const Icon = s.icon;
         return (
           <div
             key={s.label}
@@ -40,12 +39,15 @@ export function QuickStatTiles({ stats }: { stats: QuickStat[] }) {
                       }`}
                     >
                       {positive ? "+" : "−"}
-                      {formatNumber(Math.abs(s.deltaPct as number), 1)}%
+                      {Math.abs(s.deltaPct as number).toFixed(1)}%
                     </span>
                   )}
                 </div>
                 {s.caption && <p className="mt-1 truncate text-xs text-scatto-muted">{s.caption}</p>}
               </div>
+              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-scatto-line bg-scatto-bg text-scatto-ink">
+                <Icon className="h-4 w-4" />
+              </span>
             </div>
           </div>
         );

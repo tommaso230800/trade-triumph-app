@@ -266,7 +266,7 @@ const AziendaDettaglio = () => {
         .getPublicUrl(fileName);
 
       await updateAzienda.mutateAsync({ id: azienda.id, logo_url: publicUrl });
-      toast.success("Logo caricato");
+      toast.success("Logo caricato!");
     } catch (error: any) {
       toast.error("Errore upload: " + error.message);
     } finally {
@@ -295,7 +295,7 @@ const AziendaDettaglio = () => {
         .getPublicUrl(fileName);
 
       setProductForm({ ...productForm, immagine_url: publicUrl });
-      toast.success("Immagine caricata");
+      toast.success("Immagine caricata!");
     } catch (error: any) {
       toast.error("Errore upload: " + error.message);
     }
@@ -345,7 +345,7 @@ const AziendaDettaglio = () => {
           indirizzo: data.data.indirizzo || prev.indirizzo,
           citta: data.data.citta || prev.citta,
         } : null);
-        toast.success("Dati azienda recuperati");
+        toast.success("Dati azienda recuperati!");
       } else {
         toast.info(data?.message || "Nessun dato trovato per questa P.IVA");
       }
