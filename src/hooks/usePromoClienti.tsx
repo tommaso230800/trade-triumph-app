@@ -96,7 +96,7 @@ export function useSavePromoCliente() {
       queryClient.invalidateQueries({ queryKey: ["promo_anno_corrente", variables.cliente_id] });
       queryClient.invalidateQueries({ queryKey: ["clienti"] });
       queryClient.invalidateQueries({ queryKey: ["cliente", variables.cliente_id] });
-      toast.success("Promo registrata");
+      toast.success("Promo registrata!");
     },
     onError: (error) => {
       toast.error("Errore nel salvataggio: " + error.message);
@@ -121,7 +121,7 @@ export function useDeletePromoCliente() {
     onSuccess: (clienteId) => {
       queryClient.invalidateQueries({ queryKey: ["promo_clienti", clienteId] });
       queryClient.invalidateQueries({ queryKey: ["promo_anno_corrente", clienteId] });
-      toast.success("Promo eliminata");
+      toast.success("Promo eliminata!");
     },
   });
 }

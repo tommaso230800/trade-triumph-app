@@ -3,27 +3,25 @@ import { cn } from "@/lib/utils";
 
 type Tone = "default" | "primary" | "success" | "warning" | "danger" | "info";
 
-// Lo stato si mostra con un piccolo pallino colorato, non con un'icona
-// (regola unslop: le card dei numeri sono numeri; categorie → pallino di stato).
-const toneDot: Record<Tone, string> = {
-  default: "",
-  primary: "bg-primary",
-  success: "bg-success",
-  warning: "bg-warning",
-  danger: "bg-destructive",
-  info: "bg-info",
+const toneText: Record<Tone, string> = {
+  default: "text-muted-foreground",
+  primary: "text-primary",
+  success: "text-success",
+  warning: "text-warning",
+  danger: "text-destructive",
+  info: "text-info",
 };
 
 /**
  * Tessera numerica compatta condivisa (conteggi e totali di supporto in
- * testa alle pagine): etichetta, numero e, opzionale, pallino di stato.
- * Il colore di `tone` va solo sul pallino e comunica uno stato, mai decoro.
- * `icon` resta accettato per compatibilità ma non viene più mostrato.
+ * testa alle pagine): etichetta, numero e, opzionale, icona di stato.
+ * Il colore di `tone` va solo sull'icona e comunica uno stato, mai decoro.
  * Con `onClick` diventa un filtro toccabile (`active` evidenzia la selezione).
  */
 export function MetricTile({
   label,
   value,
+  icon,
   tone = "default",
   hint,
   onClick,
@@ -43,7 +41,7 @@ export function MetricTile({
     <>
       <div className="flex items-center justify-between gap-2">
         <p className="min-w-0 truncate text-xs font-medium text-muted-foreground">{label}</p>
-        {tone !== "default" && <span aria-hidden className={cn("h-2 w-2 shrink-0 rounded-full", toneDot[tone])} />}
+        {icon && <span className={cn("shrink-0 [&_svg]:h-4 [&_svg]:w-4", toneText[tone])}>{icon}</span>}
       </div>
       <p className="mt-2 break-words font-display text-2xl font-bold tracking-tight tabular-nums text-card-foreground">{value}</p>
       {hint && <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>}

@@ -27,6 +27,10 @@ import type { ProformaData } from "@/components/ordini/ProformaDialog";
 import {
   ChevronRight,
   Download,
+  Euro,
+  ShoppingCart,
+  Users,
+  Receipt,
   TrendingUp,
   Building2,
   Package,
@@ -203,6 +207,12 @@ const Index = () => {
 
   const isLoading = yoyLoading || statsLoading || aziendeLoading || ordiniLoading;
 
+  const firstName =
+    (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
+    user?.email?.split("@")[0] ||
+    "";
+  const hour = now.getHours();
+  const greeting = hour < 13 ? "Buongiorno" : hour < 18 ? "Buon pomeriggio" : "Buonasera";
 
   // KPI del periodo selezionato: stessa fonte della pagina KPI
   // (useAdvancedKPIStats con gli stessi filtri) — i numeri devono coincidere.
@@ -255,6 +265,7 @@ const Index = () => {
   const sparkValues = (yoy?.monthlyComparison || [])
     .slice(0, currentMonthIndex + 1)
     .map((m) => m.curr);
+  const sparkPath = buildSparkPath(sparkValues.length > 0 ? sparkValues : [0]);
   // Fatturato dell'anno in corso: 1° gennaio → oggi (somma dei mesi già
   // trascorsi + mese corrente), indipendente dal periodo selezionato sopra.
   const fatturatoYTD = sparkValues.reduce((s, v) => s + v, 0);
@@ -397,10 +408,11 @@ const Index = () => {
                 <img src={agencyLogo} alt="Logo Mazzi Group" className="h-full w-full object-contain" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-scatto-muted">Mazzi Group</p>
-                {/* Il titolo dice il contesto (il periodo), non saluta */}
-                <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink first-letter:uppercase">
-                  {format(now, "MMMM yyyy", { locale: it })}
+                <p className="text-xs font-semibold uppercase tracking-wider text-scatto-muted">
+                  Mazzi Group
+                </p>
+                <h1 className="font-display text-2xl font-bold tracking-tight text-scatto-ink">
+                  {greeting}{firstName ? `, ${firstName}` : ""}.
                 </h1>
                 {isLoading ? (
                   <Skeleton className="mt-1 h-4 w-48" />
@@ -446,6 +458,8 @@ const Index = () => {
                   value: formatCurrency(fatturatoYTD),
                   deltaPct: chartClosedComparison?.deltaPct ?? null,
                   deltaLabel: `mesi chiusi vs ${yearPrev}`,
+                  series: sparkValues.length > 0 ? sparkValues : [0],
+                  chart: "line",
                 },
                 {
                   label: "Mese in corso",
@@ -456,6 +470,8 @@ const Index = () => {
                     yoy?.monthlyComparison[currentMonthIndex]?.prev ?? 0
                   ),
                   deltaLabel: `vs ${format(now, "MMMM", { locale: it })} ${yearPrev}`,
+                  series: (yoy?.monthlyComparison || []).map((m) => m.curr),
+                  chart: "bars",
                 },
               ]}
             />
@@ -488,7 +504,25 @@ const Index = () => {
                       <span className="text-xs text-scatto-muted">{heroConfrontoText[period]}</span>
                     </div>
                   </div>
+                  <span className="flex-shrink-0 rounded-lg border border-scatto-line p-2 text-scatto-muted">
+                    <Euro className="h-5 w-5" />
+                  </span>
                 </div>
+
+                <svg viewBox="0 0 300 56" preserveAspectRatio="none" className="h-14 w-full panel:h-20" aria-hidden="true">
+                  {sparkPath && (
+                    <path d={`${sparkPath} L297 56 L3 56 Z`} fill="hsl(var(--scatto-accent) / 0.18)" stroke="none" className="hidden panel:block" />
+                  )}
+                  <path
+                    d={sparkPath}
+                    fill="none"
+                    stroke="hsl(var(--scatto-ink))"
+                    className="panel:stroke-scatto-accent"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
 
                 {obiettivoMensile && obiettivoMensile.obiettivo > 0 && (
                   <div className="border-t border-scatto-line pt-4">
@@ -523,7 +557,7 @@ const Index = () => {
                   label="Ordini"
                   value={formatNumberIT(ordiniCount)}
                   deltaPct={ordiniDelta}
-                  deltaLabel={heroConfrontoText[period]}
+                  icon={<ShoppingCart className="h-5 w-5" />}
                   href="/ordini"
                   hrefLabel="Vedi ordini"
                 />
@@ -531,7 +565,7 @@ const Index = () => {
                   label="Clienti attivi"
                   value={clientiAttivi > 0 ? formatNumberIT(clientiAttivi) : "N/D"}
                   deltaPct={clientiDelta}
-                  deltaLabel={heroConfrontoText[period]}
+                  icon={<Users className="h-5 w-5" />}
                   href="/clienti"
                   hrefLabel="Vedi clienti"
                 />
@@ -539,7 +573,7 @@ const Index = () => {
                   label="Scontrino medio"
                   value={ticket === null ? "N/D" : formatCurrency(ticket)}
                   deltaPct={ticketDelta}
-                  deltaLabel={heroConfrontoText[period]}
+                  icon={<Receipt className="h-5 w-5" />}
                   href="/analytics"
                 />
                 <DashCard bodyClassName="grid grid-cols-2 gap-4">

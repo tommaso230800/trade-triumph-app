@@ -208,7 +208,7 @@ const Clienti = () => {
           telefono: data.data.telefono || prev.telefono,
           email: data.data.email || prev.email,
         }));
-        toast.success("Dati cliente recuperati");
+        toast.success("Dati cliente recuperati!");
       } else {
         toast.info(data?.message || "Nessun dato trovato per questa P.IVA");
       }
