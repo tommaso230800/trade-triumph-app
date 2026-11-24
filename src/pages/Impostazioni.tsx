@@ -166,6 +166,7 @@ const Impostazioni = () => {
                       classico: { box: "rounded-md border bg-[#f2f5fa]", side: "bg-[#e2e8f0]", card: "rounded-sm border bg-white", dot: "rounded-full bg-[#2563eb]" },
                       pannelli: { box: "rounded-xl bg-[#121419]", side: "rounded-lg bg-[#1a1d23]", card: "rounded-lg bg-[#1a1d23]", dot: "rounded-full bg-[#3b82f6]" },
                       unslop: { box: "rounded-md border border-black/10 bg-[#fafafa]", side: "rounded-sm border border-black/10 bg-white", card: "rounded-sm border border-black/10 bg-white", dot: "rounded-full bg-[#1b46c2]" },
+                      tremor: { box: "rounded-md border border-[#e5e7eb] bg-[#f9fafb]", side: "rounded-sm border border-[#e5e7eb] bg-white", card: "rounded-sm border border-[#e5e7eb] bg-white shadow-sm", dot: "rounded-full bg-[#3b82f6]" },
                     }[key];
                     return (
                       <div aria-hidden className={cn("mb-3 flex h-16 gap-1 overflow-hidden p-1", pv.box)}>
@@ -183,6 +184,9 @@ const Impostazioni = () => {
                   <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{config.description}</p>
                   {key === "unslop" && (
                     <p className="mt-1 text-xs text-muted-foreground">Valori dallo skill unslop di Damir Sokolovsky (@heydamir), CC BY 4.0</p>
+                  )}
+                  {key === "tremor" && (
+                    <p className="mt-1 text-xs text-muted-foreground">Valori dal tema di Tremor (tremorlabs), Apache-2.0</p>
                   )}
                   {design === key && (
                     <div className="absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full bg-primary">
