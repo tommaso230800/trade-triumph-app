@@ -68,6 +68,7 @@ import {
 } from "@/lib/priceResolver";
 import type { ProformaData } from "./ProformaDialog";
 import { OrdineRigaEditor } from "./OrdineRigaEditor";
+import { Bump } from "@/components/ui/moments";
 import { PromozioniAttiveAlert } from "./PromozioniAttiveAlert";
 import { ProductPicker } from "./ProductPicker";
 import { NuovoProdottoRapidoDialog } from "./NuovoProdottoRapidoDialog";
@@ -1062,7 +1063,12 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
                       <span className="lg:hidden">{step.short}</span><span className="hidden lg:inline">{step.label}</span>
                     </span>
                   </button>
-                  {index < steps.length - 1 && <span className={`h-px flex-1 ${complete ? "bg-order-blue/40" : "bg-order-line"}`} />}
+                  {index < steps.length - 1 && (
+                    // "Step Track": il tratto si riempie quando il passaggio è completato.
+                    <span className="relative h-px flex-1 overflow-hidden bg-order-line">
+                      <span className={`absolute inset-0 origin-left bg-order-blue/40 transition-transform duration-200 ease-out ${complete ? "scale-x-100" : "scale-x-0"}`} />
+                    </span>
+                  )}
                 </li>
               );
             })}
@@ -1164,7 +1170,7 @@ export function NuovoOrdineDialog({ open, onOpenChange, onOrderCreated, prefill,
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-baseline justify-between px-1 text-xs text-order-muted">
-                    <span>{righeOrdine.length} righe{omaggiCount > 0 ? ` · ${omaggiCount} omaggi` : ""}</span>
+                    <span><Bump value={righeOrdine.length} className="tabular-nums">{righeOrdine.length}</Bump> righe{omaggiCount > 0 ? ` · ${omaggiCount} omaggi` : ""}</span>
                     {showProblems && righeConProblemi.length > 0 && <span className="flex items-center gap-1 font-medium text-destructive"><AlertTriangle className="h-3 w-3" /> {righeConProblemi.length} da correggere</span>}
                   </div>
                   {righeOrdine.map((riga, index) => (

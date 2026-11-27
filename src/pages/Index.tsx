@@ -39,6 +39,7 @@ import agencyLogo from "@/assets/agency-logo.jpg";
 import { formatNumber } from "@/lib/format";
 import { csvCell } from "@/lib/csvSafe";
 import { PromemoriaWidget } from "@/components/dashboard/PromemoriaWidget";
+import { SlidingThumb, useSlidingThumb } from "@/components/ui/moments";
 
 // html2canvas + jsPDF pesano ~590kB: caricati solo al primo "Apri proforma",
 // non nel bundle iniziale della dashboard (pagina più visitata dell'app).
@@ -174,6 +175,7 @@ const Index = () => {
   const now = useMemo(() => new Date(), []);
   const currentMonthIndex = now.getMonth();
   const [period, setPeriod] = useState<Period>("mese");
+  const periodSeg = useSlidingThumb<HTMLDivElement>(':scope > [aria-pressed="true"]');
   const { user } = useAuth();
 
   // Stessi confini della pagina KPI (periodo aperto, mese in corso incluso):
@@ -423,14 +425,15 @@ const Index = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="chip-group flex-1 sm:flex-initial">
+              <div ref={periodSeg.listRef} className="chip-group relative flex-1 sm:flex-initial">
+                <SlidingThumb ref={periodSeg.thumbRef} />
                 {(Object.keys(periodLabels) as Period[]).map((p) => (
                   <button
                     key={p}
                     type="button"
                     onClick={() => setPeriod(p)}
                     aria-pressed={period === p}
-                    className="chip flex-1 sm:flex-initial"
+                    className="chip relative flex-1 sm:flex-initial"
                   >
                     {periodLabels[p]}
                   </button>
