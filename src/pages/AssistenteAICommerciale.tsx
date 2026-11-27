@@ -1,3 +1,4 @@
+import { PulseDots } from "@/components/ui/moments";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -638,7 +639,7 @@ ${analysisData.alertMessage ? `⚠️ ALERT: ${analysisData.alertMessage}` : ""}
                       ))}
                       {isLoading && messages[messages.length - 1]?.content === "" && (
                         <div className="flex items-center gap-2 text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <PulseDots />
                           <span className="text-sm">Elaboro strategia...</span>
                         </div>
                       )}

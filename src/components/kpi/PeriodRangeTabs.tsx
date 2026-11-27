@@ -1,3 +1,5 @@
+import { SlidingThumb, useSlidingThumb } from "@/components/ui/moments";
+
 export type RangePreset = "7d" | "30d" | "90d" | "1y";
 
 export const rangeLabels: Record<RangePreset, string> = {
@@ -30,8 +32,10 @@ interface PeriodRangeTabsProps {
 
 /** Selettore compatto 7G / 30G / 90G / 1A (finestre rolling che finiscono oggi). */
 export function PeriodRangeTabs({ value, onChange, className }: PeriodRangeTabsProps) {
+  const { listRef, thumbRef } = useSlidingThumb<HTMLDivElement>(':scope > [aria-pressed="true"]');
   return (
-    <div className={`inline-flex rounded-xl bg-scatto-ink/[0.06] p-1 ${className || ""}`}>
+    <div ref={listRef} className={`relative inline-flex rounded-xl bg-scatto-ink/[0.06] p-1 ${className || ""}`}>
+      <SlidingThumb ref={thumbRef} />
       {(Object.keys(rangeLabels) as RangePreset[]).map((r) => (
         <button
           key={r}
@@ -39,7 +43,7 @@ export function PeriodRangeTabs({ value, onChange, className }: PeriodRangeTabsP
           onClick={() => onChange(r)}
           title={rangeDescriptions[r]}
           aria-pressed={value === r}
-          className={`min-h-[36px] rounded-lg px-3 text-xs font-semibold transition-colors ${
+          className={`relative min-h-[36px] rounded-lg px-3 text-xs font-semibold transition-colors ${
             value === r
               ? "bg-scatto-surface text-scatto-ink shadow-card"
               : "text-scatto-muted hover:text-scatto-ink"
